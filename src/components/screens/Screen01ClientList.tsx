@@ -1,0 +1,234 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import SectionHeader from "../ui/SectionHeader";
+import ScreenFrame from "../ui/ScreenFrame";
+import Badge from "../ui/Badge";
+import { useClients, useInquiries, useQuotations } from "@/lib/store";
+import LoadingSkeleton from "../ui/LoadingSkeleton";
+
+const ITEMS_PER_PAGE = 20;
+
+export default function Screen01ClientList() {
+  const router = useRouter();
+  const { clients, loading: clientsLoading } = useClients();
+  const { inquiries, loading: inquiriesLoading } = useInquiries();
+  const { quotations, loading: quotationsLoading } = useQuotations();
+
+  const loading = clientsLoading || inquiriesLoading || quotationsLoading;
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    let list = clients;
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.contact.toLowerCase().includes(q) ||
+          c.mobile.includes(q) ||
+          c.email.toLowerCase().includes(q)
+      );
+    }
+    if (statusFilter !== "All") {
+      list = list.filter((c) => c.status === statusFilter);
+    }
+    return list;
+  }, [clients, search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginated = filtered.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
+
+  const totalClients = clients.length;
+  const activeClients = clients.filter((c) => c.status === "Active").length;
+  const activeEvents = inquiries.filter(
+    (i) => i.status === "Confirmed" || i.status === "Quoted"
+  ).length;
+  const pendingQuotes = quotations.filter(
+    (q) => q.status === "Draft" || q.status === "Sent"
+  ).length;
+
+  return (
+    <>
+      <SectionHeader
+        title={<>Client <strong>list</strong></>}
+        description="Manage your clients — search, filter by status, and view event activity."
+      />
+      <ScreenFrame
+        breadcrumb="Clients"
+        actions={
+          <Link href="/clients/new" className="btn btn-primary">
+            + New client
+          </Link>
+        }
+      >
+        {loading ? (
+          <LoadingSkeleton rows={6} message="Loading clients\u2026" />
+        ) : (
+        <>
+        {/* Metrics */}
+        <div className="metrics">
+          <div className="met">
+            <div className="met-l">Total clients</div>
+            <div className="met-v">{totalClients}</div>
+          </div>
+          <div className="met">
+            <div className="met-l">Active</div>
+            <div className="met-v g">{activeClients}</div>
+          </div>
+          <div className="met">
+            <div className="met-l">Active events</div>
+            <div className="met-v b">{activeEvents}</div>
+          </div>
+          <div className="met">
+            <div className="met-l">Pending quotes</div>
+            <div className="met-v a">{pendingQuotes}</div>
+          </div>
+        </div>
+
+        {/* Search & filter */}
+        <div className="card !p-3">
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              placeholder="Search by name, contact, mobile..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              className="finp flex-1 min-w-[200px]"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+              className="fsel w-[140px]"
+            >
+              <option value="All">All clients</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{ width: 32 }}></th>
+                <th>Client</th>
+                <th style={{ width: 130 }}>Mobile</th>
+                <th style={{ width: 80 }} className="text-center">Inquiries</th>
+                <th style={{ width: 90 }}>Status</th>
+                <th style={{ width: 60 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-6 text-tx3">
+                    No clients found
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((c) => {
+                  const inquiryCount = inquiries.filter((i) => i.clientId === c.id).length;
+                  return (
+                    <tr
+                      key={c.id}
+                      className="cursor-pointer"
+                      onClick={() => router.push("/clients/" + c.id)}
+                    >
+                      <td>
+                        <div
+                          className="avatar-sm"
+                          style={{ background: c.bg, color: c.fg }}
+                        >
+                          {c.initials}
+                        </div>
+                      </td>
+                      <td>
+                        <Link
+                          href={"/clients/" + c.id}
+                          className="font-medium text-tx hover:text-acc transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {c.name}
+                        </Link>
+                        <div className="text-[10px] text-tx3 mt-[1px]">
+                          {c.contact}
+                          {c.email ? " \u00b7 " + c.email : ""}
+                        </div>
+                      </td>
+                      <td className="font-mono text-[12px]">{c.mobile}</td>
+                      <td className="text-center">
+                        <Badge variant="bl">{inquiryCount}</Badge>
+                      </td>
+                      <td>
+                        <Badge variant={c.status === "Active" ? "gr" : "gy"}>
+                          {c.status}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Link
+                          href={"/inquiries/new?clientId=" + c.id}
+                          className="btn text-[10px] px-[8px] py-[4px]"
+                          title="New inquiry for this client"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          + Inquiry
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+
+          {/* Pagination */}
+          <div className="flex justify-between items-center pt-[10px] text-[11px] text-tx3">
+            <span>
+              {filtered.length === 0
+                ? "0 results"
+                : ((page - 1) * ITEMS_PER_PAGE + 1) + "\u2013" + Math.min(
+                    page * ITEMS_PER_PAGE,
+                    filtered.length
+                  ) + " of " + filtered.length}
+            </span>
+            <div className="flex gap-1">
+              <button
+                className="btn"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                {"\u2039"} Prev
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i}
+                  className={"btn " + (page === i + 1 ? "btn-primary" : "")}
+                  style={{ padding: "5px 10px" }}
+                  onClick={() => setPage(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                className="btn"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next {"\u203A"}
+              </button>
+            </div>
+          </div>
+        </div>
+        </>
+        )}
+      </ScreenFrame>
+    </>
+  );
+}

@@ -1,0 +1,107 @@
+export interface Client {
+  id: string;
+  initials: string;
+  bg: string;
+  fg: string;
+  name: string;
+  contact: string;
+  mobile: string;
+  email: string;
+  gst: string;
+  pan: string;
+  addressLine: string;
+  city: string;
+  district: string;
+  state: string;
+  pin: string;
+  status: "Active" | "Inactive";
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface Inquiry {
+  id: string;
+  clientId: string;
+  eventType: string;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  venue: string;
+  notes: string;
+  status: "New" | "Quoted" | "Confirmed" | "Cancelled";
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface QuotationRow {
+  no: number;
+  position: string;
+  equip: string;
+  rate: number;
+  days: number;
+  amount: number;
+}
+
+export interface Quotation {
+  id: string;
+  inquiryId: string;
+  clientName: string;
+  eventName: string;
+  quoteNo: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  venue: string;
+  status: "Draft" | "Sent" | "Approved" | "Revised";
+  equipment: QuotationRow[];
+  subtotal: number;
+  cgst: number;
+  sgst: number;
+  total: number;
+  createdAt: string;
+  updatedAt?: string;
+  sentAt: string | null;
+  approvedAt: string | null;
+}
+
+export interface Invoice {
+  id: string;
+  quotationId: string;
+  invoiceNo: string;
+  clientName: string;
+  eventName: string;
+  startDate: string;
+  endDate: string;
+  venue: string;
+  videographyAmount: number;
+  photographyAmount: number;
+  advance: number;
+  balance: number;
+  status: "Unpaid" | "Partial paid" | "Paid";
+  advanceReceived: boolean;
+  advanceReceivedAt: string | null;
+  advanceRef: string;
+  advanceMethod: string;
+  balanceReceived: boolean;
+  balanceReceivedAt: string | null;
+  balanceRef: string;
+  balanceMethod: string;
+  hddDelivered: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  dueDate: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  date: number;
+  month: number;
+  year: number;
+  label: string;
+  type: "inquiry" | "quotation" | "confirmed" | "completed";
+}
+
+export function generateId(): string {
+  return Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+}
