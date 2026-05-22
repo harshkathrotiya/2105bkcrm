@@ -140,11 +140,9 @@ export default function Screen01ClientList() {
                 paginated.map((c) => {
                   const clientInquiries = inquiries.filter((i) => i.clientId === c.id);
                   const inquiryCount = clientInquiries.length;
-                  const latestInquiry = clientInquiries
-                    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0];
-                  const latestQuote = latestInquiry
-                    ? quotations.find((q) => q.inquiryId === latestInquiry.id && q.status !== "Revised")
-                    : undefined;
+                  const latestInquiry = clientInquiries.sort(
+                    (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+                  )[0];
                   // Total revenue = sum of all invoices for this client
                   const clientQuoteIds = new Set(
                     quotations.filter((q) => clientInquiries.some((i) => i.id === q.inquiryId)).map((q) => q.id)

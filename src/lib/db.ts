@@ -25,7 +25,6 @@ if (!fs.existsSync(DB_DIR)) {
 // In Next.js dev mode the module is re-evaluated on every hot-reload, so we
 // cache the instance on the global object to avoid opening multiple connections.
 declare global {
-  // eslint-disable-next-line no-var
   var __db: Database.Database | undefined;
 }
 

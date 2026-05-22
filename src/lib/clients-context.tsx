@@ -6,7 +6,6 @@ import {
   useReducer,
   useCallback,
   useEffect,
-  useState,
   type ReactNode,
 } from "react";
 import type { Client } from "./types";

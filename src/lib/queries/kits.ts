@@ -3,7 +3,7 @@
  */
 
 import { db } from "@/lib/db";
-import type { Kit, Equipment } from "@/lib/types";
+import type { Kit } from "@/lib/types";
 import { rowToEquipment, EquipmentRow, isEquipmentBooked } from "./equipment";
 
 export interface KitRow {
@@ -132,7 +132,7 @@ export function createKit(kit: {
 
     kitId = res.lastInsertRowid as number;
 
-    let finalMainBodyId = kit.mainBodyId ?? null;
+    const finalMainBodyId = kit.mainBodyId ?? null;
     if (finalMainBodyId) {
       const linkedId = assignMainBodyToKit(kitId, finalMainBodyId, kit.mainBodyQty ?? undefined);
       if (linkedId) {

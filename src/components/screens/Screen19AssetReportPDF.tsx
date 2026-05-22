@@ -13,11 +13,15 @@ export default function Screen19AssetReportPDF() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [documentNumber, setDocumentNumber] = useState("");
 
   useEffect(() => {
     const loadReportData = async () => {
       try {
+        await Promise.resolve(); // yields execution to make state changes async and prevent rendering cascade
         setLoading(true);
+        setDocumentNumber(`VAL-REP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
+        
         // Fetch asset summaries and all active equipment (set limit high to retrieve all items)
         const [sumData, eqResult] = await Promise.all([
           api.fetchAssetSummary(),
@@ -267,7 +271,7 @@ export default function Screen19AssetReportPDF() {
           </div>
           <div className="pdf-doc">
             <div className="pdf-doc-lbl">Asset Report</div>
-            <div className="pdf-doc-num">VAL-REP-{new Date().getFullYear()}-{Math.floor(1000 + Math.random() * 9000)}</div>
+            <div className="pdf-doc-num">{documentNumber}</div>
             <div className="pdf-doc-sub">Generated: {currentDateStr}</div>
           </div>
         </div>

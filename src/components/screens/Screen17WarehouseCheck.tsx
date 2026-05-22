@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
@@ -21,7 +21,6 @@ function formatSerialNumber(sn: string | null | undefined): string {
 
 export default function Screen17WarehouseCheck() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const inquiryId = searchParams.get("inquiryId");
 
   const [data, setData] = useState<api.WarehouseCheckResult | null>(null);
@@ -32,35 +31,47 @@ export default function Screen17WarehouseCheck() {
   const [toastMessage, setToastMessage] = useState("");
 
   // States for row assignments in progress
-  const [rowSelections, setRowSelections] = useState<Record<string, { type: "inhouse" | "vendor"; id: string; rate?: string }>>({});
   const [savingRows, setSavingRows] = useState<Record<string, boolean>>({});
   const [handoverLoading, setHandoverLoading] = useState<Record<number, boolean>>({});
   const [bulkConfirming, setBulkConfirming] = useState(false);
-
-  const fetchWarehouseData = async () => {
-    if (!inquiryId) return;
-    try {
-      setLoading(true);
-      const [whData, vendorList] = await Promise.all([
-        api.fetchWarehouseCheck(inquiryId),
-        api.fetchVendors(),
-      ]);
-      setData(whData);
-      setVendors(vendorList.filter(v => v.isActive));
-    } catch (err: any) {
-      console.error("Failed to load warehouse check data:", err);
-      setError(err.message || "Failed to load warehouse check data");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [vendorRates, setVendorRates] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    fetchWarehouseData();
+    if (!inquiryId) return;
+    let active = true;
+
+    const loadData = async () => {
+      try {
+        await Promise.resolve(); // yields execution to make state changes async and prevent rendering cascade
+        if (!active) return;
+        setLoading(true);
+        const [whData, vendorList] = await Promise.all([
+          api.fetchWarehouseCheck(inquiryId),
+          api.fetchVendors(),
+        ]);
+        if (!active) return;
+        setData(whData);
+        setVendors(vendorList.filter((v) => v.isActive));
+      } catch (err: any) {
+        console.error("Failed to load warehouse check data:", err);
+        if (!active) return;
+        setError(err.message || "Failed to load warehouse check data");
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      active = false;
+    };
   }, [inquiryId]);
 
   // Helper: Match quotation row with available equipment
-  const getAvailableMatches = (equipName: string) => {
+  const getAvailableMatches = useCallback((equipName: string) => {
     if (!data) return { equipment: [], kits: [] };
     const query = equipName.toLowerCase();
     
@@ -85,7 +96,7 @@ export default function Screen17WarehouseCheck() {
       kits: matchingKits,
       equipment: matchingEquip,
     };
-  };
+  }, [data]);
 
   // Memoized quotation rows mapping with their status
   const mappedQuotationRows = useMemo(() => {
@@ -124,7 +135,7 @@ export default function Screen17WarehouseCheck() {
         availableEquipment: avEquip,
       };
     });
-  }, [data, vendors]);
+  }, [data, vendors, getAvailableMatches]);
 
   // Metrics
   const metrics = useMemo(() => {
@@ -599,7 +610,7 @@ export default function Screen17WarehouseCheck() {
                   const rateInputKey = `rate-${positionStr}`;
 
                   // State values tracker for live UI calculations
-                  const [tempRate, setTempRate] = useState(booking?.vendorCostPerDay?.toString() || "");
+                  const tempRate = vendorRates[positionStr] ?? (booking?.vendorCostPerDay?.toString() || "");
                   const calculatedTotal = parseFloat(tempRate) ? parseFloat(tempRate) * eventDays : 0;
 
                   return (
@@ -652,7 +663,7 @@ export default function Screen17WarehouseCheck() {
                             className="finp"
                             style={{ padding: "4px 8px", fontSize: "11.5px", width: "100px" }}
                             value={tempRate}
-                            onChange={(e) => setTempRate(e.target.value)}
+                            onChange={(e) => setVendorRates(prev => ({ ...prev, [positionStr]: e.target.value }))}
                             disabled={isSaving}
                           />
                         )}

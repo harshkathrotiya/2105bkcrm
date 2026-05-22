@@ -57,22 +57,31 @@ export default function Screen02EditClient({
 
   // Pre-fill form once client data is available
   useEffect(() => {
-    if (client) {
-      setForm({
-        name: client.name,
-        mobile: client.mobile,
-        contact: client.contact,
-        email: client.email,
-        gst: client.gst,
-        pan: client.pan,
-        addressLine: client.addressLine,
-        city: client.city,
-        district: client.district,
-        state: client.state,
-        pin: client.pin,
-        status: client.status,
-      });
-    }
+    let active = true;
+    const initializeForm = async () => {
+      await Promise.resolve(); // yields execution to prevent synchronous rendering phase state updates
+      if (!active) return;
+      if (client) {
+        setForm({
+          name: client.name,
+          mobile: client.mobile,
+          contact: client.contact,
+          email: client.email,
+          gst: client.gst,
+          pan: client.pan,
+          addressLine: client.addressLine,
+          city: client.city,
+          district: client.district,
+          state: client.state,
+          pin: client.pin,
+          status: client.status,
+        });
+      }
+    };
+    initializeForm();
+    return () => {
+      active = false;
+    };
   }, [client]);
 
   const update = (field: keyof FormData, value: string) =>

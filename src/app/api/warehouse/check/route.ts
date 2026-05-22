@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     if (quotation) {
       try {
         quoteRows = JSON.parse(quotation.equipment);
-      } catch (err) {
+      } catch {
         quoteRows = [];
       }
     }

@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { getEquipmentById, getEquipmentDetailsById, updateEquipment, deleteEquipment } from "@/lib/queries/equipment";
+import { getEquipmentDetailsById, updateEquipment, deleteEquipment } from "@/lib/queries/equipment";
 
 export async function GET(
   _req: NextRequest,

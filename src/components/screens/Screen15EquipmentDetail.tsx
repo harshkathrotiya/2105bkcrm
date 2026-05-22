@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
@@ -14,7 +13,6 @@ interface Screen15EquipmentDetailProps {
 }
 
 export default function Screen15EquipmentDetail({ equipmentId }: Screen15EquipmentDetailProps) {
-  const router = useRouter();
   const { refreshEquipment } = useEquipment();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -22,23 +20,36 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [returningId, setReturningId] = useState<number | null>(null);
-
-  const fetchDetails = async () => {
-    try {
-      setLoading(true);
-      const data = await api.fetchEquipmentItem(equipmentId);
-      setItem(data);
-    } catch (err: any) {
-      console.error("Failed to load equipment details:", err);
-      setError(err.message || "Failed to load equipment details");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
+    let active = true;
+
+    const fetchDetails = async () => {
+      try {
+        await Promise.resolve(); // yields execution to prevent synchronous rendering phase state updates
+        if (!active) return;
+        setLoading(true);
+        const data = await api.fetchEquipmentItem(equipmentId);
+        if (!active) return;
+        setItem(data);
+      } catch (err: any) {
+        console.error("Failed to load equipment details:", err);
+        if (!active) return;
+        setError(err.message || "Failed to load equipment details");
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchDetails();
-  }, [equipmentId]);
+
+    return () => {
+      active = false;
+    };
+  }, [equipmentId, refreshKey]);
 
   const handleReturn = async (bookingId: number) => {
     if (!confirm("Are you sure you want to mark this item as returned? This updates the equipment status to AVAILABLE.")) {
@@ -51,8 +62,8 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
       setShowToast(true);
       setTimeout(() => setShowToast(false), 2000);
       
-      // Refresh current details & global store
-      await fetchDetails();
+      // Refresh current details via key & global store
+      setRefreshKey((prev) => prev + 1);
       await refreshEquipment();
     } catch (err: any) {
       alert(err.message || "Failed to mark as returned");
@@ -356,7 +367,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
               <div className="card">
                 <div className="card-t">Notes & Info</div>
                 <div style={{ fontSize: "12px", color: "var(--tx2)", lineHeight: "1.5", fontStyle: "italic", wordBreak: "break-word", overflowWrap: "break-word" }}>
-                  "{item.notes}"
+                  &ldquo;{item.notes}&rdquo;
                 </div>
               </div>
             )}

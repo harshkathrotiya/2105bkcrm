@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -21,7 +21,6 @@ function formatSerialNumber(sn: string | null | undefined): string {
 
 export default function Screen16KitList() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { kits, loading: kitsLoading, refreshKits, dispatchKits } = useKits();
   const { refreshEquipment } = useEquipment();
 
@@ -63,11 +62,25 @@ export default function Screen16KitList() {
 
   // Handle selected kit from URL parameter
   useEffect(() => {
-    if (urlKitId) {
-      setSelectedKitId(parseInt(urlKitId, 10));
-    } else if (kits.length > 0 && selectedKitId === null) {
-      setSelectedKitId(kits[0].id);
-    }
+    let active = true;
+
+    const syncKitSelection = async () => {
+      await Promise.resolve(); // yields execution to prevent synchronous rendering phase state updates
+      if (!active) return;
+
+      if (urlKitId) {
+        const targetId = parseInt(urlKitId, 10);
+        setSelectedKitId((prev) => (prev === targetId ? prev : targetId));
+      } else if (kits.length > 0 && selectedKitId === null) {
+        setSelectedKitId((prev) => (prev === null ? kits[0].id : prev));
+      }
+    };
+
+    syncKitSelection();
+
+    return () => {
+      active = false;
+    };
   }, [urlKitId, kits, selectedKitId]);
 
   // Load all equipment for dropdowns
@@ -84,7 +97,30 @@ export default function Screen16KitList() {
   };
 
   useEffect(() => {
+    let active = true;
+
+    const loadDropdownEquipment = async () => {
+      try {
+        await Promise.resolve(); // yields execution to prevent synchronous rendering phase state updates
+        if (!active) return;
+        setEquipmentLoading(true);
+        const res = await api.fetchEquipment({ limit: 500 });
+        if (!active) return;
+        setAllEquipment(res.items);
+      } catch (err) {
+        console.error("Failed to load dropdown equipment:", err);
+      } finally {
+        if (active) {
+          setEquipmentLoading(false);
+        }
+      }
+    };
+
     loadDropdownEquipment();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const activeKit = useMemo(() => {
@@ -447,7 +483,7 @@ export default function Screen16KitList() {
               <div style={{ padding: "6px", display: "flex", flexDirection: "column", gap: "4px" }}>
                 {kits.length === 0 ? (
                   <div style={{ padding: "20px", textAlign: "center", color: "var(--tx3)", fontSize: "12px" }}>
-                    No kits defined. Click '+ Create New Kit' to build one.
+                    No kits defined. Click &apos;+ Create New Kit&apos; to build one.
                   </div>
                 ) : (
                   kits.map((kit) => {
@@ -502,7 +538,7 @@ export default function Screen16KitList() {
               <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "350px", color: "var(--tx3)" }}>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontSize: "48px", marginBottom: "10px", opacity: 0.3 }}>⧉</div>
-                  <div>Select a kit from the sidebar or click '+ Create New Kit' to get started.</div>
+                  <div>Select a kit from the sidebar or click &apos;+ Create New Kit&apos; to get started.</div>
                 </div>
               </div>
             ) : (
@@ -801,7 +837,7 @@ export default function Screen16KitList() {
 
                   {modalEquipment.length === 0 ? (
                     <div style={{ fontSize: "11px", color: "var(--tx3)", fontStyle: "italic", textAlign: "center", padding: "10px", background: "var(--alt2)", borderRadius: "4px" }}>
-                      No additional equipment added yet. Click '+ Add Equipment' to add.
+                      No additional equipment added yet. Click &apos;+ Add Equipment&apos; to add.
                     </div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

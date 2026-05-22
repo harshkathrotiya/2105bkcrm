@@ -14,8 +14,6 @@ export default function Screen13EquipmentList() {
   const {
     equipment,
     total,
-    page,
-    limit,
     categoryCounts,
     loading,
     assetSummary,

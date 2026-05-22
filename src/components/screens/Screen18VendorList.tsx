@@ -11,7 +11,7 @@ import * as api from "@/lib/api";
 import type { Vendor } from "@/lib/types";
 
 export default function Screen18VendorList() {
-  const { vendors, loading, refreshVendors, dispatchVendors } = useVendors();
+  const { vendors, loading, dispatchVendors } = useVendors();
 
   // Selected vendor for detail sidebar
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
@@ -59,26 +59,39 @@ export default function Screen18VendorList() {
 
   // Fetch selected vendor history and YTD spend
   useEffect(() => {
-    if (selectedVendorId === null) {
-      setVendorHistory([]);
-      setVendorYtdSpend(0);
-      return;
-    }
+    let active = true;
 
     const fetchHistory = async () => {
-      setHistoryLoading(true);
+      if (selectedVendorId === null) {
+        await Promise.resolve(); // yields execution to prevent render phase state setting
+        if (!active) return;
+        setVendorHistory((prev) => (prev.length === 0 ? prev : []));
+        setVendorYtdSpend((prev) => (prev === 0 ? prev : 0));
+        return;
+      }
+
       try {
+        await Promise.resolve();
+        if (!active) return;
+        setHistoryLoading(true);
         const res = await api.fetchVendorHistory(selectedVendorId);
+        if (!active) return;
         setVendorHistory(res.history);
         setVendorYtdSpend(res.ytdSpend);
       } catch (err) {
         console.error("Error fetching vendor history:", err);
       } finally {
-        setHistoryLoading(false);
+        if (active) {
+          setHistoryLoading(false);
+        }
       }
     };
 
     fetchHistory();
+
+    return () => {
+      active = false;
+    };
   }, [selectedVendorId]);
 
   // Handle Quick Toggle for Active/Inactive

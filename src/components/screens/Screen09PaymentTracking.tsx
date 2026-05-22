@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -20,11 +20,23 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
   );
   const [formType, setFormType] = useState("Balance");
   const [formMethod, setFormMethod] = useState("Bank transfer");
-  const [formRef, setFormRef] = useState(`NEFT${Date.now().toString().slice(-6)}`);
-  const [formDate, setFormDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [formRef, setFormRef] = useState("");
+  const [formDate, setFormDate] = useState("");
   const [formNotes, setFormNotes] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const initialize = async () => {
+      await Promise.resolve(); // yields execution to make state changes async and prevent rendering cascade
+      if (!active) return;
+      setFormRef(`NEFT${Date.now().toString().slice(-6)}`);
+      setFormDate(new Date().toISOString().split("T")[0]);
+    };
+    initialize();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleRecordPayment = () => {
     if (!invoice || invoice.balanceReceived) return;
