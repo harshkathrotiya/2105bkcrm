@@ -5,7 +5,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import { useInquiries, useClients, useQuotations } from "@/lib/store";
+import { useInquiries, useClients, useQuotations, useInvoices } from "@/lib/store";
 
 const STATUS_COLORS: Record<string, "gr" | "am" | "bl" | "rd" | "gy"> = {
   New:       "bl",
@@ -25,6 +25,7 @@ export default function Screen10InquiryList() {
   const { inquiries } = useInquiries();
   const { clients } = useClients();
   const { quotations } = useQuotations();
+  const { invoices } = useInvoices();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -173,20 +174,22 @@ export default function Screen10InquiryList() {
                 <th>Venue</th>
                 <th style={{ width: 110, textAlign: "right" }}>Amount</th>
                 <th style={{ width: 90 }}>Status</th>
+                <th style={{ width: 80 }}>Invoice</th>
                 <th style={{ width: 80 }}></th>
               </tr>
             </thead>
             <tbody>
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-6 text-tx3">
+                  <td colSpan={8} className="text-center py-6 text-tx3">
                     No inquiries found
                   </td>
                 </tr>
               ) : (
                 paginated.map((inq) => {
                   const client = clients.find((c) => c.id === inq.clientId);
-                  const quote = quotations.find((q) => q.inquiryId === inq.id);
+                  const quote = quotations.find((q) => q.inquiryId === inq.id && q.status !== "Revised");
+                  const invoice = quote ? invoices.find((inv) => inv.quotationId === quote.id) : undefined;
                   const hasQuotation = !!quote;
                   const startFmt = new Date(inq.startDate).toLocaleDateString("en-IN", {
                     day: "numeric", month: "short",
@@ -232,6 +235,15 @@ export default function Screen10InquiryList() {
                         <Badge variant={STATUS_COLORS[inq.status] ?? "gy"}>
                           {inq.status}
                         </Badge>
+                      </td>
+                      <td>
+                        {invoice ? (
+                          <Badge variant={invoice.status === "Paid" ? "gr" : invoice.status === "Partial paid" ? "am" : "rd"}>
+                            {invoice.status === "Partial paid" ? "Partial" : invoice.status}
+                          </Badge>
+                        ) : quote ? (
+                          <span style={{ fontSize: "9px", color: "var(--tx3)" }}>No invoice</span>
+                        ) : null}
                       </td>
                       <td>
                         <Link

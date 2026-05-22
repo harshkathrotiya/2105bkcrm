@@ -32,6 +32,7 @@ export default function Screen13EquipmentList() {
   const [csvError, setCsvError] = useState("");
   const [csvSuccess, setCsvSuccess] = useState("");
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // Trigger query when filters or page changes
   useEffect(() => {
@@ -45,6 +46,80 @@ export default function Screen13EquipmentList() {
   }, [categoryFilter, statusFilter, search, currentPage, refreshEquipment]);
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
+
+  // ── CSV Export ──────────────────────────────────────────────────────────
+  const handleExportCsv = async () => {
+    setExporting(true);
+    try {
+      // Fetch ALL equipment ignoring current page filters
+      const result = await import("@/lib/api").then((api) =>
+        api.fetchEquipment({ limit: 9999 })
+      );
+      const items = result.items;
+
+      const headers = [
+        "id",
+        "product_name",
+        "category",
+        "quantity",
+        "serial_number",
+        "body_name",
+        "kit_id",
+        "resp_person",
+        "purchase_date",
+        "purchase_from",
+        "bill_number",
+        "purchase_price",
+        "status",
+        "notes",
+      ];
+
+      const escapeCell = (val: string | number | null | undefined) => {
+        if (val === null || val === undefined) return "";
+        const str = String(val);
+        // Wrap in quotes if contains comma, quote, or newline
+        if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+
+      const rows = items.map((eq) => [
+        escapeCell(eq.id),
+        escapeCell(eq.productName),
+        escapeCell(eq.category),
+        escapeCell(eq.quantity),
+        escapeCell(eq.serialNumber),
+        escapeCell(eq.bodyName),
+        escapeCell(eq.kitId),
+        escapeCell(eq.respPerson),
+        escapeCell(eq.purchaseDate),
+        escapeCell(eq.purchaseFrom),
+        escapeCell(eq.billNumber),
+        escapeCell(eq.purchasePrice),
+        escapeCell(eq.status),
+        escapeCell(eq.notes),
+      ].join(","));
+
+      // UTF-8 BOM prefix so Excel opens it correctly
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const ts = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `bk-equipment-${ts}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error("CSV export failed:", err);
+      alert("Export failed: " + (err.message || "Unknown error"));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleImportCsv = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,6 +266,14 @@ export default function Screen13EquipmentList() {
         breadcrumb="Equipment Master"
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              className="btn"
+              onClick={handleExportCsv}
+              disabled={exporting}
+              title="Download all equipment as a CSV file"
+            >
+              {exporting ? "Exporting…" : "↑ Export CSV"}
+            </button>
             <button className="btn" onClick={() => setShowCsvModal(true)}>
               ↓ Import CSV
             </button>

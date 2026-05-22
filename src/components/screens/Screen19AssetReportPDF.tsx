@@ -12,6 +12,7 @@ export default function Screen19AssetReportPDF() {
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const loadReportData = async () => {
@@ -38,6 +39,73 @@ export default function Screen19AssetReportPDF() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  // ── CSV Export (uses data already loaded on the page) ────────────────
+  const handleExportCsv = () => {
+    setExporting(true);
+    try {
+      const headers = [
+        "id",
+        "product_name",
+        "category",
+        "quantity",
+        "serial_number",
+        "body_name",
+        "kit_id",
+        "resp_person",
+        "purchase_date",
+        "purchase_from",
+        "bill_number",
+        "purchase_price",
+        "status",
+        "notes",
+      ];
+
+      const escapeCell = (val: string | number | null | undefined) => {
+        if (val === null || val === undefined) return "";
+        const str = String(val);
+        if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+
+      const rows = equipmentList.map((eq) => [
+        escapeCell(eq.id),
+        escapeCell(eq.productName),
+        escapeCell(eq.category),
+        escapeCell(eq.quantity),
+        escapeCell(eq.serialNumber),
+        escapeCell(eq.bodyName),
+        escapeCell(eq.kitId),
+        escapeCell(eq.respPerson),
+        escapeCell(eq.purchaseDate),
+        escapeCell(eq.purchaseFrom),
+        escapeCell(eq.billNumber),
+        escapeCell(eq.purchasePrice),
+        escapeCell(eq.status),
+        escapeCell(eq.notes),
+      ].join(","));
+
+      // UTF-8 BOM so Excel opens it correctly
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const ts = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `bk-asset-report-${ts}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error("CSV export failed:", err);
+      alert("Export failed: " + (err.message || "Unknown error"));
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading) {
@@ -89,36 +157,56 @@ export default function Screen19AssetReportPDF() {
       {/* Print Controls (Hidden on Print) */}
       <style>{`
         @media print {
-          .site-hdr, .app-sidebar, .no-print {
+          /* Hide non-printing UI chrome */
+          .site-hdr,
+          .app-sidebar,
+          .no-print {
             display: none !important;
           }
-          html, body, .app-layout, .app-body, .app-content, .print-wrapper {
-            margin: 0 !important;
-            padding: 0 !important;
+
+          /* Strip flex/height constraints that create phantom whitespace pages */
+          html,
+          body {
             height: auto !important;
-            min-height: 0 !important;
+            min-height: unset !important;
             overflow: visible !important;
-            background: #fff !important;
-            color: #000 !important;
           }
-          #asset-report-pdf-content {
-            margin: 0 !important;
+          .app-layout {
+            display: block !important;
+            min-height: unset !important;
+            height: auto !important;
+          }
+          .app-body {
+            display: block !important;
+            flex: unset !important;
+            height: auto !important;
+          }
+          .app-content {
             padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            background: #fff !important;
-            color: #000 !important;
-            position: relative !important;
-            width: 100% !important;
+            overflow: visible !important;
+            height: auto !important;
           }
+          .print-wrapper {
+            padding: 0 !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            height: auto !important;
+          }
+
+          /* PDF content colours and clean rendering */
           .pdf-frame {
             box-shadow: none !important;
             border: none !important;
             background: #fff !important;
             color: #000 !important;
           }
+          #asset-report-pdf-content {
+            background: #fff !important;
+            color: #000 !important;
+          }
+
           @page {
-            margin: 10mm;
+            margin: 15mm;
             size: A4;
           }
         }
@@ -146,6 +234,15 @@ export default function Screen19AssetReportPDF() {
           ← Back to Equipment
         </button>
         <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            type="button"
+            className="btn"
+            onClick={handleExportCsv}
+            disabled={exporting || equipmentList.length === 0}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+          >
+            {exporting ? "Exporting…" : "↑ Export CSV"}
+          </button>
           <button
             type="button"
             className="btn btn-primary"

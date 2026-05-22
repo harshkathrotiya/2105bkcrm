@@ -6,7 +6,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import { useClients, useInquiries, useQuotations } from "@/lib/store";
+import { useClients, useInquiries, useQuotations, useInvoices } from "@/lib/store";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 
 const ITEMS_PER_PAGE = 20;
@@ -16,6 +16,7 @@ export default function Screen01ClientList() {
   const { clients, loading: clientsLoading } = useClients();
   const { inquiries, loading: inquiriesLoading } = useInquiries();
   const { quotations, loading: quotationsLoading } = useQuotations();
+  const { invoices } = useInvoices();
 
   const loading = clientsLoading || inquiriesLoading || quotationsLoading;
   const [search, setSearch] = useState("");
@@ -122,7 +123,8 @@ export default function Screen01ClientList() {
                 <th style={{ width: 32 }}></th>
                 <th>Client</th>
                 <th style={{ width: 130 }}>Mobile</th>
-                <th style={{ width: 80 }} className="text-center">Inquiries</th>
+                <th style={{ width: 120 }}>Last Activity</th>
+                <th style={{ width: 130, textAlign: "right" }}>Revenue</th>
                 <th style={{ width: 90 }}>Status</th>
                 <th style={{ width: 60 }}></th>
               </tr>
@@ -136,7 +138,28 @@ export default function Screen01ClientList() {
                 </tr>
               ) : (
                 paginated.map((c) => {
-                  const inquiryCount = inquiries.filter((i) => i.clientId === c.id).length;
+                  const clientInquiries = inquiries.filter((i) => i.clientId === c.id);
+                  const inquiryCount = clientInquiries.length;
+                  const latestInquiry = clientInquiries
+                    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0];
+                  const latestQuote = latestInquiry
+                    ? quotations.find((q) => q.inquiryId === latestInquiry.id && q.status !== "Revised")
+                    : undefined;
+                  // Total revenue = sum of all invoices for this client
+                  const clientQuoteIds = new Set(
+                    quotations.filter((q) => clientInquiries.some((i) => i.id === q.inquiryId)).map((q) => q.id)
+                  );
+                  const clientRevenue = invoices
+                    .filter((inv) => clientQuoteIds.has(inv.quotationId))
+                    .reduce((s, inv) => s + inv.advance + inv.balance, 0);
+
+                  const inqStatusColor: Record<string, string> = {
+                    New: "var(--acc)",
+                    Quoted: "var(--yl)",
+                    Confirmed: "var(--gr)",
+                    Cancelled: "var(--rd)",
+                  };
+
                   return (
                     <tr
                       key={c.id}
@@ -165,8 +188,38 @@ export default function Screen01ClientList() {
                         </div>
                       </td>
                       <td className="font-mono text-[12px]">{c.mobile}</td>
-                      <td className="text-center">
-                        <Badge variant="bl">{inquiryCount}</Badge>
+                      <td>
+                        {latestInquiry ? (
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                              <span style={{
+                                display: "inline-block",
+                                width: "5px",
+                                height: "5px",
+                                borderRadius: "50%",
+                                background: inqStatusColor[latestInquiry.status] ?? "var(--tx3)",
+                                flexShrink: 0,
+                              }} />
+                              <span style={{ fontSize: "11px", fontWeight: 500 }}>
+                                {new Date(latestInquiry.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: "9px", color: "var(--tx3)", paddingLeft: "10px" }}>
+                              {inquiryCount} {inquiryCount === 1 ? "inquiry" : "inquiries"} · {latestInquiry.eventType}
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: "11px", color: "var(--tx3)" }}>No activity</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        {clientRevenue > 0 ? (
+                          <span style={{ fontWeight: 600, fontSize: "12px", color: "var(--gr)" }}>
+                            ₹{clientRevenue.toLocaleString("en-IN")}
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--tx3)", fontSize: "11px" }}>—</span>
+                        )}
                       </td>
                       <td>
                         <Badge variant={c.status === "Active" ? "gr" : "gy"}>

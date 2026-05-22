@@ -787,7 +787,7 @@ export default function Screen16KitList() {
                 {/* Modal Equipment Section */}
                 <div style={{ borderTop: "1px solid var(--b1)", paddingTop: "15px", marginTop: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                    <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--tx3)" }}>Additional Equipment (Optional)</div>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--tx3)" }}>Equipments</div>
                     <button
                       type="button"
                       className="btn"

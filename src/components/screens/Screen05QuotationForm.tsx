@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import { useQuotations, useInquiries, useClients } from "@/lib/store";
+import { useQuotations, useInquiries, useClients, useKits, useEquipment } from "@/lib/store";
 import type { QuotationRow } from "@/lib/store";
+import type { Equipment, Kit } from "@/lib/types";
 import { generateId } from "@/lib/types";
 import { generateQuoteNo, calcDays } from "@/lib/utils";
+
 
 // ── Full position list per FRD appendix ──────────────────────────────────────
 const POSITION_MAP: Record<string, { equip: string; rate: number }> = {
@@ -47,12 +49,14 @@ function SearchableSelect({
   options,
   placeholder,
   className = "",
+  placement = "bottom",
 }: {
   value: string;
   onChange: (val: string) => void;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; group?: string }[];
   placeholder?: string;
   className?: string;
+  placement?: "top" | "bottom";
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -69,29 +73,43 @@ function SearchableSelect({
   }, []);
 
   const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
-  const selectedLabel = options.find(o => o.value === value)?.label || "";
+  const selectedLabel = options.find(o => o.value === value)?.label || value;
+
+  // Build grouped list when options carry a group property
+  const hasGroups = options.some(o => o.group);
+  const groupedFiltered = hasGroups
+    ? Array.from(new Set(filtered.map(o => o.group || "")))
+        .map(group => ({ group, items: filtered.filter(o => (o.group || "") === group) }))
+        .filter(g => g.items.length > 0)
+    : null;
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       <div
-        className="fsel cursor-pointer flex justify-between items-center bg-white"
+        className="fsel cursor-pointer flex justify-between items-center bg-s1"
         onClick={() => { setOpen(!open); setSearch(""); }}
       >
-        <span className={value ? "" : "text-tx3 whitespace-nowrap overflow-hidden text-ellipsis"}>{value ? selectedLabel : placeholder}</span>
+        <span className={`flex-1 min-w-0 text-left whitespace-nowrap overflow-hidden text-ellipsis ${value ? "" : "text-tx3"}`}>
+          {value ? selectedLabel : placeholder}
+        </span>
         <span className="text-[10px] text-tx3 opacity-50 ml-2 shrink-0">▼</span>
       </div>
       
       {open && (
         <div 
-          className="absolute z-[999] top-full left-0 w-full bg-white border border-b1 rounded-md shadow-lg flex flex-col min-w-[200px]" 
-          style={{ marginTop: "4px", overflow: "hidden", maxHeight: "250px" }}
+          className="absolute z-[999] left-0 w-full bg-s1 border border-b1 rounded-md shadow-lg flex flex-col min-w-[200px]" 
+          style={{ 
+            ...(placement === "top" ? { bottom: "100%", marginBottom: "4px" } : { top: "100%", marginTop: "4px" }),
+            overflow: "hidden", 
+            maxHeight: "260px" 
+          }}
         >
           <div className="border-b border-b1 shrink-0 bg-s1" style={{ padding: "8px" }}>
             <input
               type="text"
               autoFocus
               placeholder="Search..."
-              className="w-full text-[11px] outline-none border border-b1 rounded bg-white"
+              className="w-full text-[11px] outline-none border border-b1 rounded bg-s1"
               style={{ padding: "6px 8px" }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -101,16 +119,40 @@ function SearchableSelect({
           <div style={{ overflowY: "auto" }}>
             {filtered.length === 0 ? (
               <div className="text-center text-tx3 text-[10px]" style={{ padding: "12px" }}>No results</div>
+            ) : groupedFiltered ? (
+              groupedFiltered.map(({ group, items }) => (
+                <div key={group}>
+                  <div style={{
+                    padding: "5px 12px 3px",
+                    fontSize: "9px",
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase" as const,
+                    color: "var(--tx3)",
+                    background: "var(--alt2)",
+                    borderBottom: "1px solid var(--b1)",
+                  }}>
+                    {group}
+                  </div>
+                  {items.map((opt) => (
+                    <div
+                      key={opt.value}
+                      className={`text-[11px] cursor-pointer transition-colors ${opt.value === value ? "bg-bl/[0.05] text-bl font-medium" : "text-tx hover:bg-s2"}`}
+                      style={{ padding: "7px 14px" }}
+                      onClick={() => { onChange(opt.value); setOpen(false); }}
+                    >
+                      {opt.label}
+                    </div>
+                  ))}
+                </div>
+              ))
             ) : (
               filtered.map((opt) => (
                 <div
                   key={opt.value}
                   className={`text-[11px] cursor-pointer transition-colors ${opt.value === value ? "bg-bl/[0.05] text-bl font-medium" : "text-tx hover:bg-s2"}`}
                   style={{ padding: "8px 12px" }}
-                  onClick={() => {
-                    onChange(opt.value);
-                    setOpen(false);
-                  }}
+                  onClick={() => { onChange(opt.value); setOpen(false); }}
                 >
                   {opt.label}
                 </div>
@@ -129,6 +171,35 @@ export default function Screen05QuotationForm() {
   const { quotations, dispatchQuotations } = useQuotations();
   const { inquiries } = useInquiries();
   const { clients } = useClients();
+  const { kits } = useKits();
+  const { equipment: allEquipment } = useEquipment();
+
+  // Build live grouped equipment options from DB:
+  // Group 1 — Kits, Group 2 — Individual available items
+  const liveEquipOptions = useMemo(() => {
+    const kitOpts = kits.map((k: Kit) => ({
+      value: k.name,
+      label: `📷 ${k.name}`,
+      group: "Kits",
+    }));
+    const eqOpts = allEquipment
+      .filter((e: Equipment) => e.status === "AVAILABLE" || e.status === "IN_USE")
+      .map((e: Equipment) => ({
+        value: e.productName,
+        label: `🎥 ${e.productName}${e.serialNumber ? ` (${e.serialNumber})` : ""}`,
+        group: "Equipment Items",
+      }));
+    // Deduplicate by value
+    const seen = new Set<string>();
+    const all = [...kitOpts, ...eqOpts].filter((o) => {
+      if (seen.has(o.value)) return false;
+      seen.add(o.value);
+      return true;
+    });
+    // Fallback to EQUIPMENT_LIST if DB not loaded yet
+    if (all.length === 0) return EQUIPMENT_LIST.map((e) => ({ value: e, label: e, group: "" }));
+    return all;
+  }, [kits, allEquipment]);
 
   // Pre-select inquiry from URL param
   const preselectedId = searchParams.get("inquiryId") ?? "";
@@ -362,10 +433,25 @@ export default function Screen05QuotationForm() {
           <div>
             <div className="card">
               <div className="card-t">
-                Equipment table
+                <span>Equipment table</span>
+                <span
+                  style={{
+                    fontSize: "9px",
+                    fontWeight: 600,
+                    letterSpacing: "0.04em",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    background: "var(--sem-gr-bg)",
+                    color: "var(--gr)",
+                    border: "1px solid var(--sem-gr-bdr)",
+                    marginLeft: "8px",
+                  }}
+                >
+                  ● Live DB
+                </span>
                 <button className="btn ml-auto text-[10px]" onClick={addRow}>+ Add row</button>
               </div>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto" style={{ overflow: "visible" }}>
                 <table className="tbl" style={{ minWidth: 520 }}>
                   <thead>
                     <tr>
@@ -379,61 +465,66 @@ export default function Screen05QuotationForm() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((row) => (
-                      <tr key={row.no}>
-                        <td className="text-tx3">{row.no}</td>
-                        <td>
-                          <SearchableSelect
-                            className="text-[10px]"
-                            value={row.position}
-                            onChange={(val) => updateRow(row.no, "position", val)}
-                            options={POSITIONS.map(p => ({ value: p, label: p }))}
-                            placeholder="Select position"
-                          />
-                        </td>
-                        <td>
-                          <SearchableSelect
-                            className="text-[10px]"
-                            value={row.equip}
-                            onChange={(val) => updateRow(row.no, "equip", val)}
-                            options={EQUIPMENT_LIST.map(e => ({ value: e, label: e }))}
-                            placeholder="Select equipment"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            className="finp text-[10px] text-right"
-                            type="number"
-                            min={1}
-                            value={row.rate}
-                            onChange={(e) => updateRow(row.no, "rate", Number(e.target.value) || 0)}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            className="finp text-[10px] text-center"
-                            type="number"
-                            min={1}
-                            value={row.days}
-                            style={{ minWidth: 58 }}
-                            onChange={(e) => updateRow(row.no, "days", Math.max(1, Number(e.target.value) || 1))}
-                          />
-                        </td>
-                        <td className="text-right font-medium text-gr font-mono text-[11px]">
-                          ₹{fmt(row.amount)}
-                        </td>
-                        <td>
-                          <button
-                            className="btn btn-danger"
-                            style={{ fontSize: 9, padding: "2px 5px" }}
-                            onClick={() => removeRow(row.no)}
-                            disabled={rows.length <= 1}
-                          >
-                            ✕
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {rows.map((row) => {
+                      const placement = rows.length > 2 && (row.no >= 4 || row.no === rows.length) ? "top" : "bottom";
+                      return (
+                        <tr key={row.no}>
+                          <td className="text-tx3">{row.no}</td>
+                          <td>
+                            <SearchableSelect
+                              className="text-[10px]"
+                              value={row.position}
+                              onChange={(val) => updateRow(row.no, "position", val)}
+                              options={POSITIONS.map(p => ({ value: p, label: p }))}
+                              placeholder="Select position"
+                              placement={placement}
+                            />
+                          </td>
+                          <td>
+                            <SearchableSelect
+                              className="text-[10px]"
+                              value={row.equip}
+                              onChange={(val) => updateRow(row.no, "equip", val)}
+                              options={liveEquipOptions}
+                              placeholder="Select kit / equipment"
+                              placement={placement}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="finp text-[10px] text-right"
+                              type="number"
+                              min={1}
+                              value={row.rate}
+                              onChange={(e) => updateRow(row.no, "rate", Number(e.target.value) || 0)}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="finp text-[10px] text-center"
+                              type="number"
+                              min={1}
+                              value={row.days}
+                              style={{ minWidth: 58 }}
+                              onChange={(e) => updateRow(row.no, "days", Math.max(1, Number(e.target.value) || 1))}
+                            />
+                          </td>
+                          <td className="text-right font-medium text-gr font-mono text-[11px]">
+                            ₹{fmt(row.amount)}
+                          </td>
+                          <td>
+                            <button
+                              className="btn btn-danger"
+                              style={{ fontSize: 9, padding: "2px 5px" }}
+                              onClick={() => removeRow(row.no)}
+                              disabled={rows.length <= 1}
+                            >
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

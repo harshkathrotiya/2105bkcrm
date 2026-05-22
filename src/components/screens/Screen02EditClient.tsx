@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
-import { useClients } from "@/lib/store";
+import { useClients, useInquiries, useQuotations, useInvoices } from "@/lib/store";
 
 interface FormData {
   name: string;
@@ -29,6 +29,9 @@ export default function Screen02EditClient({
 }) {
   const router = useRouter();
   const { clients, dispatchClients } = useClients();
+  const { inquiries } = useInquiries();
+  const { quotations } = useQuotations();
+  const { invoices } = useInvoices();
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
@@ -124,6 +127,24 @@ export default function Screen02EditClient({
     "state",
   ];
   const allRequired = requiredFields.every((f) => validations[f]);
+
+  // ── Client activity timeline (cross-module) ──────────────────────────
+  const clientActivity = useMemo(() => {
+    const clientInquiries = inquiries
+      .filter((i) => i.clientId === clientId)
+      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+
+    return clientInquiries.map((inq) => {
+      const quote = quotations.find((q) => q.inquiryId === inq.id && q.status !== "Revised");
+      const invoice = quote ? invoices.find((inv) => inv.quotationId === quote.id) : undefined;
+      return { inq, quote, invoice };
+    });
+  }, [inquiries, quotations, invoices, clientId]);
+
+  const totalRevenue = useMemo(() =>
+    clientActivity.reduce((s, { invoice }) =>
+      s + (invoice ? invoice.advance + invoice.balance : 0), 0
+    ), [clientActivity]);
 
   const handleSave = () => {
     if (!allRequired || !client) return;
@@ -230,6 +251,12 @@ export default function Screen02EditClient({
         breadcrumb={<>Clients › Edit client</>}
         actions={
           <>
+            <Link
+              href={`/inquiries/new?clientId=${clientId}`}
+              className="btn"
+            >
+              + New Inquiry
+            </Link>
             <button className="btn text-rd" onClick={handleDelete}>
               Delete
             </button>
@@ -555,6 +582,117 @@ export default function Screen02EditClient({
                     : " (optional)"}
                 </div>
               </div>
+            </div>
+            {/* Activity Timeline */}
+            <div className="card">
+              <div className="card-t">
+                <span>Client Activity</span>
+                {totalRevenue > 0 && (
+                  <span style={{
+                    fontSize: "10px",
+                    fontWeight: 600,
+                    color: "var(--gr)",
+                    marginLeft: "8px",
+                  }}>
+                    ₹{totalRevenue.toLocaleString("en-IN")} total
+                  </span>
+                )}
+              </div>
+              {clientActivity.length === 0 ? (
+                <div style={{ padding: "16px", textAlign: "center", color: "var(--tx3)", fontSize: "11px" }}>
+                  No inquiries yet
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0px" }}>
+                  {clientActivity.map(({ inq, quote, invoice }, idx) => {
+                    const invStatusColor: Record<string, string> = {
+                      "Paid": "var(--gr)",
+                      "Partial paid": "var(--yl)",
+                      "Unpaid": "var(--rd)",
+                    };
+                    const inqStatusColor: Record<string, string> = {
+                      "New": "var(--acc)",
+                      "Quoted": "var(--yl)",
+                      "Confirmed": "var(--gr)",
+                      "Cancelled": "var(--rd)",
+                    };
+                    return (
+                      <div
+                        key={inq.id}
+                        style={{
+                          padding: "10px 0",
+                          borderBottom: idx < clientActivity.length - 1 ? "1px solid var(--b1)" : "none",
+                          display: "grid",
+                          gridTemplateColumns: "1fr auto",
+                          gap: "8px",
+                          alignItems: "start",
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
+                            <span style={{
+                              display: "inline-block",
+                              width: "6px",
+                              height: "6px",
+                              borderRadius: "50%",
+                              background: inqStatusColor[inq.status] ?? "var(--tx3)",
+                              flexShrink: 0,
+                            }} />
+                            <span style={{ fontSize: "12px", fontWeight: 500 }}>{inq.eventType}</span>
+                          </div>
+                          <div style={{ fontSize: "10px", color: "var(--tx3)", paddingLeft: "12px" }}>
+                            {new Date(inq.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                            {inq.venue ? ` · ${inq.venue}` : ""}
+                          </div>
+                          {quote && (
+                            <div style={{ fontSize: "10px", color: "var(--tx2)", paddingLeft: "12px", marginTop: "2px" }}>
+                              <span style={{ fontFamily: "monospace" }}>{quote.quoteNo}</span>
+                              {" · "}
+                              <span style={{ fontWeight: 600 }}>₹{quote.total.toLocaleString("en-IN")}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+                          <span style={{
+                            fontSize: "9px",
+                            fontWeight: 600,
+                            padding: "1px 6px",
+                            borderRadius: "4px",
+                            background: `${inqStatusColor[inq.status] ?? "var(--tx3)"}22`,
+                            color: inqStatusColor[inq.status] ?? "var(--tx3)",
+                          }}>
+                            {inq.status}
+                          </span>
+                          {invoice && (
+                            <span style={{
+                              fontSize: "9px",
+                              fontWeight: 600,
+                              padding: "1px 6px",
+                              borderRadius: "4px",
+                              background: `${invStatusColor[invoice.status] ?? "var(--tx3)"}22`,
+                              color: invStatusColor[invoice.status] ?? "var(--tx3)",
+                            }}>
+                              {invoice.status}
+                            </span>
+                          )}
+                          {!invoice && quote && (
+                            <Link
+                              href={`/invoices/${quote.id}/new`}
+                              style={{
+                                fontSize: "9px",
+                                color: "var(--acc)",
+                                textDecoration: "underline",
+                              }}
+                            >
+                              + Invoice
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

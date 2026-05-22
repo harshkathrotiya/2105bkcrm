@@ -201,6 +201,7 @@ export default function Screen11QuotationList() {
                 <th style={{ width: 130 }}>Dates</th>
                 <th style={{ width: 110, textAlign: "right" }}>Total</th>
                 <th style={{ width: 90 }}>Status</th>
+                <th style={{ width: 90 }}>Invoice</th>
                 <th style={{ width: 120 }}></th>
               </tr>
             </thead>
@@ -273,6 +274,35 @@ export default function Screen11QuotationList() {
                           >
                             {lt.status}
                           </Badge>
+                        </td>
+                        <td>
+                          {(() => {
+                            const inv = invoices.find((i) => i.quotationId === lt.id);
+                            if (inv) {
+                              return (
+                                <Link
+                                  href={`/invoices/${inv.id}/payment`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Badge variant={inv.status === "Paid" ? "gr" : inv.status === "Partial paid" ? "am" : "rd"}>
+                                    {inv.status === "Partial paid" ? "Partial" : inv.status}
+                                  </Badge>
+                                </Link>
+                              );
+                            }
+                            if (lt.status === "Approved") {
+                              return (
+                                <Link
+                                  href={`/quotations/${lt.id}/approval`}
+                                  className="text-[9px] text-acc hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  + Invoice
+                                </Link>
+                              );
+                            }
+                            return <span style={{ fontSize: "9px", color: "var(--tx3)" }}>—</span>;
+                          })()}
                         </td>
                         <td>
                           <div className="flex gap-1">
