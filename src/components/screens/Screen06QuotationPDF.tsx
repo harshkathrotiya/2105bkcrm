@@ -110,8 +110,8 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
       },
     });
 
-    // Navigate to the new revision's PDF page
-    router.push(`/quotations/${newId}/pdf`);
+    // Navigate to the form so they can edit the new revision before generating the PDF
+    router.push(`/quotations/new?inquiryId=${quotation.inquiryId}`);
   };
 
   const handleDownloadPDF = () => {
@@ -177,11 +177,16 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
       >
         {/* Warning */}
         <div
-          className="rounded-lg p-[8px_12px] mb-3 text-[11px]"
+          className="rounded-lg text-[11px]"
           style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "10px 14px",
+            lineHeight: "1.4",
             background: "var(--sem-notif-bg)",
             border: "1px solid var(--sem-notif-bdr)",
             color: "var(--acc)",
+            marginBottom: "20px",
           }}
         >
           ⚠ Internal: Client ને item rates show નહીં થાય — Position + Equipment +
@@ -418,11 +423,12 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                       <Link
                         key={rev.id}
                         href={`/quotations/${rev.id}/pdf`}
-                        className={`flex items-center justify-between rounded-md px-[8px] py-[6px] transition-colors ${
+                        className={`flex items-center justify-between rounded-md transition-colors ${
                           isCurrent
                             ? "bg-bl/10 border border-bl/20"
                             : "hover:bg-hover-bg"
                         }`}
+                        style={{ padding: "8px 12px" }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <span

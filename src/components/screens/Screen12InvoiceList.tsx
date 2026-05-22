@@ -89,18 +89,20 @@ export default function Screen12InvoiceList() {
         </div>
 
         <div className="card !p-3">
-          <div className="flex gap-2 mb-3">
+          <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
             <input
               type="text"
               placeholder="Search by client, event, invoice no..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="finp flex-1 min-w-[200px]"
+              className="finp"
+              style={{ flex: "1 1 auto", minWidth: "200px" }}
             />
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="fsel w-[140px]"
+              className="fsel"
+              style={{ flex: "0 0 140px" }}
             >
               <option value="All">All statuses</option>
               <option value="Unpaid">Unpaid</option>
@@ -179,7 +181,7 @@ export default function Screen12InvoiceList() {
           </table>
 
           {/* Pagination */}
-          <div className="flex justify-between items-center pt-[10px] text-[11px] text-tx3">
+          <div className="flex justify-between items-center text-[11px] text-tx3" style={{ paddingTop: "24px" }}>
             <span>
               {filtered.length === 0
                 ? "0 results"

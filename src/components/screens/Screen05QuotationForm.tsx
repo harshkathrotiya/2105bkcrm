@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
@@ -35,11 +35,92 @@ const POSITION_MAP: Record<string, { equip: string; rate: number }> = {
 };
 
 const POSITIONS = Object.keys(POSITION_MAP);
+const EQUIPMENT_LIST = Array.from(new Set(Object.values(POSITION_MAP).map((m) => m.equip)));
 
 function makeRow(no: number, days: number): QuotationRow {
-  const pos = POSITIONS[0];
-  const { equip, rate } = POSITION_MAP[pos];
-  return { no, position: pos, equip, rate, days, amount: rate * days };
+  return { no, position: "", equip: "", rate: 0, days, amount: 0 };
+}
+
+function SearchableSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  className = "",
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
+  const selectedLabel = options.find(o => o.value === value)?.label || "";
+
+  return (
+    <div className={`relative ${className}`} ref={containerRef}>
+      <div
+        className="fsel cursor-pointer flex justify-between items-center bg-white"
+        onClick={() => { setOpen(!open); setSearch(""); }}
+      >
+        <span className={value ? "" : "text-tx3 whitespace-nowrap overflow-hidden text-ellipsis"}>{value ? selectedLabel : placeholder}</span>
+        <span className="text-[10px] text-tx3 opacity-50 ml-2 shrink-0">▼</span>
+      </div>
+      
+      {open && (
+        <div 
+          className="absolute z-[999] top-full left-0 w-full bg-white border border-b1 rounded-md shadow-lg flex flex-col min-w-[200px]" 
+          style={{ marginTop: "4px", overflow: "hidden", maxHeight: "250px" }}
+        >
+          <div className="border-b border-b1 shrink-0 bg-s1" style={{ padding: "8px" }}>
+            <input
+              type="text"
+              autoFocus
+              placeholder="Search..."
+              className="w-full text-[11px] outline-none border border-b1 rounded bg-white"
+              style={{ padding: "6px 8px" }}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div style={{ overflowY: "auto" }}>
+            {filtered.length === 0 ? (
+              <div className="text-center text-tx3 text-[10px]" style={{ padding: "12px" }}>No results</div>
+            ) : (
+              filtered.map((opt) => (
+                <div
+                  key={opt.value}
+                  className={`text-[11px] cursor-pointer transition-colors ${opt.value === value ? "bg-bl/[0.05] text-bl font-medium" : "text-tx hover:bg-s2"}`}
+                  style={{ padding: "8px 12px" }}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                >
+                  {opt.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Screen05QuotationForm() {
@@ -221,44 +302,43 @@ export default function Screen05QuotationForm() {
         }
       >
         {/* Inquiry selector */}
-        <div className="card !p-3 mb-[14px]">
+        <div className="card" style={{ padding: "12px", marginBottom: "14px" }}>
           <div className="flex gap-2 items-center">
             <div className="text-[11px] text-tx3 whitespace-nowrap">Base on inquiry:</div>
-            <select
-              className="fsel flex-1"
+            <SearchableSelect
+              className="flex-1"
               value={selectedInquiryId}
-              onChange={(e) => handleInquiryChange(e.target.value)}
-            >
-              {inquiries.map((inq) => {
+              onChange={(val) => handleInquiryChange(val)}
+              options={inquiries.map((inq) => {
                 const c = clients.find((cl) => cl.id === inq.clientId);
-                return (
-                  <option key={inq.id} value={inq.id}>
-                    {c?.name ?? "Unknown"} — {inq.eventType} ({inq.startDate})
-                  </option>
-                );
+                return {
+                  value: inq.id,
+                  label: `${c?.name ?? "Unknown"} — ${inq.eventType} (${inq.startDate})`
+                };
               })}
-            </select>
+              placeholder="Select an inquiry..."
+            />
           </div>
         </div>
 
         {/* Info strip */}
-        <div className="bg-s2 rounded-lg p-[10px_14px] mb-[14px] grid grid-cols-3 gap-2">
+        <div className="bg-s2 rounded-lg grid grid-cols-3" style={{ padding: "16px", marginBottom: "14px", gap: "24px 16px" }}>
           <div>
-            <div className="text-[10px] text-tx3 mb-[2px]">Client</div>
+            <div className="text-[10px] text-tx3" style={{ marginBottom: "2px" }}>Client</div>
             <div className="text-[12px] font-medium">{selectedClient?.name ?? "—"}</div>
           </div>
           <div>
-            <div className="text-[10px] text-tx3 mb-[2px]">Event</div>
+            <div className="text-[10px] text-tx3" style={{ marginBottom: "2px" }}>Event</div>
             <div className="text-[12px] font-medium">{selectedInquiry?.eventType ?? "—"}</div>
           </div>
           <div>
-            <div className="text-[10px] text-tx3 mb-[2px]">Quote no.</div>
+            <div className="text-[10px] text-tx3" style={{ marginBottom: "2px" }}>Quote no.</div>
             <div className="text-[12px] font-medium font-mono text-bl">
               {existingQuotation?.quoteNo ?? "Auto-generated on save"}
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-tx3 mb-[2px]">Dates</div>
+            <div className="text-[10px] text-tx3" style={{ marginBottom: "2px" }}>Dates</div>
             <div className="text-[12px] font-medium">
               {selectedInquiry
                 ? `${new Date(selectedInquiry.startDate).getDate()}–${new Date(selectedInquiry.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
@@ -266,11 +346,11 @@ export default function Screen05QuotationForm() {
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-tx3 mb-[2px]">Days</div>
+            <div className="text-[10px] text-tx3" style={{ marginBottom: "2px" }}>Days</div>
             <div className="text-[12px] font-medium text-bl">{eventDays} days</div>
           </div>
           <div>
-            <div className="text-[10px] text-tx3 mb-[2px]">Status</div>
+            <div className="text-[10px] text-tx3" style={{ marginBottom: "2px" }}>Status</div>
             <Badge variant={existingQuotation ? "am" : "gy"}>
               {existingQuotation ? existingQuotation.status : "New"}
             </Badge>
@@ -303,21 +383,22 @@ export default function Screen05QuotationForm() {
                       <tr key={row.no}>
                         <td className="text-tx3">{row.no}</td>
                         <td>
-                          <select
-                            className="fsel text-[10px]"
+                          <SearchableSelect
+                            className="text-[10px]"
                             value={row.position}
-                            onChange={(e) => updateRow(row.no, "position", e.target.value)}
-                          >
-                            {POSITIONS.map((p) => <option key={p}>{p}</option>)}
-                          </select>
+                            onChange={(val) => updateRow(row.no, "position", val)}
+                            options={POSITIONS.map(p => ({ value: p, label: p }))}
+                            placeholder="Select position"
+                          />
                         </td>
                         <td>
-                          <div
-                            className="finp text-[10px]"
-                            style={{ background: "var(--sem-gy-bg)", color: "var(--sem-gy-tx)" }}
-                          >
-                            {row.equip}
-                          </div>
+                          <SearchableSelect
+                            className="text-[10px]"
+                            value={row.equip}
+                            onChange={(val) => updateRow(row.no, "equip", val)}
+                            options={EQUIPMENT_LIST.map(e => ({ value: e, label: e }))}
+                            placeholder="Select equipment"
+                          />
                         </td>
                         <td>
                           <input

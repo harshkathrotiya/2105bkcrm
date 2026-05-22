@@ -178,9 +178,9 @@ export default function Screen04NewInquiry() {
                     ))}
                   </select>
                   {selectedClient && (
-                    <div className="bg-s2 rounded-md p-[7px_10px] mt-[5px] text-[11px] flex items-center gap-[10px]">
+                    <div className="bg-s2 rounded-md text-[11px] flex items-center" style={{ padding: "7px 10px", marginTop: "5px", gap: "10px" }}>
                       <div
-                        className="avatar-sm shrink-0"
+                        className="avatar-sm shrink-0 flex items-center justify-center"
                         style={{ background: selectedClient.bg, color: selectedClient.fg }}
                       >
                         {selectedClient.initials}
@@ -257,14 +257,14 @@ export default function Screen04NewInquiry() {
                 {/* Duration info bar */}
                 <div className="field span2">
                   <div
-                    className="rounded-md p-[8px_12px] flex items-center gap-3 text-[11px] flex-wrap"
-                    style={{ background: "var(--sem-bl-bg)", color: "var(--sem-bl-tx)" }}
+                    className="rounded-md flex items-center flex-wrap"
+                    style={{ background: "var(--sem-bl-bg)", color: "var(--sem-bl-tx)", padding: "8px 12px", gap: "12px" }}
                   >
-                    <span>📅 <strong>{duration} day{duration !== 1 ? "s" : ""}</strong></span>
-                    <span className="opacity-30">·</span>
-                    <span>⏱ <strong>{hours} hours</strong></span>
-                    <span className="opacity-30">·</span>
-                    <span>🕐 <strong>{startTime} → {endTime}</strong></span>
+                    <span className="flex items-center" style={{ gap: "4px" }}>📅 <strong>{duration} day{duration !== 1 ? "s" : ""}</strong></span>
+                    <div className="rounded-full bg-current opacity-30" style={{ width: "3px", height: "3px" }}></div>
+                    <span className="flex items-center" style={{ gap: "4px" }}>⏱ <strong>{hours} hours</strong></span>
+                    <div className="rounded-full bg-current opacity-30" style={{ width: "3px", height: "3px" }}></div>
+                    <span className="flex items-center" style={{ gap: "4px" }}>🕐 <strong>{startTime} → {endTime}</strong></span>
                   </div>
                 </div>
 
@@ -353,11 +353,11 @@ export default function Screen04NewInquiry() {
                   </div>
                 </div>
                 <div
-                  className="rounded-lg p-[8px_14px] text-center"
-                  style={{ background: "var(--sem-bl-bg)", color: "var(--sem-bl-tx)" }}
+                  className="rounded-lg flex flex-col items-center justify-center"
+                  style={{ background: "var(--sem-bl-bg)", color: "var(--sem-bl-tx)", padding: "8px 14px" }}
                 >
-                  <div className="text-[22px] font-medium leading-none">{duration}</div>
-                  <div className="text-[10px] mt-[2px]">days</div>
+                  <div className="text-[22px] font-medium leading-none" style={{ marginBottom: "4px" }}>{duration}</div>
+                  <div className="text-[10px] leading-none">day{duration !== 1 ? "s" : ""}</div>
                 </div>
               </div>
             </div>

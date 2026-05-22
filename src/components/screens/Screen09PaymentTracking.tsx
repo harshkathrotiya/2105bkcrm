@@ -105,7 +105,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
           </div>
           <div className="met">
             <div className="met-l">HDD delivery</div>
-            <div className="met-v text-[12px] mt-[4px]">
+            <div className="met-v text-[12px]" style={{ marginTop: "4px" }}>
               <Badge variant={invoice.hddDelivered ? "gr" : "bl"}>
                 {invoice.hddDelivered ? "Delivered" : "Pending"}
               </Badge>
@@ -119,16 +119,18 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
             <div className="card">
               <div className="card-t">Payment history</div>
               <div
-                className="rounded-lg p-[12px_14px] mb-2"
+                className="rounded-lg"
                 style={{
+                  padding: "12px 14px",
+                  marginBottom: "8px",
                   background: invoice.advanceReceived ? "var(--sem-gr-bg)" : "var(--sem-gy-bg)",
                   border: `1px solid ${invoice.advanceReceived ? "var(--sem-gr-bdr)" : "var(--b1)"}`,
                 }}
               >
-                <div className="flex justify-between items-start mb-[6px]">
+                <div className="flex justify-between items-start" style={{ marginBottom: "6px" }}>
                   <div>
                     <div className="text-[13px] font-medium">Advance payment — 50%</div>
-                    <div className="text-[11px] text-tx3 mt-[2px]">
+                    <div className="text-[11px] text-tx3" style={{ marginTop: "2px" }}>
                       {invoice.advanceReceived
                         ? `${invoice.advanceReceivedAt} · ${invoice.advanceMethod} · Ref: ${invoice.advanceRef}`
                         : "Not yet received"}
@@ -143,16 +145,17 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                 </div>
               </div>
               <div
-                className="rounded-lg p-[12px_14px]"
+                className="rounded-lg"
                 style={{
+                  padding: "12px 14px",
                   background: invoice.balanceReceived ? "var(--sem-gr-bg)" : "var(--sem-am-bg)",
                   border: `1px solid ${invoice.balanceReceived ? "var(--sem-gr-bdr)" : "var(--sem-am-bdr)"}`,
                 }}
               >
-                <div className="flex justify-between items-start mb-[6px]">
+                <div className="flex justify-between items-start" style={{ marginBottom: "6px" }}>
                   <div>
                     <div className="text-[13px] font-medium">Balance payment — 50%</div>
-                    <div className="text-[11px] text-tx3 mt-[2px]">
+                    <div className="text-[11px] text-tx3" style={{ marginTop: "2px" }}>
                       {invoice.balanceReceived
                         ? `${invoice.balanceReceivedAt} · ${invoice.balanceMethod} · Ref: ${invoice.balanceRef}`
                         : "Pending"}
@@ -231,7 +234,8 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                   </div>
                 </div>
                 <button
-                  className="btn btn-success w-full justify-center mt-[10px]"
+                  className="btn btn-success w-full justify-center"
+                  style={{ marginTop: "10px" }}
                   onClick={handleRecordPayment}
                 >
                   ✓ Record payment ↗
@@ -244,7 +248,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
           <div>
             <div className="card">
               <div className="card-t">HDD delivery</div>
-              <div className="bg-s2 rounded-lg p-[12px_14px] mb-[10px]">
+              <div className="bg-s2 rounded-lg" style={{ padding: "12px 14px", marginBottom: "10px" }}>
                 <div className="row-item">
                   <span className="text-[11px] text-tx3">Total data</span>
                   <span className="font-mono font-medium">480 GB</span>
@@ -269,7 +273,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
               >
                 {invoice.hddDelivered ? "✓ HDD delivered" : "✓ Mark HDD delivered ↗"}
               </button>
-              <div className="text-[10px] text-tx3 mt-[6px] text-center">
+              <div className="text-[10px] text-tx3 text-center" style={{ marginTop: "6px" }}>
                 HDD deliver only after full payment
               </div>
             </div>
