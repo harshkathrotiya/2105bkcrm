@@ -485,7 +485,7 @@ export default function Screen18VendorList() {
               </div>
               <div style={{ gridColumn: "span 2" }}>
                 <span style={{ fontSize: "10px", color: "var(--tx3)", display: "block" }}>Notes</span>
-                <p style={{ margin: "2px 0 0 0", fontSize: "11.5px", color: "var(--tx2)", fontStyle: "italic", whiteSpace: "pre-line" }}>
+                <p style={{ margin: "2px 0 0 0", fontSize: "11.5px", color: "var(--tx2)", fontStyle: "italic", whiteSpace: "pre-line", wordBreak: "break-word", overflowWrap: "break-word" }}>
                   {selectedVendor.notes || "No extra notes recorded."}
                 </p>
               </div>
@@ -521,8 +521,14 @@ export default function Screen18VendorList() {
 
             {/* Booking History Timeline */}
             <div>
-              <h4 style={{ margin: "0 0 12px 0", fontSize: "13px", fontWeight: 600 }}>
-                📅 Job History Logs ({vendorHistory.length})
+              <h4 style={{ margin: "0 0 12px 0", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Job History Logs ({vendorHistory.length})
               </h4>
               {historyLoading ? (
                 <div style={{ fontSize: "11px", color: "var(--tx3)", fontStyle: "italic" }}>

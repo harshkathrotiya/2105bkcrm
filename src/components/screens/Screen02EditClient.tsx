@@ -178,7 +178,10 @@ export default function Screen02EditClient({
         <ScreenFrame breadcrumb={<>Clients › Edit client</>}>
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center">
-              <div className="text-5xl mb-3">🔍</div>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 opacity-60">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
               <div className="text-[16px] font-medium text-tx2 mb-1">
                 Client not found
               </div>
@@ -206,7 +209,9 @@ export default function Screen02EditClient({
         <ScreenFrame breadcrumb={<>Clients › Edit client</>}>
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center">
-              <div className="animate-spin text-3xl mb-3">⏳</div>
+              <div className="flex justify-center mb-3">
+                <div className="w-8 h-8 rounded-full border-[3px] border-b2 border-t-acc animate-spin" />
+              </div>
               <div className="text-[14px] text-tx3">Loading client…</div>
             </div>
           </div>

@@ -192,10 +192,10 @@ export default function Screen13EquipmentList() {
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <button className="btn" onClick={() => setShowCsvModal(true)}>
-              📥 Import CSV
+              ↓ Import CSV
             </button>
-            <Link href="/reports/assets/pdf" target="_blank" className="btn">
-              📄 Asset Report (PDF)
+            <Link href="/reports/assets/pdf" className="btn">
+              ▤ Asset Report (PDF)
             </Link>
             <Link href="/equipment/new" className="btn btn-primary">
               + Add Equipment
@@ -310,7 +310,7 @@ export default function Screen13EquipmentList() {
                                 {item.category.replace(/_/g, " ")}
                               </Badge>
                             </td>
-                            <td className="font-mono text-[11px]">
+                            <td className="font-mono text-[11px]" style={{ wordBreak: "break-all" }}>
                               {item.serialNumber || <span style={{ color: "var(--tx3)" }}>—</span>}
                             </td>
                             <td>

@@ -30,6 +30,9 @@ export async function PATCH(
     if (body.mainBodyId !== undefined) {
       patch.mainBodyId = body.mainBodyId ? parseInt(body.mainBodyId, 10) : null;
     }
+    if (body.mainBodyQty !== undefined) {
+      patch.mainBodyQty = body.mainBodyQty ? parseInt(body.mainBodyQty, 10) : null;
+    }
 
     const updated = updateKit(parseInt(id, 10), patch);
     if (!updated) {

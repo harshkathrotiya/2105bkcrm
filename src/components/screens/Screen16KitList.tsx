@@ -10,6 +10,15 @@ import { useKits, useEquipment } from "@/lib/store";
 import * as api from "@/lib/api";
 import type { Equipment, Kit } from "@/lib/types";
 
+function formatSerialNumber(sn: string | null | undefined): string {
+  if (!sn) return "None";
+  const clean = sn.replace(/\s+/g, " ").trim();
+  if (clean.length > 25) {
+    return clean.substring(0, 22) + "...";
+  }
+  return clean;
+}
+
 export default function Screen16KitList() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -33,16 +42,18 @@ export default function Screen16KitList() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKitName, setNewKitName] = useState("");
   const [newKitDesc, setNewKitDesc] = useState("");
-  const [newKitMainBodyId, setNewKitMainBodyId] = useState("");
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [modalEquipment, setModalEquipment] = useState<{ id: string; qty: number }[]>([{ id: "", qty: 1 }]);
 
   // For Add Accessory Form
   const [selectedAccessoryId, setSelectedAccessoryId] = useState("");
+  const [selectedAccessoryQty, setSelectedAccessoryQty] = useState(1);
   const [addingAccessory, setAddingAccessory] = useState(false);
 
   // For Set Main Body Form
   const [selectedMainBodyId, setSelectedMainBodyId] = useState("");
+  const [selectedMainBodyQty, setSelectedMainBodyQty] = useState(1);
   const [settingMainBody, setSettingMainBody] = useState(false);
 
   // Load kits when date range changes
@@ -86,19 +97,95 @@ export default function Screen16KitList() {
       (item) =>
         !item.kitId &&
         item.category !== "ACCESSORY" &&
+        item.status !== "RETIRED" &&
+        !modalEquipment.some((m) => m.id === String(item.id))
+    );
+  }, [allEquipment, modalEquipment]);
+
+  // Filter unassigned devices for Kit Components
+  const unassignedEquipmentOptions = useMemo(() => {
+    return allEquipment.filter(
+      (item) =>
+        !item.kitId &&
         item.status !== "RETIRED"
     );
   }, [allEquipment]);
 
-  // Filter unassigned devices for Accessories
-  const unassignedAccessories = useMemo(() => {
-    return allEquipment.filter(
-      (item) =>
-        !item.kitId &&
-        item.category === "ACCESSORY" &&
-        item.status !== "RETIRED"
-    );
-  }, [allEquipment]);
+  // Helpers for single accessory validation
+  const selectedAccessory = useMemo(() => {
+    if (!selectedAccessoryId) return null;
+    return unassignedEquipmentOptions.find((a) => a.id === parseInt(selectedAccessoryId, 10)) || null;
+  }, [unassignedEquipmentOptions, selectedAccessoryId]);
+
+  const accessoryQtyError = useMemo(() => {
+    if (!selectedAccessory) return "";
+    if (selectedAccessoryQty <= 0) return "Quantity must be greater than 0";
+    if (selectedAccessoryQty > selectedAccessory.quantity) {
+      return `Quantity exceeds available stock (${selectedAccessory.quantity})`;
+    }
+    return "";
+  }, [selectedAccessory, selectedAccessoryQty]);
+
+  const selectedMainBodyItem = useMemo(() => {
+    if (!selectedMainBodyId) return null;
+    return unassignedMainBodies.find((item) => item.id === parseInt(selectedMainBodyId, 10)) || null;
+  }, [unassignedMainBodies, selectedMainBodyId]);
+
+  const selectedMainBodyQtyError = useMemo(() => {
+    if (!selectedMainBodyItem) return "";
+    if (selectedMainBodyQty <= 0) return "Quantity must be greater than 0";
+    if (selectedMainBodyQty > selectedMainBodyItem.quantity) {
+      return `Quantity exceeds available stock (${selectedMainBodyItem.quantity})`;
+    }
+    return "";
+  }, [selectedMainBodyItem, selectedMainBodyQty]);
+
+  // Validation for modal equipment
+  const modalEquipmentErrors = useMemo(() => {
+    const errors: string[] = [];
+    const equipmentTotals: Record<string, number> = {};
+
+    modalEquipment.forEach((item) => {
+      if (item.id) {
+        equipmentTotals[item.id] = (equipmentTotals[item.id] || 0) + item.qty;
+      }
+    });
+
+    modalEquipment.forEach((item, index) => {
+      if (!item.id) {
+        errors[index] = "";
+        return;
+      }
+
+      const dbItem = unassignedEquipmentOptions.find((a) => a.id === parseInt(item.id, 10));
+      if (!dbItem) {
+        errors[index] = "Selected item not found";
+        return;
+      }
+
+      if (item.qty <= 0) {
+        errors[index] = "Quantity must be greater than 0";
+        return;
+      }
+
+      const totalSelected = equipmentTotals[item.id];
+      if (dbItem.quantity < totalSelected) {
+        if (modalEquipment.filter((a) => a.id === item.id).length > 1) {
+          errors[index] = `Combined quantity (${totalSelected}) exceeds available stock (${dbItem.quantity})`;
+        } else {
+          errors[index] = `Quantity exceeds available stock (${dbItem.quantity})`;
+        }
+      } else {
+        errors[index] = "";
+      }
+    });
+
+    return errors;
+  }, [modalEquipment, unassignedEquipmentOptions]);
+
+  const hasModalEquipmentError = useMemo(() => {
+    return modalEquipmentErrors.some((err) => !!err);
+  }, [modalEquipmentErrors]);
 
   // Handlers
   const handleCreateKit = async (e: React.FormEvent) => {
@@ -107,21 +194,35 @@ export default function Screen16KitList() {
       setCreateError("Kit name is required");
       return;
     }
+    if (modalEquipment.length > 0 && hasModalEquipmentError) {
+      setCreateError("Please resolve equipment validation errors first.");
+      return;
+    }
     try {
       setCreating(true);
       setCreateError("");
+
+      const accessoriesPayload = modalEquipment
+        .filter((item) => item.id)
+        .map((item) => ({
+          id: parseInt(item.id, 10),
+          quantity: item.qty,
+        }));
+
       const result = await dispatchKits({
         type: "ADD_KIT",
         payload: {
           name: newKitName.trim(),
           description: newKitDesc.trim() || null,
-          mainBodyId: newKitMainBodyId ? parseInt(newKitMainBodyId, 10) : null,
+          mainBodyId: null,
+          mainBodyQty: null,
+          accessories: accessoriesPayload,
         },
       });
       setShowCreateModal(false);
       setNewKitName("");
       setNewKitDesc("");
-      setNewKitMainBodyId("");
+      setModalEquipment([{ id: "", qty: 1 }]);
       // Select the new kit
       if (result?.id) {
         setSelectedKitId(result.id);
@@ -150,7 +251,7 @@ export default function Screen16KitList() {
   };
 
   const handleAddAccessory = async () => {
-    if (!selectedKitId || !selectedAccessoryId) return;
+    if (!selectedKitId || !selectedAccessoryId || accessoryQtyError) return;
     try {
       setAddingAccessory(true);
       await dispatchKits({
@@ -158,9 +259,11 @@ export default function Screen16KitList() {
         payload: {
           kitId: selectedKitId,
           equipmentId: parseInt(selectedAccessoryId, 10),
+          quantity: selectedAccessoryQty,
         },
       });
       setSelectedAccessoryId("");
+      setSelectedAccessoryQty(1);
       loadDropdownEquipment();
       refreshEquipment();
     } catch (err: any) {
@@ -189,7 +292,7 @@ export default function Screen16KitList() {
   };
 
   const handleSetMainBody = async () => {
-    if (!selectedKitId || !selectedMainBodyId) return;
+    if (!selectedKitId || !selectedMainBodyId || selectedMainBodyQtyError) return;
     try {
       setSettingMainBody(true);
       await dispatchKits({
@@ -197,9 +300,11 @@ export default function Screen16KitList() {
         payload: {
           id: selectedKitId,
           mainBodyId: parseInt(selectedMainBodyId, 10),
+          mainBodyQty: selectedMainBodyQty,
         },
       });
       setSelectedMainBodyId("");
+      setSelectedMainBodyQty(1);
       loadDropdownEquipment();
       refreshEquipment();
     } catch (err: any) {
@@ -272,7 +377,15 @@ export default function Screen16KitList() {
       <div className="card" style={{ marginBottom: "20px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <strong style={{ fontSize: "13px", color: "var(--tx)" }}>📅 Check Kit Availability for Date Range:</strong>
+            <strong style={{ fontSize: "13px", color: "var(--tx)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              Check Kit Availability for Date Range:
+            </strong>
             <div style={{ fontSize: "11px", color: "var(--tx3)", marginTop: "2px" }}>Displays live status of kit components for the chosen dates.</div>
           </div>
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
@@ -309,7 +422,13 @@ export default function Screen16KitList() {
       <ScreenFrame
         breadcrumb="Kit List & Configuration"
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+          <button type="button" className="btn btn-primary" onClick={() => {
+            setNewKitName("");
+            setNewKitDesc("");
+            setModalEquipment([{ id: "", qty: 1 }]);
+            setCreateError("");
+            setShowCreateModal(true);
+          }}>
             + Create New Kit
           </button>
         }
@@ -382,7 +501,7 @@ export default function Screen16KitList() {
             {!activeKit ? (
               <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "350px", color: "var(--tx3)" }}>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "40px", marginBottom: "10px" }}>📦</div>
+                  <div style={{ fontSize: "48px", marginBottom: "10px", opacity: 0.3 }}>⧉</div>
                   <div>Select a kit from the sidebar or click '+ Create New Kit' to get started.</div>
                 </div>
               </div>
@@ -392,8 +511,8 @@ export default function Screen16KitList() {
                 <div className="card" style={{ padding: "20px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "20px" }}>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "var(--tx)" }}>{activeKit.name}</h3>
-                      <p style={{ margin: "5px 0 0 0", fontSize: "12px", color: "var(--tx2)" }}>
+                      <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "var(--tx)", wordBreak: "break-word", overflowWrap: "break-word" }}>{activeKit.name}</h3>
+                      <p style={{ margin: "5px 0 0 0", fontSize: "12px", color: "var(--tx2)", wordBreak: "break-word", overflowWrap: "break-word" }}>
                         {activeKit.description || "No description provided."}
                       </p>
                     </div>
@@ -403,7 +522,7 @@ export default function Screen16KitList() {
                       style={{ fontSize: "11px", padding: "4px 8px" }}
                       onClick={() => handleDeleteKit(activeKit.id)}
                     >
-                      🗑 Delete Kit
+                      ✕ Delete Kit
                     </button>
                   </div>
 
@@ -444,7 +563,7 @@ export default function Screen16KitList() {
                           <div>
                             <div style={{ fontWeight: 500, fontSize: "13px" }}>{mainBody.productName}</div>
                             <div style={{ fontSize: "10.5px", color: "var(--tx3)", marginTop: "4px" }}>
-                              Serial Number: <span style={{ fontFamily: "var(--font-mono)" }}>{mainBody.serialNumber || "—"}</span> |
+                              Serial Number: <span style={{ fontFamily: "var(--font-mono)", wordBreak: "break-all" }}>{mainBody.serialNumber || "—"}</span> |
                               Status: <Badge variant={getEquipmentStatusBadgeVariant(mainBody.status)}>{mainBody.status}</Badge>
                             </div>
                           </div>
@@ -467,29 +586,53 @@ export default function Screen16KitList() {
                       <div style={{ color: "var(--am)", fontSize: "12px", marginBottom: "12px", background: "var(--sem-am-bg)", border: "1px solid var(--sem-am-bdr)", borderRadius: "6px", padding: "8px" }}>
                         ⚠️ Warning: No main body (e.g. Camera or Mixer) linked to this kit. A kit requires a main body to track correctly.
                       </div>
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <select
-                          className="fsel"
-                          style={{ flex: 1 }}
-                          value={selectedMainBodyId}
-                          onChange={(e) => setSelectedMainBodyId(e.target.value)}
-                          disabled={settingMainBody || equipmentLoading}
-                        >
-                          <option value="">-- Select Unassigned Main Body (Camera / Mixer / etc.) --</option>
-                          {unassignedMainBodies.map((item) => (
-                            <option key={item.id} value={item.id}>
-                              [{item.category}] {item.productName} (S/N: {item.serialNumber || "None"})
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={handleSetMainBody}
-                          disabled={!selectedMainBodyId || settingMainBody}
-                        >
-                          {settingMainBody ? "Linking..." : "Set Main Body"}
-                        </button>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                          <select
+                            className="fsel"
+                            style={{ flex: 1 }}
+                            value={selectedMainBodyId}
+                            onChange={(e) => {
+                              setSelectedMainBodyId(e.target.value);
+                              setSelectedMainBodyQty(1);
+                            }}
+                            disabled={settingMainBody || equipmentLoading}
+                          >
+                            <option value="">-- Select Unassigned Main Body (Camera / Mixer / etc.) --</option>
+                            {unassignedMainBodies.map((item) => (
+                              <option key={item.id} value={item.id}>
+                                [{item.category}] {item.productName} (S/N: {formatSerialNumber(item.serialNumber)}) [Available: {item.quantity}]
+                              </option>
+                            ))}
+                          </select>
+                          {selectedMainBodyId && (
+                            <div style={{ width: "80px" }}>
+                              <input
+                                type="number"
+                                min={1}
+                                className="finp"
+                                style={{ width: "100%" }}
+                                value={selectedMainBodyQty}
+                                onChange={(e) => setSelectedMainBodyQty(parseInt(e.target.value, 10) || 0)}
+                                disabled={settingMainBody}
+                                placeholder="Qty"
+                              />
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={handleSetMainBody}
+                            disabled={!selectedMainBodyId || settingMainBody || !!selectedMainBodyQtyError}
+                          >
+                            {settingMainBody ? "Linking..." : "Set Main Body"}
+                          </button>
+                        </div>
+                        {selectedMainBodyQtyError && (
+                          <div style={{ color: "var(--rd)", fontSize: "11px" }}>
+                            ⚠️ {selectedMainBodyQtyError}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -497,7 +640,7 @@ export default function Screen16KitList() {
 
                 {/* Accessories Section */}
                 <div className="card">
-                  <div className="card-t">Kit Accessories ({activeKit.items?.filter((i) => i.id !== activeKit.mainBodyId).length || 0})</div>
+                  <div className="card-t">Linked Equipment ({activeKit.items?.filter((i) => i.id !== activeKit.mainBodyId).length || 0})</div>
                   <table className="tbl" style={{ marginBottom: "15px" }}>
                     <thead>
                       <tr>
@@ -512,7 +655,7 @@ export default function Screen16KitList() {
                       {!activeKit.items || activeKit.items.filter((i) => i.id !== activeKit.mainBodyId).length === 0 ? (
                         <tr>
                           <td colSpan={5} className="text-center py-4 text-tx3" style={{ fontStyle: "italic" }}>
-                            No accessories added to this kit.
+                            No additional equipment linked to this kit.
                           </td>
                         </tr>
                       ) : (
@@ -522,7 +665,7 @@ export default function Screen16KitList() {
                             <tr key={item.id}>
                               <td>{item.productName}</td>
                               <td>{item.category.replace(/_/g, " ")}</td>
-                              <td className="font-mono text-[11px]">{item.serialNumber || "—"}</td>
+                              <td className="font-mono text-[11px]" style={{ wordBreak: "break-all" }}>{item.serialNumber || "—"}</td>
                               <td>
                                 <Badge variant={getEquipmentStatusBadgeVariant(item.status)}>{item.status}</Badge>
                               </td>
@@ -544,31 +687,53 @@ export default function Screen16KitList() {
 
                   {/* Add Accessory Form */}
                   <div style={{ borderTop: "1px solid var(--b1)", paddingTop: "15px" }}>
-                    <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--tx3)", marginBottom: "6px" }}>ADD ACCESSORY TO KIT</div>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <select
-                        className="fsel"
-                        style={{ flex: 1 }}
-                        value={selectedAccessoryId}
-                        onChange={(e) => setSelectedAccessoryId(e.target.value)}
-                        disabled={addingAccessory || equipmentLoading}
-                      >
-                        <option value="">-- Select Unassigned Accessory (Lens, Cables, Batteries, etc.) --</option>
-                        {unassignedAccessories.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.productName} (S/N: {item.serialNumber || "None"})
-                          </option>
-                        ))}
-                      </select>
+                    <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--tx3)", marginBottom: "6px" }}>ADD EQUIPMENT TO KIT</div>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                        <select
+                          className="fsel"
+                          style={{ width: "100%" }}
+                          value={selectedAccessoryId}
+                          onChange={(e) => {
+                            setSelectedAccessoryId(e.target.value);
+                            setSelectedAccessoryQty(1);
+                          }}
+                          disabled={addingAccessory || equipmentLoading}
+                        >
+                          <option value="">-- Select Equipment (Lens, Cables, Batteries, etc.) --</option>
+                          {unassignedEquipmentOptions.map((item) => (
+                             <option key={item.id} value={item.id}>
+                               {item.productName} (S/N: {formatSerialNumber(item.serialNumber)}) [Available: {item.quantity}]
+                             </option>
+                           ))}
+                        </select>
+                      </div>
+                      <div style={{ width: "80px", display: "flex", flexDirection: "column" }}>
+                        <input
+                          type="number"
+                          min={1}
+                          className="finp"
+                          style={{ width: "100%" }}
+                          value={selectedAccessoryQty}
+                          onChange={(e) => setSelectedAccessoryQty(parseInt(e.target.value, 10) || 0)}
+                          disabled={addingAccessory || !selectedAccessoryId}
+                          placeholder="Qty"
+                        />
+                      </div>
                       <button
                         type="button"
                         className="btn btn-primary"
                         onClick={handleAddAccessory}
-                        disabled={!selectedAccessoryId || addingAccessory}
+                        disabled={!selectedAccessoryId || addingAccessory || !!accessoryQtyError}
                       >
-                        {addingAccessory ? "Adding..." : "Add Accessory"}
+                        {addingAccessory ? "Adding..." : "Add Equipment"}
                       </button>
                     </div>
+                    {accessoryQtyError && (
+                      <div style={{ color: "var(--rd)", fontSize: "11px", marginTop: "6px" }}>
+                        ⚠️ {accessoryQtyError}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -587,7 +752,10 @@ export default function Screen16KitList() {
           <div className="sf" style={{ width: "100%", maxWidth: "500px", background: "var(--s1)" }}>
             <div className="tb">
               <span style={{ fontWeight: 600, color: "var(--tx)" }}>Create New Equipment Kit</span>
-              <button className="btn" style={{ padding: "4px 8px" }} onClick={() => setShowCreateModal(false)}>✕</button>
+              <button className="btn" style={{ padding: "4px 8px" }} type="button" onClick={() => {
+                setShowCreateModal(false);
+                setModalEquipment([{ id: "", qty: 1 }]);
+              }}>✕</button>
             </div>
             <form onSubmit={handleCreateKit} style={{ padding: "20px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "20px" }}>
@@ -616,24 +784,94 @@ export default function Screen16KitList() {
                   />
                 </div>
 
-                <div className="field">
-                  <div className="flbl">Initial Main Body (Optional)</div>
-                  <select
-                    className="fsel"
-                    value={newKitMainBodyId}
-                    onChange={(e) => setNewKitMainBodyId(e.target.value)}
-                    disabled={creating || equipmentLoading}
-                  >
-                    <option value="">-- Choose Camera/Mixer/Recorder (Optional) --</option>
-                    {unassignedMainBodies.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        [{item.category}] {item.productName}
-                      </option>
-                    ))}
-                  </select>
-                  <div style={{ fontSize: "10px", color: "var(--tx3)", marginTop: "4px" }}>
-                    You can link/change the main body or add accessories later.
+                {/* Modal Equipment Section */}
+                <div style={{ borderTop: "1px solid var(--b1)", paddingTop: "15px", marginTop: "10px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--tx3)" }}>Additional Equipment (Optional)</div>
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{ fontSize: "11px", padding: "2px 6px" }}
+                      onClick={() => setModalEquipment([...modalEquipment, { id: "", qty: 1 }])}
+                      disabled={creating}
+                    >
+                      + Add Equipment
+                    </button>
                   </div>
+
+                  {modalEquipment.length === 0 ? (
+                    <div style={{ fontSize: "11px", color: "var(--tx3)", fontStyle: "italic", textAlign: "center", padding: "10px", background: "var(--alt2)", borderRadius: "4px" }}>
+                      No additional equipment added yet. Click '+ Add Equipment' to add.
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {modalEquipment.map((eq, index) => {
+                        const err = modalEquipmentErrors[index];
+                        return (
+                          <div key={index} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                              <select
+                                className="fsel"
+                                style={{ flex: 1 }}
+                                value={eq.id}
+                                onChange={(e) => {
+                                  const updated = [...modalEquipment];
+                                  updated[index].id = e.target.value;
+                                  updated[index].qty = 1;
+                                  setModalEquipment(updated);
+                                }}
+                                disabled={creating}
+                              >
+                                <option value="">-- Select Equipment --</option>
+                                {unassignedEquipmentOptions
+                                  .filter((item) => {
+                                    const isSelectedElsewhere = modalEquipment.some((itemEq, idx) => idx !== index && itemEq.id === String(item.id));
+                                    return !isSelectedElsewhere;
+                                  })
+                                  .map((item) => (
+                                    <option key={item.id} value={item.id}>
+                                      {item.productName} (S/N: {formatSerialNumber(item.serialNumber)}) [Avail: {item.quantity}]
+                                    </option>
+                                  ))}
+                              </select>
+
+                              <input
+                                type="number"
+                                min={1}
+                                className="finp"
+                                style={{ width: "65px" }}
+                                value={eq.qty}
+                                onChange={(e) => {
+                                  const updated = [...modalEquipment];
+                                  updated[index].qty = parseInt(e.target.value, 10) || 0;
+                                  setModalEquipment(updated);
+                                }}
+                                disabled={creating || !eq.id}
+                              />
+
+                              <button
+                                type="button"
+                                className="btn text-rd"
+                                style={{ padding: "4px 8px" }}
+                                onClick={() => {
+                                  const updated = modalEquipment.filter((_, i) => i !== index);
+                                  setModalEquipment(updated);
+                                }}
+                                disabled={creating}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            {err && (
+                              <div style={{ color: "var(--rd)", fontSize: "10.5px", paddingLeft: "4px" }}>
+                                ⚠️ {err}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -644,8 +882,11 @@ export default function Screen16KitList() {
               )}
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-                <button type="button" className="btn" onClick={() => setShowCreateModal(false)} disabled={creating}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={creating || !newKitName.trim()}>
+                <button type="button" className="btn" onClick={() => {
+                  setShowCreateModal(false);
+                  setModalEquipment([{ id: "", qty: 1 }]);
+                }} disabled={creating}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={creating || !newKitName.trim() || hasModalEquipmentError}>
                   {creating ? "Creating..." : "Create Kit"}
                 </button>
               </div>

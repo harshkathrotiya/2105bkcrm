@@ -10,6 +10,15 @@ import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
 import type { Vendor } from "@/lib/types";
 
+function formatSerialNumber(sn: string | null | undefined): string {
+  if (!sn) return "None";
+  const clean = sn.replace(/\s+/g, " ").trim();
+  if (clean.length > 25) {
+    return clean.substring(0, 22) + "...";
+  }
+  return clean;
+}
+
 export default function Screen17WarehouseCheck() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -300,7 +309,10 @@ export default function Screen17WarehouseCheck() {
         <ScreenFrame breadcrumb="Warehouse › Check">
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center">
-              <div className="text-5xl mb-3">🔍</div>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 opacity-60">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
               <div className="text-[16px] font-medium text-tx2 mb-1">Inquiry not found</div>
               <div className="text-[12px] text-tx3">{error || "Provide a valid inquiryId parameter."}</div>
               <Link href="/calendar" className="btn mt-4 inline-block">← Back to Calendar</Link>
@@ -447,7 +459,7 @@ export default function Screen17WarehouseCheck() {
                               <div style={{ fontWeight: 500 }}>{matchedInhouseItem.name || matchedInhouseItem.productName}</div>
                               {matchedInhouseItem.serialNumber && (
                                 <div style={{ fontSize: "10px", color: "var(--tx3)", marginTop: "2px" }}>
-                                  S/N: <span style={{ fontFamily: "var(--font-mono)" }}>{matchedInhouseItem.serialNumber}</span>
+                                  S/N: <span style={{ fontFamily: "var(--font-mono)", wordBreak: "break-all" }}>{matchedInhouseItem.serialNumber}</span>
                                 </div>
                               )}
                             </div>
@@ -479,7 +491,7 @@ export default function Screen17WarehouseCheck() {
                                 <optgroup label="Available Equipment">
                                   {availableEquipment.map(eq => (
                                     <option key={`eq-${eq.id}`} value={`eq-${eq.id}`}>
-                                      {eq.productName} (S/N: {eq.serialNumber || "None"})
+                                      {eq.productName} (S/N: {formatSerialNumber(eq.serialNumber)})
                                     </option>
                                   ))}
                                 </optgroup>

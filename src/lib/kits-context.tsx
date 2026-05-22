@@ -88,7 +88,7 @@ export function KitsProvider({ children }: { children: ReactNode }) {
             result = await api.deleteKit(action.payload);
             break;
           case "ADD_ITEM":
-            result = await api.addItemToKit(action.payload.kitId, action.payload.equipmentId);
+            result = await api.addItemToKit(action.payload.kitId, action.payload.equipmentId, action.payload.quantity);
             break;
           case "REMOVE_ITEM":
             result = await api.removeItemFromKit(action.payload.kitId, action.payload.equipmentId);

@@ -254,14 +254,14 @@ export function fetchKit(id: number): Promise<Kit> {
   return request(`/api/kits/${id}`);
 }
 
-export function createKit(data: { name: string; description?: string | null; mainBodyId?: number | null }): Promise<Kit> {
+export function createKit(data: { name: string; description?: string | null; mainBodyId?: number | null; mainBodyQty?: number | null; accessories?: { id: number; quantity: number }[] }): Promise<Kit> {
   return request("/api/kits", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export function updateKit(id: number, data: Partial<{ name: string; description: string | null; mainBodyId: number | null }>): Promise<Kit> {
+export function updateKit(id: number, data: Partial<{ name: string; description: string | null; mainBodyId: number | null; mainBodyQty: number | null }>): Promise<Kit> {
   return request(`/api/kits/${id}`, {
     method: "PATCH",
     body: JSON.stringify(data),
@@ -272,10 +272,10 @@ export function deleteKit(id: number): Promise<void> {
   return request(`/api/kits/${id}`, { method: "DELETE" });
 }
 
-export function addItemToKit(kitId: number, equipmentId: number): Promise<void> {
+export function addItemToKit(kitId: number, equipmentId: number, quantity?: number): Promise<void> {
   return request(`/api/kits/${kitId}/add-item`, {
     method: "POST",
-    body: JSON.stringify({ equipmentId }),
+    body: JSON.stringify({ equipmentId, quantity }),
   });
 }
 

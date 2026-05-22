@@ -260,11 +260,31 @@ export default function Screen04NewInquiry() {
                     className="rounded-md flex items-center flex-wrap"
                     style={{ background: "var(--sem-bl-bg)", color: "var(--sem-bl-tx)", padding: "8px 12px", gap: "12px" }}
                   >
-                    <span className="flex items-center" style={{ gap: "4px" }}>📅 <strong>{duration} day{duration !== 1 ? "s" : ""}</strong></span>
+                    <span className="flex items-center" style={{ gap: "6px" }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                      <strong>{duration} day{duration !== 1 ? "s" : ""}</strong>
+                    </span>
                     <div className="rounded-full bg-current opacity-30" style={{ width: "3px", height: "3px" }}></div>
-                    <span className="flex items-center" style={{ gap: "4px" }}>⏱ <strong>{hours} hours</strong></span>
+                    <span className="flex items-center" style={{ gap: "6px" }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                      <strong>{hours} hours</strong>
+                    </span>
                     <div className="rounded-full bg-current opacity-30" style={{ width: "3px", height: "3px" }}></div>
-                    <span className="flex items-center" style={{ gap: "4px" }}>🕐 <strong>{startTime} → {endTime}</strong></span>
+                    <span className="flex items-center" style={{ gap: "6px" }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 10"></polyline>
+                      </svg>
+                      <strong>{startTime} → {endTime}</strong>
+                    </span>
                   </div>
                 </div>
 

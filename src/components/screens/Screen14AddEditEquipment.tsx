@@ -160,7 +160,9 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
         <ScreenFrame breadcrumb={isEdit ? "Equipment Master › Edit" : "Equipment Master › New"}>
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center">
-              <div className="animate-spin text-3xl mb-3">⏳</div>
+              <div className="flex justify-center mb-3">
+                <div className="w-8 h-8 rounded-full border-[3px] border-b2 border-t-acc animate-spin" />
+              </div>
               <div className="text-[14px] text-tx3">Loading equipment details…</div>
             </div>
           </div>

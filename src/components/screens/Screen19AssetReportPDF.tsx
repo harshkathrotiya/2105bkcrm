@@ -51,7 +51,11 @@ export default function Screen19AssetReportPDF() {
   if (error || !summary) {
     return (
       <div style={{ padding: "40px", textAlign: "center" }}>
-        <div style={{ fontSize: "40px", marginBottom: "12px" }}>⚠️</div>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--rd)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3" style={{ display: "block" }}>
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
         <h3>Report Generation Failed</h3>
         <p style={{ color: "var(--tx3)", fontSize: "13px" }}>{error || "Could not retrieve asset data."}</p>
         <button type="button" className="btn mt-4" onClick={() => router.back()}>
@@ -81,21 +85,41 @@ export default function Screen19AssetReportPDF() {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
+    <div className="print-wrapper" style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
       {/* Print Controls (Hidden on Print) */}
       <style>{`
         @media print {
-          .no-print {
+          .site-hdr, .app-sidebar, .no-print {
             display: none !important;
           }
-          body {
+          html, body, .app-layout, .app-body, .app-content, .print-wrapper {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
             background: #fff !important;
             color: #000 !important;
           }
+          #asset-report-pdf-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: #fff !important;
+            color: #000 !important;
+            position: relative !important;
+            width: 100% !important;
+          }
           .pdf-frame {
             box-shadow: none !important;
-            padding: 0 !important;
-            border-radius: 0 !important;
+            border: none !important;
+            background: #fff !important;
+            color: #000 !important;
+          }
+          @page {
+            margin: 10mm;
+            size: A4;
           }
         }
       `}</style>
@@ -128,13 +152,13 @@ export default function Screen19AssetReportPDF() {
             onClick={handlePrint}
             style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
           >
-            🖨️ Print Report / Save PDF
+            ⎙ Print Report / Save PDF
           </button>
         </div>
       </div>
 
       {/* PDF Document Container */}
-      <div className="pdf-frame">
+      <div className="pdf-frame" id="asset-report-pdf-content">
         {/* PDF Header */}
         <div className="pdf-hdr">
           <div>
@@ -238,7 +262,7 @@ export default function Screen19AssetReportPDF() {
                 <td>#{eq.id}</td>
                 <td><strong>{eq.productName}</strong></td>
                 <td>{categoryLabels[eq.category] || eq.category}</td>
-                <td style={{ fontFamily: "monospace" }}>{eq.serialNumber || "—"}</td>
+                <td style={{ fontFamily: "monospace", wordBreak: "break-all" }}>{eq.serialNumber || "—"}</td>
                 <td>{eq.respPerson || "Warehouse"}</td>
                 <td style={{ textAlign: "right" }}>{eq.quantity}</td>
                 <td style={{ textAlign: "right" }}>₹{(eq.purchasePrice || 0).toLocaleString("en-IN")}</td>

@@ -96,7 +96,9 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
         <ScreenFrame breadcrumb="Equipment Master › Details">
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center">
-              <div className="animate-spin text-3xl mb-3">⏳</div>
+              <div className="flex justify-center mb-3">
+                <div className="w-8 h-8 rounded-full border-[3px] border-b2 border-t-acc animate-spin" />
+              </div>
               <div className="text-[14px] text-tx3">Loading equipment details…</div>
             </div>
           </div>
@@ -112,7 +114,10 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
         <ScreenFrame breadcrumb="Equipment Master › Details">
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center">
-              <div className="text-5xl mb-3">🔍</div>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--tx3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 opacity-60">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
               <div className="text-[16px] font-medium text-tx2 mb-1">
                 Equipment not found
               </div>
@@ -207,7 +212,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
               )}
               <div className="row-item" style={{ flexDirection: "column", alignItems: "flex-start", gap: "4px" }}>
                 <span className="text-[11px] text-tx3">Serial Number(s)</span>
-                <span className="font-mono text-[11px] whitespace-pre-line" style={{ background: "var(--b1)", width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--b2)" }}>
+                <span className="font-mono text-[11px] whitespace-pre-line" style={{ background: "var(--b1)", width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid var(--b2)", wordBreak: "break-word", overflowWrap: "break-word" }}>
                   {item.serialNumber || <span style={{ color: "var(--tx3)" }}>No serial numbers registered.</span>}
                 </span>
               </div>
@@ -350,7 +355,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
             {item.notes && (
               <div className="card">
                 <div className="card-t">Notes & Info</div>
-                <div style={{ fontSize: "12px", color: "var(--tx2)", lineHeight: "1.5", fontStyle: "italic" }}>
+                <div style={{ fontSize: "12px", color: "var(--tx2)", lineHeight: "1.5", fontStyle: "italic", wordBreak: "break-word", overflowWrap: "break-word" }}>
                   "{item.notes}"
                 </div>
               </div>

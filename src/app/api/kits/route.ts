@@ -36,6 +36,11 @@ export async function POST(request: NextRequest) {
       name: body.name.trim(),
       description: body.description?.trim() || null,
       mainBodyId: body.mainBodyId ? parseInt(body.mainBodyId, 10) : null,
+      mainBodyQty: body.mainBodyQty ? parseInt(body.mainBodyQty, 10) : null,
+      accessories: body.accessories ? body.accessories.map((acc: { id: any; quantity: any }) => ({
+        id: parseInt(acc.id, 10),
+        quantity: parseInt(acc.quantity as string, 10)
+      })) : undefined,
     });
 
     return Response.json(kit, { status: 201 });

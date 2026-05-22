@@ -36,7 +36,7 @@ export default function LoadingSkeleton({
     <div className="card !p-4">
       {/* Spinner */}
       <div className="flex items-center justify-center gap-3 py-6">
-        <div className="w-5 h-5 rounded-full border-2 border-b2 border-t-bl animate-spin" />
+        <div className="w-5 h-5 rounded-full border-2 border-b2 border-t-acc animate-spin" />
         <span className="text-[12px] text-tx3">{message}</span>
       </div>
 

@@ -144,7 +144,10 @@ export default function Screen07Approval({ quotationId }: Props) {
         <div className="sf">
           <div className="cnt flex items-center justify-center min-h-[300px]">
             <div className="text-center">
-              <div className="text-5xl mb-3">✅</div>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
               <div className="text-[16px] font-medium text-gr mb-1">
                 Quotation approved successfully!
               </div>
@@ -156,7 +159,7 @@ export default function Screen07Approval({ quotationId }: Props) {
                   className="btn btn-success"
                   onClick={() => router.push(`/warehouse/check?inquiryId=${quotation.inquiryId}`)}
                 >
-                  📦 Warehouse Check
+                  ⧉ Warehouse Check
                 </button>
                 <button
                   className="btn btn-primary"
