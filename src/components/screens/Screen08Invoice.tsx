@@ -74,9 +74,20 @@ export default function Screen08Invoice({ invoiceId }: Props) {
         }
       >
         {/* Warning */}
-        <div className="rounded-lg p-[8px_12px] mb-3 text-[11px]" style={{ background: "var(--sem-notif-bg)", border: "1px solid var(--sem-notif-bdr)", color: "var(--acc)" }}>
-          ⚠ Video invoice: ફક્ત 2 line items — Videography services + Photography
-          services. Item rates show નહીં.
+        <div
+          className="rounded-lg text-[11px]"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "10px 14px",
+            marginBottom: "20px",
+            background: "var(--sem-notif-bg)",
+            border: "1px solid var(--sem-notif-bdr)",
+            color: "var(--acc)"
+          }}
+        >
+          <span style={{ marginRight: "6px" }}>⚠</span>
+          <span>Video invoice: ફક્ત 2 line items — Videography services + Photography services. Item rates show નહીં.</span>
         </div>
 
         <div className="two-col">
@@ -267,11 +278,19 @@ export default function Screen08Invoice({ invoiceId }: Props) {
             </div>
             <div className="card">
               <div className="card-t">Payment tracking</div>
-              <div className={`rounded-lg p-[10px_12px] mb-2`} style={{ background: invoice.advanceReceived ? "var(--sem-gr-bg)" : "var(--sem-gy-bg)", border: `1px solid ${invoice.advanceReceived ? "var(--sem-gr-bdr)" : "var(--b1)"}` }}>
-                <div className="text-[12px] font-medium mb-[2px]">
+              <div 
+                className="rounded-lg" 
+                style={{ 
+                  padding: "10px 12px", 
+                  marginBottom: "8px", 
+                  background: invoice.advanceReceived ? "var(--sem-gr-bg)" : "var(--sem-gy-bg)", 
+                  border: `1px solid ${invoice.advanceReceived ? "var(--sem-gr-bdr)" : "var(--b1)"}` 
+                }}
+              >
+                <div className="text-[12px] font-medium" style={{ marginBottom: "2px" }}>
                   Advance — 50%
                 </div>
-                <div className="text-[10px] text-tx3 mb-[6px]">
+                <div className="text-[10px] text-tx3" style={{ marginBottom: "6px" }}>
                   {invoice.advanceReceived
                     ? `Received: ${invoice.advanceReceivedAt} · ${invoice.advanceMethod}`
                     : "Not yet received"}
@@ -285,11 +304,19 @@ export default function Screen08Invoice({ invoiceId }: Props) {
                   </Badge>
                 </div>
               </div>
-              <div className={`rounded-lg p-[10px_12px] mb-[10px]`} style={{ background: invoice.balanceReceived ? "var(--sem-gr-bg)" : "var(--sem-am-bg)", border: `1px solid ${invoice.balanceReceived ? "var(--sem-gr-bdr)" : "var(--sem-am-bdr)"}` }}>
-                <div className="text-[12px] font-medium mb-[2px]">
+              <div 
+                className="rounded-lg" 
+                style={{ 
+                  padding: "10px 12px", 
+                  marginBottom: "10px", 
+                  background: invoice.balanceReceived ? "var(--sem-gr-bg)" : "var(--sem-am-bg)", 
+                  border: `1px solid ${invoice.balanceReceived ? "var(--sem-gr-bdr)" : "var(--sem-am-bdr)"}` 
+                }}
+              >
+                <div className="text-[12px] font-medium" style={{ marginBottom: "2px" }}>
                   Balance — 50%
                 </div>
-                <div className="text-[10px] text-tx3 mb-[6px]">
+                <div className="text-[10px] text-tx3" style={{ marginBottom: "6px" }}>
                   {invoice.balanceReceived
                     ? `Received: ${invoice.balanceReceivedAt} · ${invoice.balanceMethod}`
                     : `Due: ${new Date(invoice.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`}
