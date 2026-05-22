@@ -146,19 +146,22 @@ export default function Screen03Calendar() {
           <>
             <div className="flex border border-b1 rounded-md overflow-hidden mr-2">
               <button 
-                className={`px-3 py-1 text-[11px] font-medium transition-colors ${viewMode === "day" ? "bg-bl text-white" : "bg-s1 text-tx2 hover:bg-s2"}`}
+                className={`text-[11px] font-medium transition-colors ${viewMode === "day" ? "bg-bl text-white" : "bg-s1 text-tx2 hover:bg-s2"}`}
+                style={{ padding: "6px 12px" }}
                 onClick={() => setViewMode("day")}
               >
                 Day
               </button>
               <button 
-                className={`px-3 py-1 text-[11px] font-medium border-l border-b1 transition-colors ${viewMode === "week" ? "bg-bl text-white border-l-bl" : "bg-s1 text-tx2 hover:bg-s2"}`}
+                className={`text-[11px] font-medium border-l border-b1 transition-colors ${viewMode === "week" ? "bg-bl text-white border-l-bl" : "bg-s1 text-tx2 hover:bg-s2"}`}
+                style={{ padding: "6px 12px" }}
                 onClick={() => setViewMode("week")}
               >
                 Week
               </button>
               <button 
-                className={`px-3 py-1 text-[11px] font-medium border-l border-b1 transition-colors ${viewMode === "month" ? "bg-bl text-white border-l-bl" : "bg-s1 text-tx2 hover:bg-s2"}`}
+                className={`text-[11px] font-medium border-l border-b1 transition-colors ${viewMode === "month" ? "bg-bl text-white border-l-bl" : "bg-s1 text-tx2 hover:bg-s2"}`}
+                style={{ padding: "6px 12px" }}
                 onClick={() => setViewMode("month")}
               >
                 Month
