@@ -105,3 +105,62 @@ export interface CalendarEvent {
 export function generateId(): string {
   return Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
 }
+
+export interface Equipment {
+  id: number;
+  productName: string;
+  category: "CAMERA" | "VIDEO_MIXER" | "VIDEO_RECORDER" | "AUDIO_MIXER" | "WIRELESS_TX" | "UPS" | "ACCESSORY";
+  quantity: number;
+  serialNumber?: string | null;
+  bodyName?: string | null;
+  kitId?: number | null;
+  respPerson?: string | null;
+  purchaseDate?: string | null;
+  purchaseFrom?: string | null;
+  billNumber?: string | null;
+  purchasePrice?: number | null;
+  status: "AVAILABLE" | "IN_USE" | "MAINTENANCE" | "SOLD" | "RETIRED";
+  notes?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface Kit {
+  id: number;
+  name: string;
+  description?: string | null;
+  mainBodyId?: number | null;
+  createdAt: string;
+  items?: Equipment[];
+  availabilityStatus?: string | null;
+}
+
+export interface EquipmentBooking {
+  id: number;
+  inquiryId: string;
+  equipmentId?: number | null;
+  kitId?: number | null;
+  position?: string | null;
+  bookedFrom: string;
+  bookedTo: string;
+  status: "BOOKED" | "OUT" | "RETURNED";
+  vendorId?: number | null;
+  vendorCostPerDay?: number | null;
+  totalVendorCost?: number | null;
+  confirmedById?: string | null;
+  confirmedAt?: string | null;
+}
+
+export interface Vendor {
+  id: number;
+  name: string;
+  phone: string;
+  email?: string | null;
+  specialization?: string | null;
+  city?: string | null;
+  gstNumber?: string | null;
+  notes?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+

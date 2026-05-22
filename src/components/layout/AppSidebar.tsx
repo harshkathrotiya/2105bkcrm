@@ -9,6 +9,9 @@ const navItems = [
   { label: "Quotations", path: "/quotations", icon: "📄" },
   { label: "Invoices",   path: "/invoices",   icon: "⊡" },
   { label: "Calendar",   path: "/calendar",   icon: "☰" },
+  { label: "Equipment",  path: "/equipment",  icon: "📷" },
+  { label: "Kits",       path: "/kits",       icon: "📦" },
+  { label: "Vendors",    path: "/vendors",    icon: "🤝" },
 ];
 
 export default function AppSidebar() {

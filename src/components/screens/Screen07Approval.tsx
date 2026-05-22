@@ -118,6 +118,7 @@ export default function Screen07Approval({ quotationId }: Props) {
     });
 
     setApproved(true);
+    router.push(`/warehouse/check?inquiryId=${quotation.inquiryId}`);
   };
 
   // Find the invoice that was generated from this quotation
@@ -151,6 +152,12 @@ export default function Screen07Approval({ quotationId }: Props) {
                 Invoice has been generated
               </div>
               <div className="flex gap-3 justify-center">
+                <button
+                  className="btn btn-success"
+                  onClick={() => router.push(`/warehouse/check?inquiryId=${quotation.inquiryId}`)}
+                >
+                  📦 Warehouse Check
+                </button>
                 <button
                   className="btn btn-primary"
                   onClick={() => invoice ? router.push(`/invoices/${invoice.id}`) : router.push("/invoices")}

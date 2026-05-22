@@ -139,6 +139,62 @@ db.exec(`
     label  TEXT NOT NULL,
     type   TEXT NOT NULL CHECK(type IN ('inquiry','quotation','confirmed','completed'))
   );
+
+  CREATE TABLE IF NOT EXISTS kits (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT UNIQUE NOT NULL,
+    description  TEXT,
+    main_body_id INTEGER,
+    created_at   TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS equipment (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_name   TEXT NOT NULL,
+    category       TEXT NOT NULL CHECK(category IN ('CAMERA','VIDEO_MIXER','VIDEO_RECORDER','AUDIO_MIXER','WIRELESS_TX','UPS','ACCESSORY')),
+    quantity       INTEGER NOT NULL DEFAULT 1,
+    serial_number  TEXT,
+    body_name      TEXT,
+    kit_id         INTEGER REFERENCES kits(id) ON DELETE SET NULL,
+    resp_person    TEXT,
+    purchase_date  TEXT,
+    purchase_from  TEXT,
+    bill_number    TEXT,
+    purchase_price REAL,
+    status         TEXT NOT NULL DEFAULT 'AVAILABLE' CHECK(status IN ('AVAILABLE','IN_USE','MAINTENANCE','SOLD','RETIRED')),
+    notes          TEXT,
+    created_at     TEXT NOT NULL,
+    updated_at     TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS vendors (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    name           TEXT NOT NULL,
+    phone          TEXT NOT NULL,
+    email          TEXT,
+    specialization TEXT,
+    city           TEXT,
+    gst_number     TEXT,
+    notes          TEXT,
+    is_active      INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0,1)),
+    created_at     TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS equipment_bookings (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    inquiry_id          TEXT NOT NULL REFERENCES inquiries(id) ON DELETE CASCADE,
+    equipment_id        INTEGER REFERENCES equipment(id) ON DELETE SET NULL,
+    kit_id              INTEGER REFERENCES kits(id) ON DELETE SET NULL,
+    position            TEXT,
+    booked_from         TEXT NOT NULL,
+    booked_to           TEXT NOT NULL,
+    status              TEXT NOT NULL DEFAULT 'BOOKED' CHECK(status IN ('BOOKED','OUT','RETURNED')),
+    vendor_id           INTEGER REFERENCES vendors(id) ON DELETE SET NULL,
+    vendor_cost_per_day REAL,
+    total_vendor_cost   REAL,
+    confirmed_by_id     TEXT,
+    confirmed_at        TEXT
+  );
 `);
 
 // ── Seed ─────────────────────────────────────────────────────────────────────
@@ -270,12 +326,358 @@ function runSeed(): void {
   seed();
 }
 
+function runPhase2Seed(): void {
+  // Check if equipment is already seeded
+  const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='equipment'").get();
+  if (!tableCheck) return;
+
+  const equipCount = (
+    db.prepare("SELECT COUNT(*) as n FROM equipment").get() as { n: number }
+  ).n;
+
+  if (equipCount > 0) return;
+
+  db.transaction(() => {
+    // 1. Insert Vendors
+    const insertVendor = db.prepare(`
+      INSERT INTO vendors (name, phone, email, specialization, city, gst_number, notes, is_active, created_at)
+      VALUES (@name, @phone, @email, @specialization, @city, @gstNumber, @notes, 1, datetime('now'))
+    `);
+    
+    insertVendor.run({ name: "Apex Rental Services", phone: "9925012345", email: "info@apexrentals.com", specialization: "Crane, Heavy Equipment", city: "Ahmedabad", gstNumber: "24APEXR1234R1ZX", notes: "Prefers payments via bank transfer." });
+    insertVendor.run({ name: "Shreeji Camera Rental", phone: "9876543210", email: "rent@shreejicamera.com", specialization: "Drone, Camera, Lenses", city: "Vadodara", gstNumber: null, notes: "Contact person: Jignesh Bhai." });
+    insertVendor.run({ name: "Falcon Drones & FPV", phone: "9123456789", email: "fly@falcondrones.com", specialization: "Drone, FPV", city: "Ahmedabad", gstNumber: "24FALCON9876A1Z", notes: "Requires 1 day advance booking." });
+    insertVendor.run({ name: "Audio Masters Rental", phone: "9898098980", email: "audio@masters.com", specialization: "Audio Mixer, Microphones", city: "Gandhinagar", gstNumber: null, notes: "High quality wireless mics available." });
+    insertVendor.run({ name: "Vasu Video Solutions", phone: "9090990909", email: "vasuvideo@gmail.com", specialization: "Video Mixer, Switchers", city: "Ahmedabad", gstNumber: null, notes: "Reliable production switcher rent." });
+
+    // 2. Insert Kits placeholder (to get IDs)
+    const insertKit = db.prepare(`
+      INSERT INTO kits (name, description, created_at)
+      VALUES (@name, @description, datetime('now'))
+    `);
+
+    const kitNames = [
+      "Sony FX6 Kit", "Sony FX3 Kit", "Sony Alpha 7S III Kit", "Sony Alpha 7 IV Kit",
+      "Sony ILCE 7M5 Kit", "Z150-01 Kit", "Z150-02 Kit", "Z150-03 Kit", "Z150-05 Kit",
+      "Hollyland Mars 4K Kit-01", "Hollyland Mars 4K Kit-02", "Hollyland Mars 4K Kit-03",
+      "Accsoon Master 4K Kit", "Live-U Solo HD Kit", "Eartec Talkback Kit", "Tally System Kit"
+    ];
+    
+    const kitIds: Record<string, number> = {};
+    for (const name of kitNames) {
+      const res = insertKit.run({ name, description: `BK Media standard ${name}.` });
+      kitIds[name] = res.lastInsertRowid as number;
+    }
+
+    // 3. Insert Equipment
+    const insertEquip = db.prepare(`
+      INSERT INTO equipment (product_name, category, quantity, serial_number, body_name, kit_id, resp_person, purchase_price, status, created_at)
+      VALUES (@productName, @category, @quantity, @serialNumber, @bodyName, @kitId, @respPerson, @purchasePrice, 'AVAILABLE', datetime('now'))
+    `);
+
+    // Insert 10 Cameras
+    const cameras = [
+      { productName: "Sony FX6", category: "CAMERA", quantity: 1, serialNumber: "7000701", bodyName: "Sony FX6", kitId: kitIds["Sony FX6 Kit"], respPerson: "Vikram", purchasePrice: 450000 },
+      { productName: "Sony FX3", category: "CAMERA", quantity: 1, serialNumber: "1002576", bodyName: "Sony FX3", kitId: kitIds["Sony FX3 Kit"], respPerson: "Priya", purchasePrice: 340000 },
+      { productName: "Sony Alpha 7S III", category: "CAMERA", quantity: 1, serialNumber: "5781062", bodyName: "Sony Alpha 7S III", kitId: kitIds["Sony Alpha 7S III Kit"], respPerson: "Rohan", purchasePrice: 250000 },
+      { productName: "Sony Alpha 7 IV", category: "CAMERA", quantity: 1, serialNumber: "8468677", bodyName: "Sony Alpha 7 IV", kitId: kitIds["Sony Alpha 7 IV Kit"], respPerson: "Rahul", purchasePrice: 200000 },
+      { productName: "Sony ILCE 7M5", category: "CAMERA", quantity: 1, serialNumber: "2027594", bodyName: "Sony ILCE 7M5", kitId: kitIds["Sony ILCE 7M5 Kit"], respPerson: "Manish", purchasePrice: 194915 },
+      { productName: "Sony Z150-01", category: "CAMERA", quantity: 1, serialNumber: "7003244", bodyName: "Sony Z150-01", kitId: kitIds["Z150-01 Kit"], respPerson: "Sanjay", purchasePrice: 285000 },
+      { productName: "Sony Z150-02", category: "CAMERA", quantity: 1, serialNumber: "7003683", bodyName: "Sony Z150-02", kitId: kitIds["Z150-02 Kit"], respPerson: "Jayesh", purchasePrice: 285000 },
+      { productName: "Sony Z150-03", category: "CAMERA", quantity: 1, serialNumber: "7001810", bodyName: "Sony Z150-03", kitId: kitIds["Z150-03 Kit"], respPerson: "Sanjay", purchasePrice: 285000 },
+      { productName: "Sony Z150-05", category: "CAMERA", quantity: 1, serialNumber: "7004593", bodyName: "Sony Z150-05", kitId: kitIds["Z150-05 Kit"], respPerson: "Jayesh", purchasePrice: 285000 },
+      { productName: "Sony Z150-04", category: "CAMERA", quantity: 1, serialNumber: "7004123", bodyName: "Sony Z150-04", kitId: null, respPerson: "Sanjay", purchasePrice: 285000 },
+    ];
+    
+    for (const cam of cameras) {
+      const res = insertEquip.run({ ...cam });
+      const id = res.lastInsertRowid as number;
+      if (cam.kitId) {
+        db.prepare("UPDATE kits SET main_body_id = ? WHERE id = ?").run(id, cam.kitId);
+      }
+    }
+
+    // Insert 9 Video Mixers
+    const videoMixers = [
+      { productName: "BM Videohub 20x20 12G", category: "VIDEO_MIXER", quantity: 1, serialNumber: "VH-2020-01", bodyName: null, kitId: null, respPerson: "Amit", purchasePrice: 247800 },
+      { productName: "Stream Deck 01", category: "VIDEO_MIXER", quantity: 1, serialNumber: "SD-01", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 21590 },
+      { productName: "Stream Deck 02", category: "VIDEO_MIXER", quantity: 1, serialNumber: "SD-02", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 21590 },
+      { productName: "BM ATEM Mini", category: "VIDEO_MIXER", quantity: 1, serialNumber: "AM-01", bodyName: null, kitId: null, respPerson: "Amit", purchasePrice: 30000 },
+      { productName: "BM ATEM Extreme", category: "VIDEO_MIXER", quantity: 1, serialNumber: "AE-01", bodyName: null, kitId: null, respPerson: "Amit", purchasePrice: 80000 },
+      { productName: "Roland V-1HD Mixer", category: "VIDEO_MIXER", quantity: 1, serialNumber: "RM-01", bodyName: null, kitId: null, respPerson: "Amit", purchasePrice: 75000 },
+      { productName: "Feelworld Live Mixer", category: "VIDEO_MIXER", quantity: 1, serialNumber: "FM-01", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 45000 },
+      { productName: "DevMixer 4K", category: "VIDEO_MIXER", quantity: 1, serialNumber: "DM-01", bodyName: null, kitId: null, respPerson: "Manish", purchasePrice: 120000 },
+      { productName: "VMixer Test", category: "VIDEO_MIXER", quantity: 1, serialNumber: null, bodyName: null, kitId: null, respPerson: null, purchasePrice: null },
+    ];
+    for (const mx of videoMixers) {
+      insertEquip.run({ ...mx });
+    }
+
+    // Insert 7 Video Recorders
+    const videoRecorders = [
+      { productName: "Atomos Shogun 7", category: "VIDEO_RECORDER", quantity: 1, serialNumber: "AS-01", bodyName: null, kitId: null, respPerson: "Rohan", purchasePrice: 110000 },
+      { productName: "Atomos Ninja V", category: "VIDEO_RECORDER", quantity: 1, serialNumber: "AN-01", bodyName: null, kitId: null, respPerson: "Rohan", purchasePrice: 65000 },
+      { productName: "Blackmagic HyperDeck Studio", category: "VIDEO_RECORDER", quantity: 1, serialNumber: "HS-01", bodyName: null, kitId: null, respPerson: "Amit", purchasePrice: 95000 },
+      { productName: "Blackmagic Video Assist 7\"", category: "VIDEO_RECORDER", quantity: 1, serialNumber: "VA-07", bodyName: null, kitId: null, respPerson: "Amit", purchasePrice: 85000 },
+      { productName: "Blackmagic Video Assist 5\"", category: "VIDEO_RECORDER", quantity: 1, serialNumber: "VA-05", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 55000 },
+      { productName: "Blackmagic HyperDeck Shuttle", category: "VIDEO_RECORDER", quantity: 1, serialNumber: "HS-02", bodyName: null, kitId: null, respPerson: "Manish", purchasePrice: 35000 },
+      { productName: "Video Recorder Test", category: "VIDEO_RECORDER", quantity: 1, serialNumber: null, bodyName: null, kitId: null, respPerson: null, purchasePrice: null },
+    ];
+    for (const rec of videoRecorders) {
+      insertEquip.run({ ...rec });
+    }
+
+    // Insert 4 Audio Mixers
+    const audioMixers = [
+      { productName: "Zoom H6", category: "AUDIO_MIXER", quantity: 1, serialNumber: "ZH-01", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 32000 },
+      { productName: "Rodecaster Pro II", category: "AUDIO_MIXER", quantity: 1, serialNumber: "RP-01", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 65000 },
+      { productName: "Yamaha MG10XU", category: "AUDIO_MIXER", quantity: 1, serialNumber: "YM-01", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 20000 },
+      { productName: "Zoom F8n Pro", category: "AUDIO_MIXER", quantity: 1, serialNumber: "ZF-01", bodyName: null, kitId: null, respPerson: "Manish", purchasePrice: 95000 },
+    ];
+    for (const am of audioMixers) {
+      insertEquip.run({ ...am });
+    }
+
+    // Insert 7 Wireless TX
+    const wirelessTX = [
+      { productName: "Mars 4K-01", category: "WIRELESS_TX", quantity: 1, serialNumber: "0023050T-R", bodyName: "Mars 4K-01", kitId: kitIds["Hollyland Mars 4K Kit-01"], respPerson: "Rahul", purchasePrice: 45000 },
+      { productName: "Mars 4K-02", category: "WIRELESS_TX", quantity: 1, serialNumber: "0023470T-R", bodyName: "Mars 4K-02", kitId: kitIds["Hollyland Mars 4K Kit-02"], respPerson: "Rahul", purchasePrice: 45000 },
+      { productName: "Mars 4K-03", category: "WIRELESS_TX", quantity: 1, serialNumber: "0023470T-R", bodyName: "Mars 4K-03", kitId: kitIds["Hollyland Mars 4K Kit-03"], respPerson: "Rahul", purchasePrice: 45000 },
+      { productName: "Accsoon Master 4K", category: "WIRELESS_TX", quantity: 1, serialNumber: "WIT07-0905", bodyName: "Accsoon Master 4K", kitId: kitIds["Accsoon Master 4K Kit"], respPerson: "Manish", purchasePrice: 38000 },
+      { productName: "Live-U Solo HD", category: "WIRELESS_TX", quantity: 1, serialNumber: "202120-23099", bodyName: "Live-U Solo HD", kitId: kitIds["Live-U Solo HD Kit"], respPerson: "Amit", purchasePrice: 150000 },
+      { productName: "Hollyland Cosmo C1", category: "WIRELESS_TX", quantity: 1, serialNumber: "CC-01", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 75000 },
+      { productName: "Teradek Bolt 4K", category: "WIRELESS_TX", quantity: 1, serialNumber: "TB-01", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 220000 },
+    ];
+    for (const wtx of wirelessTX) {
+      const res = insertEquip.run({ ...wtx });
+      const id = res.lastInsertRowid as number;
+      if (wtx.kitId) {
+        db.prepare("UPDATE kits SET main_body_id = ? WHERE id = ?").run(id, wtx.kitId);
+      }
+    }
+
+    // Insert 3 UPS
+    const ups = [
+      { productName: "APC Easy UPS 1KVA", category: "UPS", quantity: 1, serialNumber: "UP-01", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 12000 },
+      { productName: "APC Easy UPS 2KVA", category: "UPS", quantity: 1, serialNumber: "UP-02", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 22000 },
+      { productName: "Microtek UPS 1KVA", category: "UPS", quantity: 1, serialNumber: "UP-03", bodyName: null, kitId: null, respPerson: "Vikram", purchasePrice: 8000 },
+    ];
+    for (const u of ups) {
+      insertEquip.run({ ...u });
+    }
+
+    // Insert 183 Accessories
+    const specificAccessories = [
+      { productName: "Sony 200-600mm G 01", category: "ACCESSORY", quantity: 1, serialNumber: "1938001", purchasePrice: 150000 },
+      { productName: "Sony 200-600mm G 02", category: "ACCESSORY", quantity: 1, serialNumber: "1916007", purchasePrice: 150000 },
+      { productName: "Sony 400-800mm G", category: "ACCESSORY", quantity: 1, serialNumber: "1814652", purchasePrice: 270000 },
+      
+      { productName: "Sony Charger", category: "ACCESSORY", quantity: 1, serialNumber: "3374091", purchasePrice: 13000, kitName: "Sony FX6 Kit" },
+      { productName: "Lexar Card 160GB (FX6 #1)", category: "ACCESSORY", quantity: 1, serialNumber: "LC-160-01", purchasePrice: 12000, kitName: "Sony FX6 Kit" },
+      { productName: "Lexar Card 160GB (FX6 #2)", category: "ACCESSORY", quantity: 1, serialNumber: "LC-160-02", purchasePrice: 12000, kitName: "Sony FX6 Kit" },
+      { productName: "Sony BP-U35", category: "ACCESSORY", quantity: 1, serialNumber: "BP-35-01", purchasePrice: 15000, kitName: "Sony FX6 Kit" },
+      { productName: "Welborn (FX6)", category: "ACCESSORY", quantity: 1, serialNumber: "WB-01", purchasePrice: 1000, kitName: "Sony FX6 Kit" },
+      { productName: "Lexar Type A Card", category: "ACCESSORY", quantity: 1, serialNumber: "LTA-01", purchasePrice: 18000, kitName: "Sony FX6 Kit" },
+      { productName: "Digitek (FX6)", category: "ACCESSORY", quantity: 1, serialNumber: "DT-01", purchasePrice: 900, kitName: "Sony FX6 Kit" },
+
+      { productName: "Lexar Card 160GB (FX3 #1)", category: "ACCESSORY", quantity: 1, serialNumber: "LC-160-03", purchasePrice: 12000, kitName: "Sony FX3 Kit" },
+      { productName: "Lexar Card 160GB (FX3 #2)", category: "ACCESSORY", quantity: 1, serialNumber: "LC-160-04", purchasePrice: 12000, kitName: "Sony FX3 Kit" },
+      { productName: "Sony NP-FZ100 (FX3 #1)", category: "ACCESSORY", quantity: 1, serialNumber: "FZ-01", purchasePrice: 6000, kitName: "Sony FX3 Kit" },
+      { productName: "Sony NP-FZ100 (FX3 #2)", category: "ACCESSORY", quantity: 1, serialNumber: "FZ-02", purchasePrice: 6000, kitName: "Sony FX3 Kit" },
+      { productName: "Sony NP-FZ100 (FX3 #3)", category: "ACCESSORY", quantity: 1, serialNumber: "FZ-03", purchasePrice: 6000, kitName: "Sony FX3 Kit" },
+      { productName: "Sony Charger (FX3)", category: "ACCESSORY", quantity: 1, serialNumber: "SC-02", purchasePrice: 13000, kitName: "Sony FX3 Kit" },
+      { productName: "Digitek (FX3)", category: "ACCESSORY", quantity: 1, serialNumber: "DT-02", purchasePrice: 900, kitName: "Sony FX3 Kit" },
+
+      { productName: "Lexar 900mbps Card #1", category: "ACCESSORY", quantity: 1, serialNumber: "L9-01", purchasePrice: 10000, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "Lexar 900mbps Card #2", category: "ACCESSORY", quantity: 1, serialNumber: "L9-02", purchasePrice: 10000, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "Sony NP-FZ100 (7S #1)", category: "ACCESSORY", quantity: 1, serialNumber: "FZ-04", purchasePrice: 6000, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "Sony NP-FZ100 (7S #2)", category: "ACCESSORY", quantity: 1, serialNumber: "FZ-05", purchasePrice: 6000, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "Sony NP-FZ100 (7S #3)", category: "ACCESSORY", quantity: 1, serialNumber: "FZ-06", purchasePrice: 6000, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "BC-QZ1 Charger (7S)", category: "ACCESSORY", quantity: 1, serialNumber: "BC-01", purchasePrice: 8000, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "24-70mm 2.8 GM Lens", category: "ACCESSORY", quantity: 1, serialNumber: "GM-2470", purchasePrice: 180000, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "Sony 16-35mm Z Lens (7S)", category: "ACCESSORY", quantity: 1, serialNumber: "1635Z-01", purchasePrice: 66102, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "Sigma 35mm Lens", category: "ACCESSORY", quantity: 1, serialNumber: "SG-35", purchasePrice: 65000, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "50mm 1.8 Lens", category: "ACCESSORY", quantity: 1, serialNumber: "S50", purchasePrice: 18000, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "70-200mm 2.8 Lens", category: "ACCESSORY", quantity: 1, serialNumber: "S70200", purchasePrice: 220000, kitName: "Sony Alpha 7S III Kit" },
+      { productName: "Digitek LED Panel (7S)", category: "ACCESSORY", quantity: 1, serialNumber: "DL-01", purchasePrice: 8000, kitName: "Sony Alpha 7S III Kit" },
+
+      { productName: "24-105mm G Lens", category: "ACCESSORY", quantity: 1, serialNumber: "G24105", purchasePrice: 90000, kitName: "Sony Alpha 7 IV Kit" },
+      { productName: "85mm 1.8 Lens", category: "ACCESSORY", quantity: 1, serialNumber: "S85", purchasePrice: 42000, kitName: "Sony Alpha 7 IV Kit" },
+      { productName: "GODOX V860 Flash", category: "ACCESSORY", quantity: 1, serialNumber: "GX-860", purchasePrice: 15000, kitName: "Sony Alpha 7 IV Kit" },
+      { productName: "Sony NP-FZ100 (7IV #1)", category: "ACCESSORY", quantity: 1, serialNumber: "FZ-07", purchasePrice: 6000, kitName: "Sony Alpha 7 IV Kit" },
+      { productName: "Sony NP-FZ100 (7IV #2)", category: "ACCESSORY", quantity: 1, serialNumber: "FZ-08", purchasePrice: 6000, kitName: "Sony Alpha 7 IV Kit" },
+      { productName: "BC-QZ1 Charger (7IV)", category: "ACCESSORY", quantity: 1, serialNumber: "BC-02", purchasePrice: 8000, kitName: "Sony Alpha 7 IV Kit" },
+      { productName: "GODOX VB26 Battery #1", category: "ACCESSORY", quantity: 1, serialNumber: "VB26-01", purchasePrice: 3000, kitName: "Sony Alpha 7 IV Kit" },
+      { productName: "GODOX VB26 Battery #2", category: "ACCESSORY", quantity: 1, serialNumber: "VB26-02", purchasePrice: 3000, kitName: "Sony Alpha 7 IV Kit" },
+      { productName: "GODOX VB26 Battery #3", category: "ACCESSORY", quantity: 1, serialNumber: "VB26-03", purchasePrice: 3000, kitName: "Sony Alpha 7 IV Kit" },
+      { productName: "GODOX VC26 Charger", category: "ACCESSORY", quantity: 1, serialNumber: "VC26-01", purchasePrice: 2000, kitName: "Sony Alpha 7 IV Kit" },
+
+      { productName: "Charger+Battery kit (7M5)", category: "ACCESSORY", quantity: 1, serialNumber: "CB-7M5", purchasePrice: 20678, kitName: "Sony ILCE 7M5 Kit" },
+      { productName: "Lexar 320GB CF-A", category: "ACCESSORY", quantity: 1, serialNumber: "L320-01", purchasePrice: 30508, kitName: "Sony ILCE 7M5 Kit" },
+      { productName: "Sony 24-240mm Lens", category: "ACCESSORY", quantity: 1, serialNumber: "24240-01", purchasePrice: 61017, kitName: "Sony ILCE 7M5 Kit" },
+      { productName: "Sony 16-35mm Z Lens (7M5)", category: "ACCESSORY", quantity: 1, serialNumber: "1635Z-02", purchasePrice: 66102, kitName: "Sony ILCE 7M5 Kit" },
+      { productName: "Godox V860 III Flash Kit", category: "ACCESSORY", quantity: 1, serialNumber: "GX3-01", purchasePrice: 12712, kitName: "Sony ILCE 7M5 Kit" },
+
+      { productName: "Lexar 64GB (Z150-01)", category: "ACCESSORY", quantity: 1, serialNumber: "L64-01", purchasePrice: 3000, kitName: "Z150-01 Kit" },
+      { productName: "Sony NP-F770 (Z150-01)", category: "ACCESSORY", quantity: 1, serialNumber: "41163929", purchasePrice: 2000, kitName: "Z150-01 Kit" },
+      { productName: "Welborn (Z150-01)", category: "ACCESSORY", quantity: 1, serialNumber: "41154610", purchasePrice: 1000, kitName: "Z150-01 Kit" },
+      { productName: "BC-L1 Charger (Z150-01)", category: "ACCESSORY", quantity: 1, serialNumber: "BC-L1-01", purchasePrice: 8000, kitName: "Z150-01 Kit" },
+
+      { productName: "Lexar 64GB (Z150-02)", category: "ACCESSORY", quantity: 1, serialNumber: "L64-02", purchasePrice: 3000, kitName: "Z150-02 Kit" },
+      { productName: "Sony NP-F770 (Z150-02)", category: "ACCESSORY", quantity: 1, serialNumber: "F770-02", purchasePrice: 2000, kitName: "Z150-02 Kit" },
+      { productName: "DigiTek NP-F950 Battery", category: "ACCESSORY", quantity: 1, serialNumber: "DT950-01", purchasePrice: 3000, kitName: "Z150-02 Kit" },
+      { productName: "DigiTek BC-L1 Charger", category: "ACCESSORY", quantity: 1, serialNumber: "DBC-01", purchasePrice: 4000, kitName: "Z150-02 Kit" },
+
+      { productName: "Lexar 64GB (Z150-03)", category: "ACCESSORY", quantity: 1, serialNumber: "L64-03", purchasePrice: 3000, kitName: "Z150-03 Kit" },
+      { productName: "Sony NP-F770 (Z150-03)", category: "ACCESSORY", quantity: 1, serialNumber: "F770-03", purchasePrice: 2000, kitName: "Z150-03 Kit" },
+      { productName: "Welborn (Z150-03)", category: "ACCESSORY", quantity: 1, serialNumber: "WB-03", purchasePrice: 1000, kitName: "Z150-03 Kit" },
+      { productName: "BC-L1 Charger (Z150-03)", category: "ACCESSORY", quantity: 1, serialNumber: "BC-L1-03", purchasePrice: 8000, kitName: "Z150-03 Kit" },
+
+      { productName: "Lexar 64GB (Z150-05)", category: "ACCESSORY", quantity: 1, serialNumber: "L64-04", purchasePrice: 3000, kitName: "Z150-05 Kit" },
+      { productName: "Sony NP-F770 (Z150-05)", category: "ACCESSORY", quantity: 1, serialNumber: "F770-04", purchasePrice: 2000, kitName: "Z150-05 Kit" },
+      { productName: "Osaka Battery", category: "ACCESSORY", quantity: 1, serialNumber: "OB-01", purchasePrice: 2000, kitName: "Z150-05 Kit" },
+      { productName: "BC-L1 Charger (Z150-05)", category: "ACCESSORY", quantity: 1, serialNumber: "BC-L1-04", purchasePrice: 8000, kitName: "Z150-05 Kit" },
+
+      { productName: "Digitek (Mars1 #1)", category: "ACCESSORY", quantity: 1, serialNumber: "DT-03", purchasePrice: 900, kitName: "Hollyland Mars 4K Kit-01" },
+      { productName: "Digitek (Mars1 #2)", category: "ACCESSORY", quantity: 1, serialNumber: "DT-04", purchasePrice: 900, kitName: "Hollyland Mars 4K Kit-01" },
+      { productName: "Digitek (Mars1 #3)", category: "ACCESSORY", quantity: 1, serialNumber: "DT-05", purchasePrice: 900, kitName: "Hollyland Mars 4K Kit-01" },
+      { productName: "TYFY Battery (Mars1)", category: "ACCESSORY", quantity: 1, serialNumber: "TF-01", purchasePrice: 1500, kitName: "Hollyland Mars 4K Kit-01" },
+
+      { productName: "Digitek (Mars2 #1)", category: "ACCESSORY", quantity: 1, serialNumber: "DT-06", purchasePrice: 900, kitName: "Hollyland Mars 4K Kit-02" },
+      { productName: "Digitek (Mars2 #2)", category: "ACCESSORY", quantity: 1, serialNumber: "DT-07", purchasePrice: 900, kitName: "Hollyland Mars 4K Kit-02" },
+      { productName: "Digitek (Mars2 #3)", category: "ACCESSORY", quantity: 1, serialNumber: "DT-08", purchasePrice: 900, kitName: "Hollyland Mars 4K Kit-02" },
+      { productName: "Digitek (Mars2 #4)", category: "ACCESSORY", quantity: 1, serialNumber: "DT-09", purchasePrice: 900, kitName: "Hollyland Mars 4K Kit-02" },
+      { productName: "Adaptor (Mars2)", category: "ACCESSORY", quantity: 1, serialNumber: "AD-02", purchasePrice: 1200, kitName: "Hollyland Mars 4K Kit-02" },
+
+      { productName: "Digitek (Mars3)", category: "ACCESSORY", quantity: 1, serialNumber: "DT-10", purchasePrice: 900, kitName: "Hollyland Mars 4K Kit-03" },
+      { productName: "Hollyland Adaptor", category: "ACCESSORY", quantity: 1, serialNumber: "HA-01", purchasePrice: 1500, kitName: "Hollyland Mars 4K Kit-03" },
+      { productName: "INfitek+TYFY+Digitek Bundle", category: "ACCESSORY", quantity: 1, serialNumber: "BD-01", purchasePrice: 4500, kitName: "Hollyland Mars 4K Kit-03" },
+
+      { productName: "Welborn (Accsoon #1)", category: "ACCESSORY", quantity: 1, serialNumber: "WB-04", purchasePrice: 1000, kitName: "Accsoon Master 4K Kit" },
+      { productName: "Welborn (Accsoon #2)", category: "ACCESSORY", quantity: 1, serialNumber: "WB-05", purchasePrice: 1000, kitName: "Accsoon Master 4K Kit" },
+      { productName: "Welborn (Accsoon #3)", category: "ACCESSORY", quantity: 1, serialNumber: "WB-06", purchasePrice: 1000, kitName: "Accsoon Master 4K Kit" },
+      { productName: "Welborn (Accsoon #4)", category: "ACCESSORY", quantity: 1, serialNumber: "WB-07", purchasePrice: 1000, kitName: "Accsoon Master 4K Kit" },
+      { productName: "Adaptor (Accsoon)", category: "ACCESSORY", quantity: 1, serialNumber: "AD-03", purchasePrice: 1200, kitName: "Accsoon Master 4K Kit" },
+
+      { productName: "Live-U Accessory Pack", category: "ACCESSORY", quantity: 1, serialNumber: "LU-ACC-01", purchasePrice: 12000, kitName: "Live-U Solo HD Kit" },
+      { productName: "Huawei Dongle #1", category: "ACCESSORY", quantity: 1, serialNumber: "HW-01", purchasePrice: 4000, kitName: "Live-U Solo HD Kit" },
+      { productName: "Huawei Dongle #2", category: "ACCESSORY", quantity: 1, serialNumber: "HW-02", purchasePrice: 4000, kitName: "Live-U Solo HD Kit" },
+
+      { productName: "Eartec 5 Pair (Main Body)", category: "ACCESSORY", quantity: 1, serialNumber: "ET-01", purchasePrice: 120000, kitName: "Eartec Talkback Kit" },
+      { productName: "6 Battery HUB (Eartec)", category: "ACCESSORY", quantity: 1, serialNumber: "EH-01", purchasePrice: 15000, kitName: "Eartec Talkback Kit" },
+
+      { productName: "Hollyland Tally 8 Pair", category: "ACCESSORY", quantity: 1, serialNumber: "HT-01", purchasePrice: 85000, kitName: "Tally System Kit" },
+      { productName: "Tally System HUB", category: "ACCESSORY", quantity: 1, serialNumber: "TH-01", purchasePrice: 25000, kitName: "Tally System Kit" },
+      { productName: "Battery HUB 8", category: "ACCESSORY", quantity: 1, serialNumber: "TBH-01", purchasePrice: 12000, kitName: "Tally System Kit" },
+      { productName: "Tally Power Adapter #1", category: "ACCESSORY", quantity: 1, serialNumber: "TPA-01", purchasePrice: 2000, kitName: "Tally System Kit" },
+      { productName: "Tally Power Adapter #2", category: "ACCESSORY", quantity: 1, serialNumber: "TPA-02", purchasePrice: 2000, kitName: "Tally System Kit" },
+
+      { productName: "BAOFENG Walkie Talkie #1", category: "ACCESSORY", quantity: 1, serialNumber: "BF-01", purchasePrice: 1000 },
+      { productName: "BAOFENG Walkie Talkie #2", category: "ACCESSORY", quantity: 1, serialNumber: "BF-02", purchasePrice: 1000 },
+      { productName: "BAOFENG Walkie Talkie #3", category: "ACCESSORY", quantity: 1, serialNumber: "BF-03", purchasePrice: 1000 },
+      { productName: "BAOFENG Walkie Talkie #4", category: "ACCESSORY", quantity: 1, serialNumber: "BF-04", purchasePrice: 1000 },
+      { productName: "BAOFENG Walkie Talkie #5", category: "ACCESSORY", quantity: 1, serialNumber: "BF-05", purchasePrice: 1000 },
+      { productName: "BAOFENG Walkie Talkie #6", category: "ACCESSORY", quantity: 1, serialNumber: "BF-06", purchasePrice: 1000 },
+
+      { productName: "SDI to HDMI 3G #1", category: "ACCESSORY", quantity: 1, serialNumber: "SH-01", purchasePrice: 7000 },
+      { productName: "SDI to HDMI 3G #2", category: "ACCESSORY", quantity: 1, serialNumber: "SH-02", purchasePrice: 7000 },
+      { productName: "SDI to HDMI 3G #3", category: "ACCESSORY", quantity: 1, serialNumber: "SH-03", purchasePrice: 7000 },
+      { productName: "SDI to HDMI 3G #4", category: "ACCESSORY", quantity: 1, serialNumber: "SH-04", purchasePrice: 7000 },
+      { productName: "SDI to HDMI 3G #5", category: "ACCESSORY", quantity: 1, serialNumber: "SH-05", purchasePrice: 7000 },
+
+      { productName: "USB to SATA Adapter #1", category: "ACCESSORY", quantity: 1, serialNumber: "US-01", purchasePrice: 2537 },
+      { productName: "USB to SATA Adapter #2", category: "ACCESSORY", quantity: 1, serialNumber: "US-02", purchasePrice: 2537 },
+
+      { productName: "Belden 4694R 12G SDI Cable", category: "ACCESSORY", quantity: 1, serialNumber: "BC-12G-01", purchasePrice: 22400 },
+      { productName: "Neutrik BNC Connectors (Bag of 34)", category: "ACCESSORY", quantity: 1, serialNumber: "NB-34", purchasePrice: 15300 },
+      { productName: "Belden BNC Connectors (Bag of 6)", category: "ACCESSORY", quantity: 1, serialNumber: "BB-06", purchasePrice: 2700 },
+
+      { productName: "Micro Converter BiDirect 12G #1", category: "ACCESSORY", quantity: 1, serialNumber: "MC12-01", purchasePrice: 20060 },
+      { productName: "Micro Converter BiDirect 12G #2", category: "ACCESSORY", quantity: 1, serialNumber: "MC12-02", purchasePrice: 20060 },
+      { productName: "Micro Converter BiDirect 12G #3", category: "ACCESSORY", quantity: 1, serialNumber: "MC12-03", purchasePrice: 20060 },
+      { productName: "Micro Converter BiDirect 12G #4", category: "ACCESSORY", quantity: 1, serialNumber: "MC12-04", purchasePrice: 20060 },
+      { productName: "Micro Converter BiDirect 12G #5", category: "ACCESSORY", quantity: 1, serialNumber: "MC12-05", purchasePrice: 20060 },
+
+      { productName: "24 Port Rack Patti (1)", category: "ACCESSORY", quantity: 1, serialNumber: "RP-24-01", purchasePrice: 11092 },
+      { productName: "24 Port Rack Patti (2)", category: "ACCESSORY", quantity: 1, serialNumber: "RP-24-02", purchasePrice: 8071 },
+
+      { productName: "Canare SDI Cable (Short)", category: "ACCESSORY", quantity: 1, serialNumber: "CS-01", purchasePrice: 872 },
+      { productName: "Canare SDI Cable (Long)", category: "ACCESSORY", quantity: 1, serialNumber: "CL-01", purchasePrice: 19824 },
+
+      { productName: "Micro Converter BiDirect (Generic) #1", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G01", purchasePrice: null },
+      { productName: "Micro Converter BiDirect (Generic) #2", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G02", purchasePrice: null },
+      { productName: "Micro Converter BiDirect (Generic) #3", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G03", purchasePrice: null },
+      { productName: "Micro Converter BiDirect (Generic) #4", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G04", purchasePrice: null },
+      { productName: "Micro Converter BiDirect (Generic) #5", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G05", purchasePrice: null },
+      { productName: "Micro Converter BiDirect (Generic) #6", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G06", purchasePrice: null },
+      { productName: "Micro Converter BiDirect (Generic) #7", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G07", purchasePrice: null },
+      { productName: "Micro Converter BiDirect (Generic) #8", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G08", purchasePrice: null },
+      { productName: "Micro Converter BiDirect (Generic) #9", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G09", purchasePrice: null },
+      { productName: "Micro Converter BiDirect (Generic) #10", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G10", purchasePrice: null },
+      { productName: "Micro Converter BiDirect (Generic) #11", category: "ACCESSORY", quantity: 1, serialNumber: "MC-G11", purchasePrice: null },
+    ];
+
+    // Let's add the specific accessories
+    const specificAccessoriesCount = specificAccessories.length;
+    for (const acc of specificAccessories) {
+      const kitId = acc.kitName ? kitIds[acc.kitName] : null;
+      insertEquip.run({
+        productName: acc.productName,
+        category: "ACCESSORY",
+        quantity: 1,
+        serialNumber: acc.serialNumber,
+        bodyName: null,
+        kitId,
+        respPerson: "Vikram",
+        purchasePrice: acc.purchasePrice
+      });
+    }
+
+    // Now insert remaining (183 - specificAccessoriesCount) generic accessories
+    const remainingCount = 183 - specificAccessoriesCount;
+    for (let i = 1; i <= remainingCount; i++) {
+      insertEquip.run({
+        productName: `Generic Cable Accessory #${i}`,
+        category: "ACCESSORY",
+        quantity: 1,
+        serialNumber: `ACC-S-${1000 + i}`,
+        bodyName: null,
+        kitId: null,
+        respPerson: "Vikram",
+        purchasePrice: 500 + (i % 5) * 100
+      });
+    }
+
+    // Link remaining kit main bodies
+    const tallyMain = db.prepare("SELECT id FROM equipment WHERE product_name = 'Hollyland Tally 8 Pair'").get() as { id: number } | undefined;
+    if (tallyMain) {
+      db.prepare("UPDATE kits SET main_body_id = ? WHERE id = ?").run(tallyMain.id, kitIds["Tally System Kit"]);
+    }
+    const eartecMain = db.prepare("SELECT id FROM equipment WHERE product_name = 'Eartec 5 Pair (Main Body)'").get() as { id: number } | undefined;
+    if (eartecMain) {
+      db.prepare("UPDATE kits SET main_body_id = ? WHERE id = ?").run(eartecMain.id, kitIds["Eartec Talkback Kit"]);
+    }
+
+    // Link kitId on main body items
+    db.prepare("UPDATE equipment SET kit_id = ? WHERE product_name = 'Hollyland Tally 8 Pair'").run(kitIds["Tally System Kit"]);
+    db.prepare("UPDATE equipment SET kit_id = ? WHERE product_name = 'Eartec 5 Pair (Main Body)'").run(kitIds["Eartec Talkback Kit"]);
+
+    // Create a dummy booking for 'inq-1' on equipment 'Sony FX6 Kit' (main body is camera with ID 1)
+    // to show conflict / warehouse check usage
+    const fx6Equip = db.prepare("SELECT id FROM equipment WHERE product_name = 'Sony FX6'").get() as { id: number } | undefined;
+    if (fx6Equip) {
+      db.prepare(`
+        INSERT INTO equipment_bookings (inquiry_id, equipment_id, kit_id, position, booked_from, booked_to, status)
+        VALUES ('inq-1', ?, ?, 'Center Tally', '2026-05-10', '2026-05-12', 'BOOKED')
+      `).run(fx6Equip.id, kitIds["Sony FX6 Kit"]);
+    }
+  });
+}
+
 try {
   runSeed();
-} catch {
-  // During `next build`, Turbopack may load this module in up to 7 parallel
-  // workers (separate processes, each with their own globalThis). Multiple
-  // workers may attempt to seed concurrently, causing SQLITE_BUSY or UNIQUE
-  // constraint failures. These are safe to ignore because the data will have
-  // been inserted by whichever worker won the race.
+  runPhase2Seed();
+} catch (err) {
+  console.error("Seeding error:", err);
 }
+

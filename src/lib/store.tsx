@@ -6,6 +6,9 @@ import { InquiriesProvider } from "./inquiries-context";
 import { QuotationsProvider } from "./quotations-context";
 import { InvoicesProvider } from "./invoices-context";
 import { CalendarProvider } from "./calendar-context";
+import { EquipmentProvider } from "./equipment-context";
+import { KitsProvider } from "./kits-context";
+import { VendorsProvider } from "./vendors-context";
 
 // Re-export all hooks from a single import
 export { useClients } from "./clients-context";
@@ -14,6 +17,9 @@ export { useQuotations } from "./quotations-context";
 export { useInvoices } from "./invoices-context";
 export { useCalendar } from "./calendar-context";
 export { useTheme } from "./theme-context";
+export { useEquipment } from "./equipment-context";
+export { useKits } from "./kits-context";
+export { useVendors } from "./vendors-context";
 
 // Re-export types
 export type {
@@ -23,6 +29,9 @@ export type {
   QuotationRow,
   Invoice,
   CalendarEvent,
+  Equipment,
+  Kit,
+  Vendor,
 } from "./types";
 
 // Re-export utilities
@@ -35,7 +44,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         <QuotationsProvider>
           <InvoicesProvider>
             <CalendarProvider>
-              {children}
+              <EquipmentProvider>
+                <KitsProvider>
+                  <VendorsProvider>
+                    {children}
+                  </VendorsProvider>
+                </KitsProvider>
+              </EquipmentProvider>
             </CalendarProvider>
           </InvoicesProvider>
         </QuotationsProvider>
