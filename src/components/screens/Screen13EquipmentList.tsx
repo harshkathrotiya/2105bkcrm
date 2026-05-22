@@ -32,6 +32,14 @@ export default function Screen13EquipmentList() {
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  const equipmentAssetsValue = assetSummary ? (
+    (assetSummary.categories?.VIDEO_MIXER?.value || 0) +
+    (assetSummary.categories?.VIDEO_RECORDER?.value || 0) +
+    (assetSummary.categories?.AUDIO_MIXER?.value || 0) +
+    (assetSummary.categories?.WIRELESS_TX?.value || 0) +
+    (assetSummary.categories?.UPS?.value || 0)
+  ) : 0;
+
   // Trigger query when filters or page changes
   useEffect(() => {
     refreshEquipment({
@@ -213,20 +221,20 @@ export default function Screen13EquipmentList() {
         <div style={{ flex: 1 }}>
           <div className="metrics">
             <div className="met">
-              <div className="met-l">Total Assets Value</div>
+              <div className="met-l">Total Items</div>
+              <div className="met-v">{assetSummary?.totalCount || 0}</div>
+            </div>
+            <div className="met">
+              <div className="met-l">Total Asset Value</div>
               <div className="met-v g">₹{(assetSummary?.totalValue || 0).toLocaleString("en-IN")}</div>
             </div>
             <div className="met">
-              <div className="met-l">Total Inventory Count</div>
-              <div className="met-v">{assetSummary?.totalCount || 0} items</div>
+              <div className="met-l">Camera Assets</div>
+              <div className="met-v b">₹{(assetSummary?.categories?.CAMERA?.value || 0).toLocaleString("en-IN")}</div>
             </div>
             <div className="met">
-              <div className="met-l">Category Counts</div>
-              <div className="met-v b">7 Categories</div>
-            </div>
-            <div className="met">
-              <div className="met-l">Active Bookings</div>
-              <div className="met-v a">Live Status</div>
+              <div className="met-l">Equipment Assets</div>
+              <div className="met-v a">₹{equipmentAssetsValue.toLocaleString("en-IN")}</div>
             </div>
           </div>
         </div>
@@ -346,6 +354,7 @@ export default function Screen13EquipmentList() {
                   <option value="IN_USE">In Use</option>
                   <option value="MAINTENANCE">Maintenance</option>
                   <option value="SOLD">Sold</option>
+                  <option value="RETIRED">Retired</option>
                 </select>
               </div>
 
@@ -356,18 +365,20 @@ export default function Screen13EquipmentList() {
                   <table className="tbl">
                     <thead>
                       <tr>
-                        <th>Equipment / Kit</th>
-                        <th style={{ width: 130 }}>Category</th>
-                        <th style={{ width: 130 }}>Serial Number</th>
-                        <th style={{ width: 100 }}>Purchase Price</th>
-                        <th style={{ width: 100 }}>Resp. Person</th>
-                        <th style={{ width: 100 }}>Status</th>
+                        <th style={{ width: "30px" }}>No.</th>
+                        <th>Product name</th>
+                        <th style={{ width: "95px" }}>Category</th>
+                        <th style={{ width: "100px" }}>Body / Kit</th>
+                        <th style={{ width: "90px" }}>Serial no.</th>
+                        <th style={{ width: "100px", textAlign: "right" }}>Purchase price</th>
+                        <th style={{ width: "75px" }}>Status</th>
+                        <th style={{ width: "70px" }}>Resp.</th>
                       </tr>
                     </thead>
                     <tbody>
                       {equipment.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="text-center py-6 text-tx3">
+                          <td colSpan={8} className="text-center py-6 text-tx3">
                             No equipment items matching filters
                           </td>
                         </tr>
@@ -378,6 +389,7 @@ export default function Screen13EquipmentList() {
                             className="cursor-pointer"
                             onClick={() => router.push(`/equipment/${item.id}`)}
                           >
+                            <td>{item.id}</td>
                             <td>
                               <div style={{ fontWeight: 500, color: "var(--tx)" }}>{item.productName}</div>
                               {item.bodyName && (
@@ -391,20 +403,21 @@ export default function Screen13EquipmentList() {
                                 {item.category.replace(/_/g, " ")}
                               </Badge>
                             </td>
+                            <td>{item.kitName || <span style={{ color: "var(--tx3)" }}>—</span>}</td>
                             <td className="font-mono text-[11px]" style={{ wordBreak: "break-all" }}>
                               {item.serialNumber || <span style={{ color: "var(--tx3)" }}>—</span>}
                             </td>
-                            <td>
+                            <td style={{ textAlign: "right" }}>
                               {item.purchasePrice !== null && item.purchasePrice !== undefined ? (
                                 <span style={{ fontWeight: 500 }}>₹{item.purchasePrice.toLocaleString("en-IN")}</span>
                               ) : (
-                                <span style={{ color: "var(--tx3)" }}>—</span>
+                                <span style={{ color: "var(--tx3)", fontStyle: "italic" }}>Not entered</span>
                               )}
                             </td>
-                            <td>{item.respPerson || <span style={{ color: "var(--tx3)" }}>—</span>}</td>
                             <td>
                               <Badge variant={getStatusBadgeVariant(item.status)}>{item.status}</Badge>
                             </td>
+                            <td>{item.respPerson || <span style={{ color: "var(--tx3)" }}>—</span>}</td>
                           </tr>
                         ))
                       )}

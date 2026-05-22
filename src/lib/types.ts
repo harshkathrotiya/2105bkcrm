@@ -114,6 +114,7 @@ export interface Equipment {
   serialNumber?: string | null;
   bodyName?: string | null;
   kitId?: number | null;
+  kitName?: string | null;
   respPerson?: string | null;
   purchaseDate?: string | null;
   purchaseFrom?: string | null;

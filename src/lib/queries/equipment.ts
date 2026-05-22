@@ -22,6 +22,7 @@ export interface EquipmentRow {
   notes: string | null;
   created_at: string;
   updated_at: string | null;
+  kit_name?: string | null;
 }
 
 export function rowToEquipment(row: EquipmentRow): Equipment {
@@ -33,6 +34,7 @@ export function rowToEquipment(row: EquipmentRow): Equipment {
     serialNumber: row.serial_number,
     bodyName: row.body_name,
     kitId: row.kit_id,
+    kitName: row.kit_name || null,
     respPerson: row.resp_person,
     purchaseDate: row.purchase_date,
     purchaseFrom: row.purchase_from,
@@ -54,34 +56,42 @@ export interface EquipmentFilters {
 }
 
 export function getEquipment(filters: EquipmentFilters = {}): { items: Equipment[]; total: number } {
-  let query = "SELECT * FROM equipment WHERE status != 'RETIRED'";
-  let countQuery = "SELECT COUNT(*) as total FROM equipment WHERE status != 'RETIRED'";
+  let query = `
+    SELECT e.*, k.name as kit_name
+    FROM equipment e
+    LEFT JOIN kits k ON e.kit_id = k.id
+    WHERE 1=1
+  `;
+  let countQuery = "SELECT COUNT(*) as total FROM equipment WHERE 1=1";
   const params: any[] = [];
   const countParams: any[] = [];
 
+  if (filters.status) {
+    query += " AND e.status = ?";
+    countQuery += " AND status = ?";
+    params.push(filters.status);
+    countParams.push(filters.status);
+  } else {
+    query += " AND e.status != 'RETIRED'";
+    countQuery += " AND status != 'RETIRED'";
+  }
+
   if (filters.category) {
-    query += " AND category = ?";
+    query += " AND e.category = ?";
     countQuery += " AND category = ?";
     params.push(filters.category);
     countParams.push(filters.category);
   }
 
-  if (filters.status) {
-    query += " AND status = ?";
-    countQuery += " AND status = ?";
-    params.push(filters.status);
-    countParams.push(filters.status);
-  }
-
   if (filters.search) {
     const term = `%${filters.search}%`;
-    query += " AND (product_name LIKE ? OR serial_number LIKE ? OR resp_person LIKE ?)";
+    query += " AND (e.product_name LIKE ? OR e.serial_number LIKE ? OR e.resp_person LIKE ?)";
     countQuery += " AND (product_name LIKE ? OR serial_number LIKE ? OR resp_person LIKE ?)";
     params.push(term, term, term);
     countParams.push(term, term, term);
   }
 
-  query += " ORDER BY id DESC";
+  query += " ORDER BY e.id DESC";
 
   if (filters.limit !== undefined && filters.offset !== undefined) {
     query += " LIMIT ? OFFSET ?";
@@ -98,7 +108,12 @@ export function getEquipment(filters: EquipmentFilters = {}): { items: Equipment
 }
 
 export function getEquipmentById(id: number): Equipment | undefined {
-  const row = db.prepare("SELECT * FROM equipment WHERE id = ?").get(id) as EquipmentRow | undefined;
+  const row = db.prepare(`
+    SELECT e.*, k.name as kit_name
+    FROM equipment e
+    LEFT JOIN kits k ON e.kit_id = k.id
+    WHERE e.id = ?
+  `).get(id) as EquipmentRow | undefined;
   return row ? rowToEquipment(row) : undefined;
 }
 
@@ -150,7 +165,12 @@ export function getEquipmentDetailsById(id: number) {
 }
 
 export function getEquipmentByKitId(kitId: number): Equipment[] {
-  const rows = db.prepare("SELECT * FROM equipment WHERE kit_id = ?").all(kitId) as EquipmentRow[];
+  const rows = db.prepare(`
+    SELECT e.*, k.name as kit_name
+    FROM equipment e
+    LEFT JOIN kits k ON e.kit_id = k.id
+    WHERE e.kit_id = ?
+  `).all(kitId) as EquipmentRow[];
   return rows.map(rowToEquipment);
 }
 
@@ -245,13 +265,13 @@ export function getAssetSummary() {
   const totalValRow = db.prepare(`
     SELECT SUM(purchase_price * quantity) as totalValue, COUNT(*) as totalCount
     FROM equipment
-    WHERE status != 'RETIRED'
+    WHERE status NOT IN ('RETIRED', 'SOLD')
   `).get() as { totalValue: number | null; totalCount: number } | undefined;
 
   const categoryBreakdown = db.prepare(`
     SELECT category, SUM(purchase_price * quantity) as value, COUNT(*) as count
     FROM equipment
-    WHERE status != 'RETIRED'
+    WHERE status NOT IN ('RETIRED', 'SOLD')
     GROUP BY category
   `).all() as { category: string; value: number | null; count: number }[];
 
@@ -285,7 +305,7 @@ export function getEquipmentCategoryCounts(): Record<string, number> {
   const rows = db.prepare(`
     SELECT category, COUNT(*) as count
     FROM equipment
-    WHERE status != 'RETIRED'
+    WHERE status NOT IN ('RETIRED', 'SOLD')
     GROUP BY category
   `).all() as { category: string; count: number }[];
 
@@ -316,6 +336,7 @@ export function getEquipmentCategoryCounts(): Record<string, number> {
  * Helper to check if a specific equipment is booked in a date range
  */
 export function isEquipmentBooked(equipmentId: number, startDate: string, endDate: string): boolean {
+  // First, check if there is an explicit booking for this equipment
   const row = db.prepare(`
     SELECT COUNT(*) as count 
     FROM equipment_bookings 
@@ -325,6 +346,23 @@ export function isEquipmentBooked(equipmentId: number, startDate: string, endDat
       AND booked_to >= ?
   `).get(equipmentId, endDate, startDate) as { count: number } | undefined;
 
-  return (row?.count || 0) > 0;
+  if (row && row.count > 0) return true;
+
+  // Next, check if this equipment belongs to a kit, and if that kit is booked
+  const eq = db.prepare("SELECT kit_id FROM equipment WHERE id = ?").get(equipmentId) as { kit_id: number | null } | undefined;
+  if (eq && eq.kit_id) {
+    const kitRow = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM equipment_bookings
+      WHERE kit_id = ?
+        AND status != 'RETURNED'
+        AND booked_from <= ?
+        AND booked_to >= ?
+    `).get(eq.kit_id, endDate, startDate) as { count: number } | undefined;
+    
+    if (kitRow && kitRow.count > 0) return true;
+  }
+
+  return false;
 }
 

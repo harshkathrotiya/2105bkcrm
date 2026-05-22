@@ -28,8 +28,8 @@ export default function Screen19AssetReportPDF() {
           api.fetchEquipment({ limit: 1000 }),
         ]);
         setSummary(sumData);
-        // Filter out retired items just in case, though fetchEquipment does this
-        setEquipmentList(eqResult.items.filter(eq => eq.status !== "RETIRED"));
+        // Filter out retired/sold items just in case, though fetchEquipment does this
+        setEquipmentList(eqResult.items.filter(eq => eq.status !== "RETIRED" && eq.status !== "SOLD"));
       } catch (err: any) {
         console.error("Failed to load asset report data:", err);
         setError(err.message || "Failed to load asset report data");
@@ -271,6 +271,7 @@ export default function Screen19AssetReportPDF() {
           </div>
           <div className="pdf-doc">
             <div className="pdf-doc-lbl">Asset Report</div>
+            <div style={{ color: "var(--rd)", fontSize: "10px", fontWeight: 600, marginTop: "2px", letterSpacing: "0.5px" }}>Internal — Confidential</div>
             <div className="pdf-doc-num">{documentNumber}</div>
             <div className="pdf-doc-sub">Generated: {currentDateStr}</div>
           </div>
@@ -387,6 +388,10 @@ export default function Screen19AssetReportPDF() {
             <div className="pdf-sign-line"></div>
             <div className="pdf-sign-lbl">Approved By: Head of Production</div>
           </div>
+        </div>
+
+        <div style={{ textAlign: "center", fontSize: "10px", color: "var(--tx3)", marginTop: "30px", fontWeight: "600", letterSpacing: "1px" }}>
+          *** Internal — Confidential ***
         </div>
       </div>
     </div>

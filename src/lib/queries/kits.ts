@@ -287,36 +287,47 @@ export function getKitAvailabilityStatus(kitId: number, startDate: string, endDa
   const mainBodyId = kit.mainBodyId;
   const accessories = kit.items?.filter(item => item.id !== mainBodyId) || [];
 
-  if (!mainBodyId) {
+  if (mainBodyId) {
+    const mainBodyItem = kit.items?.find(item => item.id === mainBodyId);
+    if (!mainBodyItem) {
+      return "UNAVAILABLE";
+    }
+
+    const isMainBodyBooked = isEquipmentBooked(mainBodyId, startDate, endDate);
+    const isMainBodyOutOfService = mainBodyItem.status === "MAINTENANCE" || mainBodyItem.status === "SOLD" || mainBodyItem.status === "RETIRED";
+
+    if (isMainBodyBooked || isMainBodyOutOfService) {
+      return "UNAVAILABLE";
+    }
+
+    // Main body is available, check accessories
+    let hasMissingAccessory = false;
+    for (const item of accessories) {
+      const isBooked = isEquipmentBooked(item.id, startDate, endDate);
+      const isOutOfService = item.status === "MAINTENANCE" || item.status === "SOLD" || item.status === "RETIRED";
+      if (isBooked || isOutOfService) {
+        hasMissingAccessory = true;
+        break;
+      }
+    }
+
+    return hasMissingAccessory ? "PARTIAL" : "AVAILABLE";
+  } else {
     // If no main body, check accessories
     if (accessories.length === 0) return "AVAILABLE";
-    
-    // Check if any accessories are booked
+
     let bookedAccessoriesCount = 0;
     for (const item of accessories) {
       const isBooked = isEquipmentBooked(item.id, startDate, endDate);
-      if (isBooked) bookedAccessoriesCount++;
+      const isOutOfService = item.status === "MAINTENANCE" || item.status === "SOLD" || item.status === "RETIRED";
+      if (isBooked || isOutOfService) {
+        bookedAccessoriesCount++;
+      }
     }
 
     if (bookedAccessoriesCount === 0) return "AVAILABLE";
     if (bookedAccessoriesCount === accessories.length) return "UNAVAILABLE";
     return "PARTIAL";
   }
-
-  // Check if main body is booked
-  const isMainBodyBooked = isEquipmentBooked(mainBodyId, startDate, endDate);
-  if (isMainBodyBooked) {
-    return "UNAVAILABLE";
-  }
-
-  // Check accessories
-  let bookedAccessoriesCount = 0;
-  for (const item of accessories) {
-    const isBooked = isEquipmentBooked(item.id, startDate, endDate);
-    if (isBooked) bookedAccessoriesCount++;
-  }
-
-  if (bookedAccessoriesCount === 0) return "AVAILABLE";
-  return "PARTIAL";
 }
 
