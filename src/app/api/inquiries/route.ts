@@ -1,7 +1,7 @@
 /**
- * GET  /api/inquiries              — list all inquiries
- * GET  /api/inquiries?clientId=x   — filter by client
- * POST /api/inquiries              — create a new inquiry
+ * GET  /api/inquiries             — list all inquiries
+ * GET  /api/inquiries?clientId=x  — filter by client
+ * POST /api/inquiries             — create a new inquiry
  */
 
 import type { NextRequest } from "next/server";
@@ -13,6 +13,7 @@ import {
 import { createCalendarEvent } from "@/lib/queries/calendar";
 import { getClientById } from "@/lib/queries/clients";
 import { generateId } from "@/lib/types";
+import { Validator, INQUIRY_STATUSES } from "@/lib/validate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,20 +32,20 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.clientId) {
-      return Response.json({ error: "clientId is required" }, { status: 400 });
-    }
-    if (!body.eventType?.trim()) {
-      return Response.json({ error: "eventType is required" }, { status: 400 });
-    }
-    if (!body.startDate || !body.endDate) {
-      return Response.json(
-        { error: "startDate and endDate are required" },
-        { status: 400 }
-      );
-    }
-    if (!body.venue?.trim()) {
-      return Response.json({ error: "venue is required" }, { status: 400 });
+    const v = new Validator(body);
+    v.required("clientId", "client");
+    v.required("eventType", "event type").minLength("eventType", 2).maxLength("eventType", 100);
+    v.required("startDate", "start date").date("startDate", "start date");
+    v.required("endDate", "end date").date("endDate", "end date");
+    v.dateRange("startDate", "endDate");
+    v.required("venue").minLength("venue", 2).maxLength("venue", 200);
+    v.maxLength("notes", 1000);
+    if (v.hasErrors()) return v.response();
+
+    // Verify client exists
+    const client = getClientById(body.clientId);
+    if (!client) {
+      return Response.json({ error: "Client not found" }, { status: 404 });
     }
 
     const inquiry = createInquiry({
@@ -62,23 +63,19 @@ export async function POST(request: NextRequest) {
     });
 
     // Auto-create calendar event for the start date
-    const client = getClientById(body.clientId);
     const startD = new Date(body.startDate);
     createCalendarEvent({
       id: `cal-${generateId()}`,
       date: startD.getDate(),
-      month: startD.getMonth(), // store 0-indexed (matching JS Date)
+      month: startD.getMonth(),
       year: startD.getFullYear(),
-      label: client?.name ?? "Event",
+      label: client.name,
       type: "inquiry",
     });
 
     return Response.json(inquiry, { status: 201 });
   } catch (err) {
     console.error("[POST /api/inquiries]", err);
-    return Response.json(
-      { error: "Failed to create inquiry" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Failed to create inquiry" }, { status: 500 });
   }
 }

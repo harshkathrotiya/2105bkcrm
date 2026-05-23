@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getKitById, updateKit, deleteKit } from "@/lib/queries/kits";
+import { Validator } from "@/lib/validate";
 
 export async function GET(
   _req: NextRequest,
@@ -26,13 +27,18 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
+    const v = new Validator(body);
+    if (body.name !== undefined) v.minLength("name", 2).maxLength("name", 100);
+    if (body.description !== undefined && body.description) v.maxLength("description", 500);
+    if (body.mainBodyId !== undefined && body.mainBodyId !== null) v.positiveInteger("mainBodyId", "main body ID");
+    if (body.mainBodyQty !== undefined && body.mainBodyQty !== null) v.positiveInteger("mainBodyQty", "main body quantity");
+    if (v.hasErrors()) return v.response();
+
     const patch: any = { ...body };
-    if (body.mainBodyId !== undefined) {
-      patch.mainBodyId = body.mainBodyId ? parseInt(body.mainBodyId, 10) : null;
-    }
-    if (body.mainBodyQty !== undefined) {
-      patch.mainBodyQty = body.mainBodyQty ? parseInt(body.mainBodyQty, 10) : null;
-    }
+    if (body.name !== undefined) patch.name = body.name.trim();
+    if (body.description !== undefined) patch.description = body.description?.trim() || null;
+    if (body.mainBodyId !== undefined) patch.mainBodyId = body.mainBodyId ? parseInt(body.mainBodyId, 10) : null;
+    if (body.mainBodyQty !== undefined) patch.mainBodyQty = body.mainBodyQty ? parseInt(body.mainBodyQty, 10) : null;
 
     const updated = updateKit(parseInt(id, 10), patch);
     if (!updated) {

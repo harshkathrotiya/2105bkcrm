@@ -9,27 +9,31 @@ export async function PUT(
     const { id } = await params;
     const bookingId = parseInt(id, 10);
 
+    if (isNaN(bookingId) || bookingId <= 0) {
+      return Response.json({ error: "Invalid booking ID" }, { status: 400 });
+    }
+
     const booking = db.prepare("SELECT * FROM equipment_bookings WHERE id = ?").get(bookingId) as any;
     if (!booking) {
       return Response.json({ error: "Booking not found" }, { status: 404 });
+    }
+    if (booking.status === "OUT" || booking.status === "RETURNED") {
+      return Response.json({ error: `Booking is already ${booking.status.toLowerCase()}` }, { status: 409 });
     }
 
     const nowStr = new Date().toISOString();
 
     db.transaction(() => {
-      // Update booking status
       db.prepare(`
         UPDATE equipment_bookings
-        SET status = 'OUT', confirmed_by_id = 'user-1', confirmed_at = ?
+        SET status = 'OUT', confirmed_by_id = 'system', confirmed_at = ?
         WHERE id = ?
       `).run(nowStr, bookingId);
 
-      // If it's a specific equipment item, set status to IN_USE
       if (booking.equipment_id) {
         db.prepare("UPDATE equipment SET status = 'IN_USE' WHERE id = ?").run(booking.equipment_id);
       }
 
-      // If it's a kit, set the main body and all accessories in this kit to IN_USE
       if (booking.kit_id) {
         db.prepare("UPDATE equipment SET status = 'IN_USE' WHERE kit_id = ?").run(booking.kit_id);
         const kit = db.prepare("SELECT main_body_id FROM kits WHERE id = ?").get(booking.kit_id) as { main_body_id: number | null } | undefined;

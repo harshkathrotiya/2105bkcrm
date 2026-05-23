@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getAllStaff, createStaff } from "@/lib/queries/staff";
+import { Validator, STAFF_ROLES, STAFF_TYPES, PAYMENT_TYPES } from "@/lib/validate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,6 +9,17 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") || undefined;
     const paymentType = searchParams.get("paymentType") || undefined;
     const status = searchParams.get("status") || undefined;
+
+    // Validate enum query params if provided
+    if (type && !["INHOUSE", "EXTERNAL"].includes(type)) {
+      return Response.json({ error: "type must be INHOUSE or EXTERNAL" }, { status: 400 });
+    }
+    if (paymentType && !["PER_DAY", "MONTHLY"].includes(paymentType)) {
+      return Response.json({ error: "paymentType must be PER_DAY or MONTHLY" }, { status: 400 });
+    }
+    if (status && !["AVAILABLE", "DEPLOYED"].includes(status)) {
+      return Response.json({ error: "status must be AVAILABLE or DEPLOYED" }, { status: 400 });
+    }
 
     const staff = getAllStaff({ search, type, paymentType, status });
     return Response.json(staff);
@@ -21,21 +33,23 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.name?.trim()) {
-      return Response.json({ error: "name is required" }, { status: 400 });
+    const v = new Validator(body);
+    v.required("name").minLength("name", 2).maxLength("name", 100);
+    v.required("phone").phone("phone");
+    v.required("role").oneOf("role", STAFF_ROLES);
+    v.required("staffType", "staff type").oneOf("staffType", STAFF_TYPES, "staff type");
+    v.required("paymentType", "payment type").oneOf("paymentType", PAYMENT_TYPES, "payment type");
+
+    // Rate validation based on payment type
+    if (body.paymentType === "PER_DAY") {
+      v.required("ratePerDay", "rate per day").positiveNumber("ratePerDay", "rate per day");
+    } else if (body.paymentType === "MONTHLY") {
+      v.required("monthlySalary", "monthly salary").positiveNumber("monthlySalary", "monthly salary");
     }
-    if (!body.phone?.trim()) {
-      return Response.json({ error: "phone is required" }, { status: 400 });
-    }
-    if (!body.role) {
-      return Response.json({ error: "role is required" }, { status: 400 });
-    }
-    if (!body.staffType) {
-      return Response.json({ error: "staffType is required" }, { status: 400 });
-    }
-    if (!body.paymentType) {
-      return Response.json({ error: "paymentType is required" }, { status: 400 });
-    }
+
+    if (body.aadharNumber) v.aadhar("aadharNumber", "Aadhar number");
+    if (body.equipmentDesc) v.maxLength("equipmentDesc", 200, "equipment description");
+    if (v.hasErrors()) return v.response();
 
     const staff = createStaff({
       name: body.name.trim(),

@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { addEquipmentToKit } from "@/lib/queries/kits";
+import { Validator } from "@/lib/validate";
 
 export async function POST(
   request: NextRequest,
@@ -8,16 +9,25 @@ export async function POST(
   try {
     const { id: kitIdStr } = await params;
     const kitId = parseInt(kitIdStr, 10);
-    const { equipmentId, quantity } = await request.json();
 
-    if (!equipmentId) {
-      return Response.json({ error: "equipmentId is required" }, { status: 400 });
+    if (isNaN(kitId) || kitId <= 0) {
+      return Response.json({ error: "Invalid kit ID" }, { status: 400 });
     }
 
-    const qty = quantity !== undefined ? parseInt(quantity, 10) : undefined;
-    const success = addEquipmentToKit(kitId, parseInt(equipmentId, 10), qty);
+    const body = await request.json();
+
+    const v = new Validator(body);
+    v.required("equipmentId", "equipment ID").positiveInteger("equipmentId", "equipment ID");
+    if (body.quantity !== undefined) v.positiveInteger("quantity");
+    if (v.hasErrors()) return v.response();
+
+    const qty = body.quantity !== undefined ? parseInt(body.quantity, 10) : undefined;
+    const success = addEquipmentToKit(kitId, parseInt(body.equipmentId, 10), qty);
     if (!success) {
-      return Response.json({ error: "Failed to add equipment to kit. Item might not exist or be retired." }, { status: 400 });
+      return Response.json(
+        { error: "Failed to add equipment to kit. Item may not exist or may be retired." },
+        { status: 400 }
+      );
     }
 
     return Response.json({ success: true });

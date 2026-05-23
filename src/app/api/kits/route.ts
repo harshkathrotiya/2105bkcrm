@@ -1,11 +1,21 @@
 import type { NextRequest } from "next/server";
 import { getAllKits, createKit, getKitAvailabilityStatus } from "@/lib/queries/kits";
+import { Validator } from "@/lib/validate";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+
+    // Validate date params if provided
+    if (startDate || endDate) {
+      const v = new Validator({ startDate, endDate });
+      if (startDate) v.date("startDate", "start date");
+      if (endDate) v.date("endDate", "end date");
+      if (startDate && endDate) v.dateRange("startDate", "endDate");
+      if (v.hasErrors()) return v.response();
+    }
 
     const kits = getAllKits();
 
@@ -28,8 +38,24 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.name?.trim()) {
-      return Response.json({ error: "name is required" }, { status: 400 });
+    const v = new Validator(body);
+    v.required("name").minLength("name", 2).maxLength("name", 100);
+    if (body.description) v.maxLength("description", 500);
+    if (body.mainBodyId !== undefined && body.mainBodyId !== null) v.positiveInteger("mainBodyId", "main body ID");
+    if (body.mainBodyQty !== undefined && body.mainBodyQty !== null) v.positiveInteger("mainBodyQty", "main body quantity");
+    if (v.hasErrors()) return v.response();
+
+    // Validate accessories array if provided
+    if (Array.isArray(body.accessories)) {
+      for (let i = 0; i < body.accessories.length; i++) {
+        const acc = body.accessories[i];
+        if (!acc.id || isNaN(Number(acc.id)) || Number(acc.id) <= 0) {
+          return Response.json({ error: `accessories[${i}].id must be a positive integer` }, { status: 400 });
+        }
+        if (acc.quantity !== undefined && (isNaN(Number(acc.quantity)) || Number(acc.quantity) <= 0)) {
+          return Response.json({ error: `accessories[${i}].quantity must be a positive integer` }, { status: 400 });
+        }
+      }
     }
 
     const kit = createKit({
@@ -37,10 +63,12 @@ export async function POST(request: NextRequest) {
       description: body.description?.trim() || null,
       mainBodyId: body.mainBodyId ? parseInt(body.mainBodyId, 10) : null,
       mainBodyQty: body.mainBodyQty ? parseInt(body.mainBodyQty, 10) : null,
-      accessories: body.accessories ? body.accessories.map((acc: { id: any; quantity: any }) => ({
-        id: parseInt(acc.id, 10),
-        quantity: parseInt(acc.quantity as string, 10)
-      })) : undefined,
+      accessories: body.accessories
+        ? body.accessories.map((acc: { id: any; quantity: any }) => ({
+            id: parseInt(acc.id, 10),
+            quantity: parseInt(acc.quantity as string, 10),
+          }))
+        : undefined,
     });
 
     return Response.json(kit, { status: 201 });

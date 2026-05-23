@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getAllVendors, createVendor } from "@/lib/queries/vendors";
+import { Validator } from "@/lib/validate";
 
 export async function GET() {
   try {
@@ -15,12 +16,15 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.name?.trim()) {
-      return Response.json({ error: "name is required" }, { status: 400 });
-    }
-    if (!body.phone?.trim()) {
-      return Response.json({ error: "phone is required" }, { status: 400 });
-    }
+    const v = new Validator(body);
+    v.required("name").minLength("name", 2).maxLength("name", 100);
+    v.required("phone").phone("phone");
+    v.email("email");
+    v.maxLength("specialization", 100);
+    v.maxLength("city", 100);
+    if (body.gstNumber) v.gst("gstNumber", "GST number");
+    v.maxLength("notes", 500);
+    if (v.hasErrors()) return v.response();
 
     const vendor = createVendor({
       name: body.name.trim(),

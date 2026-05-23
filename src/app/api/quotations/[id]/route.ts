@@ -1,12 +1,13 @@
 /**
- * GET   /api/quotations/[id]  — get a single quotation
- * PATCH /api/quotations/[id]  — update a quotation (partial)
- * DELETE /api/quotations/[id] — delete a quotation
+ * GET    /api/quotations/[id]  — get a single quotation
+ * PATCH  /api/quotations/[id]  — update a quotation (partial)
+ * DELETE /api/quotations/[id]  — delete a quotation
  */
 
 import type { NextRequest } from "next/server";
 import { getQuotationById, updateQuotation, deleteQuotation } from "@/lib/queries/quotations";
 import type { QuotationRow } from "@/lib/types";
+import { Validator, QUOTATION_STATUSES } from "@/lib/validate";
 
 export async function GET(
   _req: NextRequest,
@@ -33,8 +34,32 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
+    const v = new Validator(body);
+    if (body.clientName !== undefined) v.minLength("clientName", 2).maxLength("clientName", 100);
+    if (body.startDate !== undefined) v.date("startDate", "start date");
+    if (body.endDate !== undefined) v.date("endDate", "end date");
+    if (body.startDate !== undefined && body.endDate !== undefined) v.dateRange("startDate", "endDate");
+    if (body.days !== undefined) v.positiveInteger("days");
+    if (body.status !== undefined) v.oneOf("status", QUOTATION_STATUSES);
+    if (body.subtotal !== undefined) v.nonNegativeNumber("subtotal");
+    if (body.cgst !== undefined) v.nonNegativeNumber("cgst", "CGST");
+    if (body.sgst !== undefined) v.nonNegativeNumber("sgst", "SGST");
+    if (v.hasErrors()) return v.response();
+
     // Recalculate totals if equipment is being updated
     if (Array.isArray(body.equipment)) {
+      for (let i = 0; i < body.equipment.length; i++) {
+        const row = body.equipment[i];
+        if (!row.position?.trim()) {
+          return Response.json({ error: `equipment[${i}].position is required` }, { status: 400 });
+        }
+        if (typeof row.rate !== "number" || row.rate < 0) {
+          return Response.json({ error: `equipment[${i}].rate must be a non-negative number` }, { status: 400 });
+        }
+        if (typeof row.days !== "number" || row.days <= 0) {
+          return Response.json({ error: `equipment[${i}].days must be a positive number` }, { status: 400 });
+        }
+      }
       const equipment = body.equipment as QuotationRow[];
       const subtotal = equipment.reduce((s, r) => s + r.amount, 0);
       body.subtotal = subtotal;
@@ -43,7 +68,13 @@ export async function PATCH(
       body.total = body.total ?? subtotal + body.cgst + body.sgst;
     }
 
-    const updated = updateQuotation(id, { ...body, updatedAt: new Date().toISOString().split("T")[0] });
+    const updated = updateQuotation(id, {
+      ...body,
+      clientName: body.clientName?.trim(),
+      eventName: body.eventName?.trim(),
+      venue: body.venue?.trim(),
+      updatedAt: new Date().toISOString().split("T")[0],
+    });
     if (!updated) {
       return Response.json({ error: "Quotation not found" }, { status: 404 });
     }

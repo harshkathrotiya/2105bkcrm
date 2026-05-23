@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getStaffAssignments, assignStaff, deleteAssignment } from "@/lib/queries/staff";
+import { Validator } from "@/lib/validate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,18 +23,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.inquiryId) {
-      return Response.json({ error: "inquiryId is required" }, { status: 400 });
-    }
-    if (!body.staffId) {
-      return Response.json({ error: "staffId is required" }, { status: 400 });
-    }
-    if (body.daysAssigned === undefined) {
-      return Response.json({ error: "daysAssigned is required" }, { status: 400 });
-    }
-    if (body.ratePerDay === undefined) {
-      return Response.json({ error: "ratePerDay is required" }, { status: 400 });
-    }
+    const v = new Validator(body);
+    v.required("inquiryId", "inquiry ID");
+    v.required("staffId", "staff ID").positiveInteger("staffId", "staff ID");
+    v.required("daysAssigned", "days assigned").positiveInteger("daysAssigned", "days assigned");
+    v.required("ratePerDay", "rate per day").nonNegativeNumber("ratePerDay", "rate per day");
+    if (body.positionNo !== undefined && body.positionNo !== null) v.positiveInteger("positionNo", "position number");
+    if (body.positionName !== undefined && body.positionName) v.maxLength("positionName", 100, "position name");
+    if (v.hasErrors()) return v.response();
 
     const assignment = assignStaff({
       staffId: parseInt(body.staffId, 10),
@@ -61,6 +58,10 @@ export async function DELETE(request: NextRequest) {
     }
 
     const id = parseInt(idStr, 10);
+    if (isNaN(id) || id <= 0) {
+      return Response.json({ error: "id must be a positive integer" }, { status: 400 });
+    }
+
     const deleted = deleteAssignment(id);
     if (!deleted) {
       return Response.json({ error: "Assignment not found" }, { status: 404 });

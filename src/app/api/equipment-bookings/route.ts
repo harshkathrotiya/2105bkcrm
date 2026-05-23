@@ -1,25 +1,41 @@
 import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
+import { Validator } from "@/lib/validate";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      inquiryId,
-      equipmentId,
-      kitId,
-      position,
-      bookedFrom,
-      bookedTo,
-      vendorId,
-      vendorCostPerDay,
-    } = body;
 
-    if (!inquiryId || !bookedFrom || !bookedTo) {
-      return Response.json({ error: "inquiryId, bookedFrom, and bookedTo are required" }, { status: 400 });
+    const v = new Validator(body);
+    v.required("inquiryId", "inquiry ID");
+    v.required("bookedFrom", "booked from date").date("bookedFrom", "booked from date");
+    v.required("bookedTo", "booked to date").date("bookedTo", "booked to date");
+    v.dateRange("bookedFrom", "bookedTo");
+
+    // Must have either equipmentId or kitId
+    if (!body.equipmentId && !body.kitId) {
+      return Response.json({ error: "Either equipmentId or kitId is required" }, { status: 400 });
     }
+    if (body.equipmentId !== undefined && body.equipmentId !== null) {
+      v.positiveInteger("equipmentId", "equipment ID");
+    }
+    if (body.kitId !== undefined && body.kitId !== null) {
+      v.positiveInteger("kitId", "kit ID");
+    }
+    if (body.vendorId !== undefined && body.vendorId !== null) {
+      v.positiveInteger("vendorId", "vendor ID");
+    }
+    if (body.vendorCostPerDay !== undefined && body.vendorCostPerDay !== null) {
+      v.nonNegativeNumber("vendorCostPerDay", "vendor cost per day");
+    }
+    if (body.position !== undefined && body.position) {
+      v.maxLength("position", 100);
+    }
+    if (v.hasErrors()) return v.response();
 
-    // Calculate total vendor cost if vendor is present
+    const { inquiryId, equipmentId, kitId, position, bookedFrom, bookedTo, vendorId, vendorCostPerDay } = body;
+
+    // Calculate total vendor cost
     let totalVendorCost = null;
     if (vendorId && vendorCostPerDay !== undefined && vendorCostPerDay !== null) {
       const start = new Date(bookedFrom);
@@ -28,7 +44,7 @@ export async function POST(request: NextRequest) {
       totalVendorCost = parseFloat(vendorCostPerDay) * days;
     }
 
-    // Remove any existing booking for the same inquiry and position to prevent duplicates
+    // Remove any existing booking for the same inquiry + position to prevent duplicates
     if (position) {
       db.prepare("DELETE FROM equipment_bookings WHERE inquiry_id = ? AND position = ?").run(inquiryId, position);
     }
@@ -54,7 +70,6 @@ export async function POST(request: NextRequest) {
     });
 
     const newBooking = db.prepare("SELECT * FROM equipment_bookings WHERE id = ?").get(res.lastInsertRowid) as any;
-
     return Response.json(newBooking, { status: 201 });
   } catch (err) {
     console.error("[POST /api/equipment-bookings]", err);

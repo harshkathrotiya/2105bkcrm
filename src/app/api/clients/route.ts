@@ -1,11 +1,12 @@
 /**
- * GET  /api/clients        — list all clients
- * POST /api/clients        — create a new client
+ * GET  /api/clients  — list all clients
+ * POST /api/clients  — create a new client
  */
 
 import type { NextRequest } from "next/server";
 import { getAllClients, createClient } from "@/lib/queries/clients";
 import { generateId } from "@/lib/types";
+import { Validator } from "@/lib/validate";
 
 export async function GET() {
   try {
@@ -21,16 +22,19 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Basic validation
-    if (!body.name?.trim()) {
-      return Response.json({ error: "name is required" }, { status: 400 });
-    }
-    if (!body.mobile?.trim()) {
-      return Response.json({ error: "mobile is required" }, { status: 400 });
-    }
-    if (!body.contact?.trim()) {
-      return Response.json({ error: "contact is required" }, { status: 400 });
-    }
+    const v = new Validator(body);
+    v.required("name").minLength("name", 2).maxLength("name", 100);
+    v.required("mobile").phone("mobile");
+    v.required("contact", "contact person").minLength("contact", 2).maxLength("contact", 100);
+    v.email("email");
+    v.gst("gst", "GST number");
+    v.pan("pan", "PAN number");
+    v.pin("pin", "PIN code");
+    v.maxLength("addressLine", 200, "address");
+    v.maxLength("city", 100);
+    v.maxLength("district", 100);
+    v.maxLength("state", 100);
+    if (v.hasErrors()) return v.response();
 
     const client = createClient({
       id: body.id ?? `client-${generateId()}`,

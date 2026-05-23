@@ -1,7 +1,7 @@
 /**
- * GET  /api/calendar             — all events
- * GET  /api/calendar?month=5&year=2026  — filter by month/year
- * POST /api/calendar             — create a calendar event
+ * GET  /api/calendar                        — all events
+ * GET  /api/calendar?month=5&year=2026      — filter by month/year
+ * POST /api/calendar                        — create a calendar event
  */
 
 import type { NextRequest } from "next/server";
@@ -11,6 +11,7 @@ import {
   createCalendarEvent,
 } from "@/lib/queries/calendar";
 import { generateId } from "@/lib/types";
+import { Validator, CALENDAR_TYPES } from "@/lib/validate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,14 +19,17 @@ export async function GET(request: NextRequest) {
     const monthParam = sp.get("month");
     const yearParam = sp.get("year");
 
-    if (monthParam && yearParam) {
+    if (monthParam !== null || yearParam !== null) {
+      if (!monthParam || !yearParam) {
+        return Response.json({ error: "Both month and year are required together" }, { status: 400 });
+      }
       const month = parseInt(monthParam, 10);
       const year = parseInt(yearParam, 10);
-      if (isNaN(month) || isNaN(year)) {
-        return Response.json(
-          { error: "month and year must be integers" },
-          { status: 400 }
-        );
+      if (isNaN(month) || month < 0 || month > 11) {
+        return Response.json({ error: "month must be an integer between 0 and 11" }, { status: 400 });
+      }
+      if (isNaN(year) || year < 2000 || year > 2100) {
+        return Response.json({ error: "year must be a valid 4-digit year" }, { status: 400 });
       }
       const events = getCalendarEventsByMonth(month, year);
       return Response.json(events);
@@ -35,10 +39,7 @@ export async function GET(request: NextRequest) {
     return Response.json(events);
   } catch (err) {
     console.error("[GET /api/calendar]", err);
-    return Response.json(
-      { error: "Failed to fetch calendar events" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Failed to fetch calendar events" }, { status: 500 });
   }
 }
 
@@ -46,28 +47,33 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.date || !body.month || !body.year) {
-      return Response.json(
-        { error: "date, month, and year are required" },
-        { status: 400 }
-      );
+    const v = new Validator(body);
+    v.required("date").integer("date").positiveInteger("date");
+    v.required("month").integer("month");
+    v.required("year").integer("year");
+    v.required("label").minLength("label", 1).maxLength("label", 200);
+    v.required("type").oneOf("type", CALENDAR_TYPES);
+    if (v.hasErrors()) return v.response();
+
+    const date = Number(body.date);
+    const month = Number(body.month);
+    const year = Number(body.year);
+
+    if (date < 1 || date > 31) {
+      return Response.json({ error: "date must be between 1 and 31" }, { status: 400 });
     }
-    if (!body.label?.trim()) {
-      return Response.json({ error: "label is required" }, { status: 400 });
+    if (month < 0 || month > 11) {
+      return Response.json({ error: "month must be between 0 and 11" }, { status: 400 });
     }
-    const validTypes = ["inquiry", "quotation", "confirmed"];
-    if (!validTypes.includes(body.type)) {
-      return Response.json(
-        { error: `type must be one of: ${validTypes.join(", ")}` },
-        { status: 400 }
-      );
+    if (year < 2000 || year > 2100) {
+      return Response.json({ error: "year must be a valid 4-digit year" }, { status: 400 });
     }
 
     const event = createCalendarEvent({
       id: body.id ?? `cal-${generateId()}`,
-      date: Number(body.date),
-      month: Number(body.month),
-      year: Number(body.year),
+      date,
+      month,
+      year,
       label: body.label.trim(),
       type: body.type,
     });
@@ -75,9 +81,6 @@ export async function POST(request: NextRequest) {
     return Response.json(event, { status: 201 });
   } catch (err) {
     console.error("[POST /api/calendar]", err);
-    return Response.json(
-      { error: "Failed to create calendar event" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Failed to create calendar event" }, { status: 500 });
   }
 }

@@ -7,6 +7,7 @@ import type { NextRequest } from "next/server";
 import { getAllQuotations, createQuotation } from "@/lib/queries/quotations";
 import { generateId } from "@/lib/types";
 import type { QuotationRow } from "@/lib/types";
+import { Validator } from "@/lib/validate";
 
 export async function GET() {
   try {
@@ -14,10 +15,7 @@ export async function GET() {
     return Response.json(quotations);
   } catch (err) {
     console.error("[GET /api/quotations]", err);
-    return Response.json(
-      { error: "Failed to fetch quotations" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Failed to fetch quotations" }, { status: 500 });
   }
 }
 
@@ -25,20 +23,33 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.inquiryId) {
-      return Response.json({ error: "inquiryId is required" }, { status: 400 });
-    }
-    if (!body.clientName?.trim()) {
-      return Response.json(
-        { error: "clientName is required" },
-        { status: 400 }
-      );
-    }
-    if (!Array.isArray(body.equipment) || body.equipment.length === 0) {
-      return Response.json(
-        { error: "equipment must be a non-empty array" },
-        { status: 400 }
-      );
+    const v = new Validator(body);
+    v.required("inquiryId", "inquiry");
+    v.required("clientName", "client name").minLength("clientName", 2).maxLength("clientName", 100);
+    v.nonEmptyArray("equipment");
+    if (body.startDate) v.date("startDate", "start date");
+    if (body.endDate) v.date("endDate", "end date");
+    if (body.startDate && body.endDate) v.dateRange("startDate", "endDate");
+    if (body.days !== undefined) v.positiveInteger("days");
+    if (body.subtotal !== undefined) v.nonNegativeNumber("subtotal");
+    if (body.cgst !== undefined) v.nonNegativeNumber("cgst", "CGST");
+    if (body.sgst !== undefined) v.nonNegativeNumber("sgst", "SGST");
+    if (v.hasErrors()) return v.response();
+
+    // Validate each equipment row
+    if (Array.isArray(body.equipment)) {
+      for (let i = 0; i < body.equipment.length; i++) {
+        const row = body.equipment[i];
+        if (!row.position?.trim()) {
+          return Response.json({ error: `equipment[${i}].position is required` }, { status: 400 });
+        }
+        if (typeof row.rate !== "number" || row.rate < 0) {
+          return Response.json({ error: `equipment[${i}].rate must be a non-negative number` }, { status: 400 });
+        }
+        if (typeof row.days !== "number" || row.days <= 0) {
+          return Response.json({ error: `equipment[${i}].days must be a positive number` }, { status: 400 });
+        }
+      }
     }
 
     const equipment = body.equipment as QuotationRow[];
@@ -71,9 +82,6 @@ export async function POST(request: NextRequest) {
     return Response.json(quotation, { status: 201 });
   } catch (err) {
     console.error("[POST /api/quotations]", err);
-    return Response.json(
-      { error: "Failed to create quotation" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Failed to create quotation" }, { status: 500 });
   }
 }

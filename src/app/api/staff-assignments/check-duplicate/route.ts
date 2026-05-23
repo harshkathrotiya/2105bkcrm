@@ -6,11 +6,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { inquiryId, staffId } = body;
 
-    if (!inquiryId || !staffId) {
-      return Response.json({ error: "inquiryId and staffId are required" }, { status: 400 });
+    if (!inquiryId || typeof inquiryId !== "string" || !inquiryId.trim()) {
+      return Response.json({ error: "inquiryId is required" }, { status: 400 });
+    }
+    if (!staffId || isNaN(Number(staffId)) || Number(staffId) <= 0) {
+      return Response.json({ error: "staffId must be a positive integer" }, { status: 400 });
     }
 
-    const res = checkDuplicateAssignment(inquiryId, parseInt(staffId, 10));
+    const res = checkDuplicateAssignment(inquiryId.trim(), parseInt(staffId, 10));
     return Response.json(res);
   } catch (err) {
     console.error("[POST /api/staff-assignments/check-duplicate]", err);

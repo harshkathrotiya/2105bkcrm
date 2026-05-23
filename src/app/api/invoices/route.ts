@@ -6,6 +6,7 @@
 import type { NextRequest } from "next/server";
 import { getAllInvoices, createInvoice } from "@/lib/queries/invoices";
 import { generateId } from "@/lib/types";
+import { Validator } from "@/lib/validate";
 
 export async function GET() {
   try {
@@ -21,12 +22,20 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!body.quotationId) {
-      return Response.json({ error: "quotationId is required" }, { status: 400 });
-    }
-    if (!body.clientName?.trim()) {
-      return Response.json({ error: "clientName is required" }, { status: 400 });
-    }
+    const v = new Validator(body);
+    v.required("quotationId", "quotation");
+    v.required("clientName", "client name").minLength("clientName", 2).maxLength("clientName", 100);
+    v.maxLength("eventName", 200, "event name");
+    v.maxLength("venue", 200);
+    if (body.startDate) v.date("startDate", "start date");
+    if (body.endDate) v.date("endDate", "end date");
+    if (body.startDate && body.endDate) v.dateRange("startDate", "endDate");
+    if (body.dueDate) v.date("dueDate", "due date");
+    if (body.videographyAmount !== undefined) v.nonNegativeNumber("videographyAmount", "videography amount");
+    if (body.photographyAmount !== undefined) v.nonNegativeNumber("photographyAmount", "photography amount");
+    if (body.advance !== undefined) v.nonNegativeNumber("advance");
+    if (body.balance !== undefined) v.nonNegativeNumber("balance");
+    if (v.hasErrors()) return v.response();
 
     const advance = body.advance ?? 0;
     const balance = body.balance ?? 0;
@@ -57,9 +66,7 @@ export async function POST(request: NextRequest) {
       createdAt: body.createdAt ?? new Date().toISOString().split("T")[0],
       dueDate:
         body.dueDate ??
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0],
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
     });
 
     return Response.json(invoice, { status: 201 });
