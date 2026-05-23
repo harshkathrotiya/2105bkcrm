@@ -24,98 +24,101 @@ export default function Screen07Approval({ quotationId }: Props) {
     new Date().toISOString().split("T")[0]
   );
   const [notes, setNotes] = useState("");
+  const [signedCopyName, setSignedCopyName] = useState("");
   const [approved, setApproved] = useState(false);
+  const [approving, setApproving] = useState(false);
 
   const isApproved = approved || quotation?.status === "Approved";
 
-  const handleApprove = () => {
-    if (!quotation || isApproved) return;
+  const handleApprove = async () => {
+    if (!quotation || isApproved || approving) return;
 
-    // Duplicate guard — prevent creating multiple invoices
-    if (invoices.some((inv) => inv.quotationId === quotation.id)) {
-      return;
+    setApproving(true);
+
+    const existingInvoice = invoices.find((inv) => inv.quotationId === quotation.id);
+    const shouldConfirmBooking = quotation.status !== "Approved";
+
+    if (shouldConfirmBooking) {
+      await dispatchQuotations({
+        type: "UPDATE_QUOTATION",
+        payload: {
+          id: quotation.id,
+          status: "Approved",
+          approvedAt: approvalDate,
+        },
+      });
+
+      const inquiry = inquiries.find((i) => i.id === quotation.inquiryId);
+      if (inquiry) {
+        await dispatchInquiries({
+          type: "UPDATE_INQUIRY",
+          payload: {
+            id: inquiry.id,
+            status: "Confirmed",
+          },
+        });
+      }
+
+      const startDt = new Date(quotation.startDate);
+      const endDt = new Date(quotation.endDate);
+      const calType = "confirmed" as const;
+      const now = Date.now();
+      let idx = 0;
+      for (let d = new Date(startDt); d <= endDt; d.setDate(d.getDate() + 1)) {
+        await dispatchCalendar({
+          type: "ADD_CALENDAR_EVENT",
+          payload: {
+            id: `cal-${now}-${idx++}`,
+            date: d.getDate(),
+            month: d.getMonth() + 1,
+            year: d.getFullYear(),
+            label: quotation.clientName,
+            type: calType,
+          },
+        });
+      }
     }
 
-    // Update quotation status
-    dispatchQuotations({
-      type: "UPDATE_QUOTATION",
-      payload: {
-        id: quotation.id,
-        status: "Approved",
-        approvedAt: approvalDate,
-      },
-    });
+    if (!existingInvoice) {
+      const advance = Math.round(quotation.total * 0.5);
+      const grossForInvoice = quotation.total;
+      const videographyAmount = Math.round(grossForInvoice * 0.82);
+      const photographyAmount = grossForInvoice - videographyAmount;
 
-    // Also update the inquiry
-    const inquiry = inquiries.find((i) => i.id === quotation.inquiryId);
-    if (inquiry) {
-    dispatchInquiries({
-      type: "UPDATE_INQUIRY",
+      dispatchInvoices({
+        type: "ADD_INVOICE",
         payload: {
-          id: inquiry.id,
-          status: "Confirmed",
+          id: `inv-${Date.now()}`,
+          quotationId: quotation.id,
+          invoiceNo: generateInvoiceNo(invoices.map((inv) => inv.invoiceNo)),
+          clientName: quotation.clientName,
+          eventName: quotation.eventName,
+          startDate: quotation.startDate,
+          endDate: quotation.endDate,
+          venue: quotation.venue,
+          videographyAmount,
+          photographyAmount,
+          advance,
+          balance: quotation.total - advance,
+          status: "Unpaid",
+          advanceReceived: false,
+          advanceReceivedAt: null,
+          advanceRef: "",
+          advanceMethod: "",
+          balanceReceived: false,
+          balanceReceivedAt: null,
+          balanceRef: "",
+          balanceMethod: "",
+          hddDelivered: false,
+          createdAt: approvalDate,
+          dueDate: new Date(
+            new Date(approvalDate).getTime() + 7 * 24 * 60 * 60 * 1000
+          )
+            .toISOString()
+            .split("T")[0],
         },
       });
     }
-
-    // Add calendar events for the confirmed event dates
-    const startDt = new Date(quotation.startDate);
-    const endDt = new Date(quotation.endDate);
-    const calType = "confirmed" as const;
-    const now = Date.now();
-    let idx = 0;
-    for (let d = new Date(startDt); d <= endDt; d.setDate(d.getDate() + 1)) {
-      dispatchCalendar({
-        type: "ADD_CALENDAR_EVENT",
-        payload: {
-          id: `cal-${now}-${idx++}`,
-          date: d.getDate(),
-          month: d.getMonth() + 1,
-          year: d.getFullYear(),
-          label: quotation.clientName,
-          type: calType,
-        },
-      });
-    }
-
-    // Generate invoice — derive descriptive line items from quotation total
-    const advance = Math.round(quotation.total * 0.5);
-    const grossForInvoice = quotation.total;
-    const videographyAmount = Math.round(grossForInvoice * 0.82);
-    const photographyAmount = grossForInvoice - videographyAmount;
-    dispatchInvoices({
-      type: "ADD_INVOICE",
-      payload: {
-        id: `inv-${Date.now()}`,
-        quotationId: quotation.id,
-        invoiceNo: generateInvoiceNo(invoices.map((inv) => inv.invoiceNo)),
-        clientName: quotation.clientName,
-        eventName: quotation.eventName,
-        startDate: quotation.startDate,
-        endDate: quotation.endDate,
-        venue: quotation.venue,
-        videographyAmount,
-        photographyAmount,
-        advance,
-        balance: quotation.total - advance,
-        status: "Unpaid",
-        advanceReceived: false,
-        advanceReceivedAt: null,
-        advanceRef: "",
-        advanceMethod: "",
-        balanceReceived: false,
-        balanceReceivedAt: null,
-        balanceRef: "",
-        balanceMethod: "",
-        hddDelivered: false,
-        createdAt: approvalDate,
-        dueDate: new Date(
-          new Date(approvalDate).getTime() + 7 * 24 * 60 * 60 * 1000
-        )
-          .toISOString()
-          .split("T")[0],
-      },
-    });
 
     setApproved(true);
     router.push(`/warehouse/check?inquiryId=${quotation.inquiryId}`);
@@ -193,8 +196,8 @@ export default function Screen07Approval({ quotationId }: Props) {
         actions={
           <>
             <Badge variant="am">Sent to client</Badge>
-            <button className="btn btn-success" onClick={handleApprove}>
-              ✓ Mark approved
+            <button className="btn btn-success" onClick={handleApprove} disabled={approving}>
+              {approving ? "Approving..." : "✓ Mark approved"}
             </button>
           </>
         }
@@ -217,7 +220,7 @@ export default function Screen07Approval({ quotationId }: Props) {
           <div>
             <div className="card">
               <div className="card-t">Quotation summary</div>
-              <div className="bg-s2 rounded-lg p-[12px_14px] mb-[10px]">
+              <div className="quotation-summary-panel bg-s2 rounded-lg">
                 <div className="row-item">
                   <span className="text-[11px] text-tx3">Client</span>
                   <span className="text-[12px] font-medium">
@@ -262,7 +265,7 @@ export default function Screen07Approval({ quotationId }: Props) {
               </div>
             </div>
 
-            <div className="card">
+            <div className="card approval-card">
               <div className="card-t">Mark as approved</div>
               <div className="fgrid">
                 <div className="field span2">
@@ -278,25 +281,38 @@ export default function Screen07Approval({ quotationId }: Props) {
                   <div className="flbl">
                     Signed copy upload (optional)
                   </div>
-                  <div className="h-[52px] bg-s2 border border-dashed border-b2 rounded-lg flex items-center justify-center text-[11px] text-tx3">
-                    ↑ Upload signed quotation PDF
-                  </div>
+                  <label className="approval-upload">
+                    <input
+                      type="file"
+                      accept="application/pdf,image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        setSignedCopyName(file?.name ?? "");
+                      }}
+                    />
+                    <span className="approval-upload-title">
+                      {signedCopyName || "Upload signed quotation PDF"}
+                    </span>
+                    <span className="approval-upload-meta">
+                      PDF or image file
+                    </span>
+                  </label>
                 </div>
                 <div className="field span2">
                   <div className="flbl">Notes</div>
                   <textarea
                     className="ftxt"
-                    style={{ minHeight: 44 }}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                   />
                 </div>
               </div>
               <button
-                className="btn btn-success w-full justify-center mt-[10px] text-[12px]"
+                className="btn btn-success approval-submit w-full justify-center text-[12px]"
                 onClick={handleApprove}
+                disabled={approving}
               >
-                ✓ Confirm approval → Generate invoice
+                {approving ? "Approving..." : "✓ Confirm approval → Generate invoice"}
               </button>
             </div>
           </div>

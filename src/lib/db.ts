@@ -179,20 +179,52 @@ db.exec(`
     created_at     TEXT NOT NULL
   );
 
-  CREATE TABLE IF NOT EXISTS equipment_bookings (
-    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    inquiry_id          TEXT NOT NULL REFERENCES inquiries(id) ON DELETE CASCADE,
-    equipment_id        INTEGER REFERENCES equipment(id) ON DELETE SET NULL,
-    kit_id              INTEGER REFERENCES kits(id) ON DELETE SET NULL,
-    position            TEXT,
-    booked_from         TEXT NOT NULL,
-    booked_to           TEXT NOT NULL,
-    status              TEXT NOT NULL DEFAULT 'BOOKED' CHECK(status IN ('BOOKED','OUT','RETURNED')),
-    vendor_id           INTEGER REFERENCES vendors(id) ON DELETE SET NULL,
-    vendor_cost_per_day REAL,
-    total_vendor_cost   REAL,
-    confirmed_by_id     TEXT,
-    confirmed_at        TEXT
+  CREATE TABLE IF NOT EXISTS staff (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL,
+    phone           TEXT NOT NULL,
+    role            TEXT NOT NULL,
+    staff_type      TEXT NOT NULL CHECK(staff_type IN ('INHOUSE', 'EXTERNAL')),
+    payment_type    TEXT NOT NULL CHECK(payment_type IN ('PER_DAY', 'MONTHLY')),
+    rate_per_day    REAL,
+    monthly_salary  REAL,
+    with_equipment  INTEGER NOT NULL DEFAULT 0 CHECK(with_equipment IN (0, 1)),
+    equipment_desc  TEXT,
+    aadhar_number   TEXT,
+    aadhar_front    TEXT,
+    aadhar_back     TEXT,
+    is_active       INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0, 1)),
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS staff_assignments (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    staff_id        INTEGER NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
+    inquiry_id      TEXT NOT NULL REFERENCES inquiries(id) ON DELETE CASCADE,
+    position_no     INTEGER,
+    position_name   TEXT,
+    days_assigned   INTEGER NOT NULL,
+    rate_per_day    REAL NOT NULL,
+    total_amount    REAL NOT NULL,
+    is_duplicate    INTEGER NOT NULL DEFAULT 0 CHECK(is_duplicate IN (0, 1)),
+    confirmed_dup   INTEGER NOT NULL DEFAULT 0 CHECK(confirmed_dup IN (0, 1)),
+    created_at      TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS staff_payments (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    staff_id        INTEGER NOT NULL REFERENCES staff(id) ON DELETE CASCADE,
+    assignment_id   INTEGER REFERENCES staff_assignments(id) ON DELETE SET NULL,
+    inquiry_id      TEXT REFERENCES inquiries(id) ON DELETE SET NULL,
+    amount          REAL NOT NULL,
+    payment_type    TEXT NOT NULL CHECK(payment_type IN ('PER_EVENT', 'MONTHLY_SALARY')),
+    payment_method  TEXT NOT NULL CHECK(payment_method IN ('CASH', 'UPI', 'BANK_TRANSFER', 'CHEQUE')),
+    reference_no    TEXT,
+    month           TEXT, -- "YYYY-MM"
+    paid_at         TEXT NOT NULL,
+    paid_by_id      TEXT,
+    notes           TEXT
   );
 `);
 
@@ -673,9 +705,105 @@ function runPhase2Seed(): void {
   });
 }
 
+function runStaffSeed(): void {
+  const staffCount = (
+    db.prepare("SELECT COUNT(*) as n FROM staff").get() as { n: number }
+  ).n;
+
+  if (staffCount !== 0) return;
+
+  const insertStaff = db.prepare(`
+    INSERT INTO staff
+      (name, phone, role, staff_type, payment_type, rate_per_day, monthly_salary,
+       with_equipment, equipment_desc, aadhar_number, aadhar_front, aadhar_back, is_active, created_at)
+    VALUES
+      (@name, @phone, @role, @staffType, @paymentType, @ratePerDay, @monthlySalary,
+       @withEquipment, @equipmentDesc, @aadharNumber, @aadharFront, @aadharBack, 1, @createdAt)
+  `);
+
+  const insertAssignment = db.prepare(`
+    INSERT INTO staff_assignments
+      (staff_id, inquiry_id, position_no, position_name, days_assigned, rate_per_day, total_amount, is_duplicate, confirmed_dup, created_at)
+    VALUES
+      (@staffId, @inquiryId, @positionNo, @positionName, @daysAssigned, @ratePerDay, @totalAmount, @isDuplicate, @confirmedDup, @createdAt)
+  `);
+
+  const insertPayment = db.prepare(`
+    INSERT INTO staff_payments
+      (staff_id, assignment_id, inquiry_id, amount, payment_type, payment_method, reference_no, month, paid_at, notes)
+    VALUES
+      (@staffId, @assignmentId, @inquiryId, @amount, @paymentType, @paymentMethod, @referenceNo, @month, @paidAt, @notes)
+  `);
+
+  const now = new Date();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const y = now.getFullYear();
+  const d = (day: number) => `${y}-${m}-${String(day).padStart(2, "0")}`;
+
+  db.transaction(() => {
+    // 1. Insert Staff
+    insertStaff.run({ name: "Rishi Kumar", phone: "9825011111", role: "Videographer", staffType: "INHOUSE", paymentType: "PER_DAY", ratePerDay: 1500, monthlySalary: null, withEquipment: 0, equipmentDesc: null, aadharNumber: "452187342190", aadharFront: "mock_front.jpg", aadharBack: "mock_back.jpg", createdAt: d(1) });
+    insertStaff.run({ name: "Dev Vora", phone: "9825022222", role: "Videographer", staffType: "INHOUSE", paymentType: "PER_DAY", ratePerDay: 1500, monthlySalary: null, withEquipment: 0, equipmentDesc: null, aadharNumber: "123456789012", aadharFront: null, aadharBack: null, createdAt: d(1) });
+    insertStaff.run({ name: "Mehul Shah", phone: "9825033333", role: "Photographer", staffType: "INHOUSE", paymentType: "MONTHLY", ratePerDay: null, monthlySalary: 45000, withEquipment: 0, equipmentDesc: null, aadharNumber: "223456789012", aadharFront: null, aadharBack: null, createdAt: d(1) });
+    insertStaff.run({ name: "Hetal Patel", phone: "9825044444", role: "LED operator", staffType: "INHOUSE", paymentType: "PER_DAY", ratePerDay: 1200, monthlySalary: null, withEquipment: 0, equipmentDesc: null, aadharNumber: "323456789012", aadharFront: null, aadharBack: null, createdAt: d(1) });
+    insertStaff.run({ name: "Jignesh Rao", phone: "9825055555", role: "Crane operator", staffType: "EXTERNAL", paymentType: "PER_DAY", ratePerDay: 2500, monthlySalary: null, withEquipment: 1, equipmentDesc: "Crane 32ft", aadharNumber: "423456789012", aadharFront: null, aadharBack: null, createdAt: d(1) });
+    insertStaff.run({ name: "Karan Patel", phone: "9825066666", role: "Drone operator", staffType: "EXTERNAL", paymentType: "PER_DAY", ratePerDay: 3000, monthlySalary: null, withEquipment: 1, equipmentDesc: "DJI Drone", aadharNumber: "523456789012", aadharFront: null, aadharBack: null, createdAt: d(1) });
+    insertStaff.run({ name: "Priya Joshi", phone: "9825077777", role: "Editor", staffType: "INHOUSE", paymentType: "MONTHLY", ratePerDay: null, monthlySalary: 35000, withEquipment: 0, equipmentDesc: null, aadharNumber: "623456789012", aadharFront: null, aadharBack: null, createdAt: d(1) });
+    insertStaff.run({ name: "Nirav Parmar", phone: "9825088888", role: "Videographer", staffType: "INHOUSE", paymentType: "PER_DAY", ratePerDay: 1200, monthlySalary: null, withEquipment: 0, equipmentDesc: null, aadharNumber: "723456789012", aadharFront: null, aadharBack: null, createdAt: d(1) });
+    insertStaff.run({ name: "Smit Mehta", phone: "9825099999", role: "Photo editor", staffType: "INHOUSE", paymentType: "MONTHLY", ratePerDay: null, monthlySalary: 28000, withEquipment: 0, equipmentDesc: null, aadharNumber: "823456789012", aadharFront: null, aadharBack: null, createdAt: d(1) });
+
+    // Seed the Dholera Mahotsav Inquiry (April 15-20, i.e., in previous month or static)
+    db.prepare(`
+      INSERT OR IGNORE INTO inquiries (id, client_id, event_type, start_date, end_date, venue, notes, status, created_at)
+      VALUES ('inq-4', 'client-4', 'Dholera Mahotsav', '2026-04-15', '2026-04-20', 'Dholera Grounds', 'Annual Festival', 'Confirmed', '2026-04-10')
+    `).run();
+
+    // 2. Insert Assignments
+    // Rishi Kumar (staffId = 1) -> inq-1 (Adani Annual Meet)
+    const ass1 = insertAssignment.run({ staffId: 1, inquiryId: "inq-1", positionNo: 1, positionName: "Center Tally", daysAssigned: 3, ratePerDay: 1500, totalAmount: 4500, isDuplicate: 1, confirmedDup: 1, createdAt: d(9) });
+    const ass2 = insertAssignment.run({ staffId: 1, inquiryId: "inq-1", positionNo: 2, positionName: "Center Semi Wide", daysAssigned: 3, ratePerDay: 1500, totalAmount: 4500, isDuplicate: 1, confirmedDup: 1, createdAt: d(9) });
+    
+    // Rishi Kumar -> inq-2 (Torrent Pharma)
+    const ass3 = insertAssignment.run({ staffId: 1, inquiryId: "inq-2", positionNo: 1, positionName: "Videographer", daysAssigned: 2, ratePerDay: 1500, totalAmount: 3000, isDuplicate: 0, confirmedDup: 0, createdAt: d(9) });
+
+    // Dev Vora (staffId = 2) -> inq-1
+    const ass4 = insertAssignment.run({ staffId: 2, inquiryId: "inq-1", positionNo: 5, positionName: "Photo 1", daysAssigned: 3, ratePerDay: 1500, totalAmount: 4500, isDuplicate: 0, confirmedDup: 0, createdAt: d(9) });
+    // Dev Vora -> inq-2
+    const ass5 = insertAssignment.run({ staffId: 2, inquiryId: "inq-2", positionNo: 2, positionName: "Videographer", daysAssigned: 2, ratePerDay: 1500, totalAmount: 3000, isDuplicate: 0, confirmedDup: 0, createdAt: d(9) });
+
+    // Hetal Patel (staffId = 4) -> inq-4 (Dholera Mahotsav)
+    const ass6 = insertAssignment.run({ staffId: 4, inquiryId: "inq-4", positionNo: 1, positionName: "LED operator", daysAssigned: 6, ratePerDay: 1200, totalAmount: 7200, isDuplicate: 0, confirmedDup: 0, createdAt: "2026-04-10" });
+
+    // Jignesh Rao (staffId = 5) -> inq-1
+    const ass7 = insertAssignment.run({ staffId: 5, inquiryId: "inq-1", positionNo: 3, positionName: "Video Crane 32ft", daysAssigned: 3, ratePerDay: 2500, totalAmount: 7500, isDuplicate: 0, confirmedDup: 0, createdAt: d(9) });
+    // Jignesh Rao -> inq-4 (Dholera Mahotsav)
+    const ass8 = insertAssignment.run({ staffId: 5, inquiryId: "inq-4", positionNo: 2, positionName: "Video Crane 32ft", daysAssigned: 6, ratePerDay: 2500, totalAmount: 15000, isDuplicate: 0, confirmedDup: 0, createdAt: "2026-04-10" });
+
+    // Karan Patel (staffId = 6) -> inq-1
+    const ass9 = insertAssignment.run({ staffId: 6, inquiryId: "inq-1", positionNo: 4, positionName: "Drone", daysAssigned: 3, ratePerDay: 3000, totalAmount: 9000, isDuplicate: 0, confirmedDup: 0, createdAt: d(9) });
+    // Karan Patel -> inq-4 (Dholera Mahotsav)
+    const ass10 = insertAssignment.run({ staffId: 6, inquiryId: "inq-4", positionNo: 3, positionName: "Drone", daysAssigned: 5, ratePerDay: 3000, totalAmount: 15000, isDuplicate: 0, confirmedDup: 0, createdAt: "2026-04-10" });
+
+    // 3. Insert Payments
+    // Rishi Kumar (staffId = 1) -> Paid for Adani Meet (ass1 row, total Rs 4500)
+    insertPayment.run({ staffId: 1, assignmentId: ass1.lastInsertRowid as number, inquiryId: "inq-1", amount: 4500, paymentType: "PER_EVENT", paymentMethod: "UPI", referenceNo: "UPI123456", month: null, paidAt: d(12), notes: "Center Tally pay" });
+    
+    // Dev Vora (staffId = 2) -> Paid for Adani Meet (ass4) and Torrent Pharma (ass5)
+    insertPayment.run({ staffId: 2, assignmentId: ass4.lastInsertRowid as number, inquiryId: "inq-1", amount: 4500, paymentType: "PER_EVENT", paymentMethod: "CASH", referenceNo: "", month: null, paidAt: d(13), notes: "Adani Meet pay" });
+    insertPayment.run({ staffId: 2, assignmentId: ass5.lastInsertRowid as number, inquiryId: "inq-2", amount: 3000, paymentType: "PER_EVENT", paymentMethod: "CASH", referenceNo: "", month: null, paidAt: d(16), notes: "Torrent Pharma pay" });
+
+    // Karan Patel (staffId = 6) -> Partial payment for Dholera Mahotsav (ass10, total Rs 15000, paid Rs 9000)
+    insertPayment.run({ staffId: 6, assignmentId: ass10.lastInsertRowid as number, inquiryId: "inq-4", amount: 9000, paymentType: "PER_EVENT", paymentMethod: "BANK_TRANSFER", referenceNo: "TXN987654", month: null, paidAt: "2026-04-22", notes: "Partial pay" });
+
+    // Priya Joshi (staffId = 7) -> Paid monthly salary for May 2026 (or dynamically current month)
+    insertPayment.run({ staffId: 7, assignmentId: null, inquiryId: null, amount: 35000, paymentType: "MONTHLY_SALARY", paymentMethod: "BANK_TRANSFER", referenceNo: "SALARYMAY26", month: `${y}-${m}`, paidAt: d(20), notes: "May Fixed Salary" });
+  });
+}
+
 try {
   runSeed();
   runPhase2Seed();
+  runStaffSeed();
 } catch (err) {
   console.error("Seeding error:", err);
 }

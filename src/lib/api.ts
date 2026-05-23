@@ -4,7 +4,7 @@
  * All functions return the raw JSON response (or throw on error).
  */
 
-import type { Client, Inquiry, Quotation, Invoice, CalendarEvent, Equipment, Kit, Vendor } from "./types";
+import type { Client, Inquiry, Quotation, Invoice, CalendarEvent, Equipment, Kit, Vendor, Staff, StaffAssignment, StaffPayment } from "./types";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -365,3 +365,115 @@ export function bulkConfirmBookings(bookingIds: number[]): Promise<{ success: bo
     body: JSON.stringify({ bookingIds }),
   });
 }
+
+// ── Staff ────────────────────────────────────────────────────────────────────
+
+export interface StaffFetchParams {
+  search?: string;
+  type?: string;
+  paymentType?: string;
+  status?: string;
+}
+
+export function fetchStaff(params?: StaffFetchParams): Promise<(Staff & { status: "Available" | "Deployed"; pendingPayment: number })[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.type) query.set("type", params.type);
+  if (params?.paymentType) query.set("paymentType", params.paymentType);
+  if (params?.status) query.set("status", params.status);
+  return request(`/api/staff?${query.toString()}`);
+}
+
+export function fetchStaffItem(id: number): Promise<Staff> {
+  return request(`/api/staff/${id}`);
+}
+
+export function createStaff(data: Omit<Staff, "id" | "createdAt" | "isActive">): Promise<Staff> {
+  return request("/api/staff", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateStaff(id: number, data: Partial<Omit<Staff, "id" | "createdAt">>): Promise<Staff> {
+  return request(`/api/staff/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteStaff(id: number): Promise<void> {
+  return request(`/api/staff/${id}`, { method: "DELETE" });
+}
+
+export function fetchStaffHistory(id: number): Promise<any[]> {
+  return request(`/api/staff/${id}/history`);
+}
+
+export function fetchStaffSummary(id: number): Promise<any> {
+  return request(`/api/staff/${id}/summary`);
+}
+
+// ── Staff Assignments ────────────────────────────────────────────────────────
+
+export function fetchStaffAssignments(inquiryId: string): Promise<(StaffAssignment & { staffName: string; staffType: "INHOUSE" | "EXTERNAL"; withEquipment: boolean; equipmentDesc: string | null })[]> {
+  return request(`/api/staff-assignments?inquiryId=${inquiryId}`);
+}
+
+export function createStaffAssignment(data: Omit<StaffAssignment, "id" | "totalAmount" | "isDuplicate" | "confirmedDup" | "createdAt">): Promise<StaffAssignment> {
+  return request("/api/staff-assignments", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteStaffAssignment(id: number): Promise<void> {
+  return request(`/api/staff-assignments?id=${id}`, { method: "DELETE" });
+}
+
+export function checkDuplicateAssignment(inquiryId: string, staffId: number): Promise<{ isDuplicate: boolean; existingPosition?: string }> {
+  return request("/api/staff-assignments/check-duplicate", {
+    method: "POST",
+    body: JSON.stringify({ inquiryId, staffId }),
+  });
+}
+
+export function confirmDuplicateAssignment(assignmentId: number): Promise<void> {
+  return request("/api/staff-assignments/confirm-duplicate", {
+    method: "POST",
+    body: JSON.stringify({ assignmentId }),
+  });
+}
+
+// ── Staff Payments ───────────────────────────────────────────────────────────
+
+export function recordStaffPayment(data: Omit<StaffPayment, "id" | "paidAt">): Promise<StaffPayment> {
+  return request("/api/staff-payments", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function recordBulkStaffPayments(payments: Omit<StaffPayment, "id" | "paidAt">[]): Promise<any> {
+  return request("/api/staff-payments/bulk", {
+    method: "POST",
+    body: JSON.stringify({ payments }),
+  });
+}
+
+export function fetchMonthlyReport(month: string): Promise<{
+  perDayStaff: any[];
+  monthlyStaff: any[];
+  totals: { total: number; paid: number; pending: number };
+}> {
+  return request(`/api/staff-payments/monthly-report?month=${month}`);
+}
+
+// ── Availability ─────────────────────────────────────────────────────────────
+
+export function checkStaffAvailability(startDate: string, endDate: string, role?: string): Promise<(Staff & { status: "FREE" | "PARTIAL" | "BUSY"; conflicts: any[] })[]> {
+  const query = new URLSearchParams({ startDate, endDate });
+  if (role) query.set("role", role);
+  return request(`/api/staff/availability?${query.toString()}`);
+}
+

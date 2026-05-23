@@ -12,6 +12,7 @@ const navItems = [
   { label: "Equipment",  path: "/equipment",  icon: "⚙" },
   { label: "Kits",       path: "/kits",       icon: "⧉" },
   { label: "Vendors",    path: "/vendors",    icon: "☍" },
+  { label: "Staff",      path: "/staff",      icon: "👤" },
 ];
 
 export default function AppSidebar() {

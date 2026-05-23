@@ -9,6 +9,7 @@ import { CalendarProvider } from "./calendar-context";
 import { EquipmentProvider } from "./equipment-context";
 import { KitsProvider } from "./kits-context";
 import { VendorsProvider } from "./vendors-context";
+import { StaffProvider } from "./staff-context";
 
 // Re-export all hooks from a single import
 export { useClients } from "./clients-context";
@@ -20,6 +21,7 @@ export { useTheme } from "./theme-context";
 export { useEquipment } from "./equipment-context";
 export { useKits } from "./kits-context";
 export { useVendors } from "./vendors-context";
+export { useStaff } from "./staff-context";
 
 // Re-export types
 export type {
@@ -32,6 +34,9 @@ export type {
   Equipment,
   Kit,
   Vendor,
+  Staff,
+  StaffAssignment,
+  StaffPayment,
 } from "./types";
 
 // Re-export utilities
@@ -47,7 +52,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               <EquipmentProvider>
                 <KitsProvider>
                   <VendorsProvider>
-                    {children}
+                    <StaffProvider>
+                      {children}
+                    </StaffProvider>
                   </VendorsProvider>
                 </KitsProvider>
               </EquipmentProvider>
@@ -58,3 +65,4 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     </ClientsProvider>
   );
 }
+

@@ -165,3 +165,52 @@ export interface Vendor {
   createdAt: string;
 }
 
+export interface Staff {
+  id: number;
+  name: string;
+  phone: string;
+  role: "Videographer" | "Photographer" | "Crane operator" | "Drone operator" | "LED operator" | "Audio operator" | "Editor" | "Photo editor" | "Other";
+  staffType: "INHOUSE" | "EXTERNAL";
+  paymentType: "PER_DAY" | "MONTHLY";
+  ratePerDay?: number | null;
+  monthlySalary?: number | null;
+  withEquipment: boolean;
+  equipmentDesc?: string | null;
+  aadharNumber?: string | null;
+  aadharFront?: string | null;
+  aadharBack?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface StaffAssignment {
+  id: number;
+  staffId: number;
+  inquiryId: string;
+  positionNo?: number | null;
+  positionName?: string | null;
+  daysAssigned: number;
+  ratePerDay: number;
+  totalAmount: number;
+  isDuplicate: boolean;
+  confirmedDup: boolean;
+  createdAt: string;
+}
+
+export interface StaffPayment {
+  id: number;
+  staffId: number;
+  assignmentId?: number | null;
+  inquiryId?: string | null;
+  amount: number;
+  paymentType: "PER_EVENT" | "MONTHLY_SALARY";
+  paymentMethod: "CASH" | "UPI" | "BANK_TRANSFER" | "CHEQUE";
+  referenceNo?: string | null;
+  month?: string | null;
+  paidAt: string;
+  paidById?: string | null;
+  notes?: string | null;
+}
+
+

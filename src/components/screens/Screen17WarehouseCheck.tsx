@@ -19,6 +19,36 @@ function formatSerialNumber(sn: string | null | undefined): string {
   return clean;
 }
 
+function normalizeEquipmentName(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getEquipmentSearchTerms(equipName: string): string[] {
+  const query = normalizeEquipmentName(equipName);
+  const terms = new Set<string>([query]);
+
+  if (query.includes("fs6")) terms.add("fx6");
+  if (query.includes("fx6")) terms.add("fx6");
+  if (query.includes("fx3")) terms.add("fx3");
+  if (query.includes("wireless")) terms.add("wireless");
+  if (query.includes("dslr")) {
+    terms.add("camera");
+    terms.add("alpha");
+  }
+  if (query.includes("crane")) terms.add("crane");
+
+  return [...terms].filter(Boolean);
+}
+
+function equipmentMatchesSearch(candidate: string, terms: string[]): boolean {
+  const normalizedCandidate = normalizeEquipmentName(candidate);
+  return terms.some((term) => normalizedCandidate.includes(term));
+}
+
 export default function Screen17WarehouseCheck() {
   const searchParams = useSearchParams();
   const inquiryId = searchParams.get("inquiryId");
@@ -73,12 +103,12 @@ export default function Screen17WarehouseCheck() {
   // Helper: Match quotation row with available equipment
   const getAvailableMatches = useCallback((equipName: string) => {
     if (!data) return { equipment: [], kits: [] };
-    const query = equipName.toLowerCase();
+    const searchTerms = getEquipmentSearchTerms(equipName);
     
     // Find unbooked kits
     const matchingKits = data.kits.filter(
       (kit) =>
-        (kit.name.toLowerCase().includes(query) || query.includes("kit")) &&
+        equipmentMatchesSearch(`${kit.name} ${kit.description ?? ""}`, searchTerms) &&
         kit.availabilityStatus === "AVAILABLE" &&
         !kit.bookedForThisInquiry
     );
@@ -86,7 +116,10 @@ export default function Screen17WarehouseCheck() {
     // Find unbooked equipment
     const matchingEquip = data.equipment.filter(
       (eq) =>
-        (eq.productName.toLowerCase().includes(query) || query.includes(eq.productName.toLowerCase())) &&
+        equipmentMatchesSearch(
+          `${eq.productName} ${eq.category ?? ""} ${eq.kitName ?? ""}`,
+          searchTerms
+        ) &&
         !eq.isBookedForRange &&
         eq.status === "AVAILABLE" &&
         !eq.bookedForThisInquiry
@@ -104,7 +137,9 @@ export default function Screen17WarehouseCheck() {
     
     return data.quotation.equipment.map((row) => {
       const positionStr = row.no.toString();
-      const booking = data.bookings.find((b) => b.position === positionStr);
+      const booking = data.bookings.find(
+        (b) => b.position === positionStr || b.position === row.position
+      );
       
       let matchedInhouseItem: any = null;
       let matchedVendor: any = null;
@@ -407,6 +442,18 @@ export default function Screen17WarehouseCheck() {
         breadcrumb={<>Warehouse check › Inquiry #{data.inquiry.id}</>}
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
+            <Link
+              href={`/staff/assign?inquiryId=${inquiryId}`}
+              className="btn btn-warning"
+            >
+              → Assign Positions
+            </Link>
+            <Link
+              href={`/staff/payments?inquiryId=${inquiryId}`}
+              className="btn"
+            >
+              💵 Staff Payments
+            </Link>
             <button
               type="button"
               className="btn btn-primary"
