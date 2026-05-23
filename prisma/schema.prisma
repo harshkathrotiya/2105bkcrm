@@ -1,0 +1,256 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Client {
+  id           String    @id
+  initials     String
+  bg           String    @default("#EEEDFE")
+  fg           String    @default("#3C3489")
+  name         String
+  contact      String
+  mobile       String
+  email        String    @default("")
+  gst          String    @default("")
+  pan          String    @default("")
+  address_line String    @default("")
+  city         String    @default("")
+  district     String    @default("")
+  state        String    @default("")
+  pin          String    @default("")
+  status       String    @default("Active")
+  created_at   String
+  updated_at   String?
+  inquiries    Inquiry[]
+
+  @@map("clients")
+}
+
+model Inquiry {
+  id                 String             @id
+  client_id          String
+  client             Client             @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  event_type         String
+  start_date         String
+  end_date           String
+  start_time         String             @default("")
+  end_time           String             @default("")
+  venue              String             @default("")
+  notes              String             @default("")
+  status             String             @default("New")
+  created_at         String
+  updated_at         String?
+  quotations         Quotation[]
+  staff_assignments  StaffAssignment[]
+  staff_payments     StaffPayment[]
+  equipment_bookings EquipmentBooking[]
+
+  @@map("inquiries")
+}
+
+model Quotation {
+  id          String    @id
+  inquiry_id  String
+  inquiry     Inquiry   @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  client_name String
+  event_name  String
+  quote_no    String
+  start_date  String
+  end_date    String
+  days        Int       @default(1)
+  venue       String    @default("")
+  status      String    @default("Draft")
+  equipment   String    @default("[]")
+  subtotal    Float     @default(0)
+  cgst        Float     @default(0)
+  sgst        Float     @default(0)
+  total       Float     @default(0)
+  created_at  String
+  updated_at  String?
+  sent_at     String?
+  approved_at String?
+  invoices    Invoice[]
+
+  @@map("quotations")
+}
+
+model Invoice {
+  id                  String    @id
+  quotation_id        String
+  quotation           Quotation @relation(fields: [quotation_id], references: [id], onDelete: Cascade)
+  invoice_no          String
+  client_name         String
+  event_name          String
+  start_date          String
+  end_date            String
+  venue               String    @default("")
+  videography_amount  Float     @default(0)
+  photography_amount  Float     @default(0)
+  advance             Float     @default(0)
+  balance             Float     @default(0)
+  status              String    @default("Unpaid")
+  advance_received    Int       @default(0)
+  advance_received_at String?
+  advance_ref         String    @default("")
+  advance_method      String    @default("")
+  balance_received    Int       @default(0)
+  balance_received_at String?
+  balance_ref         String    @default("")
+  balance_method      String    @default("")
+  hdd_delivered       Int       @default(0)
+  created_at          String
+  updated_at          String?
+  due_date            String
+
+  @@map("invoices")
+}
+
+model CalendarEvent {
+  id    String @id
+  date  Int
+  month Int
+  year  Int
+  label String
+  type  String
+
+  @@map("calendar_events")
+}
+
+model Kit {
+  id                 Int                @id @default(autoincrement())
+  name               String             @unique
+  description        String?
+  main_body_id       Int?
+  created_at         String
+  equipment          Equipment[]
+  equipment_bookings EquipmentBooking[]
+
+  @@map("kits")
+}
+
+model Equipment {
+  id             Int                @id @default(autoincrement())
+  product_name   String
+  category       String
+  quantity       Int                @default(1)
+  serial_number  String?
+  body_name      String?
+  kit_id         Int?
+  kit            Kit?               @relation(fields: [kit_id], references: [id], onDelete: SetNull)
+  resp_person    String?
+  purchase_date  String?
+  purchase_from  String?
+  bill_number    String?
+  purchase_price Float?
+  status         String             @default("AVAILABLE")
+  notes          String?
+  created_at     String
+  updated_at     String?
+  bookings       EquipmentBooking[]
+
+  @@map("equipment")
+}
+
+model Vendor {
+  id                 Int                @id @default(autoincrement())
+  name               String
+  phone              String
+  email              String?
+  specialization     String?
+  city               String?
+  gst_number         String?
+  notes              String?
+  is_active          Int                @default(1)
+  created_at         String
+  equipment_bookings EquipmentBooking[]
+
+  @@map("vendors")
+}
+
+model Staff {
+  id             Int               @id @default(autoincrement())
+  name           String
+  phone          String
+  role           String
+  staff_type     String
+  payment_type   String
+  rate_per_day   Float?
+  monthly_salary Float?
+  with_equipment Int               @default(0)
+  equipment_desc String?
+  aadhar_number  String?
+  aadhar_front   String?
+  aadhar_back    String?
+  is_active      Int               @default(1)
+  created_at     String
+  updated_at     String?
+  assignments    StaffAssignment[]
+  payments       StaffPayment[]
+
+  @@map("staff")
+}
+
+model StaffAssignment {
+  id            Int            @id @default(autoincrement())
+  staff_id      Int
+  staff         Staff          @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  inquiry_id    String
+  inquiry       Inquiry        @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  position_no   Int?
+  position_name String?
+  days_assigned Int
+  rate_per_day  Float
+  total_amount  Float
+  is_duplicate  Int            @default(0)
+  confirmed_dup Int            @default(0)
+  created_at    String
+  payments      StaffPayment[]
+
+  @@map("staff_assignments")
+}
+
+model StaffPayment {
+  id             Int              @id @default(autoincrement())
+  staff_id       Int
+  staff          Staff            @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  assignment_id  Int?
+  assignment     StaffAssignment? @relation(fields: [assignment_id], references: [id], onDelete: SetNull)
+  inquiry_id     String?
+  inquiry        Inquiry?         @relation(fields: [inquiry_id], references: [id], onDelete: SetNull)
+  amount         Float
+  payment_type   String
+  payment_method String
+  reference_no   String?
+  month          String?
+  paid_at        String
+  paid_by_id     String?
+  notes          String?
+
+  @@map("staff_payments")
+}
+
+model EquipmentBooking {
+  id                  Int        @id @default(autoincrement())
+  inquiry_id          String
+  inquiry             Inquiry    @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  equipment_id        Int?
+  equipment           Equipment? @relation(fields: [equipment_id], references: [id], onDelete: SetNull)
+  kit_id              Int?
+  kit                 Kit?       @relation(fields: [kit_id], references: [id], onDelete: SetNull)
+  position            String?
+  booked_from         String
+  booked_to           String
+  status              String     @default("BOOKED")
+  vendor_id           Int?
+  vendor              Vendor?    @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
+  vendor_cost_per_day Float?
+  total_vendor_cost   Float?
+  confirmed_by_id     String?
+  confirmed_at        String?
+
+  @@map("equipment_bookings")
+}

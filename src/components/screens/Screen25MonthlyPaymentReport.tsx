@@ -218,12 +218,12 @@ export default function Screen25MonthlyPaymentReport() {
 
   return (
     <>
-      <SectionHeader
-        title={<>Monthly <strong>Salary & Payment Report</strong></>}
-        description="Review payroll distributions split by monthly fixed salary staff and freelance per-day operators."
-      />
-
       <div className="no-print">
+        <SectionHeader
+          title={<>Monthly <strong>Salary & Payment Report</strong></>}
+          description="Review payroll distributions split by monthly fixed salary staff and freelance per-day operators."
+        />
+
         <ScreenFrame
           breadcrumb={`Staff › Reports › ${formatMonthText(selectedMonth)}`}
           actions={

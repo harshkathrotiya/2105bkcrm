@@ -134,10 +134,11 @@ export default function Screen20StaffList() {
 
   return (
     <>
-      <SectionHeader
-        title={<>Staff <strong>Directory</strong></>}
-        description="Manage in-house employees, external contractors, assign positions, check availability and record payments."
-      />
+      <div className="no-print">
+        <SectionHeader
+          title={<>Staff <strong>Directory</strong></>}
+          description="Manage in-house employees, external contractors, assign positions, check availability and record payments."
+        />
 
       {/* Top metrics cards */}
       <div className="metrics" style={{ marginBottom: "20px" }}>
@@ -503,6 +504,7 @@ export default function Screen20StaffList() {
 
         </div>
       </ScreenFrame>
+      </div>
 
       {/* Print-only PDF layout — hidden on screen, shown when printing */}
       <div className="staff-print-only" style={{ display: "none", padding: "20px", color: "#000", background: "#fff" }}>
