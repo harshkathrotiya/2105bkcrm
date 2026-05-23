@@ -234,17 +234,17 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                 </div>
 
                 <div style={{ marginTop: "12px" }}>
-                  <div className="row">
+                  <div className="row-item">
                     <span style={{ color: "var(--tx3)" }}>Mobile</span>
                     <span style={{ fontFamily: "var(--font-mono)", color: "var(--tx2)" }}>
                       {staffMember.phone.replace(/(\d{5})(\d{5})/, "$1 $2")}
                     </span>
                   </div>
-                  <div className="row">
+                  <div className="row-item">
                     <span style={{ color: "var(--tx3)" }}>Payment type</span>
                     <span style={{ color: "var(--tx2)" }}>{staffMember.paymentType === "PER_DAY" ? "Per Day" : "Monthly Fixed"}</span>
                   </div>
-                  <div className="row">
+                  <div className="row-item">
                     <span style={{ color: "var(--tx3)" }}>Rate / Salary</span>
                     <span style={{ fontFamily: "var(--font-mono)", fontWeight: 500, color: "var(--tx)" }}>
                       {staffMember.paymentType === "PER_DAY"
@@ -252,13 +252,13 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                         : `₹${(staffMember.monthlySalary || 0).toLocaleString("en-IN")}/month`}
                     </span>
                   </div>
-                  <div className="row">
+                  <div className="row-item">
                     <span style={{ color: "var(--tx3)" }}>With equipment</span>
                     <span style={{ color: "var(--tx2)" }}>
                       {staffMember.withEquipment ? staffMember.equipmentDesc || "Yes" : "No"}
                     </span>
                   </div>
-                  <div className="row">
+                  <div className="row-item">
                     <span style={{ color: "var(--tx3)" }}>Aadhar Number</span>
                     <span style={{ fontFamily: "var(--font-mono)", color: "var(--tx2)" }}>
                       {staffMember.aadharNumber
@@ -307,27 +307,27 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                 <div className="card" style={{ padding: "16px", marginBottom: 0 }}>
                   <div className="ct">FY {new Date().getFullYear()}-{String(new Date().getFullYear() + 1).slice(2)} Summary</div>
                   
-                  <div className="row">
+                  <div className="row-item">
                     <span style={{ color: "var(--tx3)" }}>Events worked</span>
                     <strong style={{ color: "var(--tx)" }}>{summary.eventsWorked}</strong>
                   </div>
-                  <div className="row">
+                  <div className="row-item">
                     <span style={{ color: "var(--tx3)" }}>Total days worked</span>
                     <strong style={{ color: "var(--tx)" }}>{summary.totalDays} days</strong>
                   </div>
-                  <div className="row">
+                  <div className="row-item">
                     <span style={{ color: "var(--tx3)" }}>Total earned</span>
                     <strong style={{ color: "var(--gr)", fontFamily: "var(--font-mono)" }}>
                       ₹{summary.totalEarned.toLocaleString("en-IN")}
                     </strong>
                   </div>
-                  <div className="row">
+                  <div className="row-item">
                     <span style={{ color: "var(--tx3)" }}>Paid</span>
                     <span style={{ color: "var(--gr)", fontFamily: "var(--font-mono)" }}>
                       ₹{summary.paid.toLocaleString("en-IN")}
                     </span>
                   </div>
-                  <div className="row">
+                  <div className="row-item">
                     <span style={{ color: "var(--tx3)" }}>Pending</span>
                     <strong style={{ color: "var(--acc)", fontFamily: "var(--font-mono)" }}>
                       ₹{summary.pending.toLocaleString("en-IN")}

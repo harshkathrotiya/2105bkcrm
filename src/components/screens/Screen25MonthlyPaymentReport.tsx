@@ -558,11 +558,11 @@ export default function Screen25MonthlyPaymentReport() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
-              <div className="row" style={{ borderBottom: "none", padding: 0 }}>
+              <div className="row-item" style={{ borderBottom: "none", padding: 0 }}>
                 <span style={{ color: "var(--tx3)", fontSize: "12px" }}>Staff Member</span>
                 <strong style={{ color: "var(--tx)" }}>{payModal.staffName}</strong>
               </div>
-              <div className="row" style={{ borderBottom: "none", padding: 0 }}>
+              <div className="row-item" style={{ borderBottom: "none", padding: 0 }}>
                 <span style={{ color: "var(--tx3)", fontSize: "12px" }}>Payout Amount</span>
                 <strong style={{ color: "var(--gr)", fontFamily: "var(--font-mono)" }}>₹{payModal.amount.toLocaleString("en-IN")}</strong>
               </div>
