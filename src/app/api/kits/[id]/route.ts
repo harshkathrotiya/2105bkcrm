@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const kit = getKitById(parseInt(id, 10));
+    const kit = await getKitById(parseInt(id, 10));
     if (!kit) {
       return Response.json({ error: "Kit not found" }, { status: 404 });
     }
@@ -40,7 +40,7 @@ export async function PATCH(
     if (body.mainBodyId !== undefined) patch.mainBodyId = body.mainBodyId ? parseInt(body.mainBodyId, 10) : null;
     if (body.mainBodyQty !== undefined) patch.mainBodyQty = body.mainBodyQty ? parseInt(body.mainBodyQty, 10) : null;
 
-    const updated = updateKit(parseInt(id, 10), patch);
+    const updated = await updateKit(parseInt(id, 10), patch);
     if (!updated) {
       return Response.json({ error: "Kit not found" }, { status: 404 });
     }
@@ -57,7 +57,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const deleted = deleteKit(parseInt(id, 10));
+    const deleted = await deleteKit(parseInt(id, 10));
     if (!deleted) {
       return Response.json({ error: "Kit not found" }, { status: 404 });
     }

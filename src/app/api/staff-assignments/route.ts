@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "inquiryId is required" }, { status: 400 });
     }
 
-    const assignments = getStaffAssignments(inquiryId);
+    const assignments = await getStaffAssignments(inquiryId);
     return Response.json(assignments);
   } catch (err) {
     console.error("[GET /api/staff-assignments]", err);
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (body.positionName !== undefined && body.positionName) v.maxLength("positionName", 100, "position name");
     if (v.hasErrors()) return v.response();
 
-    const assignment = assignStaff({
+    const assignment = await assignStaff({
       staffId: parseInt(body.staffId, 10),
       inquiryId: body.inquiryId,
       positionNo: body.positionNo ? parseInt(body.positionNo, 10) : null,
@@ -62,7 +62,7 @@ export async function DELETE(request: NextRequest) {
       return Response.json({ error: "id must be a positive integer" }, { status: 400 });
     }
 
-    const deleted = deleteAssignment(id);
+    const deleted = await deleteAssignment(id);
     if (!deleted) {
       return Response.json({ error: "Assignment not found" }, { status: 404 });
     }

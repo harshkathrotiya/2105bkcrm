@@ -3,7 +3,7 @@ import { getAllStaffIncludingInactive } from "@/lib/queries/staff";
 
 export async function GET(_req: NextRequest) {
   try {
-    const staff = getAllStaffIncludingInactive();
+    const staff = await getAllStaffIncludingInactive();
     return Response.json(staff);
   } catch (err) {
     console.error("[GET /api/staff/inactive]", err);

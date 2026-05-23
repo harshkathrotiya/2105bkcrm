@@ -13,7 +13,10 @@ export async function PUT(
       return Response.json({ error: "Invalid booking ID" }, { status: 400 });
     }
 
-    const booking = db.prepare("SELECT * FROM equipment_bookings WHERE id = ?").get(bookingId) as any;
+    const booking = await db.equipmentBooking.findUnique({
+      where: { id: bookingId }
+    });
+
     if (!booking) {
       return Response.json({ error: "Booking not found" }, { status: 404 });
     }
@@ -24,23 +27,40 @@ export async function PUT(
       return Response.json({ error: "Booking must be confirmed (OUT) before it can be returned" }, { status: 409 });
     }
 
-    db.transaction(() => {
-      db.prepare("UPDATE equipment_bookings SET status = 'RETURNED' WHERE id = ?").run(bookingId);
+    await db.$transaction(async (tx) => {
+      await tx.equipmentBooking.update({
+        where: { id: bookingId },
+        data: { status: 'RETURNED' }
+      });
 
       if (booking.equipment_id) {
-        db.prepare("UPDATE equipment SET status = 'AVAILABLE' WHERE id = ?").run(booking.equipment_id);
+        await tx.equipment.update({
+          where: { id: booking.equipment_id },
+          data: { status: 'AVAILABLE' }
+        });
       }
 
       if (booking.kit_id) {
-        db.prepare("UPDATE equipment SET status = 'AVAILABLE' WHERE kit_id = ?").run(booking.kit_id);
-        const kit = db.prepare("SELECT main_body_id FROM kits WHERE id = ?").get(booking.kit_id) as { main_body_id: number | null } | undefined;
+        await tx.equipment.updateMany({
+          where: { kit_id: booking.kit_id },
+          data: { status: 'AVAILABLE' }
+        });
+        const kit = await tx.kit.findUnique({
+          where: { id: booking.kit_id },
+          select: { main_body_id: true }
+        });
         if (kit?.main_body_id) {
-          db.prepare("UPDATE equipment SET status = 'AVAILABLE' WHERE id = ?").run(kit.main_body_id);
+          await tx.equipment.update({
+            where: { id: kit.main_body_id },
+            data: { status: 'AVAILABLE' }
+          });
         }
       }
-    })();
+    });
 
-    const updatedBooking = db.prepare("SELECT * FROM equipment_bookings WHERE id = ?").get(bookingId);
+    const updatedBooking = await db.equipmentBooking.findUnique({
+      where: { id: bookingId }
+    });
     return Response.json(updatedBooking);
   } catch (err) {
     console.error("[PUT /api/equipment-bookings/[id]/return]", err);

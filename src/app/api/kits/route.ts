@@ -17,13 +17,13 @@ export async function GET(request: NextRequest) {
       if (v.hasErrors()) return v.response();
     }
 
-    const kits = getAllKits();
+    const kits = await getAllKits();
 
     if (startDate && endDate) {
-      const kitsWithStatus = kits.map((kit) => ({
+      const kitsWithStatus = await Promise.all(kits.map(async (kit) => ({
         ...kit,
-        availabilityStatus: getKitAvailabilityStatus(kit.id, startDate, endDate),
-      }));
+        availabilityStatus: await getKitAvailabilityStatus(kit.id, startDate, endDate),
+      })));
       return Response.json(kitsWithStatus);
     }
 
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const kit = createKit({
+    const kit = await createKit({
       name: body.name.trim(),
       description: body.description?.trim() || null,
       mainBodyId: body.mainBodyId ? parseInt(body.mainBodyId, 10) : null,

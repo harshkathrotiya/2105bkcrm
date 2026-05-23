@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const item = getEquipmentDetailsById(parseInt(id, 10));
+    const item = await getEquipmentDetailsById(parseInt(id, 10));
     if (!item) {
       return Response.json({ error: "Equipment not found" }, { status: 404 });
     }
@@ -48,7 +48,7 @@ export async function PATCH(
     if (body.purchasePrice !== undefined) patch.purchasePrice = body.purchasePrice ? parseFloat(body.purchasePrice) : null;
     if (body.kitId !== undefined) patch.kitId = body.kitId ? parseInt(body.kitId, 10) : null;
 
-    const updated = updateEquipment(parseInt(id, 10), patch);
+    const updated = await updateEquipment(parseInt(id, 10), patch);
     if (!updated) {
       return Response.json({ error: "Equipment not found" }, { status: 404 });
     }
@@ -65,7 +65,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const deleted = deleteEquipment(parseInt(id, 10));
+    const deleted = await deleteEquipment(parseInt(id, 10));
     if (!deleted) {
       return Response.json({ error: "Equipment not found" }, { status: 404 });
     }

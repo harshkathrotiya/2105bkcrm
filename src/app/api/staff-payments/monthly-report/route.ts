@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "month parameter is required (YYYY-MM)" }, { status: 400 });
     }
 
-    const report = getMonthlyReport(month);
+    const report = await getMonthlyReport(month);
     return Response.json(report);
   } catch (err) {
     console.error("[GET /api/staff-payments/monthly-report]", err);

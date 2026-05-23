@@ -23,9 +23,9 @@ export async function PUT(
     if (body.positionName !== undefined && body.positionName) v.maxLength("positionName", 100, "position name");
     if (v.hasErrors()) return v.response();
 
-    const existing = db
-      .prepare("SELECT * FROM staff_assignments WHERE id = ?")
-      .get(assignmentId) as any;
+    const existing = await db.staffAssignment.findUnique({
+      where: { id: assignmentId }
+    });
 
     if (!existing) {
       return Response.json({ error: "Assignment not found" }, { status: 404 });
@@ -44,19 +44,16 @@ export async function PUT(
 
     const totalAmount = ratePerDay * daysAssigned;
 
-    db.prepare(`
-      UPDATE staff_assignments
-      SET days_assigned = @daysAssigned,
-          rate_per_day  = @ratePerDay,
-          total_amount  = @totalAmount,
-          position_name = @positionName,
-          position_no   = @positionNo
-      WHERE id = @id
-    `).run({ id: assignmentId, daysAssigned, ratePerDay, totalAmount, positionName, positionNo });
-
-    const updated = db
-      .prepare("SELECT * FROM staff_assignments WHERE id = ?")
-      .get(assignmentId) as any;
+    const updated = await db.staffAssignment.update({
+      where: { id: assignmentId },
+      data: {
+        days_assigned: daysAssigned,
+        rate_per_day: ratePerDay,
+        total_amount: totalAmount,
+        position_name: positionName,
+        position_no: positionNo,
+      }
+    });
 
     return Response.json({
       id: updated.id,

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "assignmentId must be a positive integer" }, { status: 400 });
     }
 
-    const res = confirmDuplicate(parseInt(assignmentId, 10));
+    const res = await confirmDuplicate(parseInt(assignmentId, 10));
     if (!res) {
       return Response.json({ error: "Assignment not found" }, { status: 404 });
     }

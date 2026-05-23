@@ -1,39 +1,48 @@
 /**
- * queries/invoices.ts — typed DB helpers for the invoices table
+ * queries/invoices.ts — typed DB helpers for the invoices table using Prisma
  */
 
 import { db } from "@/lib/db";
 import type { Invoice } from "@/lib/types";
 
-interface InvoiceRow {
-  id: string;
-  quotation_id: string;
-  invoice_no: string;
-  client_name: string;
-  event_name: string;
-  start_date: string;
-  end_date: string;
-  venue: string;
-  videography_amount: number;
-  photography_amount: number;
-  advance: number;
-  balance: number;
-  status: "Unpaid" | "Partial paid" | "Paid";
-  advance_received: number;
-  advance_received_at: string | null;
-  advance_ref: string;
-  advance_method: string;
-  balance_received: number;
-  balance_received_at: string | null;
-  balance_ref: string;
-  balance_method: string;
-  hdd_delivered: number;
-  created_at: string;
-  updated_at: string | null;
-  due_date: string;
+export async function getAllInvoices(): Promise<Invoice[]> {
+  const rows = await db.invoice.findMany({
+    orderBy: { created_at: "desc" },
+  });
+  return rows.map((r: any) => ({
+    id: r.id,
+    quotationId: r.quotation_id,
+    invoiceNo: r.invoice_no,
+    clientName: r.client_name,
+    eventName: r.event_name,
+    startDate: r.start_date,
+    endDate: r.end_date,
+    venue: r.venue,
+    videographyAmount: r.videography_amount,
+    photographyAmount: r.photography_amount,
+    advance: r.advance,
+    balance: r.balance,
+    status: r.status as "Unpaid" | "Partial paid" | "Paid",
+    advanceReceived: r.advance_received === 1,
+    advanceReceivedAt: r.advance_received_at,
+    advanceRef: r.advance_ref,
+    advanceMethod: r.advance_method,
+    balanceReceived: r.balance_received === 1,
+    balanceReceivedAt: r.balance_received_at,
+    balanceRef: r.balance_ref,
+    balanceMethod: r.balance_method,
+    hddDelivered: r.hdd_delivered === 1,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at ?? undefined,
+    dueDate: r.due_date,
+  }));
 }
 
-function rowToInvoice(row: InvoiceRow): Invoice {
+export async function getInvoiceById(id: string): Promise<Invoice | undefined> {
+  const row = await db.invoice.findUnique({
+    where: { id },
+  });
+  if (!row) return undefined;
   return {
     id: row.id,
     quotationId: row.quotation_id,
@@ -47,7 +56,7 @@ function rowToInvoice(row: InvoiceRow): Invoice {
     photographyAmount: row.photography_amount,
     advance: row.advance,
     balance: row.balance,
-    status: row.status,
+    status: row.status as "Unpaid" | "Partial paid" | "Paid",
     advanceReceived: row.advance_received === 1,
     advanceReceivedAt: row.advance_received_at,
     advanceRef: row.advance_ref,
@@ -63,116 +72,84 @@ function rowToInvoice(row: InvoiceRow): Invoice {
   };
 }
 
-export function getAllInvoices(): Invoice[] {
-  const rows = db
-    .prepare("SELECT * FROM invoices ORDER BY created_at DESC")
-    .all() as InvoiceRow[];
-  return rows.map(rowToInvoice);
-}
-
-export function getInvoiceById(id: string): Invoice | undefined {
-  const row = db
-    .prepare("SELECT * FROM invoices WHERE id = ?")
-    .get(id) as InvoiceRow | undefined;
-  return row ? rowToInvoice(row) : undefined;
-}
-
-export function createInvoice(invoice: Invoice): Invoice {
-  db.prepare(`
-    INSERT INTO invoices
-      (id,quotation_id,invoice_no,client_name,event_name,start_date,end_date,
-       venue,videography_amount,photography_amount,advance,balance,status,
-       advance_received,advance_received_at,advance_ref,advance_method,
-       balance_received,balance_received_at,balance_ref,balance_method,
-       hdd_delivered,created_at,due_date)
-    VALUES
-      (@id,@quotationId,@invoiceNo,@clientName,@eventName,@startDate,@endDate,
-       @venue,@videographyAmount,@photographyAmount,@advance,@balance,@status,
-       @advanceReceived,@advanceReceivedAt,@advanceRef,@advanceMethod,
-       @balanceReceived,@balanceReceivedAt,@balanceRef,@balanceMethod,
-       @hddDelivered,@createdAt,@dueDate)
-  `).run({
-    id: invoice.id,
-    quotationId: invoice.quotationId,
-    invoiceNo: invoice.invoiceNo,
-    clientName: invoice.clientName,
-    eventName: invoice.eventName,
-    startDate: invoice.startDate,
-    endDate: invoice.endDate,
-    venue: invoice.venue,
-    videographyAmount: invoice.videographyAmount,
-    photographyAmount: invoice.photographyAmount,
-    advance: invoice.advance,
-    balance: invoice.balance,
-    status: invoice.status,
-    advanceReceived: invoice.advanceReceived ? 1 : 0,
-    advanceReceivedAt: invoice.advanceReceivedAt,
-    advanceRef: invoice.advanceRef,
-    advanceMethod: invoice.advanceMethod,
-    balanceReceived: invoice.balanceReceived ? 1 : 0,
-    balanceReceivedAt: invoice.balanceReceivedAt,
-    balanceRef: invoice.balanceRef,
-    balanceMethod: invoice.balanceMethod,
-    hddDelivered: invoice.hddDelivered ? 1 : 0,
-    createdAt: invoice.createdAt,
-    dueDate: invoice.dueDate,
+export async function createInvoice(invoice: Invoice): Promise<Invoice> {
+  await db.invoice.create({
+    data: {
+      id: invoice.id,
+      quotation_id: invoice.quotationId,
+      invoice_no: invoice.invoiceNo,
+      client_name: invoice.clientName,
+      event_name: invoice.eventName,
+      start_date: invoice.startDate,
+      end_date: invoice.endDate,
+      venue: invoice.venue,
+      videography_amount: invoice.videographyAmount,
+      photography_amount: invoice.photographyAmount,
+      advance: invoice.advance,
+      balance: invoice.balance,
+      status: invoice.status,
+      advance_received: invoice.advanceReceived ? 1 : 0,
+      advance_received_at: invoice.advanceReceivedAt,
+      advance_ref: invoice.advanceRef,
+      advance_method: invoice.advanceMethod,
+      balance_received: invoice.balanceReceived ? 1 : 0,
+      balance_received_at: invoice.balanceReceivedAt,
+      balance_ref: invoice.balanceRef,
+      balance_method: invoice.balanceMethod,
+      hdd_delivered: invoice.hddDelivered ? 1 : 0,
+      created_at: invoice.createdAt,
+      due_date: invoice.dueDate,
+    },
   });
   return invoice;
 }
 
-export function updateInvoice(
+export async function updateInvoice(
   id: string,
   patch: Partial<Omit<Invoice, "id">>
-): Invoice | undefined {
-  const existing = getInvoiceById(id);
+): Promise<Invoice | undefined> {
+  const existing = await getInvoiceById(id);
   if (!existing) return undefined;
 
   const merged = { ...existing, ...patch };
 
-  db.prepare(`
-    UPDATE invoices SET
-      quotation_id=@quotationId, invoice_no=@invoiceNo,
-      client_name=@clientName, event_name=@eventName,
-      start_date=@startDate, end_date=@endDate, venue=@venue,
-      videography_amount=@videographyAmount, photography_amount=@photographyAmount,
-      advance=@advance, balance=@balance, status=@status,
-      advance_received=@advanceReceived, advance_received_at=@advanceReceivedAt,
-      advance_ref=@advanceRef, advance_method=@advanceMethod,
-      balance_received=@balanceReceived, balance_received_at=@balanceReceivedAt,
-      balance_ref=@balanceRef, balance_method=@balanceMethod,
-      hdd_delivered=@hddDelivered, updated_at=@updatedAt, due_date=@dueDate
-    WHERE id=@id
-  `).run({
-    id,
-    quotationId: merged.quotationId,
-    invoiceNo: merged.invoiceNo,
-    clientName: merged.clientName,
-    eventName: merged.eventName,
-    startDate: merged.startDate,
-    endDate: merged.endDate,
-    venue: merged.venue,
-    videographyAmount: merged.videographyAmount,
-    photographyAmount: merged.photographyAmount,
-    advance: merged.advance,
-    balance: merged.balance,
-    status: merged.status,
-    advanceReceived: merged.advanceReceived ? 1 : 0,
-    advanceReceivedAt: merged.advanceReceivedAt,
-    advanceRef: merged.advanceRef,
-    advanceMethod: merged.advanceMethod,
-    balanceReceived: merged.balanceReceived ? 1 : 0,
-    balanceReceivedAt: merged.balanceReceivedAt,
-    balanceRef: merged.balanceRef,
-    balanceMethod: merged.balanceMethod,
-    hddDelivered: merged.hddDelivered ? 1 : 0,
-    updatedAt: merged.updatedAt ?? null,
-    dueDate: merged.dueDate,
+  await db.invoice.update({
+    where: { id },
+    data: {
+      quotation_id: merged.quotationId,
+      invoice_no: merged.invoiceNo,
+      client_name: merged.clientName,
+      event_name: merged.eventName,
+      start_date: merged.startDate,
+      end_date: merged.endDate,
+      venue: merged.venue,
+      videography_amount: merged.videographyAmount,
+      photography_amount: merged.photographyAmount,
+      advance: merged.advance,
+      balance: merged.balance,
+      status: merged.status,
+      advance_received: merged.advanceReceived ? 1 : 0,
+      advance_received_at: merged.advanceReceivedAt,
+      advance_ref: merged.advanceRef,
+      advance_method: merged.advanceMethod,
+      balance_received: merged.balanceReceived ? 1 : 0,
+      balance_received_at: merged.balanceReceivedAt,
+      balance_ref: merged.balanceRef,
+      balance_method: merged.balanceMethod,
+      hdd_delivered: merged.hddDelivered ? 1 : 0,
+      updated_at: merged.updatedAt ?? null,
+      due_date: merged.dueDate,
+    },
   });
 
-  return getInvoiceById(id);
+  return await getInvoiceById(id);
 }
 
-export function deleteInvoice(id: string): boolean {
-  const result = db.prepare("DELETE FROM invoices WHERE id = ?").run(id);
-  return result.changes > 0;
+export async function deleteInvoice(id: string): Promise<boolean> {
+  try {
+    await db.invoice.delete({ where: { id } });
+    return true;
+  } catch (err) {
+    return false;
+  }
 }

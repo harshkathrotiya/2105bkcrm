@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const staff = getStaffById(parseInt(id, 10));
+    const staff = await getStaffById(parseInt(id, 10));
     if (!staff) {
       return Response.json({ error: "Staff not found" }, { status: 404 });
     }
@@ -48,7 +48,7 @@ export async function PATCH(
     if (body.equipmentDesc !== undefined) patch.equipmentDesc = body.equipmentDesc?.trim() || null;
     if (body.aadharNumber !== undefined) patch.aadharNumber = body.aadharNumber?.trim() || null;
 
-    const updated = updateStaff(parseInt(id, 10), patch);
+    const updated = await updateStaff(parseInt(id, 10), patch);
     if (!updated) {
       return Response.json({ error: "Staff not found" }, { status: 404 });
     }
@@ -65,7 +65,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const deleted = deleteStaff(parseInt(id, 10));
+    const deleted = await deleteStaff(parseInt(id, 10));
     if (!deleted) {
       return Response.json({ error: "Staff not found" }, { status: 404 });
     }

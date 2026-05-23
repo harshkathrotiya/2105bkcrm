@@ -1,31 +1,19 @@
 /**
- * queries/equipment.ts — typed DB helpers for the equipment table
+ * queries/equipment.ts — typed DB helpers for the equipment table using Prisma
  */
 
 import { db } from "@/lib/db";
 import type { Equipment } from "@/lib/types";
 
-export interface EquipmentRow {
-  id: number;
-  product_name: string;
-  category: "CAMERA" | "VIDEO_MIXER" | "VIDEO_RECORDER" | "AUDIO_MIXER" | "WIRELESS_TX" | "UPS" | "ACCESSORY";
-  quantity: number;
-  serial_number: string | null;
-  body_name: string | null;
-  kit_id: number | null;
-  resp_person: string | null;
-  purchase_date: string | null;
-  purchase_from: string | null;
-  bill_number: string | null;
-  purchase_price: number | null;
-  status: "AVAILABLE" | "IN_USE" | "MAINTENANCE" | "SOLD" | "RETIRED";
-  notes: string | null;
-  created_at: string;
-  updated_at: string | null;
-  kit_name?: string | null;
+export interface EquipmentFilters {
+  category?: string;
+  status?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
 }
 
-export function rowToEquipment(row: EquipmentRow): Equipment {
+function mapEquipment(row: any): Equipment {
   return {
     id: row.id,
     productName: row.product_name,
@@ -34,7 +22,7 @@ export function rowToEquipment(row: EquipmentRow): Equipment {
     serialNumber: row.serial_number,
     bodyName: row.body_name,
     kitId: row.kit_id,
-    kitName: row.kit_name || null,
+    kitName: row.kit?.name || row.kit_name || null,
     respPerson: row.resp_person,
     purchaseDate: row.purchase_date,
     purchaseFrom: row.purchase_from,
@@ -47,234 +35,188 @@ export function rowToEquipment(row: EquipmentRow): Equipment {
   };
 }
 
-export interface EquipmentFilters {
-  category?: string;
-  status?: string;
-  search?: string;
-  limit?: number;
-  offset?: number;
-}
-
-export function getEquipment(filters: EquipmentFilters = {}): { items: Equipment[]; total: number } {
-  let query = `
-    SELECT e.*, k.name as kit_name
-    FROM equipment e
-    LEFT JOIN kits k ON e.kit_id = k.id
-    WHERE 1=1
-  `;
-  let countQuery = "SELECT COUNT(*) as total FROM equipment WHERE 1=1";
-  const params: any[] = [];
-  const countParams: any[] = [];
-
+export async function getEquipment(filters: EquipmentFilters = {}): Promise<{ items: Equipment[]; total: number }> {
+  const where: any = {};
+  
   if (filters.status) {
-    query += " AND e.status = ?";
-    countQuery += " AND status = ?";
-    params.push(filters.status);
-    countParams.push(filters.status);
+    where.status = filters.status;
   } else {
-    query += " AND e.status != 'RETIRED'";
-    countQuery += " AND status != 'RETIRED'";
+    where.status = { not: "RETIRED" };
   }
 
   if (filters.category) {
-    query += " AND e.category = ?";
-    countQuery += " AND category = ?";
-    params.push(filters.category);
-    countParams.push(filters.category);
+    where.category = filters.category;
   }
 
   if (filters.search) {
-    const term = `%${filters.search}%`;
-    query += " AND (e.product_name LIKE ? OR e.serial_number LIKE ? OR e.resp_person LIKE ?)";
-    countQuery += " AND (product_name LIKE ? OR serial_number LIKE ? OR resp_person LIKE ?)";
-    params.push(term, term, term);
-    countParams.push(term, term, term);
+    where.OR = [
+      { product_name: { contains: filters.search, mode: "insensitive" } },
+      { serial_number: { contains: filters.search, mode: "insensitive" } },
+      { resp_person: { contains: filters.search, mode: "insensitive" } },
+    ];
   }
 
-  query += " ORDER BY e.id DESC";
-
-  if (filters.limit !== undefined && filters.offset !== undefined) {
-    query += " LIMIT ? OFFSET ?";
-    params.push(filters.limit, filters.offset);
-  }
-
-  const rows = db.prepare(query).all(...params) as EquipmentRow[];
-  const countRow = db.prepare(countQuery).get(...countParams) as { total: number } | undefined;
+  const [rows, total] = await Promise.all([
+    db.equipment.findMany({
+      where,
+      include: { kit: true },
+      orderBy: { id: "desc" },
+      take: filters.limit,
+      skip: filters.offset,
+    }),
+    db.equipment.count({ where }),
+  ]);
 
   return {
-    items: rows.map(rowToEquipment),
-    total: countRow ? countRow.total : 0,
+    items: rows.map(mapEquipment),
+    total,
   };
 }
 
-export function getEquipmentById(id: number): Equipment | undefined {
-  const row = db.prepare(`
-    SELECT e.*, k.name as kit_name
-    FROM equipment e
-    LEFT JOIN kits k ON e.kit_id = k.id
-    WHERE e.id = ?
-  `).get(id) as EquipmentRow | undefined;
-  return row ? rowToEquipment(row) : undefined;
+export async function getEquipmentById(id: number): Promise<Equipment | undefined> {
+  const row = await db.equipment.findUnique({
+    where: { id },
+    include: { kit: true },
+  });
+  return row ? mapEquipment(row) : undefined;
 }
 
-export function getEquipmentDetailsById(id: number) {
-  const item = getEquipmentById(id);
+export async function getEquipmentDetailsById(id: number) {
+  const item = await getEquipmentById(id);
   if (!item) return undefined;
 
-  // Fetch kit it belongs to
   let kit = null;
   if (item.kitId) {
-    kit = db.prepare("SELECT id, name FROM kits WHERE id = ?").get(item.kitId) as { id: number; name: string } | undefined;
+    kit = await db.kit.findUnique({
+      where: { id: item.kitId },
+      select: { id: true, name: true },
+    });
   }
 
-  // Fetch kit where it is the main body
-  const mainBodyOfKit = db.prepare("SELECT id, name FROM kits WHERE main_body_id = ?").get(id) as { id: number; name: string } | undefined;
+  const mainBodyOfKit = await db.kit.findFirst({
+    where: { main_body_id: id },
+    select: { id: true, name: true },
+  });
 
-  // Fetch booking history
-  const bookings = db.prepare(`
-    SELECT
-      eb.id,
-      eb.inquiry_id as inquiryId,
-      eb.position,
-      eb.booked_from as bookedFrom,
-      eb.booked_to as bookedTo,
-      eb.status,
-      eb.vendor_id as vendorId,
-      eb.vendor_cost_per_day as vendorCostPerDay,
-      eb.total_vendor_cost as totalVendorCost,
-      i.event_type as eventType,
-      i.start_date as startDate,
-      i.end_date as endDate,
-      i.status as inquiryStatus,
-      c.name as clientName,
-      v.name as vendorName
-    FROM equipment_bookings eb
-    LEFT JOIN inquiries i ON eb.inquiry_id = i.id
-    LEFT JOIN clients c ON i.client_id = c.id
-    LEFT JOIN vendors v ON eb.vendor_id = v.id
-    WHERE eb.equipment_id = ?
-    ORDER BY eb.booked_from DESC
-  `).all(id) as any[];
+  const bookings = await db.equipmentBooking.findMany({
+    where: { equipment_id: id },
+    include: {
+      inquiry: {
+        include: { client: true },
+      },
+      vendor: true,
+    },
+    orderBy: { booked_from: "desc" },
+  });
 
   return {
     ...item,
     kit: kit || null,
     mainBodyOfKit: mainBodyOfKit || null,
-    bookings,
+    bookings: bookings.map((b: any) => ({
+      id: b.id,
+      inquiryId: b.inquiry_id,
+      position: b.position,
+      bookedFrom: b.booked_from,
+      bookedTo: b.booked_to,
+      status: b.status,
+      vendorId: b.vendor_id,
+      vendorCostPerDay: b.vendor_cost_per_day,
+      totalVendorCost: b.total_vendor_cost,
+      eventType: b.inquiry?.event_type,
+      startDate: b.inquiry?.start_date,
+      endDate: b.inquiry?.end_date,
+      inquiryStatus: b.inquiry?.status,
+      clientName: b.inquiry?.client?.name,
+      vendorName: b.vendor?.name,
+    })),
   };
 }
 
-export function getEquipmentByKitId(kitId: number): Equipment[] {
-  const rows = db.prepare(`
-    SELECT e.*, k.name as kit_name
-    FROM equipment e
-    LEFT JOIN kits k ON e.kit_id = k.id
-    WHERE e.kit_id = ?
-  `).all(kitId) as EquipmentRow[];
-  return rows.map(rowToEquipment);
+export async function getEquipmentByKitId(kitId: number): Promise<Equipment[]> {
+  const rows = await db.equipment.findMany({
+    where: { kit_id: kitId },
+    include: { kit: true },
+  });
+  return rows.map(mapEquipment);
 }
 
-export function createEquipment(item: Omit<Equipment, "id" | "createdAt">): Equipment {
+export async function createEquipment(item: Omit<Equipment, "id" | "createdAt">): Promise<Equipment> {
   const nowStr = new Date().toISOString();
-  const res = db.prepare(`
-    INSERT INTO equipment (
-      product_name, category, quantity, serial_number, body_name, kit_id,
-      resp_person, purchase_date, purchase_from, bill_number, purchase_price,
-      status, notes, created_at
-    ) VALUES (
-      @productName, @category, @quantity, @serialNumber, @bodyName, @kitId,
-      @respPerson, @purchaseDate, @purchaseFrom, @billNumber, @purchasePrice,
-      @status, @notes, @createdAt
-    )
-  `).run({
-    productName: item.productName,
-    category: item.category,
-    quantity: item.quantity,
-    serialNumber: item.serialNumber ?? null,
-    bodyName: item.bodyName ?? null,
-    kitId: item.kitId ?? null,
-    respPerson: item.respPerson ?? null,
-    purchaseDate: item.purchaseDate ?? null,
-    purchaseFrom: item.purchaseFrom ?? null,
-    billNumber: item.billNumber ?? null,
-    purchasePrice: item.purchasePrice ?? null,
-    status: item.status || "AVAILABLE",
-    notes: item.notes ?? null,
-    createdAt: nowStr
+  const row = await db.equipment.create({
+    data: {
+      product_name: item.productName,
+      category: item.category,
+      quantity: item.quantity,
+      serial_number: item.serialNumber ?? null,
+      body_name: item.bodyName ?? null,
+      kit_id: item.kitId ?? null,
+      resp_person: item.respPerson ?? null,
+      purchase_date: item.purchaseDate ?? null,
+      purchase_from: item.purchaseFrom ?? null,
+      bill_number: item.billNumber ?? null,
+      purchase_price: item.purchasePrice ?? null,
+      status: item.status || "AVAILABLE",
+      notes: item.notes ?? null,
+      created_at: nowStr,
+    },
+    include: { kit: true }
   });
 
-  return {
-    ...item,
-    id: res.lastInsertRowid as number,
-    createdAt: nowStr,
-  };
+  return mapEquipment(row);
 }
 
-export function updateEquipment(id: number, patch: Partial<Omit<Equipment, "id" | "createdAt">>): Equipment | undefined {
-  const existing = getEquipmentById(id);
+export async function updateEquipment(id: number, patch: Partial<Omit<Equipment, "id" | "createdAt">>): Promise<Equipment | undefined> {
+  const existing = await getEquipmentById(id);
   if (!existing) return undefined;
 
   const merged = { ...existing, ...patch };
   const nowStr = new Date().toISOString();
 
-  db.prepare(`
-    UPDATE equipment SET
-      product_name = @productName,
-      category = @category,
-      quantity = @quantity,
-      serial_number = @serialNumber,
-      body_name = @bodyName,
-      kit_id = @kitId,
-      resp_person = @respPerson,
-      purchase_date = @purchaseDate,
-      purchase_from = @purchaseFrom,
-      bill_number = @billNumber,
-      purchase_price = @purchasePrice,
-      status = @status,
-      notes = @notes,
-      updated_at = @updatedAt
-    WHERE id = @id
-  `).run({
-    id,
-    productName: merged.productName,
-    category: merged.category,
-    quantity: merged.quantity,
-    serialNumber: merged.serialNumber ?? null,
-    bodyName: merged.bodyName ?? null,
-    kitId: merged.kitId ?? null,
-    respPerson: merged.respPerson ?? null,
-    purchaseDate: merged.purchaseDate ?? null,
-    purchaseFrom: merged.purchaseFrom ?? null,
-    billNumber: merged.billNumber ?? null,
-    purchasePrice: merged.purchasePrice ?? null,
-    status: merged.status,
-    notes: merged.notes ?? null,
-    updatedAt: nowStr,
+  const row = await db.equipment.update({
+    where: { id },
+    data: {
+      product_name: merged.productName,
+      category: merged.category,
+      quantity: merged.quantity,
+      serial_number: merged.serialNumber ?? null,
+      body_name: merged.bodyName ?? null,
+      kit_id: merged.kitId ?? null,
+      resp_person: merged.respPerson ?? null,
+      purchase_date: merged.purchaseDate ?? null,
+      purchase_from: merged.purchaseFrom ?? null,
+      bill_number: merged.billNumber ?? null,
+      purchase_price: merged.purchasePrice ?? null,
+      status: merged.status,
+      notes: merged.notes ?? null,
+      updated_at: nowStr,
+    },
+    include: { kit: true }
   });
 
-  return getEquipmentById(id);
+  return mapEquipment(row);
 }
 
-export function deleteEquipment(id: number): boolean {
-  // Soft delete: status = RETIRED
-  const result = db.prepare("UPDATE equipment SET status = 'RETIRED', updated_at = datetime('now') WHERE id = ?").run(id);
-  return result.changes > 0;
+export async function deleteEquipment(id: number): Promise<boolean> {
+  try {
+    await db.equipment.update({
+      where: { id },
+      data: { status: "RETIRED", updated_at: new Date().toISOString() },
+    });
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
-export function getAssetSummary() {
-  const totalValRow = db.prepare(`
-    SELECT SUM(purchase_price * quantity) as totalValue, COUNT(*) as totalCount
-    FROM equipment
-    WHERE status NOT IN ('RETIRED', 'SOLD')
-  `).get() as { totalValue: number | null; totalCount: number } | undefined;
+export async function getAssetSummary() {
+  const equipment = await db.equipment.findMany({
+    where: { status: { notIn: ["RETIRED", "SOLD"] } },
+  });
 
-  const categoryBreakdown = db.prepare(`
-    SELECT category, SUM(purchase_price * quantity) as value, COUNT(*) as count
-    FROM equipment
-    WHERE status NOT IN ('RETIRED', 'SOLD')
-    GROUP BY category
-  `).all() as { category: string; value: number | null; count: number }[];
-
+  let totalValue = 0;
+  let totalCount = 0;
+  
   const categoryMap: Record<string, { count: number; value: number }> = {
     CAMERA: { count: 0, value: 0 },
     VIDEO_MIXER: { count: 0, value: 0 },
@@ -285,32 +227,32 @@ export function getAssetSummary() {
     ACCESSORY: { count: 0, value: 0 },
   };
 
-  categoryBreakdown.forEach((row) => {
-    if (categoryMap[row.category]) {
-      categoryMap[row.category] = {
-        count: row.count,
-        value: row.value || 0,
-      };
+  for (const eq of equipment) {
+    const val = (eq.purchase_price || 0) * eq.quantity;
+    totalValue += val;
+    totalCount += 1; // Or eq.quantity? The previous SQL did COUNT(*)
+    
+    if (categoryMap[eq.category]) {
+      categoryMap[eq.category].count += 1;
+      categoryMap[eq.category].value += val;
     }
-  });
+  }
 
   return {
-    totalValue: totalValRow?.totalValue || 0,
-    totalCount: totalValRow?.totalCount || 0,
+    totalValue,
+    totalCount,
     categories: categoryMap,
   };
 }
 
-export function getEquipmentCategoryCounts(): Record<string, number> {
-  const rows = db.prepare(`
-    SELECT category, COUNT(*) as count
-    FROM equipment
-    WHERE status NOT IN ('RETIRED', 'SOLD')
-    GROUP BY category
-  `).all() as { category: string; count: number }[];
+export async function getEquipmentCategoryCounts(): Promise<Record<string, number>> {
+  const equipment = await db.equipment.findMany({
+    where: { status: { notIn: ["RETIRED", "SOLD"] } },
+    select: { category: true },
+  });
 
   const counts: Record<string, number> = {
-    ALL: 0,
+    ALL: equipment.length,
     CAMERA: 0,
     VIDEO_MIXER: 0,
     VIDEO_RECORDER: 0,
@@ -320,49 +262,43 @@ export function getEquipmentCategoryCounts(): Record<string, number> {
     ACCESSORY: 0,
   };
 
-  let total = 0;
-  rows.forEach((row) => {
-    if (row.category in counts) {
-      counts[row.category] = row.count;
-      total += row.count;
+  for (const eq of equipment) {
+    if (eq.category in counts) {
+      counts[eq.category] += 1;
     }
-  });
-  counts.ALL = total;
+  }
 
   return counts;
 }
 
-/**
- * Helper to check if a specific equipment is booked in a date range
- */
-export function isEquipmentBooked(equipmentId: number, startDate: string, endDate: string): boolean {
-  // First, check if there is an explicit booking for this equipment
-  const row = db.prepare(`
-    SELECT COUNT(*) as count 
-    FROM equipment_bookings 
-    WHERE equipment_id = ? 
-      AND status != 'RETURNED'
-      AND booked_from <= ? 
-      AND booked_to >= ?
-  `).get(equipmentId, endDate, startDate) as { count: number } | undefined;
+export async function isEquipmentBooked(equipmentId: number, startDate: string, endDate: string): Promise<boolean> {
+  const count = await db.equipmentBooking.count({
+    where: {
+      equipment_id: equipmentId,
+      status: { not: "RETURNED" },
+      booked_from: { lte: endDate },
+      booked_to: { gte: startDate },
+    },
+  });
 
-  if (row && row.count > 0) return true;
+  if (count > 0) return true;
 
-  // Next, check if this equipment belongs to a kit, and if that kit is booked
-  const eq = db.prepare("SELECT kit_id FROM equipment WHERE id = ?").get(equipmentId) as { kit_id: number | null } | undefined;
+  const eq = await db.equipment.findUnique({
+    where: { id: equipmentId },
+    select: { kit_id: true },
+  });
+
   if (eq && eq.kit_id) {
-    const kitRow = db.prepare(`
-      SELECT COUNT(*) as count
-      FROM equipment_bookings
-      WHERE kit_id = ?
-        AND status != 'RETURNED'
-        AND booked_from <= ?
-        AND booked_to >= ?
-    `).get(eq.kit_id, endDate, startDate) as { count: number } | undefined;
-    
-    if (kitRow && kitRow.count > 0) return true;
+    const kitCount = await db.equipmentBooking.count({
+      where: {
+        kit_id: eq.kit_id,
+        status: { not: "RETURNED" },
+        booked_from: { lte: endDate },
+        booked_to: { gte: startDate },
+      },
+    });
+    if (kitCount > 0) return true;
   }
 
   return false;
 }
-

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const limit = isNaN(limitRaw) || limitRaw < 1 ? 20 : Math.min(limitRaw, 200);
     const offset = (page - 1) * limit;
 
-    const { items, total } = getEquipment({
+    const { items, total } = await getEquipment({
       category: category === "ALL" ? undefined : category,
       status,
       search,
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       offset,
     });
 
-    const categoryCounts = getEquipmentCategoryCounts();
+    const categoryCounts = await getEquipmentCategoryCounts();
     return Response.json({ items, total, page, limit, categoryCounts });
   } catch (err) {
     console.error("[GET /api/equipment]", err);
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     if (body.notes) v.maxLength("notes", 1000);
     if (v.hasErrors()) return v.response();
 
-    const item = createEquipment({
+    const item = await createEquipment({
       productName: body.productName.trim(),
       category: body.category,
       quantity: parseInt(body.quantity ?? "1", 10),

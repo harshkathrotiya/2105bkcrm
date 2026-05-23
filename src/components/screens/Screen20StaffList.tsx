@@ -170,216 +170,247 @@ export default function Screen20StaffList() {
           </div>
         }
       >
-        <div style={{ display: "flex", border: "1px solid var(--b1)", borderRadius: "12px", overflow: "hidden", background: "var(--s1)" }}>
+            <div className="two-col" style={{ gridTemplateColumns: "180px 1fr" }}>
           
           {/* Sidebar Filters */}
-          <div
-            style={{
-              width: "185px",
-              background: "var(--s2)",
-              borderRight: "1px solid var(--b1)",
-              padding: "12px 0",
-              flexShrink: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: "4px",
-            }}
-          >
-            <div style={{ padding: "6px 14px 2px", fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase" }}>
-              Filter by type
+          <aside className="sf" style={{ background: "var(--alt2)", borderRight: "1px solid var(--b1)", alignSelf: "start" }}>
+            <div className="tb" style={{ padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "var(--tx3)" }}>
+              FILTER BY TYPE
             </div>
-            <div
-              onClick={() => { setSidebarFilter("ALL"); setCurrentPage(1); }}
-              style={{
-                padding: "8px 14px",
-                fontSize: "12px",
-                color: sidebarFilter === "ALL" ? "var(--tx)" : "var(--tx3)",
-                background: sidebarFilter === "ALL" ? "var(--s1)" : "transparent",
-                borderLeft: `2px solid ${sidebarFilter === "ALL" ? "var(--acc)" : "transparent"}`,
-                cursor: "pointer",
-                display: "flex",
-                justifyContent: "space-between",
-                fontWeight: sidebarFilter === "ALL" ? 500 : 400,
-              }}
-            >
-              <span>All Staff</span>
-              <span style={{ fontSize: "10px", color: "var(--tx3)" }}>{counts.total}</span>
-            </div>
-            <div
-              onClick={() => { setSidebarFilter("INHOUSE"); setCurrentPage(1); }}
-              style={{
-                padding: "8px 14px",
-                fontSize: "12px",
-                color: sidebarFilter === "INHOUSE" ? "var(--tx)" : "var(--tx3)",
-                background: sidebarFilter === "INHOUSE" ? "var(--s1)" : "transparent",
-                borderLeft: `2px solid ${sidebarFilter === "INHOUSE" ? "var(--acc)" : "transparent"}`,
-                cursor: "pointer",
-                display: "flex",
-                justifyContent: "space-between",
-                fontWeight: sidebarFilter === "INHOUSE" ? 500 : 400,
-              }}
-            >
-              <span>In-house</span>
-              <span style={{ fontSize: "10px", color: "var(--tx3)" }}>{counts.inHouse}</span>
-            </div>
-            <div
-              onClick={() => { setSidebarFilter("EXTERNAL"); setCurrentPage(1); }}
-              style={{
-                padding: "8px 14px",
-                fontSize: "12px",
-                color: sidebarFilter === "EXTERNAL" ? "var(--tx)" : "var(--tx3)",
-                background: sidebarFilter === "EXTERNAL" ? "var(--s1)" : "transparent",
-                borderLeft: `2px solid ${sidebarFilter === "EXTERNAL" ? "var(--acc)" : "transparent"}`,
-                cursor: "pointer",
-                display: "flex",
-                justifyContent: "space-between",
-                fontWeight: sidebarFilter === "EXTERNAL" ? 500 : 400,
-              }}
-            >
-              <span>External</span>
-              <span style={{ fontSize: "10px", color: "var(--tx3)" }}>{counts.external}</span>
-            </div>
-
-            <div style={{ height: "1px", background: "var(--b1)", margin: "8px 14px" }} />
-
-            <div style={{ padding: "6px 14px 2px", fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase" }}>
-              Payment type
-            </div>
-            <div
-              onClick={() => { setSidebarFilter("MONTHLY"); setCurrentPage(1); }}
-              style={{
-                padding: "8px 14px",
-                fontSize: "12px",
-                color: sidebarFilter === "MONTHLY" ? "var(--tx)" : "var(--tx3)",
-                background: sidebarFilter === "MONTHLY" ? "var(--s1)" : "transparent",
-                borderLeft: `2px solid ${sidebarFilter === "MONTHLY" ? "var(--acc)" : "transparent"}`,
-                cursor: "pointer",
-                display: "flex",
-                justifyContent: "space-between",
-                fontWeight: sidebarFilter === "MONTHLY" ? 500 : 400,
-              }}
-            >
-              <span>Monthly salary</span>
-              <span style={{ fontSize: "10px", color: "var(--tx3)" }}>{counts.monthly}</span>
-            </div>
-            <div
-              onClick={() => { setSidebarFilter("PER_DAY"); setCurrentPage(1); }}
-              style={{
-                padding: "8px 14px",
-                fontSize: "12px",
-                color: sidebarFilter === "PER_DAY" ? "var(--tx)" : "var(--tx3)",
-                background: sidebarFilter === "PER_DAY" ? "var(--s1)" : "transparent",
-                borderLeft: `2px solid ${sidebarFilter === "PER_DAY" ? "var(--acc)" : "transparent"}`,
-                cursor: "pointer",
-                display: "flex",
-                justifyContent: "space-between",
-                fontWeight: sidebarFilter === "PER_DAY" ? 500 : 400,
-              }}
-            >
-              <span>Per day</span>
-              <span style={{ fontSize: "10px", color: "var(--tx3)" }}>{counts.perDay}</span>
+            <div style={{ padding: "6px" }}>
+              <button
+                onClick={() => { setSidebarFilter("ALL"); setCurrentPage(1); }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "7px 10px",
+                  borderRadius: "6px",
+                  background: sidebarFilter === "ALL" ? "var(--sidebar-active)" : "transparent",
+                  color: sidebarFilter === "ALL" ? "var(--tx)" : "var(--tx2)",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: sidebarFilter === "ALL" ? 600 : 400,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "2px",
+                }}
+              >
+                <span>All Staff</span>
+                <span className="badge bdg-gy" style={{ padding: "1px 6px", fontSize: "9px" }}>{counts.total}</span>
+              </button>
+              <button
+                onClick={() => { setSidebarFilter("INHOUSE"); setCurrentPage(1); }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "7px 10px",
+                  borderRadius: "6px",
+                  background: sidebarFilter === "INHOUSE" ? "var(--sidebar-active)" : "transparent",
+                  color: sidebarFilter === "INHOUSE" ? "var(--tx)" : "var(--tx2)",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: sidebarFilter === "INHOUSE" ? 600 : 400,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "2px",
+                }}
+              >
+                <span>In-house</span>
+                <span className="badge bdg-gy" style={{ padding: "1px 6px", fontSize: "9px" }}>{counts.inHouse}</span>
+              </button>
+              <button
+                onClick={() => { setSidebarFilter("EXTERNAL"); setCurrentPage(1); }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "7px 10px",
+                  borderRadius: "6px",
+                  background: sidebarFilter === "EXTERNAL" ? "var(--sidebar-active)" : "transparent",
+                  color: sidebarFilter === "EXTERNAL" ? "var(--tx)" : "var(--tx2)",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: sidebarFilter === "EXTERNAL" ? 600 : 400,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "2px",
+                }}
+              >
+                <span>External</span>
+                <span className="badge bdg-gy" style={{ padding: "1px 6px", fontSize: "9px" }}>{counts.external}</span>
+              </button>
             </div>
 
-            <div style={{ height: "1px", background: "var(--b1)", margin: "8px 14px" }} />
+            <div style={{ height: "1px", background: "var(--b1)", margin: "4px 12px" }} />
 
-            <div style={{ padding: "6px 14px 2px", fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase" }}>
-              Status
+            <div className="tb" style={{ padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "var(--tx3)" }}>
+              PAYMENT TYPE
             </div>
-            <div
-              onClick={() => { setSidebarFilter("AVAILABLE"); setCurrentPage(1); }}
-              style={{
-                padding: "8px 14px",
-                fontSize: "12px",
-                color: sidebarFilter === "AVAILABLE" ? "var(--tx)" : "var(--tx3)",
-                background: sidebarFilter === "AVAILABLE" ? "var(--s1)" : "transparent",
-                borderLeft: `2px solid ${sidebarFilter === "AVAILABLE" ? "var(--acc)" : "transparent"}`,
-                cursor: "pointer",
-                display: "flex",
-                justifyContent: "space-between",
-                fontWeight: sidebarFilter === "AVAILABLE" ? 500 : 400,
-              }}
-            >
-              <span>Available</span>
-              <span style={{ fontSize: "10px", color: "var(--tx3)" }}>{counts.available}</span>
-            </div>
-            <div
-              onClick={() => { setSidebarFilter("DEPLOYED"); setCurrentPage(1); }}
-              style={{
-                padding: "8px 14px",
-                fontSize: "12px",
-                color: sidebarFilter === "DEPLOYED" ? "var(--tx)" : "var(--tx3)",
-                background: sidebarFilter === "DEPLOYED" ? "var(--s1)" : "transparent",
-                borderLeft: `2px solid ${sidebarFilter === "DEPLOYED" ? "var(--acc)" : "transparent"}`,
-                cursor: "pointer",
-                display: "flex",
-                justifyContent: "space-between",
-                fontWeight: sidebarFilter === "DEPLOYED" ? 500 : 400,
-              }}
-            >
-              <span>Deployed</span>
-              <span style={{ fontSize: "10px", color: "var(--tx3)" }}>{counts.deployed}</span>
+            <div style={{ padding: "6px" }}>
+              <button
+                onClick={() => { setSidebarFilter("MONTHLY"); setCurrentPage(1); }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "7px 10px",
+                  borderRadius: "6px",
+                  background: sidebarFilter === "MONTHLY" ? "var(--sidebar-active)" : "transparent",
+                  color: sidebarFilter === "MONTHLY" ? "var(--tx)" : "var(--tx2)",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: sidebarFilter === "MONTHLY" ? 600 : 400,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "2px",
+                }}
+              >
+                <span>Monthly salary</span>
+                <span className="badge bdg-gy" style={{ padding: "1px 6px", fontSize: "9px" }}>{counts.monthly}</span>
+              </button>
+              <button
+                onClick={() => { setSidebarFilter("PER_DAY"); setCurrentPage(1); }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "7px 10px",
+                  borderRadius: "6px",
+                  background: sidebarFilter === "PER_DAY" ? "var(--sidebar-active)" : "transparent",
+                  color: sidebarFilter === "PER_DAY" ? "var(--tx)" : "var(--tx2)",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: sidebarFilter === "PER_DAY" ? 600 : 400,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "2px",
+                }}
+              >
+                <span>Per day</span>
+                <span className="badge bdg-gy" style={{ padding: "1px 6px", fontSize: "9px" }}>{counts.perDay}</span>
+              </button>
             </div>
 
-            <div style={{ height: "1px", background: "var(--b1)", margin: "8px 14px" }} />
+            <div style={{ height: "1px", background: "var(--b1)", margin: "4px 12px" }} />
 
-            <div style={{ padding: "8px 14px" }}>
+            <div className="tb" style={{ padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "var(--tx3)" }}>
+              STATUS
+            </div>
+            <div style={{ padding: "6px" }}>
+              <button
+                onClick={() => { setSidebarFilter("AVAILABLE"); setCurrentPage(1); }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "7px 10px",
+                  borderRadius: "6px",
+                  background: sidebarFilter === "AVAILABLE" ? "var(--sidebar-active)" : "transparent",
+                  color: sidebarFilter === "AVAILABLE" ? "var(--tx)" : "var(--tx2)",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: sidebarFilter === "AVAILABLE" ? 600 : 400,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "2px",
+                }}
+              >
+                <span>Available</span>
+                <span className="badge bdg-gy" style={{ padding: "1px 6px", fontSize: "9px" }}>{counts.available}</span>
+              </button>
+              <button
+                onClick={() => { setSidebarFilter("DEPLOYED"); setCurrentPage(1); }}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "7px 10px",
+                  borderRadius: "6px",
+                  background: sidebarFilter === "DEPLOYED" ? "var(--sidebar-active)" : "transparent",
+                  color: sidebarFilter === "DEPLOYED" ? "var(--tx)" : "var(--tx2)",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: sidebarFilter === "DEPLOYED" ? 600 : 400,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "2px",
+                }}
+              >
+                <span>Deployed</span>
+                <span className="badge bdg-gy" style={{ padding: "1px 6px", fontSize: "9px" }}>{counts.deployed}</span>
+              </button>
+            </div>
+
+            <div style={{ height: "1px", background: "var(--b1)", margin: "4px 12px" }} />
+
+            <div style={{ padding: "8px 12px" }}>
               <div style={{ fontSize: "10px", color: "var(--tx3)", marginBottom: "3px" }}>Total pending pay</div>
               <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--acc)" }}>₹{pendingPaymentsDue.toLocaleString("en-IN")}</div>
             </div>
 
-            <div style={{ height: "1px", background: "var(--b1)", margin: "8px 14px" }} />
+            <div style={{ height: "1px", background: "var(--b1)", margin: "4px 12px" }} />
 
-            <Link
-              href="/staff/inactive"
-              style={{
-                padding: "8px 14px",
-                fontSize: "12px",
-                color: "var(--tx3)",
-                display: "block",
-                textDecoration: "none",
-              }}
-            >
-              Inactive Staff →
-            </Link>
-          </div>
+            <div style={{ padding: "6px" }}>
+              <Link
+                href="/staff/inactive"
+                className="btn w-full justify-center"
+                style={{
+                  fontSize: "11px",
+                  padding: "6px 8px",
+                  textDecoration: "none",
+                }}
+              >
+                Inactive Staff →
+              </Link>
+            </div>
+          </aside>
 
           {/* Main Grid Content */}
-          <div style={{ flex: 1, padding: "16px", background: "var(--cnt-bg)", minHeight: "480px" }}>
-            
-            {/* Search and Dropdowns Filter */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-              <input
-                type="text"
-                placeholder="Search staff by name, role, mobile number..."
-                className="finp"
-                style={{ flex: 1, fontSize: "12px" }}
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              />
-              <select
-                className="fsel"
-                style={{ width: "135px", fontSize: "12px" }}
-                value={typeFilter}
-                onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
-              >
-                <option value="ALL">All Types</option>
-                <option value="INHOUSE">In-house</option>
-                <option value="EXTERNAL">External</option>
-              </select>
-              <select
-                className="fsel"
-                style={{ width: "135px", fontSize: "12px" }}
-                value={paymentFilter}
-                onChange={(e) => { setPaymentFilter(e.target.value); setCurrentPage(1); }}
-              >
-                <option value="ALL">All Payments</option>
-                <option value="PER_DAY">Per Day</option>
-                <option value="MONTHLY">Monthly Fixed</option>
-              </select>
-            </div>
+          <div>
+            <div className="card !p-3" style={{ marginBottom: "0px" }}>
+              
+              {/* Search and Dropdowns Filter */}
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                <input
+                  type="text"
+                  placeholder="Search staff by name, role, mobile number..."
+                  className="finp"
+                  style={{ flex: 1, fontSize: "12px" }}
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                />
+                <select
+                  className="fsel"
+                  style={{ width: "135px", fontSize: "12px" }}
+                  value={typeFilter}
+                  onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="ALL">All Types</option>
+                  <option value="INHOUSE">In-house</option>
+                  <option value="EXTERNAL">External</option>
+                </select>
+                <select
+                  className="fsel"
+                  style={{ width: "135px", fontSize: "12px" }}
+                  value={paymentFilter}
+                  onChange={(e) => { setPaymentFilter(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="ALL">All Payments</option>
+                  <option value="PER_DAY">Per Day</option>
+                  <option value="MONTHLY">Monthly Fixed</option>
+                </select>
+              </div>
 
-            {/* Table */}
-            <div className="card" style={{ padding: 0, border: "none" }}>
+              {/* Table */}
               <table className="tbl">
                 <thead>
                   <tr>
@@ -464,7 +495,7 @@ export default function Screen20StaffList() {
 
               {/* Pagination controls */}
               {filteredStaff.length > itemsPerPage && (
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", borderTop: "1px solid var(--tbl-line)", fontSize: "11px", color: "var(--tx3)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px 0 14px", borderTop: "1px solid var(--tbl-line)", fontSize: "11px", color: "var(--tx3)", marginTop: "12px" }}>
                   <span>
                     Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredStaff.length)} of {filteredStaff.length} staff
                   </span>
@@ -499,9 +530,7 @@ export default function Screen20StaffList() {
                 </div>
               )}
             </div>
-
           </div>
-
         </div>
       </ScreenFrame>
       </div>

@@ -44,32 +44,31 @@ export async function POST(request: NextRequest) {
       totalVendorCost = parseFloat(vendorCostPerDay) * days;
     }
 
-    // Remove any existing booking for the same inquiry + position to prevent duplicates
-    if (position) {
-      db.prepare("DELETE FROM equipment_bookings WHERE inquiry_id = ? AND position = ?").run(inquiryId, position);
-    }
+    let newBooking;
+    await db.$transaction(async (tx) => {
+      // Remove any existing booking for the same inquiry + position to prevent duplicates
+      if (position) {
+        await tx.equipmentBooking.deleteMany({
+          where: { inquiry_id: inquiryId, position: position }
+        });
+      }
 
-    const res = db.prepare(`
-      INSERT INTO equipment_bookings (
-        inquiry_id, equipment_id, kit_id, position, booked_from, booked_to,
-        status, vendor_id, vendor_cost_per_day, total_vendor_cost
-      ) VALUES (
-        @inquiryId, @equipmentId, @kitId, @position, @bookedFrom, @bookedTo,
-        'BOOKED', @vendorId, @vendorCostPerDay, @totalVendorCost
-      )
-    `).run({
-      inquiryId,
-      equipmentId: equipmentId ? parseInt(equipmentId, 10) : null,
-      kitId: kitId ? parseInt(kitId, 10) : null,
-      position: position || null,
-      bookedFrom,
-      bookedTo,
-      vendorId: vendorId ? parseInt(vendorId, 10) : null,
-      vendorCostPerDay: vendorCostPerDay ? parseFloat(vendorCostPerDay) : null,
-      totalVendorCost,
+      newBooking = await tx.equipmentBooking.create({
+        data: {
+          inquiry_id: inquiryId,
+          equipment_id: equipmentId ? parseInt(equipmentId, 10) : null,
+          kit_id: kitId ? parseInt(kitId, 10) : null,
+          position: position || null,
+          booked_from: bookedFrom,
+          booked_to: bookedTo,
+          status: 'BOOKED',
+          vendor_id: vendorId ? parseInt(vendorId, 10) : null,
+          vendor_cost_per_day: vendorCostPerDay ? parseFloat(vendorCostPerDay) : null,
+          total_vendor_cost: totalVendorCost,
+        }
+      });
     });
 
-    const newBooking = db.prepare("SELECT * FROM equipment_bookings WHERE id = ?").get(res.lastInsertRowid) as any;
     return Response.json(newBooking, { status: 201 });
   } catch (err) {
     console.error("[POST /api/equipment-bookings]", err);

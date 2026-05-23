@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
   try {
     const clientId = request.nextUrl.searchParams.get("clientId");
     const inquiries = clientId
-      ? getInquiriesByClient(clientId)
-      : getAllInquiries();
+      ? await getInquiriesByClient(clientId)
+      : await getAllInquiries();
     return Response.json(inquiries);
   } catch (err) {
     console.error("[GET /api/inquiries]", err);
@@ -43,12 +43,12 @@ export async function POST(request: NextRequest) {
     if (v.hasErrors()) return v.response();
 
     // Verify client exists
-    const client = getClientById(body.clientId);
+    const client = await getClientById(body.clientId);
     if (!client) {
       return Response.json({ error: "Client not found" }, { status: 404 });
     }
 
-    const inquiry = createInquiry({
+    const inquiry = await createInquiry({
       id: body.id ?? `inq-${generateId()}`,
       clientId: body.clientId,
       eventType: body.eventType.trim(),
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     // Auto-create calendar event for the start date
     const startD = new Date(body.startDate);
-    createCalendarEvent({
+    await createCalendarEvent({
       id: `cal-${generateId()}`,
       date: startD.getDate(),
       month: startD.getMonth(),

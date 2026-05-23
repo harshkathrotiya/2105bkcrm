@@ -4,7 +4,7 @@ import { Validator } from "@/lib/validate";
 
 export async function GET() {
   try {
-    const vendors = getAllVendors();
+    const vendors = await getAllVendors();
     return Response.json(vendors);
   } catch (err) {
     console.error("[GET /api/vendors]", err);
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     v.maxLength("notes", 500);
     if (v.hasErrors()) return v.response();
 
-    const vendor = createVendor({
+    const vendor = await createVendor({
       name: body.name.trim(),
       phone: body.phone.trim(),
       email: body.email?.trim() || null,

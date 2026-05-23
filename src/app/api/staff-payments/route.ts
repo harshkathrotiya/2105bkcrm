@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "status must be PENDING or PAID" }, { status: 400 });
     }
 
-    const payments = getStaffPayments({ inquiryId, month, status, staffId });
+    const payments = await getStaffPayments({ inquiryId, month, status, staffId });
     return Response.json(payments);
   } catch (err) {
     console.error("[GET /api/staff-payments]", err);
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     if (body.notes !== undefined && body.notes) v.maxLength("notes", 500);
     if (v.hasErrors()) return v.response();
 
-    const payment = recordStaffPayment({
+    const payment = await recordStaffPayment({
       staffId: parseInt(body.staffId, 10),
       assignmentId: body.assignmentId ? parseInt(body.assignmentId, 10) : null,
       inquiryId: body.inquiryId || null,

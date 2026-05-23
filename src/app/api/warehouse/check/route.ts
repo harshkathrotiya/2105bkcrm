@@ -13,13 +13,16 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "inquiryId is required" }, { status: 400 });
     }
 
-    const inquiry = getInquiryById(inquiryId);
+    const inquiry = await getInquiryById(inquiryId);
     if (!inquiry) {
       return Response.json({ error: "Inquiry not found" }, { status: 404 });
     }
 
     // Get the quotation for this inquiry
-    const quotation = db.prepare("SELECT * FROM quotations WHERE inquiry_id = ?").get(inquiryId) as any;
+    const quotation = await db.quotation.findFirst({
+      where: { inquiry_id: inquiryId }
+    });
+    
     let quoteRows: any[] = [];
     if (quotation) {
       try {
@@ -30,12 +33,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Get existing bookings for this inquiry
-    const bookings = db.prepare("SELECT * FROM equipment_bookings WHERE inquiry_id = ?").all(inquiryId) as any[];
+    const bookings = await db.equipmentBooking.findMany({
+      where: { inquiry_id: inquiryId }
+    });
 
     // Fetch all equipment with their availability status for the inquiry dates
-    const { items: allEquipment } = getEquipment();
-    const equipmentWithStatus = allEquipment.map((item) => {
-      const isBooked = isEquipmentBooked(item.id, inquiry.startDate, inquiry.endDate);
+    const { items: allEquipment } = await getEquipment();
+    
+    const equipmentWithStatus = await Promise.all(allEquipment.map(async (item) => {
+      const isBooked = await isEquipmentBooked(item.id, inquiry.startDate, inquiry.endDate);
       
       // Find if booked for THIS inquiry
       const thisBooking = bookings.find(b => b.equipment_id === item.id);
@@ -46,12 +52,12 @@ export async function GET(request: NextRequest) {
         bookedForThisInquiry: !!thisBooking,
         bookingDetails: thisBooking || null,
       };
-    });
+    }));
 
     // Fetch all kits with their availability status for the inquiry dates
-    const allKitsList = getAllKits();
-    const kitsWithStatus = allKitsList.map((kit) => {
-      const availabilityStatus = getKitAvailabilityStatus(kit.id, inquiry.startDate, inquiry.endDate);
+    const allKitsList = await getAllKits();
+    const kitsWithStatus = await Promise.all(allKitsList.map(async (kit) => {
+      const availabilityStatus = await getKitAvailabilityStatus(kit.id, inquiry.startDate, inquiry.endDate);
       const thisBooking = bookings.find(b => b.kit_id === kit.id);
 
       return {
@@ -60,7 +66,7 @@ export async function GET(request: NextRequest) {
         bookedForThisInquiry: !!thisBooking,
         bookingDetails: thisBooking || null,
       };
-    });
+    }));
 
     return Response.json({
       inquiry,
@@ -69,7 +75,7 @@ export async function GET(request: NextRequest) {
         quoteNo: quotation.quote_no,
         equipment: quoteRows,
       } : null,
-      bookings: bookings.map((b) => ({
+      bookings: bookings.map((b: any) => ({
         id: b.id,
         equipmentId: b.equipment_id,
         kitId: b.kit_id,

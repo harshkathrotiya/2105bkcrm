@@ -10,7 +10,7 @@ import { Validator } from "@/lib/validate";
 
 export async function GET() {
   try {
-    const invoices = getAllInvoices();
+    const invoices = await getAllInvoices();
     return Response.json(invoices);
   } catch (err) {
     console.error("[GET /api/invoices]", err);
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const advance = body.advance ?? 0;
     const balance = body.balance ?? 0;
 
-    const invoice = createInvoice({
+    const invoice = await createInvoice({
       id: body.id ?? `inv-${generateId()}`,
       quotationId: body.quotationId,
       invoiceNo: body.invoiceNo?.trim() ?? `BKM-INV-${generateId()}`,

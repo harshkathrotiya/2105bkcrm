@@ -9,8 +9,10 @@ export async function GET(
     const { id } = await params;
     const vendorId = parseInt(id, 10);
 
-    const history = getVendorHistory(vendorId);
-    const ytdSpend = getVendorYtdSpend(vendorId);
+    const [history, ytdSpend] = await Promise.all([
+      getVendorHistory(vendorId),
+      getVendorYtdSpend(vendorId),
+    ]);
 
     return Response.json({
       history,

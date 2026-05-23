@@ -14,7 +14,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const client = getClientById(id);
+    const client = await getClientById(id);
     if (!client) {
       return Response.json({ error: "Client not found" }, { status: 404 });
     }
@@ -44,7 +44,7 @@ export async function PATCH(
     if (body.addressLine !== undefined) v.maxLength("addressLine", 200, "address");
     if (v.hasErrors()) return v.response();
 
-    const updated = updateClient(id, {
+    const updated = await updateClient(id, {
       ...body,
       name: body.name?.trim(),
       contact: body.contact?.trim(),
@@ -75,7 +75,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const deleted = deleteClient(id);
+    const deleted = await deleteClient(id);
     if (!deleted) {
       return Response.json({ error: "Client not found" }, { status: 404 });
     }

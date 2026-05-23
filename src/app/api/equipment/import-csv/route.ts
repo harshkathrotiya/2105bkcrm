@@ -147,26 +147,28 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
-    // Run import inside a single SQLite transaction
-    const insertTransaction = db.transaction(() => {
-      const stmt = db.prepare(`
-        INSERT INTO equipment (
-          product_name, category, quantity, serial_number, body_name,
-          resp_person, purchase_date, purchase_from, bill_number, purchase_price,
-          status, notes, created_at
-        ) VALUES (
-          @productName, @category, @quantity, @serialNumber, @bodyName,
-          @respPerson, @purchaseDate, @purchaseFrom, @billNumber, @purchasePrice,
-          @status, @notes, datetime('now')
-        )
-      `);
+    const nowStr = new Date().toISOString();
+    
+    // Map itemsToInsert to Prisma model fields
+    const dataToInsert = itemsToInsert.map(item => ({
+      product_name: item.productName,
+      category: item.category,
+      quantity: item.quantity,
+      serial_number: item.serialNumber,
+      body_name: item.bodyName,
+      resp_person: item.respPerson,
+      purchase_date: item.purchaseDate,
+      purchase_from: item.purchaseFrom,
+      bill_number: item.billNumber,
+      purchase_price: item.purchasePrice,
+      status: item.status,
+      notes: item.notes,
+      created_at: nowStr,
+    }));
 
-      for (const item of itemsToInsert) {
-        stmt.run(item);
-      }
+    await db.equipment.createMany({
+      data: dataToInsert,
     });
-
-    insertTransaction();
 
     return Response.json({ success: true, count: itemsToInsert.length });
   } catch (err) {

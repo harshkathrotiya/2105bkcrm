@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const summary = getStaffYtdSummary(parseInt(id, 10));
+    const summary = await getStaffYtdSummary(parseInt(id, 10));
     return Response.json(summary);
   } catch (err) {
     console.error("[GET /api/staff/[id]/summary]", err);

@@ -15,7 +15,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const quotation = getQuotationById(id);
+    const quotation = await getQuotationById(id);
     if (!quotation) {
       return Response.json({ error: "Quotation not found" }, { status: 404 });
     }
@@ -68,7 +68,7 @@ export async function PATCH(
       body.total = body.total ?? subtotal + body.cgst + body.sgst;
     }
 
-    const updated = updateQuotation(id, {
+    const updated = await updateQuotation(id, {
       ...body,
       clientName: body.clientName?.trim(),
       eventName: body.eventName?.trim(),
@@ -91,7 +91,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const deleted = deleteQuotation(id);
+    const deleted = await deleteQuotation(id);
     if (!deleted) {
       return Response.json({ error: "Quotation not found" }, { status: 404 });
     }

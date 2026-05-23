@@ -10,7 +10,7 @@ import { Validator } from "@/lib/validate";
 
 export async function GET() {
   try {
-    const clients = getAllClients();
+    const clients = await getAllClients();
     return Response.json(clients);
   } catch (err) {
     console.error("[GET /api/clients]", err);
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     v.maxLength("state", 100);
     if (v.hasErrors()) return v.response();
 
-    const client = createClient({
+    const client = await createClient({
       id: body.id ?? `client-${generateId()}`,
       initials: body.initials ?? body.name.slice(0, 2).toUpperCase(),
       bg: body.bg ?? "#EEEDFE",

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "status must be AVAILABLE or DEPLOYED" }, { status: 400 });
     }
 
-    const staff = getAllStaff({ search, type, paymentType, status });
+    const staff = await getAllStaff({ search, type, paymentType, status });
     return Response.json(staff);
   } catch (err) {
     console.error("[GET /api/staff]", err);
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (body.equipmentDesc) v.maxLength("equipmentDesc", 200, "equipment description");
     if (v.hasErrors()) return v.response();
 
-    const staff = createStaff({
+    const staff = await createStaff({
       name: body.name.trim(),
       phone: body.phone.trim(),
       role: body.role,

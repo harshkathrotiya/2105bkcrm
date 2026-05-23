@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "startDate and endDate are required" }, { status: 400 });
     }
 
-    const availability = getStaffAvailability(startDate, endDate, role);
+    const availability = await getStaffAvailability(startDate, endDate, role);
     return Response.json(availability);
   } catch (err) {
     console.error("[GET /api/staff/availability]", err);

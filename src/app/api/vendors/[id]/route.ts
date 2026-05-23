@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const vendor = getVendorById(parseInt(id, 10));
+    const vendor = await getVendorById(parseInt(id, 10));
     if (!vendor) {
       return Response.json({ error: "Vendor not found" }, { status: 404 });
     }
@@ -47,7 +47,7 @@ export async function PATCH(
     if (body.notes !== undefined) patch.notes = body.notes?.trim() || null;
     if (body.isActive !== undefined) patch.isActive = !!body.isActive;
 
-    const updated = updateVendor(parseInt(id, 10), patch);
+    const updated = await updateVendor(parseInt(id, 10), patch);
     if (!updated) {
       return Response.json({ error: "Vendor not found" }, { status: 404 });
     }

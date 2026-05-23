@@ -11,9 +11,10 @@ export async function POST(
     const staffId = parseInt(id, 10);
 
     // Check if staff exists (including inactive)
-    const existing = db
-      .prepare("SELECT id, is_active FROM staff WHERE id = ?")
-      .get(staffId) as { id: number; is_active: number } | undefined;
+    const existing = await db.staff.findUnique({
+      where: { id: staffId },
+      select: { id: true, is_active: true }
+    });
 
     if (!existing) {
       return Response.json({ error: "Staff not found" }, { status: 404 });
@@ -23,7 +24,7 @@ export async function POST(
       return Response.json({ error: "Staff is already active" }, { status: 400 });
     }
 
-    const success = reactivateStaff(staffId);
+    const success = await reactivateStaff(staffId);
     if (!success) {
       return Response.json({ error: "Failed to reactivate staff" }, { status: 500 });
     }

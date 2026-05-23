@@ -20,36 +20,41 @@ export async function POST(request: NextRequest) {
 
     const nowStr = new Date().toISOString();
 
-    db.transaction(() => {
-      const getBooking = db.prepare("SELECT * FROM equipment_bookings WHERE id = ?");
-      const confirmBooking = db.prepare(`
-        UPDATE equipment_bookings
-        SET status = 'OUT', confirmed_by_id = 'system', confirmed_at = ?
-        WHERE id = ?
-      `);
-      const setEquipInUse = db.prepare("UPDATE equipment SET status = 'IN_USE' WHERE id = ?");
-      const setKitItemsInUse = db.prepare("UPDATE equipment SET status = 'IN_USE' WHERE kit_id = ?");
-      const getKitMainBody = db.prepare("SELECT main_body_id FROM kits WHERE id = ?");
-
+    await db.$transaction(async (tx) => {
       for (const id of bookingIds) {
-        const booking = getBooking.get(id) as any;
+        const booking = await tx.equipmentBooking.findUnique({ where: { id } });
         if (!booking || booking.status === "OUT" || booking.status === "RETURNED") continue;
 
-        confirmBooking.run(nowStr, id);
+        await tx.equipmentBooking.update({
+          where: { id },
+          data: { status: 'OUT', confirmed_by_id: 'system', confirmed_at: nowStr }
+        });
 
         if (booking.equipment_id) {
-          setEquipInUse.run(booking.equipment_id);
+          await tx.equipment.update({
+            where: { id: booking.equipment_id },
+            data: { status: 'IN_USE' }
+          });
         }
 
         if (booking.kit_id) {
-          setKitItemsInUse.run(booking.kit_id);
-          const kit = getKitMainBody.get(booking.kit_id) as { main_body_id: number | null } | undefined;
+          await tx.equipment.updateMany({
+            where: { kit_id: booking.kit_id },
+            data: { status: 'IN_USE' }
+          });
+          const kit = await tx.kit.findUnique({
+            where: { id: booking.kit_id },
+            select: { main_body_id: true }
+          });
           if (kit?.main_body_id) {
-            setEquipInUse.run(kit.main_body_id);
+            await tx.equipment.update({
+              where: { id: kit.main_body_id },
+              data: { status: 'IN_USE' }
+            });
           }
         }
       }
-    })();
+    });
 
     return Response.json({ success: true, count: bookingIds.length });
   } catch (err) {

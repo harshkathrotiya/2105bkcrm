@@ -31,11 +31,11 @@ export async function GET(request: NextRequest) {
       if (isNaN(year) || year < 2000 || year > 2100) {
         return Response.json({ error: "year must be a valid 4-digit year" }, { status: 400 });
       }
-      const events = getCalendarEventsByMonth(month, year);
+      const events = await getCalendarEventsByMonth(month, year);
       return Response.json(events);
     }
 
-    const events = getAllCalendarEvents();
+    const events = await getAllCalendarEvents();
     return Response.json(events);
   } catch (err) {
     console.error("[GET /api/calendar]", err);
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "year must be a valid 4-digit year" }, { status: 400 });
     }
 
-    const event = createCalendarEvent({
+    const event = await createCalendarEvent({
       id: body.id ?? `cal-${generateId()}`,
       date,
       month,

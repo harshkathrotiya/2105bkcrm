@@ -10,7 +10,7 @@ export async function DELETE(
     const kitId = parseInt(kitIdStr, 10);
     const equipmentId = parseInt(equipmentIdStr, 10);
 
-    const success = removeEquipmentFromKit(kitId, equipmentId);
+    const success = await removeEquipmentFromKit(kitId, equipmentId);
     if (!success) {
       return Response.json({ error: "Failed to remove equipment from kit" }, { status: 400 });
     }

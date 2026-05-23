@@ -1,287 +1,292 @@
 /**
- * queries/kits.ts — typed DB helpers for the kits table
+ * queries/kits.ts — typed DB helpers for the kits table using Prisma
  */
 
 import { db } from "@/lib/db";
 import type { Kit } from "@/lib/types";
-import { rowToEquipment, EquipmentRow, isEquipmentBooked } from "./equipment";
+import { isEquipmentBooked } from "./equipment";
 
-export interface KitRow {
-  id: number;
-  name: string;
-  description: string | null;
-  main_body_id: number | null;
-  created_at: string;
-}
-
-function rowToKit(row: KitRow): Kit {
+function mapKit(row: any): Kit {
   return {
     id: row.id,
     name: row.name,
     description: row.description,
     mainBodyId: row.main_body_id,
     createdAt: row.created_at,
-    items: [],
+    items: row.equipment ? row.equipment.map((eq: any) => ({
+      id: eq.id,
+      productName: eq.product_name,
+      category: eq.category,
+      quantity: eq.quantity,
+      serialNumber: eq.serial_number,
+      bodyName: eq.body_name,
+      kitId: eq.kit_id,
+      kitName: row.name,
+      respPerson: eq.resp_person,
+      purchaseDate: eq.purchase_date,
+      purchaseFrom: eq.purchase_from,
+      billNumber: eq.bill_number,
+      purchasePrice: eq.purchase_price,
+      status: eq.status,
+      notes: eq.notes,
+      createdAt: eq.created_at,
+      updatedAt: eq.updated_at,
+    })) : [],
   };
 }
 
-export function getAllKits(): Kit[] {
-  const rows = db.prepare("SELECT * FROM kits ORDER BY id DESC").all() as KitRow[];
-  const kits = rows.map(rowToKit);
-
-  // Load items for each kit
-  for (const kit of kits) {
-    const items = db.prepare("SELECT * FROM equipment WHERE kit_id = ? AND status != 'RETIRED'").all(kit.id) as EquipmentRow[];
-    kit.items = items.map(rowToEquipment);
-  }
-
-  return kits;
+export async function getAllKits(): Promise<Kit[]> {
+  const rows = await db.kit.findMany({
+    orderBy: { id: "desc" },
+    include: {
+      equipment: {
+        where: { status: { not: "RETIRED" } }
+      }
+    }
+  });
+  return rows.map(mapKit);
 }
 
-export function getKitById(id: number): Kit | undefined {
-  const row = db.prepare("SELECT * FROM kits WHERE id = ?").get(id) as KitRow | undefined;
+export async function getKitById(id: number): Promise<Kit | undefined> {
+  const row = await db.kit.findUnique({
+    where: { id },
+    include: {
+      equipment: {
+        where: { status: { not: "RETIRED" } }
+      }
+    }
+  });
   if (!row) return undefined;
-
-  const kit = rowToKit(row);
-  const items = db.prepare("SELECT * FROM equipment WHERE kit_id = ? AND status != 'RETIRED'").all(id) as EquipmentRow[];
-  kit.items = items.map(rowToEquipment);
-
-  return kit;
+  return mapKit(row);
 }
 
-export function assignMainBodyToKit(kitId: number, equipmentId: number, quantityToAdd?: number): number | null {
-  const eq = db.prepare("SELECT * FROM equipment WHERE id = ? AND status != 'RETIRED'").get(equipmentId) as EquipmentRow | undefined;
+export async function assignMainBodyToKit(kitId: number, equipmentId: number, quantityToAdd?: number): Promise<number | null> {
+  const eq = await db.equipment.findFirst({
+    where: { id: equipmentId, status: { not: "RETIRED" } }
+  });
   if (!eq) return null;
 
   const targetQty = quantityToAdd !== undefined ? quantityToAdd : eq.quantity;
   if (targetQty <= 0 || targetQty > eq.quantity) return null;
 
   if (targetQty === eq.quantity) {
-    // Link the whole row
-    db.prepare("UPDATE equipment SET kit_id = ? WHERE id = ?").run(kitId, equipmentId);
+    await db.equipment.update({
+      where: { id: equipmentId },
+      data: { kit_id: kitId }
+    });
     return equipmentId;
   } else {
-    // Split the row!
     const sns = eq.serial_number ? eq.serial_number.split("\n").map(s => s.trim()).filter(Boolean) : [];
     const addedSns = sns.slice(0, targetQty).join("\n");
     const remainingSns = sns.slice(targetQty).join("\n");
 
     let newId: number | null = null;
-    db.transaction(() => {
-      // 1. Insert new row with targetQty linked to the kit
-      const res = db.prepare(`
-        INSERT INTO equipment (
-          product_name, category, quantity, serial_number, body_name, kit_id,
-          resp_person, purchase_date, purchase_from, bill_number, purchase_price,
-          status, notes, created_at
-        ) VALUES (
-          @productName, @category, @quantity, @serialNumber, @bodyName, @kitId,
-          @respPerson, @purchaseDate, @purchaseFrom, @billNumber, @purchasePrice,
-          @status, @notes, @createdAt
-        )
-      `).run({
-        productName: eq.product_name,
-        category: eq.category,
-        quantity: targetQty,
-        serialNumber: addedSns || null,
-        bodyName: eq.body_name,
-        kitId: kitId,
-        respPerson: eq.resp_person,
-        purchaseDate: eq.purchase_date,
-        purchaseFrom: eq.purchase_from,
-        billNumber: eq.bill_number,
-        purchasePrice: eq.purchase_price,
-        status: eq.status,
-        notes: eq.notes,
-        createdAt: eq.created_at,
+    await db.$transaction(async (tx) => {
+      const newEq = await tx.equipment.create({
+        data: {
+          product_name: eq.product_name,
+          category: eq.category,
+          quantity: targetQty,
+          serial_number: addedSns || null,
+          body_name: eq.body_name,
+          kit_id: kitId,
+          resp_person: eq.resp_person,
+          purchase_date: eq.purchase_date,
+          purchase_from: eq.purchase_from,
+          bill_number: eq.bill_number,
+          purchase_price: eq.purchase_price,
+          status: eq.status,
+          notes: eq.notes,
+          created_at: eq.created_at,
+        }
       });
-      newId = res.lastInsertRowid as number;
+      newId = newEq.id;
 
-      // 2. Update existing row to have remaining quantity and remaining serial numbers
-      db.prepare(`
-        UPDATE equipment SET
-          quantity = ?,
-          serial_number = ?
-        WHERE id = ?
-      `).run(eq.quantity - targetQty, remainingSns || null, equipmentId);
-    })();
+      await tx.equipment.update({
+        where: { id: equipmentId },
+        data: {
+          quantity: eq.quantity - targetQty,
+          serial_number: remainingSns || null,
+        }
+      });
+    });
 
     return newId;
   }
 }
 
-export function createKit(kit: {
+export async function createKit(kit: {
   name: string;
   description?: string | null;
   mainBodyId?: number | null;
   mainBodyQty?: number | null;
   accessories?: { id: number; quantity: number }[];
-}): Kit {
+}): Promise<Kit> {
   const nowStr = new Date().toISOString();
   let kitId = 0;
 
-  db.transaction(() => {
-    const res = db.prepare(`
-      INSERT INTO kits (name, description, main_body_id, created_at)
-      VALUES (@name, @description, NULL, @createdAt)
-    `).run({
-      name: kit.name,
-      description: kit.description ?? null,
-      createdAt: nowStr,
+  await db.$transaction(async (tx) => {
+    const newKit = await tx.kit.create({
+      data: {
+        name: kit.name,
+        description: kit.description ?? null,
+        main_body_id: null,
+        created_at: nowStr,
+      }
     });
+    kitId = newKit.id;
+  });
 
-    kitId = res.lastInsertRowid as number;
+  const finalMainBodyId = kit.mainBodyId ?? null;
+  if (finalMainBodyId) {
+    const linkedId = await assignMainBodyToKit(kitId, finalMainBodyId, kit.mainBodyQty ?? undefined);
+    if (linkedId) {
+      await db.kit.update({
+        where: { id: kitId },
+        data: { main_body_id: linkedId }
+      });
+    }
+  }
 
-    const finalMainBodyId = kit.mainBodyId ?? null;
-    if (finalMainBodyId) {
-      const linkedId = assignMainBodyToKit(kitId, finalMainBodyId, kit.mainBodyQty ?? undefined);
-      if (linkedId) {
-        db.prepare("UPDATE kits SET main_body_id = ? WHERE id = ?").run(linkedId, kitId);
+  if (kit.accessories && kit.accessories.length > 0) {
+    for (const acc of kit.accessories) {
+      const added = await addEquipmentToKit(kitId, acc.id, acc.quantity);
+      if (!added) {
+        throw new Error(`Failed to add accessory ${acc.id} to kit`);
       }
     }
+  }
 
-    // Link accessories if provided
-    if (kit.accessories && kit.accessories.length > 0) {
-      for (const acc of kit.accessories) {
-        const added = addEquipmentToKit(kitId, acc.id, acc.quantity);
-        if (!added) {
-          throw new Error(`Failed to add accessory ${acc.id} to kit`);
-        }
-      }
-    }
-  })();
-
-  const newKit = getKitById(kitId);
-  if (!newKit) {
+  const resultKit = await getKitById(kitId);
+  if (!resultKit) {
     throw new Error("Failed to retrieve newly created kit");
   }
-  return newKit;
+  return resultKit;
 }
 
-export function updateKit(id: number, patch: Partial<{ name: string; description: string | null; mainBodyId: number | null; mainBodyQty: number | null }>): Kit | undefined {
-  const existing = getKitById(id);
+export async function updateKit(id: number, patch: Partial<{ name: string; description: string | null; mainBodyId: number | null; mainBodyQty: number | null }>): Promise<Kit | undefined> {
+  const existing = await getKitById(id);
   if (!existing) return undefined;
 
   const merged = { ...existing, ...patch };
 
-  db.transaction(() => {
-    let finalMainBodyId = merged.mainBodyId;
+  let finalMainBodyId = merged.mainBodyId;
 
-    if (patch.mainBodyId !== undefined) {
-      // Unlink old main body if it belonged to this kit
-      if (existing.mainBodyId && existing.mainBodyId !== patch.mainBodyId) {
-        db.prepare("UPDATE equipment SET kit_id = NULL WHERE id = ? AND kit_id = ?").run(existing.mainBodyId, id);
-      }
-      // Link new main body
-      if (patch.mainBodyId) {
-        const qty = patch.mainBodyQty !== undefined && patch.mainBodyQty !== null ? patch.mainBodyQty : undefined;
-        const linkedId = assignMainBodyToKit(id, patch.mainBodyId, qty);
-        if (linkedId) {
-          finalMainBodyId = linkedId;
-        }
+  if (patch.mainBodyId !== undefined) {
+    if (existing.mainBodyId && existing.mainBodyId !== patch.mainBodyId) {
+      await db.equipment.updateMany({
+        where: { id: existing.mainBodyId, kit_id: id },
+        data: { kit_id: null }
+      });
+    }
+    if (patch.mainBodyId) {
+      const qty = patch.mainBodyQty !== undefined && patch.mainBodyQty !== null ? patch.mainBodyQty : undefined;
+      const linkedId = await assignMainBodyToKit(id, patch.mainBodyId, qty);
+      if (linkedId) {
+        finalMainBodyId = linkedId;
       }
     }
+  }
 
-    db.prepare(`
-      UPDATE kits SET
-        name = @name,
-        description = @description,
-        main_body_id = @mainBodyId
-      WHERE id = @id
-    `).run({
-      id,
+  await db.kit.update({
+    where: { id },
+    data: {
       name: merged.name,
       description: merged.description ?? null,
-      mainBodyId: finalMainBodyId ?? null,
+      main_body_id: finalMainBodyId ?? null,
+    }
+  });
+
+  return await getKitById(id);
+}
+
+export async function deleteKit(id: number): Promise<boolean> {
+  try {
+    await db.$transaction(async (tx) => {
+      await tx.equipment.updateMany({
+        where: { kit_id: id },
+        data: { kit_id: null }
+      });
+      await tx.kit.delete({ where: { id } });
     });
-  })();
-
-  return getKitById(id);
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
-export function deleteKit(id: number): boolean {
-  // Clear kit_id from all equipment items first
-  db.prepare("UPDATE equipment SET kit_id = NULL WHERE kit_id = ?").run(id);
-  const result = db.prepare("DELETE FROM kits WHERE id = ?").run(id);
-  return result.changes > 0;
-}
-
-export function addEquipmentToKit(kitId: number, equipmentId: number, quantityToAdd?: number): boolean {
-  const eq = db.prepare("SELECT * FROM equipment WHERE id = ? AND status != 'RETIRED'").get(equipmentId) as EquipmentRow | undefined;
+export async function addEquipmentToKit(kitId: number, equipmentId: number, quantityToAdd?: number): Promise<boolean> {
+  const eq = await db.equipment.findFirst({
+    where: { id: equipmentId, status: { not: "RETIRED" } }
+  });
   if (!eq) return false;
 
   const targetQty = quantityToAdd !== undefined ? quantityToAdd : eq.quantity;
   if (targetQty <= 0 || targetQty > eq.quantity) return false;
 
   if (targetQty === eq.quantity) {
-    // Just link the whole row
-    const result = db.prepare("UPDATE equipment SET kit_id = ? WHERE id = ?").run(kitId, equipmentId);
-    return result.changes > 0;
+    await db.equipment.update({
+      where: { id: equipmentId },
+      data: { kit_id: kitId }
+    });
+    return true;
   } else {
-    // Split the row!
-    // Parse serial numbers
     const sns = eq.serial_number ? eq.serial_number.split("\n").map(s => s.trim()).filter(Boolean) : [];
     const addedSns = sns.slice(0, targetQty).join("\n");
     const remainingSns = sns.slice(targetQty).join("\n");
 
-    db.transaction(() => {
-      // 1. Insert new row with targetQty linked to the kit
-      db.prepare(`
-        INSERT INTO equipment (
-          product_name, category, quantity, serial_number, body_name, kit_id,
-          resp_person, purchase_date, purchase_from, bill_number, purchase_price,
-          status, notes, created_at
-        ) VALUES (
-          @productName, @category, @quantity, @serialNumber, @bodyName, @kitId,
-          @respPerson, @purchaseDate, @purchaseFrom, @billNumber, @purchasePrice,
-          @status, @notes, @createdAt
-        )
-      `).run({
-        productName: eq.product_name,
-        category: eq.category,
-        quantity: targetQty,
-        serialNumber: addedSns || null,
-        bodyName: eq.body_name,
-        kitId: kitId,
-        respPerson: eq.resp_person,
-        purchaseDate: eq.purchase_date,
-        purchaseFrom: eq.purchase_from,
-        billNumber: eq.bill_number,
-        purchasePrice: eq.purchase_price,
-        status: eq.status,
-        notes: eq.notes,
-        createdAt: eq.created_at,
+    await db.$transaction(async (tx) => {
+      await tx.equipment.create({
+        data: {
+          product_name: eq.product_name,
+          category: eq.category,
+          quantity: targetQty,
+          serial_number: addedSns || null,
+          body_name: eq.body_name,
+          kit_id: kitId,
+          resp_person: eq.resp_person,
+          purchase_date: eq.purchase_date,
+          purchase_from: eq.purchase_from,
+          bill_number: eq.bill_number,
+          purchase_price: eq.purchase_price,
+          status: eq.status,
+          notes: eq.notes,
+          created_at: eq.created_at,
+        }
       });
 
-      // 2. Update existing row to have remaining quantity and remaining serial numbers
-      db.prepare(`
-        UPDATE equipment SET
-          quantity = ?,
-          serial_number = ?
-        WHERE id = ?
-      `).run(eq.quantity - targetQty, remainingSns || null, equipmentId);
-    })();
+      await tx.equipment.update({
+        where: { id: equipmentId },
+        data: {
+          quantity: eq.quantity - targetQty,
+          serial_number: remainingSns || null,
+        }
+      });
+    });
 
     return true;
   }
 }
 
-export function removeEquipmentFromKit(kitId: number, equipmentId: number): boolean {
-  // If this item was the main body, clear main_body_id on the kit
-  const kit = getKitById(kitId);
+export async function removeEquipmentFromKit(kitId: number, equipmentId: number): Promise<boolean> {
+  const kit = await getKitById(kitId);
   if (kit && kit.mainBodyId === equipmentId) {
-    db.prepare("UPDATE kits SET main_body_id = NULL WHERE id = ?").run(kitId);
+    await db.kit.update({
+      where: { id: kitId },
+      data: { main_body_id: null }
+    });
   }
-  const result = db.prepare("UPDATE equipment SET kit_id = NULL WHERE id = ? AND kit_id = ?").run(equipmentId, kitId);
-  return result.changes > 0;
+  
+  const result = await db.equipment.updateMany({
+    where: { id: equipmentId, kit_id: kitId },
+    data: { kit_id: null }
+  });
+  
+  return result.count > 0;
 }
 
-/**
- * Checks kit availability status for a given event date range.
- * Returns 'AVAILABLE', 'PARTIAL', or 'UNAVAILABLE'.
- */
-export function getKitAvailabilityStatus(kitId: number, startDate: string, endDate: string): "AVAILABLE" | "PARTIAL" | "UNAVAILABLE" {
-  const kit = getKitById(kitId);
+export async function getKitAvailabilityStatus(kitId: number, startDate: string, endDate: string): Promise<"AVAILABLE" | "PARTIAL" | "UNAVAILABLE"> {
+  const kit = await getKitById(kitId);
   if (!kit) return "UNAVAILABLE";
 
   const mainBodyId = kit.mainBodyId;
@@ -293,17 +298,16 @@ export function getKitAvailabilityStatus(kitId: number, startDate: string, endDa
       return "UNAVAILABLE";
     }
 
-    const isMainBodyBooked = isEquipmentBooked(mainBodyId, startDate, endDate);
+    const isMainBodyBooked = await isEquipmentBooked(mainBodyId, startDate, endDate);
     const isMainBodyOutOfService = mainBodyItem.status === "MAINTENANCE" || mainBodyItem.status === "SOLD" || mainBodyItem.status === "RETIRED";
 
     if (isMainBodyBooked || isMainBodyOutOfService) {
       return "UNAVAILABLE";
     }
 
-    // Main body is available, check accessories
     let hasMissingAccessory = false;
     for (const item of accessories) {
-      const isBooked = isEquipmentBooked(item.id, startDate, endDate);
+      const isBooked = await isEquipmentBooked(item.id, startDate, endDate);
       const isOutOfService = item.status === "MAINTENANCE" || item.status === "SOLD" || item.status === "RETIRED";
       if (isBooked || isOutOfService) {
         hasMissingAccessory = true;
@@ -313,12 +317,11 @@ export function getKitAvailabilityStatus(kitId: number, startDate: string, endDa
 
     return hasMissingAccessory ? "PARTIAL" : "AVAILABLE";
   } else {
-    // If no main body, check accessories
     if (accessories.length === 0) return "AVAILABLE";
 
     let bookedAccessoriesCount = 0;
     for (const item of accessories) {
-      const isBooked = isEquipmentBooked(item.id, startDate, endDate);
+      const isBooked = await isEquipmentBooked(item.id, startDate, endDate);
       const isOutOfService = item.status === "MAINTENANCE" || item.status === "SOLD" || item.status === "RETIRED";
       if (isBooked || isOutOfService) {
         bookedAccessoriesCount++;
@@ -330,4 +333,3 @@ export function getKitAvailabilityStatus(kitId: number, startDate: string, endDa
     return "PARTIAL";
   }
 }
-

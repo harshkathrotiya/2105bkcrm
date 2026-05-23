@@ -11,7 +11,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const deleted = deleteCalendarEvent(id);
+    const deleted = await deleteCalendarEvent(id);
     if (!deleted) {
       return Response.json({ error: "Event not found" }, { status: 404 });
     }

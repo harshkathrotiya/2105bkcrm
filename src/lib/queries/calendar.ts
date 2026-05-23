@@ -1,60 +1,65 @@
 /**
- * queries/calendar.ts — typed DB helpers for the calendar_events table
+ * queries/calendar.ts — typed DB helpers for the calendar_events table using Prisma
  */
 
 import { db } from "@/lib/db";
 import type { CalendarEvent } from "@/lib/types";
 
-interface CalendarRow {
-  id: string;
-  date: number;
-  month: number;
-  year: number;
-  label: string;
-  type: "inquiry" | "quotation" | "confirmed";
+export async function getAllCalendarEvents(): Promise<CalendarEvent[]> {
+  const rows = await db.calendarEvent.findMany({
+    orderBy: [
+      { year: "asc" },
+      { month: "asc" },
+      { date: "asc" },
+    ],
+  });
+  return rows.map((r: any) => ({
+    id: r.id,
+    date: r.date,
+    month: r.month,
+    year: r.year,
+    label: r.label,
+    type: r.type as "inquiry" | "quotation" | "confirmed",
+  }));
 }
 
-function rowToEvent(row: CalendarRow): CalendarEvent {
-  return {
-    id: row.id,
-    date: row.date,
-    month: row.month,
-    year: row.year,
-    label: row.label,
-    type: row.type,
-  };
-}
-
-export function getAllCalendarEvents(): CalendarEvent[] {
-  const rows = db
-    .prepare("SELECT * FROM calendar_events ORDER BY year, month, date")
-    .all() as CalendarRow[];
-  return rows.map(rowToEvent);
-}
-
-export function getCalendarEventsByMonth(
+export async function getCalendarEventsByMonth(
   month: number,
   year: number
-): CalendarEvent[] {
-  const rows = db
-    .prepare(
-      "SELECT * FROM calendar_events WHERE month = ? AND year = ? ORDER BY date"
-    )
-    .all(month, year) as CalendarRow[];
-  return rows.map(rowToEvent);
+): Promise<CalendarEvent[]> {
+  const rows = await db.calendarEvent.findMany({
+    where: { month, year },
+    orderBy: { date: "asc" },
+  });
+  return rows.map((r: any) => ({
+    id: r.id,
+    date: r.date,
+    month: r.month,
+    year: r.year,
+    label: r.label,
+    type: r.type as "inquiry" | "quotation" | "confirmed",
+  }));
 }
 
-export function createCalendarEvent(event: CalendarEvent): CalendarEvent {
-  db.prepare(`
-    INSERT INTO calendar_events (id, date, month, year, label, type)
-    VALUES (@id, @date, @month, @year, @label, @type)
-  `).run(event);
+export async function createCalendarEvent(event: CalendarEvent): Promise<CalendarEvent> {
+  await db.calendarEvent.create({
+    data: {
+      id: event.id,
+      date: event.date,
+      month: event.month,
+      year: event.year,
+      label: event.label,
+      type: event.type,
+    },
+  });
   return event;
 }
 
-export function deleteCalendarEvent(id: string): boolean {
-  const result = db
-    .prepare("DELETE FROM calendar_events WHERE id = ?")
-    .run(id);
-  return result.changes > 0;
+export async function deleteCalendarEvent(id: string): Promise<boolean> {
+  try {
+    await db.calendarEvent.delete({ where: { id } });
+    return true;
+  } catch (err) {
+    return false;
+  }
 }

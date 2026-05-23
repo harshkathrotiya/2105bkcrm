@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "staffId must be a positive integer" }, { status: 400 });
     }
 
-    const res = checkDuplicateAssignment(inquiryId.trim(), parseInt(staffId, 10));
+    const res = await checkDuplicateAssignment(inquiryId.trim(), parseInt(staffId, 10));
     return Response.json(res);
   } catch (err) {
     console.error("[POST /api/staff-assignments/check-duplicate]", err);

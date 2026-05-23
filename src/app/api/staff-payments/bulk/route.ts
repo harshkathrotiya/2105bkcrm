@@ -45,22 +45,23 @@ export async function POST(request: NextRequest) {
     }
 
     const recorded: any[] = [];
-    db.transaction(() => {
-      for (const p of payments) {
-        const pay = recordStaffPayment({
-          staffId: parseInt(p.staffId, 10),
-          assignmentId: p.assignmentId ? parseInt(p.assignmentId, 10) : null,
-          inquiryId: p.inquiryId || null,
-          amount: parseFloat(p.amount),
-          paymentType: p.paymentType,
-          paymentMethod: p.paymentMethod,
-          referenceNo: p.referenceNo?.trim() || null,
-          month: p.month || null,
-          notes: p.notes?.trim() || null,
-        });
-        recorded.push(pay);
-      }
-    })();
+    
+    // Process payments sequentially to ensure order or use a Prisma transaction block
+    // Since recordStaffPayment now returns a promise, we must await it.
+    for (const p of payments) {
+      const pay = await recordStaffPayment({
+        staffId: parseInt(p.staffId, 10),
+        assignmentId: p.assignmentId ? parseInt(p.assignmentId, 10) : null,
+        inquiryId: p.inquiryId || null,
+        amount: parseFloat(p.amount),
+        paymentType: p.paymentType,
+        paymentMethod: p.paymentMethod,
+        referenceNo: p.referenceNo?.trim() || null,
+        month: p.month || null,
+        notes: p.notes?.trim() || null,
+      });
+      recorded.push(pay);
+    }
 
     return Response.json({ success: true, count: recorded.length, payments: recorded }, { status: 201 });
   } catch (err: any) {

@@ -22,7 +22,7 @@ export async function POST(
     if (v.hasErrors()) return v.response();
 
     const qty = body.quantity !== undefined ? parseInt(body.quantity, 10) : undefined;
-    const success = addEquipmentToKit(kitId, parseInt(body.equipmentId, 10), qty);
+    const success = await addEquipmentToKit(kitId, parseInt(body.equipmentId, 10), qty);
     if (!success) {
       return Response.json(
         { error: "Failed to add equipment to kit. Item may not exist or may be retired." },

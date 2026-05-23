@@ -11,7 +11,7 @@ import { Validator } from "@/lib/validate";
 
 export async function GET() {
   try {
-    const quotations = getAllQuotations();
+    const quotations = await getAllQuotations();
     return Response.json(quotations);
   } catch (err) {
     console.error("[GET /api/quotations]", err);
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     const sgst = body.sgst ?? Math.round(subtotal * 0.09);
     const total = body.total ?? subtotal + cgst + sgst;
 
-    const quotation = createQuotation({
+    const quotation = await createQuotation({
       id: body.id ?? `quote-${generateId()}`,
       inquiryId: body.inquiryId,
       clientName: body.clientName.trim(),

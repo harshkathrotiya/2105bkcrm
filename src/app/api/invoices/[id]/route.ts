@@ -14,7 +14,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const invoice = getInvoiceById(id);
+    const invoice = await getInvoiceById(id);
     if (!invoice) {
       return Response.json({ error: "Invoice not found" }, { status: 404 });
     }
@@ -33,7 +33,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const existing = getInvoiceById(id);
+    const existing = await getInvoiceById(id);
     if (!existing) {
       return Response.json({ error: "Invoice not found" }, { status: 404 });
     }
@@ -69,7 +69,7 @@ export async function PATCH(
       }
     }
 
-    const updated = updateInvoice(id, {
+    const updated = await updateInvoice(id, {
       ...body,
       clientName: body.clientName?.trim(),
       eventName: body.eventName?.trim(),
@@ -89,7 +89,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const deleted = deleteInvoice(id);
+    const deleted = await deleteInvoice(id);
     if (!deleted) {
       return Response.json({ error: "Invoice not found" }, { status: 404 });
     }
