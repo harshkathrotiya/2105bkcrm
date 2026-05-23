@@ -19,6 +19,10 @@ export default function Screen25MonthlyPaymentReport() {
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
+  // Sidebar filter
+  type ReportFilter = "ALL" | "PENDING" | "PAID" | "PER_DAY" | "MONTHLY";
+  const [sidebarFilter, setSidebarFilter] = useState<ReportFilter>("ALL");
+
   // Modal State
   const [payModal, setPayModal] = useState<{
     show: boolean;
@@ -258,25 +262,66 @@ export default function Screen25MonthlyPaymentReport() {
                   width: "190px",
                   background: "var(--s2)",
                   borderRight: "1px solid var(--b1)",
-                  padding: "12px 14px",
+                  padding: "12px 0",
                   flexShrink: 0,
                   fontSize: "12px",
                   lineHeight: "1.7",
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
-                <div style={{ padding: "0 0 4px", fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase" }}>
-                  Selected Month
+                <div style={{ padding: "6px 14px 8px" }}>
+                  <div style={{ fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase", marginBottom: "4px" }}>
+                    Selected Month
+                  </div>
+                  <strong style={{ color: "var(--tx)", display: "block", fontSize: "13.5px" }}>{formatMonthText(selectedMonth)}</strong>
                 </div>
-                <strong style={{ color: "var(--tx)", display: "block", fontSize: "13.5px" }}>{formatMonthText(selectedMonth)}</strong>
-                
-                <div style={{ height: "1px", background: "var(--b1)", margin: "10px 0" }} />
 
-                <div style={{ padding: "0 0 4px", fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase" }}>
-                  Monthly Aggregates
+                <div style={{ height: "1px", background: "var(--b1)", margin: "0 0 6px" }} />
+
+                <div style={{ padding: "6px 14px 2px", fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase" }}>
+                  Filter View
                 </div>
-                <div style={{ color: "var(--tx2)" }}>Total Payable: <span style={{ color: "var(--tx)", fontFamily: "var(--font-mono)" }}>₹{report.totals.total.toLocaleString("en-IN")}</span></div>
-                <div style={{ color: "var(--tx2)" }}>Paid: <span style={{ color: "var(--gr)", fontFamily: "var(--font-mono)" }}>₹{report.totals.paid.toLocaleString("en-IN")}</span></div>
-                <div style={{ color: "var(--tx2)" }}>Pending: <span style={{ color: "var(--acc)", fontFamily: "var(--font-mono)" }}>₹{report.totals.pending.toLocaleString("en-IN")}</span></div>
+
+                {(
+                  [
+                    { key: "ALL", label: "All Staff", count: (report?.perDayStaff?.length ?? 0) + (report?.monthlyStaff?.length ?? 0) },
+                    { key: "PENDING", label: "Pending Only", count: (report?.perDayStaff?.filter((p: any) => p.pending > 0).length ?? 0) + (report?.monthlyStaff?.filter((m: any) => m.status === "Pending").length ?? 0) },
+                    { key: "PAID", label: "Paid", count: (report?.perDayStaff?.filter((p: any) => p.pending === 0).length ?? 0) + (report?.monthlyStaff?.filter((m: any) => m.status === "Paid").length ?? 0) },
+                    { key: "PER_DAY", label: "Per Day Staff", count: report?.perDayStaff?.length ?? 0 },
+                    { key: "MONTHLY", label: "Monthly Salary", count: report?.monthlyStaff?.length ?? 0 },
+                  ] as { key: ReportFilter; label: string; count: number }[]
+                ).map((f) => (
+                  <div
+                    key={f.key}
+                    onClick={() => setSidebarFilter(f.key)}
+                    style={{
+                      padding: "8px 14px",
+                      fontSize: "12px",
+                      color: sidebarFilter === f.key ? "var(--tx)" : "var(--tx3)",
+                      background: sidebarFilter === f.key ? "var(--s1)" : "transparent",
+                      borderLeft: `2px solid ${sidebarFilter === f.key ? "var(--acc)" : "transparent"}`,
+                      cursor: "pointer",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontWeight: sidebarFilter === f.key ? 500 : 400,
+                    }}
+                  >
+                    <span>{f.label}</span>
+                    <span style={{ fontSize: "10px", color: "var(--tx3)" }}>{f.count}</span>
+                  </div>
+                ))}
+
+                <div style={{ height: "1px", background: "var(--b1)", margin: "8px 14px" }} />
+
+                <div style={{ padding: "6px 14px", fontSize: "11.5px", lineHeight: "1.8" }}>
+                  <div style={{ fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase", marginBottom: "4px" }}>
+                    Aggregates
+                  </div>
+                  <div style={{ color: "var(--tx2)" }}>Total: <span style={{ color: "var(--tx)", fontFamily: "var(--font-mono)" }}>₹{report.totals.total.toLocaleString("en-IN")}</span></div>
+                  <div style={{ color: "var(--tx2)" }}>Paid: <span style={{ color: "var(--gr)", fontFamily: "var(--font-mono)" }}>₹{report.totals.paid.toLocaleString("en-IN")}</span></div>
+                  <div style={{ color: "var(--tx2)" }}>Pending: <span style={{ color: "var(--acc)", fontFamily: "var(--font-mono)" }}>₹{report.totals.pending.toLocaleString("en-IN")}</span></div>
+                </div>
               </div>
 
               {/* Main Report Table Grid */}
@@ -303,6 +348,7 @@ export default function Screen25MonthlyPaymentReport() {
                 </div>
 
                 {/* Section 1: Per Day Wages */}
+                {(sidebarFilter === "ALL" || sidebarFilter === "PER_DAY" || sidebarFilter === "PENDING" || sidebarFilter === "PAID") && (
                 <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
                   <div className="ct" style={{ fontSize: "13px" }}>Per Day Wages Staff — {formatMonthText(selectedMonth)}</div>
                   <div style={{ overflowX: "auto" }}>
@@ -327,7 +373,13 @@ export default function Screen25MonthlyPaymentReport() {
                             </td>
                           </tr>
                         ) : (
-                          report.perDayStaff.map((pd: any) => (
+                          report.perDayStaff
+                            .filter((pd: any) => {
+                              if (sidebarFilter === "PENDING") return pd.pending > 0;
+                              if (sidebarFilter === "PAID") return pd.pending === 0;
+                              return true;
+                            })
+                            .map((pd: any) => (
                             <tr key={pd.staff.id}>
                               <td>
                                 <strong style={{ color: "var(--tx)" }}>{pd.staff.name}</strong>
@@ -373,8 +425,10 @@ export default function Screen25MonthlyPaymentReport() {
                     </table>
                   </div>
                 </div>
+                )}
 
                 {/* Section 2: Fixed Monthly Salary Staff */}
+                {(sidebarFilter === "ALL" || sidebarFilter === "MONTHLY" || sidebarFilter === "PENDING" || sidebarFilter === "PAID") && (
                 <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
                   <div className="ct" style={{ fontSize: "13px" }}>Monthly Salary Staff — {formatMonthText(selectedMonth)}</div>
                   <div style={{ overflowX: "auto" }}>
@@ -396,7 +450,13 @@ export default function Screen25MonthlyPaymentReport() {
                             </td>
                           </tr>
                         ) : (
-                          report.monthlyStaff.map((ms: any) => {
+                          report.monthlyStaff
+                            .filter((ms: any) => {
+                              if (sidebarFilter === "PENDING") return ms.status === "Pending";
+                              if (sidebarFilter === "PAID") return ms.status === "Paid";
+                              return true;
+                            })
+                            .map((ms: any) => {
                             const isPaid = ms.status === "Paid";
                             return (
                               <tr key={ms.staff.id}>
@@ -436,6 +496,7 @@ export default function Screen25MonthlyPaymentReport() {
                     </table>
                   </div>
                 </div>
+                )}
 
               </div>
 

@@ -406,6 +406,14 @@ export function deleteStaff(id: number): Promise<void> {
   return request(`/api/staff/${id}`, { method: "DELETE" });
 }
 
+export function reactivateStaff(id: number): Promise<{ success: boolean; message: string }> {
+  return request(`/api/staff/${id}/reactivate`, { method: "POST" });
+}
+
+export function fetchInactiveStaff(): Promise<Staff[]> {
+  return request("/api/staff/inactive");
+}
+
 export function fetchStaffHistory(id: number): Promise<any[]> {
   return request(`/api/staff/${id}/history`);
 }
@@ -423,6 +431,16 @@ export function fetchStaffAssignments(inquiryId: string): Promise<(StaffAssignme
 export function createStaffAssignment(data: Omit<StaffAssignment, "id" | "totalAmount" | "isDuplicate" | "confirmedDup" | "createdAt">): Promise<StaffAssignment> {
   return request("/api/staff-assignments", {
     method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateStaffAssignment(
+  id: number,
+  data: Partial<{ daysAssigned: number; ratePerDay: number; positionName: string; positionNo: number | null }>
+): Promise<StaffAssignment> {
+  return request(`/api/staff-assignments/${id}`, {
+    method: "PUT",
     body: JSON.stringify(data),
   });
 }
@@ -459,6 +477,20 @@ export function recordBulkStaffPayments(payments: Omit<StaffPayment, "id" | "pai
     method: "POST",
     body: JSON.stringify({ payments }),
   });
+}
+
+export function fetchStaffPayments(params?: {
+  inquiryId?: string;
+  month?: string;
+  status?: "PENDING" | "PAID";
+  staffId?: number;
+}): Promise<any[]> {
+  const query = new URLSearchParams();
+  if (params?.inquiryId) query.set("inquiryId", params.inquiryId);
+  if (params?.month) query.set("month", params.month);
+  if (params?.status) query.set("status", params.status);
+  if (params?.staffId) query.set("staffId", params.staffId.toString());
+  return request(`/api/staff-payments?${query.toString()}`);
 }
 
 export function fetchMonthlyReport(month: string): Promise<{

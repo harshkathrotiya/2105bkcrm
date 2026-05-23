@@ -222,6 +222,16 @@ export function deleteStaff(id: number): boolean {
   return res.changes > 0;
 }
 
+export function reactivateStaff(id: number): boolean {
+  const res = db.prepare("UPDATE staff SET is_active = 1 WHERE id = ?").run(id);
+  return res.changes > 0;
+}
+
+export function getAllStaffIncludingInactive(): Staff[] {
+  const rows = db.prepare("SELECT * FROM staff WHERE is_active = 0 ORDER BY name ASC").all() as StaffRow[];
+  return rows.map(rowToStaff);
+}
+
 export interface StaffHistoryItem {
   id: number;
   inquiryId: string;
@@ -489,18 +499,101 @@ export function deleteAssignment(id: number): boolean {
   return res.changes > 0;
 }
 
-export function getStaffPayments(params: { inquiryId?: string; month?: string; status?: "PENDING" | "PAID" }) {
-  // Returns all payments made or due
-  // For monthly report payments, we need to match status.
-  // In the API, this is simplified.
-  return [];
+export interface StaffPaymentRow {
+  id: number;
+  staffId: number;
+  staffName: string;
+  staffRole: string;
+  staffType: "INHOUSE" | "EXTERNAL";
+  assignmentId: number | null;
+  inquiryId: string | null;
+  amount: number;
+  paymentType: "PER_EVENT" | "MONTHLY_SALARY";
+  paymentMethod: "CASH" | "UPI" | "BANK_TRANSFER" | "CHEQUE";
+  referenceNo: string | null;
+  month: string | null;
+  paidAt: string;
+  notes: string | null;
+}
+
+export function getStaffPayments(params: {
+  inquiryId?: string;
+  month?: string;
+  status?: "PENDING" | "PAID";
+  staffId?: number;
+}): StaffPaymentRow[] {
+  let sql = `
+    SELECT
+      sp.id,
+      sp.staff_id,
+      s.name  AS staff_name,
+      s.role  AS staff_role,
+      s.staff_type,
+      sp.assignment_id,
+      sp.inquiry_id,
+      sp.amount,
+      sp.payment_type,
+      sp.payment_method,
+      sp.reference_no,
+      sp.month,
+      sp.paid_at,
+      sp.notes
+    FROM staff_payments sp
+    JOIN staff s ON sp.staff_id = s.id
+    WHERE 1=1
+  `;
+  const args: any[] = [];
+
+  if (params.inquiryId) {
+    sql += ` AND sp.inquiry_id = ?`;
+    args.push(params.inquiryId);
+  }
+
+  if (params.month) {
+    sql += ` AND sp.month = ?`;
+    args.push(params.month);
+  }
+
+  if (params.staffId) {
+    sql += ` AND sp.staff_id = ?`;
+    args.push(params.staffId);
+  }
+
+  // "status" filter: PAID means rows exist (all rows in staff_payments are paid records).
+  // PENDING means assignments that have no matching payment yet.
+  // For simplicity, this endpoint returns actual payment records (all are "PAID" records).
+  // Callers wanting pending should use the monthly-report or history endpoints.
+  if (params.status === "PAID" || !params.status) {
+    // no extra filter — all rows in staff_payments are paid
+  }
+
+  sql += ` ORDER BY sp.paid_at DESC`;
+
+  const rows = db.prepare(sql).all(...args) as any[];
+
+  return rows.map((r) => ({
+    id: r.id,
+    staffId: r.staff_id,
+    staffName: r.staff_name,
+    staffRole: r.staff_role,
+    staffType: r.staff_type,
+    assignmentId: r.assignment_id,
+    inquiryId: r.inquiry_id,
+    amount: r.amount,
+    paymentType: r.payment_type,
+    paymentMethod: r.payment_method,
+    referenceNo: r.reference_no,
+    month: r.month,
+    paidAt: r.paid_at,
+    notes: r.notes,
+  }));
 }
 
 export function recordStaffPayment(payment: Omit<StaffPayment, "id" | "paidAt">): StaffPayment {
   const nowStr = new Date().toISOString();
   const res = db.prepare(`
-    INSERT INTO staff_payments (staff_id, assignment_id, inquiry_id, amount, payment_type, payment_method, reference_no, month, paid_at, notes)
-    VALUES (@staffId, @assignmentId, @inquiryId, @amount, @paymentType, @paymentMethod, @referenceNo, @month, @paidAt, @notes)
+    INSERT INTO staff_payments (staff_id, assignment_id, inquiry_id, amount, payment_type, payment_method, reference_no, month, paid_at, paid_by_id, notes)
+    VALUES (@staffId, @assignmentId, @inquiryId, @amount, @paymentType, @paymentMethod, @referenceNo, @month, @paidAt, @paidById, @notes)
   `).run({
     staffId: payment.staffId,
     assignmentId: payment.assignmentId ?? null,
@@ -511,12 +604,14 @@ export function recordStaffPayment(payment: Omit<StaffPayment, "id" | "paidAt">)
     referenceNo: payment.referenceNo ?? null,
     month: payment.month ?? null,
     paidAt: nowStr,
+    paidById: payment.paidById ?? "system",
     notes: payment.notes ?? null,
   });
 
   return {
     id: res.lastInsertRowid as number,
     ...payment,
+    paidById: payment.paidById ?? "system",
     paidAt: nowStr,
   };
 }
