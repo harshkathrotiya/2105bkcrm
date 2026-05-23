@@ -3,10 +3,19 @@ import { db } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
-    const { bookingIds } = await request.json();
+    const body = await request.json();
+    const { bookingIds } = body;
 
-    if (!bookingIds || !Array.isArray(bookingIds)) {
-      return Response.json({ error: "bookingIds must be an array of numbers" }, { status: 400 });
+    if (!bookingIds || !Array.isArray(bookingIds) || bookingIds.length === 0) {
+      return Response.json({ error: "bookingIds must be a non-empty array of integers" }, { status: 400 });
+    }
+
+    // Validate every ID before touching the DB
+    for (let i = 0; i < bookingIds.length; i++) {
+      const bid = bookingIds[i];
+      if (isNaN(Number(bid)) || !Number.isInteger(Number(bid)) || Number(bid) <= 0) {
+        return Response.json({ error: `bookingIds[${i}] must be a positive integer` }, { status: 400 });
+      }
     }
 
     const nowStr = new Date().toISOString();
@@ -15,7 +24,7 @@ export async function POST(request: NextRequest) {
       const getBooking = db.prepare("SELECT * FROM equipment_bookings WHERE id = ?");
       const confirmBooking = db.prepare(`
         UPDATE equipment_bookings
-        SET status = 'OUT', confirmed_by_id = 'user-1', confirmed_at = ?
+        SET status = 'OUT', confirmed_by_id = 'system', confirmed_at = ?
         WHERE id = ?
       `);
       const setEquipInUse = db.prepare("UPDATE equipment SET status = 'IN_USE' WHERE id = ?");
@@ -24,7 +33,7 @@ export async function POST(request: NextRequest) {
 
       for (const id of bookingIds) {
         const booking = getBooking.get(id) as any;
-        if (!booking) continue;
+        if (!booking || booking.status === "OUT" || booking.status === "RETURNED") continue;
 
         confirmBooking.run(nowStr, id);
 
