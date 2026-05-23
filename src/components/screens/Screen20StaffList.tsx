@@ -103,6 +103,11 @@ export default function Screen20StaffList() {
     document.body.removeChild(link);
   };
 
+  // Export to PDF via browser print
+  const handleExportPDF = () => {
+    window.print();
+  };
+
   // Avatar Initials + color helper
   const getAvatarInitials = (name: string) => {
     return name
@@ -159,6 +164,7 @@ export default function Screen20StaffList() {
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <button className="btn" onClick={handleExportCSV}>Export CSV</button>
+            <button className="btn" onClick={handleExportPDF}>Export PDF</button>
             <Link href="/staff/new" className="btn btn-primary">+ Add Staff</Link>
           </div>
         }
@@ -319,6 +325,21 @@ export default function Screen20StaffList() {
               <div style={{ fontSize: "10px", color: "var(--tx3)", marginBottom: "3px" }}>Total pending pay</div>
               <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--acc)" }}>₹{pendingPaymentsDue.toLocaleString("en-IN")}</div>
             </div>
+
+            <div style={{ height: "1px", background: "var(--b1)", margin: "8px 14px" }} />
+
+            <Link
+              href="/staff/inactive"
+              style={{
+                padding: "8px 14px",
+                fontSize: "12px",
+                color: "var(--tx3)",
+                display: "block",
+                textDecoration: "none",
+              }}
+            >
+              Inactive Staff →
+            </Link>
           </div>
 
           {/* Main Grid Content */}
@@ -482,6 +503,98 @@ export default function Screen20StaffList() {
 
         </div>
       </ScreenFrame>
+
+      {/* Print-only PDF layout — hidden on screen, shown when printing */}
+      <div className="staff-print-only" style={{ display: "none", padding: "20px", color: "#000", background: "#fff" }}>
+        <div style={{ borderBottom: "2px solid #000", paddingBottom: "10px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div>
+            <h1 style={{ fontSize: "20px", fontWeight: "bold", margin: 0 }}>BK MEDIA CRM</h1>
+            <div style={{ fontSize: "12px", color: "#666" }}>Staff Directory</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "13px", fontWeight: "bold" }}>
+              {sidebarFilter !== "ALL" ? `Filter: ${sidebarFilter}` : "All Staff"}
+              {searchQuery ? ` — Search: "${searchQuery}"` : ""}
+            </div>
+            <div style={{ fontSize: "11px", color: "#666" }}>
+              Printed on: {new Date().toLocaleDateString("en-IN")} · {filteredStaff.length} staff member(s)
+            </div>
+          </div>
+        </div>
+
+        {/* Summary row */}
+        <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
+          {[
+            { label: "Total", value: counts.total },
+            { label: "In-house", value: counts.inHouse },
+            { label: "External", value: counts.external },
+            { label: "Available", value: counts.available },
+            { label: "Deployed", value: counts.deployed },
+            { label: "Pending Pay", value: `₹${pendingPaymentsDue.toLocaleString("en-IN")}` },
+          ].map((m) => (
+            <div key={m.label} style={{ border: "1px solid #ddd", borderRadius: "4px", padding: "8px 12px", flex: 1 }}>
+              <div style={{ fontSize: "9px", color: "#888", textTransform: "uppercase" }}>{m.label}</div>
+              <div style={{ fontSize: "15px", fontWeight: "bold" }}>{m.value}</div>
+            </div>
+          ))}
+        </div>
+
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
+          <thead>
+            <tr style={{ borderBottom: "2px solid #000", background: "#f5f5f5" }}>
+              <th style={{ textAlign: "left", padding: "6px 8px" }}>Name</th>
+              <th style={{ textAlign: "left", padding: "6px 8px" }}>Phone</th>
+              <th style={{ textAlign: "left", padding: "6px 8px" }}>Type</th>
+              <th style={{ textAlign: "left", padding: "6px 8px" }}>Role</th>
+              <th style={{ textAlign: "right", padding: "6px 8px" }}>Rate / Salary</th>
+              <th style={{ textAlign: "center", padding: "6px 8px" }}>Equipment</th>
+              <th style={{ textAlign: "center", padding: "6px 8px" }}>Status</th>
+              <th style={{ textAlign: "right", padding: "6px 8px" }}>Pending Pay</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredStaff.map((s, idx) => (
+              <tr key={s.id} style={{ borderBottom: "1px solid #eee", background: idx % 2 === 0 ? "#fff" : "#fafafa" }}>
+                <td style={{ padding: "5px 8px", fontWeight: 500 }}>{s.name}</td>
+                <td style={{ padding: "5px 8px", fontFamily: "monospace" }}>{s.phone}</td>
+                <td style={{ padding: "5px 8px" }}>{s.staffType === "INHOUSE" ? "In-house" : "External"}</td>
+                <td style={{ padding: "5px 8px" }}>{s.role}</td>
+                <td style={{ padding: "5px 8px", textAlign: "right", fontFamily: "monospace" }}>
+                  {s.paymentType === "PER_DAY"
+                    ? `₹${(s.ratePerDay || 0).toLocaleString("en-IN")}/day`
+                    : `₹${(s.monthlySalary || 0).toLocaleString("en-IN")}/mo`}
+                </td>
+                <td style={{ padding: "5px 8px", textAlign: "center" }}>
+                  {s.withEquipment ? (s.equipmentDesc ? s.equipmentDesc.split(",")[0] : "Yes") : "No"}
+                </td>
+                <td style={{ padding: "5px 8px", textAlign: "center" }}>{s.status}</td>
+                <td style={{ padding: "5px 8px", textAlign: "right", fontFamily: "monospace" }}>
+                  {(s.pendingPayment || 0) > 0 ? `₹${(s.pendingPayment || 0).toLocaleString("en-IN")}` : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr style={{ borderTop: "2px solid #000", fontWeight: "bold" }}>
+              <td colSpan={7} style={{ padding: "6px 8px", textAlign: "right" }}>Total Pending Payment:</td>
+              <td style={{ padding: "6px 8px", textAlign: "right", fontFamily: "monospace" }}>
+                ₹{pendingPaymentsDue.toLocaleString("en-IN")}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <style jsx global>{`
+        @media print {
+          .no-print, header, nav, footer, .sidebar-wrapper, .breadcrumb-wrapper {
+            display: none !important;
+          }
+          .staff-print-only {
+            display: block !important;
+          }
+        }
+      `}</style>
     </>
   );
 }

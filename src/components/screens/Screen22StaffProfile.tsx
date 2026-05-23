@@ -33,18 +33,17 @@ interface StaffSummary {
 
 export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   const router = useRouter();
-  const { staff, loading: staffLoading } = useStaff();
+  const { staff, loading: staffLoading, refreshStaff } = useStaff();
 
   const [history, setHistory] = useState<StaffHistoryItem[]>([]);
   const [summary, setSummary] = useState<StaffSummary | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Find target staff member
   const staffMember = useMemo(() => {
     return staff.find((s) => s.id === staffId);
-  }, [staff, staffId]);
-
-  // Load staff history and summary details
+  }, [staff, staffId]);  // Load staff history and summary details
   useEffect(() => {
     let active = true;
     async function loadData() {
@@ -102,6 +101,22 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
     return `${start.getDate()} ${months[start.getMonth()]} - ${end.getDate()} ${months[end.getMonth()]}`;
   };
 
+  // Handle deactivate (soft delete)
+  const handleDeactivate = async () => {
+    if (!staffMember) return;
+    if (!confirm(`Deactivate ${staffMember.name}? They will be hidden from all lists but their history will be preserved.`)) return;
+    setActionLoading(true);
+    try {
+      await api.deleteStaff(staffMember.id);
+      await refreshStaff();
+      router.push("/staff");
+    } catch (err: any) {
+      alert(err.message || "Failed to deactivate staff");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (staffLoading || (loadingDetails && !staffMember)) {
     return (
       <ScreenFrame breadcrumb="Staff › Profile › Loading...">
@@ -130,6 +145,14 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href="/staff" className="btn">Back to List</Link>
+            <button
+              onClick={handleDeactivate}
+              className="btn"
+              disabled={actionLoading}
+              style={{ color: "var(--rd)", borderColor: "var(--rd)" }}
+            >
+              {actionLoading ? "..." : "Deactivate"}
+            </button>
             <Link href={`/staff/${staffMember.id}/edit`} className="btn btn-primary">Edit Profile ↗</Link>
           </div>
         }
