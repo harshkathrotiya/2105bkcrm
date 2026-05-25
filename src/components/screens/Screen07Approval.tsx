@@ -18,7 +18,7 @@ export default function Screen07Approval({ quotationId }: Props) {
   const { quotations, dispatchQuotations } = useQuotations();
   const { inquiries, dispatchInquiries } = useInquiries();
   const { invoices, dispatchInvoices } = useInvoices();
-  const { dispatchCalendar } = useCalendar();
+  const { calendarEvents, dispatchCalendar } = useCalendar();
   const quotation = quotations.find((q) => q.id === quotationId);
   const [approvalDate, setApprovalDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -59,22 +59,36 @@ export default function Screen07Approval({ quotationId }: Props) {
         });
       }
 
+      // Delete old inquiry calendar events first
+      const eventsToDelete = calendarEvents.filter((evt) =>
+        evt.id.startsWith(`cal-${quotation.inquiryId}-`)
+      );
+      if (eventsToDelete.length > 0) {
+        await dispatchCalendar({
+          type: "BULK_DELETE_CALENDAR_EVENTS",
+          payload: eventsToDelete.map((evt) => evt.id),
+        });
+      }
+
       const startDt = new Date(quotation.startDate);
       const endDt = new Date(quotation.endDate);
       const calType = "confirmed" as const;
-      const now = Date.now();
       let idx = 0;
+      const eventsToAdd = [];
       for (let d = new Date(startDt); d <= endDt; d.setDate(d.getDate() + 1)) {
+        eventsToAdd.push({
+          id: `cal-${quotation.inquiryId}-confirmed-${idx++}`,
+          date: d.getDate(),
+          month: d.getMonth() + 1,
+          year: d.getFullYear(),
+          label: quotation.clientName,
+          type: calType,
+        });
+      }
+      if (eventsToAdd.length > 0) {
         await dispatchCalendar({
-          type: "ADD_CALENDAR_EVENT",
-          payload: {
-            id: `cal-${now}-${idx++}`,
-            date: d.getDate(),
-            month: d.getMonth() + 1,
-            year: d.getFullYear(),
-            label: quotation.clientName,
-            type: calType,
-          },
+          type: "BULK_ADD_CALENDAR_EVENTS",
+          payload: eventsToAdd,
         });
       }
     }
@@ -121,7 +135,6 @@ export default function Screen07Approval({ quotationId }: Props) {
     }
 
     setApproved(true);
-    router.push(`/warehouse/check?inquiryId=${quotation.inquiryId}`);
   };
 
   // Find the invoice that was generated from this quotation

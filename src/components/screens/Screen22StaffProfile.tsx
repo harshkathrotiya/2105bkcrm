@@ -37,25 +37,38 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
 
   const [history, setHistory] = useState<StaffHistoryItem[]>([]);
   const [summary, setSummary] = useState<StaffSummary | null>(null);
+  const [fetchedStaff, setFetchedStaff] = useState<Staff | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
   // Find target staff member
   const staffMember = useMemo(() => {
-    return staff.find((s) => s.id === staffId);
-  }, [staff, staffId]);  // Load staff history and summary details
+    return staff.find((s) => s.id === staffId) || fetchedStaff;
+  }, [staff, staffId, fetchedStaff]);
+
+  const staffStatus = useMemo(() => {
+    if (!staffMember) return "Unknown";
+    if (!staffMember.isActive) return "Inactive";
+    return ("status" in staffMember ? (staffMember as any).status : "Available") as string;
+  }, [staffMember]);
+
+  // Load staff history and summary details
   useEffect(() => {
     let active = true;
     async function loadData() {
       setLoadingDetails(true);
       try {
-        const [histData, summData] = await Promise.all([
+        const [histData, summData, memberData] = await Promise.all([
           api.fetchStaffHistory(staffId),
           api.fetchStaffSummary(staffId),
+          api.fetchStaffItem(staffId).catch(() => null),
         ]);
         if (active) {
           setHistory(histData);
           setSummary(summData);
+          if (memberData) {
+            setFetchedStaff(memberData);
+          }
         }
       } catch (err) {
         console.error("Failed to load staff details:", err);
@@ -117,6 +130,25 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
     }
   };
 
+  // Handle reactivate
+  const handleReactivate = async () => {
+    if (!staffMember) return;
+    if (!confirm(`Reactivate ${staffMember.name}? They will appear in the staff list again.`)) return;
+    setActionLoading(true);
+    try {
+      await api.reactivateStaff(staffMember.id);
+      await refreshStaff();
+      const memberData = await api.fetchStaffItem(staffId).catch(() => null);
+      if (memberData) {
+        setFetchedStaff(memberData);
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to reactivate staff");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (staffLoading || (loadingDetails && !staffMember)) {
     return (
       <ScreenFrame breadcrumb="Staff › Profile › Loading...">
@@ -145,14 +177,24 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href="/staff" className="btn">Back to List</Link>
-            <button
-              onClick={handleDeactivate}
-              className="btn"
-              disabled={actionLoading}
-              style={{ color: "var(--rd)", borderColor: "var(--rd)" }}
-            >
-              {actionLoading ? "..." : "Deactivate"}
-            </button>
+            {staffMember.isActive ? (
+              <button
+                onClick={handleDeactivate}
+                className="btn"
+                disabled={actionLoading}
+                style={{ color: "var(--rd)", borderColor: "var(--rd)" }}
+              >
+                {actionLoading ? "..." : "Deactivate"}
+              </button>
+            ) : (
+              <button
+                onClick={handleReactivate}
+                className="btn btn-success"
+                disabled={actionLoading}
+              >
+                {actionLoading ? "..." : "Reactivate"}
+              </button>
+            )}
             <Link href={`/staff/${staffMember.id}/edit`} className="btn btn-primary">Edit Profile ↗</Link>
           </div>
         }
@@ -250,8 +292,8 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                     <Badge variant={staffMember.staffType === "INHOUSE" ? "gr" : "am"}>
                       {staffMember.staffType === "INHOUSE" ? "In-house" : "External"}
                     </Badge>
-                    <Badge variant={staffMember.status === "Available" ? "gr" : "bl"}>
-                      {staffMember.status}
+                    <Badge variant={staffStatus === "Available" ? "gr" : staffStatus === "Deployed" ? "bl" : "gy"}>
+                      {staffStatus}
                     </Badge>
                   </div>
                 </div>

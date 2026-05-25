@@ -237,6 +237,25 @@ export default function Screen17WarehouseCheck() {
     const vendorId = parseInt(vendorIdStr, 10);
     const rate = parseFloat(rateStr);
 
+    // Try to resolve matching kitId or equipmentId by name
+    let resolvedEquipmentId: number | null = null;
+    let resolvedKitId: number | null = null;
+
+    const rowObj = data.quotation?.equipment?.find((r: any) => r.no === rowNo);
+    if (rowObj && rowObj.equip) {
+      const equipNameLower = rowObj.equip.toLowerCase();
+      
+      const matchingKit = data.kits?.find((k: any) => k.name.toLowerCase() === equipNameLower);
+      if (matchingKit) {
+        resolvedKitId = matchingKit.id;
+      } else {
+        const matchingEquip = data.equipment?.find((eq: any) => eq.productName.toLowerCase() === equipNameLower);
+        if (matchingEquip) {
+          resolvedEquipmentId = matchingEquip.id;
+        }
+      }
+    }
+
     try {
       setSavingRows((prev) => ({ ...prev, [positionStr]: true }));
       await api.createEquipmentBooking({
@@ -246,6 +265,8 @@ export default function Screen17WarehouseCheck() {
         position: positionStr,
         bookedFrom: data.inquiry.startDate,
         bookedTo: data.inquiry.endDate,
+        equipmentId: resolvedEquipmentId,
+        kitId: resolvedKitId,
       });
 
       setToastMessage(`Row #${rowNo} assigned to rental vendor!`);

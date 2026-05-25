@@ -40,7 +40,7 @@ interface CalendarContextValue {
   calendarEvents: CalendarEvent[];
   loading: boolean;
   dispatchCalendar: (action: {
-    type: "ADD_CALENDAR_EVENT" | "DELETE_CALENDAR_EVENT" | "UPDATE_CALENDAR_EVENT";
+    type: "ADD_CALENDAR_EVENT" | "DELETE_CALENDAR_EVENT" | "UPDATE_CALENDAR_EVENT" | "BULK_ADD_CALENDAR_EVENTS" | "BULK_DELETE_CALENDAR_EVENTS";
     payload: any;
   }) => void;
   getCalendarEvents: (month: number, year: number) => CalendarEvent[];
@@ -66,7 +66,7 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
 
   const dispatchCalendar = useCallback(
     async (action: {
-      type: "ADD_CALENDAR_EVENT" | "DELETE_CALENDAR_EVENT" | "UPDATE_CALENDAR_EVENT";
+      type: "ADD_CALENDAR_EVENT" | "DELETE_CALENDAR_EVENT" | "UPDATE_CALENDAR_EVENT" | "BULK_ADD_CALENDAR_EVENTS" | "BULK_DELETE_CALENDAR_EVENTS";
       payload: any;
     }) => {
       try {
@@ -81,6 +81,12 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
             // Calendar events don't have a PATCH endpoint, so delete + recreate
             await api.deleteCalendarEvent(action.payload.id);
             await api.createCalendarEvent(action.payload);
+            break;
+          case "BULK_ADD_CALENDAR_EVENTS":
+            await api.createCalendarEventsBulk(action.payload);
+            break;
+          case "BULK_DELETE_CALENDAR_EVENTS":
+            await api.deleteCalendarEventsBulk(action.payload);
             break;
         }
         await load();

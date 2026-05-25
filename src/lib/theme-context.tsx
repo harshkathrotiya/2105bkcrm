@@ -34,9 +34,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Hydrate theme on mount (avoids hydration mismatch)
   useEffect(() => {
     const t = getInitialTheme();
-    setTimeout(() => {
-      setThemeState(t);
-    }, 0);
+    setThemeState(t);
     document.documentElement.classList.toggle("light", t === "light");
   }, []);
 

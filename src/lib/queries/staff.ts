@@ -86,7 +86,7 @@ export async function getAllStaff(params?: {
 
 export async function getStaffById(id: number): Promise<Staff | undefined> {
   const s = await db.staff.findUnique({ where: { id } });
-  if (!s || s.is_active === 0) return undefined;
+  if (!s) return undefined;
   return {
     id: s.id,
     name: s.name,

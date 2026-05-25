@@ -218,7 +218,18 @@ export default function Screen20StaffList() {
 
             <div style={{ height: "1px", background: "var(--b1)", margin: "4px 12px" }} />
 
-            <div style={{ padding: "6px" }}>
+            <div style={{ padding: "6px", display: "flex", flexDirection: "column", gap: "6px" }}>
+              <Link
+                href="/staff/reports"
+                className="btn btn-primary w-full justify-center"
+                style={{
+                  fontSize: "11px",
+                  padding: "6px 8px",
+                  textDecoration: "none",
+                }}
+              >
+                Salary Reports & Payroll ↗
+              </Link>
               <Link
                 href="/staff/inactive"
                 className="btn w-full justify-center"

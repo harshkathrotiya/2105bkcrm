@@ -602,7 +602,7 @@ export default function Screen16KitList() {
             </div>
             {kitsLoading ? (
               <div style={{ padding: "15px" }}>
-                <LoadingSkeleton rows={4} message="Fetching kits..." />
+                <LoadingSkeleton rows={4} message="Fetching kits..." type="list" />
               </div>
             ) : (
               <div style={{ padding: "6px", display: "flex", flexDirection: "column", gap: "4px" }}>

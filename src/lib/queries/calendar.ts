@@ -63,3 +63,30 @@ export async function deleteCalendarEvent(id: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function createCalendarEventsBulk(events: CalendarEvent[]): Promise<CalendarEvent[]> {
+  await db.calendarEvent.createMany({
+    data: events.map((event) => ({
+      id: event.id,
+      date: event.date,
+      month: event.month,
+      year: event.year,
+      label: event.label.trim(),
+      type: event.type,
+    })),
+  });
+  return events;
+}
+
+export async function deleteCalendarEventsBulk(ids: string[]): Promise<boolean> {
+  try {
+    await db.calendarEvent.deleteMany({
+      where: {
+        id: { in: ids },
+      },
+    });
+    return true;
+  } catch (err) {
+    return false;
+  }
+}

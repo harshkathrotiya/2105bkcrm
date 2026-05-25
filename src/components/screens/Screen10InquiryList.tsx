@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -22,6 +23,7 @@ const MONTHS = [
 const ITEMS_PER_PAGE = 20;
 
 export default function Screen10InquiryList() {
+  const router = useRouter();
   const { inquiries } = useInquiries();
   const { clients } = useClients();
   const { quotations } = useQuotations();
@@ -198,7 +200,11 @@ export default function Screen10InquiryList() {
                     day: "numeric", month: "short", year: "numeric",
                   });
                   return (
-                    <tr key={inq.id}>
+                    <tr 
+                      key={inq.id}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/inquiries/new?id=${inq.id}`)}
+                    >
                       <td>
                         {client ? (
                           <div
@@ -250,6 +256,7 @@ export default function Screen10InquiryList() {
                           href={`/quotations/new?inquiryId=${inq.id}`}
                           className={`btn text-[10px] px-[8px] py-[4px] ${hasQuotation ? "" : "btn-primary"}`}
                           title={hasQuotation ? "View/edit quotation" : "Create quotation"}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           {hasQuotation ? "Quotation" : "+ Quote"}
                         </Link>

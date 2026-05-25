@@ -112,10 +112,9 @@ export default function Screen18VendorList() {
   };
 
   // GST Number validation helper
-  // Standard Indian GST format: 2 numbers, 5 letters, 4 numbers, 1 letter, 1 alphanumeric/number, 'Z', 1 alphanumeric/number
   const validateGst = (gst: string): boolean => {
     if (!gst.trim()) return true; // Optional field
-    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{3}$/i;
+    const gstRegex = /^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/i;
     return gstRegex.test(gst.trim());
   };
 
@@ -128,12 +127,24 @@ export default function Screen18VendorList() {
       setFormError("Vendor name is required.");
       return;
     }
+    if (formData.name.trim().length < 2) {
+      setFormError("Vendor name must be at least 2 characters.");
+      return;
+    }
     if (!formData.phone.trim()) {
       setFormError("Phone number is required.");
       return;
     }
+    if (!/^\d{10}$/.test(formData.phone.trim())) {
+      setFormError("Phone number must be exactly 10 digits.");
+      return;
+    }
+    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      setFormError("Invalid email address format.");
+      return;
+    }
     if (formData.gstNumber && !validateGst(formData.gstNumber)) {
-      setFormError("Invalid GST format. Must be 15-character uppercase alphanumeric (e.g. 22AAAAA0000A1Z5).");
+      setFormError("Invalid GST format. Must be a valid 15-character GST number (e.g. 22AAAAA0000A1Z5).");
       return;
     }
 
@@ -203,12 +214,24 @@ export default function Screen18VendorList() {
       setFormError("Vendor name is required.");
       return;
     }
+    if (editFormData.name.trim().length < 2) {
+      setFormError("Vendor name must be at least 2 characters.");
+      return;
+    }
     if (!editFormData.phone.trim()) {
       setFormError("Phone number is required.");
       return;
     }
+    if (!/^\d{10}$/.test(editFormData.phone.trim())) {
+      setFormError("Phone number must be exactly 10 digits.");
+      return;
+    }
+    if (editFormData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFormData.email.trim())) {
+      setFormError("Invalid email address format.");
+      return;
+    }
     if (editFormData.gstNumber && !validateGst(editFormData.gstNumber)) {
-      setFormError("Invalid GST format. Must be 15-character uppercase alphanumeric (e.g. 22AAAAA0000A1Z5).");
+      setFormError("Invalid GST format. Must be a valid 15-character GST number (e.g. 22AAAAA0000A1Z5).");
       return;
     }
 
@@ -594,7 +617,8 @@ export default function Screen18VendorList() {
                     placeholder="Contact number"
                     className="finp"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "") })}
+                    maxLength={10}
                   />
                 </div>
                 <div>
@@ -635,7 +659,8 @@ export default function Screen18VendorList() {
                     className="finp"
                     style={{ textTransform: "uppercase" }}
                     value={formData.gstNumber}
-                    onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })}
+                    maxLength={15}
                   />
                 </div>
                 <div style={{ gridColumn: "span 2" }}>
@@ -692,7 +717,8 @@ export default function Screen18VendorList() {
                     placeholder="Contact number"
                     className="finp"
                     value={editFormData.phone}
-                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value.replace(/\D/g, "") })}
+                    maxLength={10}
                   />
                 </div>
                 <div>
@@ -733,7 +759,8 @@ export default function Screen18VendorList() {
                     className="finp"
                     style={{ textTransform: "uppercase" }}
                     value={editFormData.gstNumber}
-                    onChange={(e) => setEditFormData({ ...editFormData, gstNumber: e.target.value })}
+                    onChange={(e) => setEditFormData({ ...editFormData, gstNumber: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "") })}
+                    maxLength={15}
                   />
                 </div>
                 <div style={{ gridColumn: "span 2" }}>

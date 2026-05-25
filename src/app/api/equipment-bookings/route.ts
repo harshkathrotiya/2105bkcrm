@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
     v.required("bookedTo", "booked to date").date("bookedTo", "booked to date");
     v.dateRange("bookedFrom", "bookedTo");
 
-    // Must have either equipmentId or kitId
-    if (!body.equipmentId && !body.kitId) {
-      return Response.json({ error: "Either equipmentId or kitId is required" }, { status: 400 });
+    // Must have either equipmentId, kitId, or vendorId
+    if (!body.equipmentId && !body.kitId && !body.vendorId) {
+      return Response.json({ error: "Either equipmentId, kitId, or vendorId is required" }, { status: 400 });
     }
     if (body.equipmentId !== undefined && body.equipmentId !== null) {
       v.positiveInteger("equipmentId", "equipment ID");

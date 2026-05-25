@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
@@ -29,8 +29,8 @@ export default function Screen04NewInquiry() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { clients } = useClients();
-  const { dispatchInquiries } = useInquiries();
-  const { dispatchCalendar } = useCalendar();
+  const { inquiries, dispatchInquiries } = useInquiries();
+  const { calendarEvents, dispatchCalendar } = useCalendar();
 
   const preselectedClientId = searchParams.get("clientId") ?? "";
   const defaultClientId =
@@ -49,6 +49,24 @@ export default function Screen04NewInquiry() {
   const [venue, setVenue] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const editInquiryId = searchParams.get("id") ?? searchParams.get("inquiryId") ?? "";
+  const editInquiry = useMemo(() => {
+    return inquiries.find((i) => i.id === editInquiryId);
+  }, [inquiries, editInquiryId]);
+
+  useEffect(() => {
+    if (editInquiry) {
+      setClientId(editInquiry.clientId);
+      setEventType(editInquiry.eventType);
+      setStartDate(editInquiry.startDate);
+      setEndDate(editInquiry.endDate);
+      setStartTime(editInquiry.startTime || "09:00 AM");
+      setEndTime(editInquiry.endTime || "09:00 PM");
+      setVenue(editInquiry.venue || "");
+      setNotes(editInquiry.notes || "");
+    }
+  }, [editInquiry]);
 
   const selectedClient = clients.find((c) => c.id === clientId);
 
@@ -86,45 +104,98 @@ export default function Screen04NewInquiry() {
     if (!canSave || saving) return;
     setSaving(true);
 
-    const inquiryId = `inq-${generateId()}`;
+    const inquiryId = editInquiry ? editInquiry.id : `inq-${generateId()}`;
 
-    await dispatchInquiries({
-      type: "ADD_INQUIRY",
-      payload: {
-        id: inquiryId,
-        clientId,
-        eventType,
-        startDate,
-        endDate,
-        startTime,
-        endTime,
-        venue,
-        notes,
-        status: "New",
-        createdAt: today,
-      },
-    });
+    if (editInquiry) {
+      // 1. Delete old calendar events first using captured details
+      const oldClientId = editInquiry.clientId;
+      const oldStartDate = editInquiry.startDate;
+      const oldEndDate = editInquiry.endDate;
+      const oldClient = clients.find((c) => c.id === oldClientId);
+      const oldClientName = oldClient?.name ?? "Event";
+
+      const eventsToDelete = calendarEvents.filter((evt) => {
+        // Matches new ID format (both inquiry and confirmed events start with `cal-${inquiryId}-`)
+        if (evt.id.startsWith(`cal-${inquiryId}-`)) return true;
+        
+        // Fallback for legacy format: check type, label and date range
+        if (evt.type === "inquiry" || evt.type === "confirmed") {
+          const isLabelMatch = evt.label === oldClientName || evt.label === `↔ ${oldClientName}`;
+          if (isLabelMatch) {
+            const eDateStr = `${evt.year}-${String(evt.month).padStart(2, "0")}-${String(evt.date).padStart(2, "0")}`;
+            return eDateStr >= oldStartDate && eDateStr <= oldEndDate;
+          }
+        }
+        return false;
+      });
+
+      if (eventsToDelete.length > 0) {
+        await dispatchCalendar({
+          type: "BULK_DELETE_CALENDAR_EVENTS",
+          payload: eventsToDelete.map((evt) => evt.id),
+        });
+      }
+
+      // 2. Update existing inquiry
+      await dispatchInquiries({
+        type: "UPDATE_INQUIRY",
+        payload: {
+          id: inquiryId,
+          clientId,
+          eventType,
+          startDate,
+          endDate,
+          startTime,
+          endTime,
+          venue,
+          notes,
+        },
+      });
+    } else {
+      // Create new inquiry
+      await dispatchInquiries({
+        type: "ADD_INQUIRY",
+        payload: {
+          id: inquiryId,
+          clientId,
+          eventType,
+          startDate,
+          endDate,
+          startTime,
+          endTime,
+          venue,
+          notes,
+          status: "New",
+          createdAt: today,
+        },
+      });
+    }
 
     // Add calendar events for every day of the event (1-indexed month)
     const start = new Date(startDate);
     const end = new Date(endDate);
     const clientName = selectedClient?.name ?? "Event";
-    const now = Date.now();
     let idx = 0;
+    const calType = editInquiry && editInquiry.status === "Confirmed" ? "confirmed" : "inquiry";
+    const eventsToAdd = [];
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const isFirst = idx === 0;
-      await dispatchCalendar({
-        type: "ADD_CALENDAR_EVENT",
-        payload: {
-          id: `cal-${now}-${idx}`,
-          date: d.getDate(),
-          month: d.getMonth() + 1, // 1-indexed
-          year: d.getFullYear(),
-          label: isFirst ? clientName : `↔ ${clientName}`,
-          type: "inquiry",
-        },
+      eventsToAdd.push({
+        id: calType === "confirmed" ? `cal-${inquiryId}-confirmed-${idx}` : `cal-${inquiryId}-${idx}`,
+        date: d.getDate(),
+        month: d.getMonth() + 1, // 1-indexed
+        year: d.getFullYear(),
+        label: isFirst ? clientName : `↔ ${clientName}`,
+        type: calType,
       });
       idx++;
+    }
+
+    if (eventsToAdd.length > 0) {
+      await dispatchCalendar({
+        type: "BULK_ADD_CALENDAR_EVENTS",
+        payload: eventsToAdd,
+      });
     }
 
     router.push("/inquiries");
@@ -133,20 +204,22 @@ export default function Screen04NewInquiry() {
   return (
     <>
       <SectionHeader
-        title={<>New <strong>inquiry</strong></>}
-        description="Create a new event inquiry — select a client, set dates, and add event details."
+        title={editInquiry ? <>Edit <strong>inquiry</strong></> : <>New <strong>inquiry</strong></>}
+        description={editInquiry ? "Update inquiry details below." : "Create a new event inquiry — select a client, set dates, and add event details."}
       />
       <ScreenFrame
-        breadcrumb={<>Inquiries › New inquiry</>}
+        breadcrumb={editInquiry ? <>Inquiries › Edit inquiry</> : <>Inquiries › New inquiry</>}
         actions={
           <>
-            <button className="btn" onClick={handleReset} disabled={saving}>Reset</button>
+            {!editInquiry && (
+              <button className="btn" onClick={handleReset} disabled={saving}>Reset</button>
+            )}
             <button
               className={`btn btn-success ${!canSave || saving ? "opacity-50" : ""}`}
               onClick={handleSave}
               disabled={!canSave || saving}
             >
-              {saving ? "Saving..." : "Save inquiry ↗"}
+              {saving ? "Saving..." : editInquiry ? "Update inquiry ↗" : "Save inquiry ↗"}
             </button>
           </>
         }

@@ -85,7 +85,7 @@ export default function InactiveStaffPage() {
               </thead>
               <tbody>
                 {inactiveStaff.map((s) => (
-                  <tr key={s.id} style={{ opacity: 0.75 }}>
+                  <tr key={s.id} onClick={() => router.push(`/staff/${s.id}`)} style={{ opacity: 0.75, cursor: "pointer" }}>
                     <td>
                       <div
                         className="avatar-sm"
@@ -128,7 +128,7 @@ export default function InactiveStaffPage() {
                         <span style={{ color: "var(--tx3)", fontSize: "12px" }}>No</span>
                       )}
                     </td>
-                    <td className="tc">
+                    <td className="tc" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleReactivate(s.id, s.name)}
                         className="btn btn-success"

@@ -117,7 +117,7 @@ export default function Screen02EditClient({
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email),
       gst:
         form.gst.length === 0 ||
-        /^\d{2}[A-Z]{5}\d{4}[A-Z]\d[A-Z]{2}\d$/.test(form.gst),
+        /^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}[Z]{1}[A-Z\d]{1}$/i.test(form.gst),
       pan:
         form.pan.length === 0 || /^[A-Z]{5}\d{4}[A-Z]$/.test(form.pan),
       city: form.city.trim().length >= 2,
@@ -353,8 +353,9 @@ export default function Screen02EditClient({
                     className="finp font-mono text-[11px]"
                     value={form.gst}
                     onChange={(e) =>
-                      update("gst", e.target.value.toUpperCase().slice(0, 15))
+                      update("gst", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))
                     }
+                    maxLength={15}
                     placeholder="24XXXXX1234X1ZX"
                   />
                 </div>
@@ -364,8 +365,9 @@ export default function Screen02EditClient({
                     className="finp font-mono text-[11px]"
                     value={form.pan}
                     onChange={(e) =>
-                      update("pan", e.target.value.toUpperCase().slice(0, 10))
+                      update("pan", e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))
                     }
+                    maxLength={10}
                     placeholder="ABCDE1234F"
                   />
                 </div>
@@ -453,11 +455,9 @@ export default function Screen02EditClient({
                     className="finp"
                     value={form.pin}
                     onChange={(e) =>
-                      update(
-                        "pin",
-                        e.target.value.replace(/\D/g, "").slice(0, 6)
-                      )
+                      update("pin", e.target.value.replace(/\D/g, ""))
                     }
+                    maxLength={6}
                     placeholder="390001"
                   />
                 </div>

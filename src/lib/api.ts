@@ -176,6 +176,22 @@ export function deleteCalendarEvent(id: string): Promise<void> {
   return request(`/api/calendar/${id}`, { method: "DELETE" });
 }
 
+export function createCalendarEventsBulk(
+  events: CalendarEvent[]
+): Promise<CalendarEvent[]> {
+  return request("/api/calendar/bulk", {
+    method: "POST",
+    body: JSON.stringify({ events }),
+  });
+}
+
+export function deleteCalendarEventsBulk(ids: string[]): Promise<void> {
+  return request("/api/calendar/bulk-delete", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+}
+
 // ── Equipment ────────────────────────────────────────────────────────────────
 
 export interface EquipmentFetchResult {

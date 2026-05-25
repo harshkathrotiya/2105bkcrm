@@ -127,7 +127,12 @@ export async function getVendorHistory(vendorId: number): Promise<VendorHistoryI
     where: { vendor_id: vendorId },
     include: {
       inquiry: {
-        include: { client: true },
+        include: {
+          client: true,
+          quotations: {
+            where: { status: { not: "Revised" } }
+          }
+        },
       },
       equipment: true,
       kit: true,
@@ -135,19 +140,36 @@ export async function getVendorHistory(vendorId: number): Promise<VendorHistoryI
     orderBy: { booked_from: "desc" },
   });
 
-  return rows.map((r: any) => ({
-    bookingId: r.id,
-    inquiryId: r.inquiry_id,
-    clientName: r.inquiry?.client?.name || "Unknown Client",
-    eventType: r.inquiry?.event_type || "Unknown Event",
-    bookedFrom: r.booked_from,
-    bookedTo: r.booked_to,
-    itemName: r.equipment?.product_name || r.kit?.name || "Unspecified Item",
-    position: r.position || "",
-    status: r.status,
-    vendorCostPerDay: r.vendor_cost_per_day || 0,
-    totalVendorCost: r.total_vendor_cost || 0,
-  }));
+  return rows.map((r: any) => {
+    let itemName = r.equipment?.product_name || r.kit?.name || "Unspecified Item";
+
+    if (itemName === "Unspecified Item" && r.position) {
+      const activeQuote = r.inquiry?.quotations?.[0];
+      if (activeQuote && activeQuote.equipment) {
+        try {
+          const eqRows = JSON.parse(activeQuote.equipment);
+          const matchedRow = eqRows.find((er: any) => er.no.toString() === r.position);
+          if (matchedRow && matchedRow.equip) {
+            itemName = matchedRow.equip;
+          }
+        } catch {}
+      }
+    }
+
+    return {
+      bookingId: r.id,
+      inquiryId: r.inquiry_id,
+      clientName: r.inquiry?.client?.name || "Unknown Client",
+      eventType: r.inquiry?.event_type || "Unknown Event",
+      bookedFrom: r.booked_from,
+      bookedTo: r.booked_to,
+      itemName,
+      position: r.position || "",
+      status: r.status,
+      vendorCostPerDay: r.vendor_cost_per_day || 0,
+      totalVendorCost: r.total_vendor_cost || 0,
+    };
+  });
 }
 
 export async function getVendorYtdSpend(vendorId: number): Promise<number> {
