@@ -299,6 +299,26 @@ export default function Screen05QuotationForm() {
     const endDate = selectedInquiry.endDate;
     const days = calcDays(startDate, endDate);
 
+    // Validate rows on frontend before submitting
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row.position?.trim()) {
+        alert(`Row #${row.no}: Please select a Position.`);
+        setSaving(false);
+        return;
+      }
+      if (!row.equip?.trim()) {
+        alert(`Row #${row.no}: Please select a Kit or Equipment.`);
+        setSaving(false);
+        return;
+      }
+      if (typeof row.rate !== "number" || row.rate < 0) {
+        alert(`Row #${row.no}: Rate must be a non-negative number.`);
+        setSaving(false);
+        return;
+      }
+    }
+
     const quoteData = {
       equipment: rows, subtotal, cgst, sgst, total,
       status: "Draft" as const,
