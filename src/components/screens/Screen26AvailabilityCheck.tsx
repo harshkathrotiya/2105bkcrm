@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
+import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
 import type { Staff } from "@/lib/types";
 
@@ -199,7 +200,7 @@ export default function Screen26AvailabilityCheck() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {loading ? (
-                  <div className="text-center py-12 text-tx3">Checking availability calendar...</div>
+                  <LoadingSkeleton rows={5} message="Checking availability calendar..." />
                 ) : staffList.length === 0 ? (
                   <div style={{ fontStyle: "italic", color: "var(--tx3)", textAlign: "center", padding: "20px" }}>
                     No staff profiles matching role filters.

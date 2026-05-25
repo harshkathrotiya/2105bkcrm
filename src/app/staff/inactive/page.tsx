@@ -6,6 +6,7 @@ import Link from "next/link";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ScreenFrame from "@/components/ui/ScreenFrame";
 import Badge from "@/components/ui/Badge";
+import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 import * as api from "@/lib/api";
 import { useStaff } from "@/lib/store";
 import type { Staff } from "@/lib/types";
@@ -64,7 +65,7 @@ export default function InactiveStaffPage() {
         }
       >
         {loading ? (
-          <div className="text-center py-12 text-tx3">Loading inactive staff...</div>
+          <LoadingSkeleton rows={6} message="Loading inactive staff..." />
         ) : inactiveStaff.length === 0 ? (
           <div className="text-center py-12 text-tx3" style={{ fontStyle: "italic" }}>
             No deactivated staff members found.

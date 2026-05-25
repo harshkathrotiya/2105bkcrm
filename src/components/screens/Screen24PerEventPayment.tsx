@@ -6,6 +6,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
+import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
 import type { Inquiry, Quotation, StaffAssignment } from "@/lib/types";
 
@@ -231,7 +232,7 @@ export default function Screen24PerEventPayment() {
   if (loading) {
     return (
       <ScreenFrame breadcrumb="Staff › Payments › Loading...">
-        <div className="text-center py-12 text-tx3">Loading event payments data...</div>
+        <LoadingSkeleton rows={6} message="Loading event payments data..." />
       </ScreenFrame>
     );
   }

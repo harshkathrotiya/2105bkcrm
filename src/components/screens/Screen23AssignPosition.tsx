@@ -6,6 +6,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
+import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useStaff } from "@/lib/store";
 import * as api from "@/lib/api";
 import type { Inquiry, Quotation, Staff, StaffAssignment } from "@/lib/types";
@@ -316,7 +317,7 @@ export default function Screen23AssignPosition() {
   if (loading) {
     return (
       <ScreenFrame breadcrumb="Staff › Assignments › Loading...">
-        <div className="text-center py-12 text-tx3">Loading quotation and staff data...</div>
+        <LoadingSkeleton rows={6} message="Loading quotation and staff data..." />
       </ScreenFrame>
     );
   }

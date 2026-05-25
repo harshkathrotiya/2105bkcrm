@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
+import LoadingSkeleton from "../ui/LoadingSkeleton";
 import Badge from "../ui/Badge";
 import * as api from "@/lib/api";
 import { useEquipment } from "@/lib/store";
@@ -105,14 +106,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
       <>
         <SectionHeader title="Equipment Details" />
         <ScreenFrame breadcrumb="Equipment Master › Details">
-          <div className="flex items-center justify-center min-h-[300px]">
-            <div className="text-center">
-              <div className="flex justify-center mb-3">
-                <div className="w-8 h-8 rounded-full border-[3px] border-b2 border-t-acc animate-spin" />
-              </div>
-              <div className="text-[14px] text-tx3">Loading equipment details…</div>
-            </div>
-          </div>
+          <LoadingSkeleton rows={6} message="Loading equipment details…" />
         </ScreenFrame>
       </>
     );

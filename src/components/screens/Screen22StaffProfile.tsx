@@ -6,6 +6,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
+import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useStaff } from "@/lib/store";
 import * as api from "@/lib/api";
 import type { Staff } from "@/lib/types";
@@ -152,7 +153,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   if (staffLoading || (loadingDetails && !staffMember)) {
     return (
       <ScreenFrame breadcrumb="Staff › Profile › Loading...">
-        <div className="text-center py-12 text-tx3">Loading profile details...</div>
+        <LoadingSkeleton rows={6} message="Loading profile details..." />
       </ScreenFrame>
     );
   }

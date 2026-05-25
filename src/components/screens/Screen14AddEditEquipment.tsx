@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
+import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useEquipment } from "@/lib/store";
 import * as api from "@/lib/api";
 
@@ -158,14 +159,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
       <>
         <SectionHeader title={isEdit ? "Edit Equipment" : "Add Equipment"} />
         <ScreenFrame breadcrumb={isEdit ? "Equipment Master › Edit" : "Equipment Master › New"}>
-          <div className="flex items-center justify-center min-h-[300px]">
-            <div className="text-center">
-              <div className="flex justify-center mb-3">
-                <div className="w-8 h-8 rounded-full border-[3px] border-b2 border-t-acc animate-spin" />
-              </div>
-              <div className="text-[14px] text-tx3">Loading equipment details…</div>
-            </div>
-          </div>
+          <LoadingSkeleton rows={6} message="Loading equipment details…" />
         </ScreenFrame>
       </>
     );

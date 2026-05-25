@@ -5,6 +5,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
+import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
 
 export default function Screen25MonthlyPaymentReport() {
@@ -252,7 +253,7 @@ export default function Screen25MonthlyPaymentReport() {
           }
         >
           {loading || !report ? (
-            <div className="text-center py-12 text-tx3">Loading report details...</div>
+            <LoadingSkeleton rows={8} message="Loading report details..." />
           ) : (
             <div style={{ display: "flex", border: "1px solid var(--b1)", borderRadius: "12px", overflow: "hidden", background: "var(--s1)" }}>
               

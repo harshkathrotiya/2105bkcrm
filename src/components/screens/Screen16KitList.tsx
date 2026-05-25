@@ -170,6 +170,11 @@ export default function Screen16KitList() {
   const [createError, setCreateError] = useState("");
   const [modalEquipment, setModalEquipment] = useState<{ id: string; qty: number }[]>([{ id: "", qty: 1 }]);
 
+  // Search & Pagination for kits sidebar
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
+
   // For Add Accessory Form
   const [selectedAccessoryId, setSelectedAccessoryId] = useState("");
   const [selectedAccessoryQty, setSelectedAccessoryQty] = useState(1);
@@ -179,6 +184,25 @@ export default function Screen16KitList() {
   const [selectedMainBodyId, setSelectedMainBodyId] = useState("");
   const [selectedMainBodyQty, setSelectedMainBodyQty] = useState(1);
   const [settingMainBody, setSettingMainBody] = useState(false);
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  // Filter kits by search query
+  const filteredKits = useMemo(() => {
+    if (!searchQuery.trim()) return kits;
+    const q = searchQuery.toLowerCase();
+    return kits.filter((kit) => kit.name.toLowerCase().includes(q));
+  }, [kits, searchQuery]);
+
+  // Paginate filtered kits
+  const totalPages = Math.max(1, Math.ceil(filteredKits.length / ITEMS_PER_PAGE));
+  const paginatedKits = filteredKits.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
 
   // Load kits when date range changes
   useEffect(() => {
@@ -597,63 +621,101 @@ export default function Screen16KitList() {
         <div className="two-col" style={{ gridTemplateColumns: "260px 1fr" }}>
           {/* Left Column: Kits Sidebar */}
           <aside className="sf" style={{ background: "var(--alt2)", borderRight: "1px solid var(--b1)", alignSelf: "start" }}>
-            <div className="tb" style={{ padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "var(--tx3)" }}>
-              KITS IN STOCK ({kits.length})
+            <div className="tb" style={{ padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "var(--tx3)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>KITS IN STOCK ({kits.length})</span>
+            </div>
+            {/* Search input */}
+            <div style={{ padding: "6px 8px" }}>
+              <input
+                type="text"
+                placeholder="Search kits by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="finp"
+                style={{ width: "100%", fontSize: "11px", padding: "5px 8px" }}
+              />
             </div>
             {kitsLoading ? (
               <div style={{ padding: "15px" }}>
                 <LoadingSkeleton rows={4} message="Fetching kits..." type="list" />
               </div>
             ) : (
-              <div style={{ padding: "6px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                {kits.length === 0 ? (
-                  <div style={{ padding: "20px", textAlign: "center", color: "var(--tx3)", fontSize: "12px" }}>
-                    No kits defined. Click &apos;+ Create New Kit&apos; to build one.
-                  </div>
-                ) : (
-                  kits.map((kit) => {
-                    const isActive = kit.id === selectedKitId;
-                    const totalValue = getKitTotalValue(kit);
-                    const mainBodyName = getKitMainBodyName(kit);
-                    const availability = kit.availabilityStatus || "AVAILABLE";
+              <>
+                <div style={{ padding: "6px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {filteredKits.length === 0 ? (
+                    <div style={{ padding: "20px", textAlign: "center", color: "var(--tx3)", fontSize: "12px" }}>
+                      {searchQuery ? "No kits match your search." : "No kits defined. Click '+ Create New Kit' to build one."}
+                    </div>
+                  ) : (
+                    paginatedKits.map((kit) => {
+                      const isActive = kit.id === selectedKitId;
+                      const totalValue = getKitTotalValue(kit);
+                      const mainBodyName = getKitMainBodyName(kit);
+                      const availability = kit.availabilityStatus || "AVAILABLE";
 
-                    return (
-                      <button
-                        key={kit.id}
-                        onClick={() => setSelectedKitId(kit.id)}
-                        style={{
-                          width: "100%",
-                          textAlign: "left",
-                          padding: "10px",
-                          borderRadius: "6px",
-                          background: isActive ? "var(--sidebar-active)" : "transparent",
-                          color: isActive ? "var(--tx)" : "var(--tx2)",
-                          border: "none",
-                          cursor: "pointer",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "4px",
-                          marginBottom: "2px",
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
-                          <span style={{ fontWeight: isActive ? 600 : 500, fontSize: "12.5px" }}>{kit.name}</span>
-                          <Badge variant={getAvailabilityBadgeVariant(availability)}>
-                            {availability}
-                          </Badge>
-                        </div>
-                        <div style={{ fontSize: "10.5px", color: "var(--tx3)" }}>
-                          {mainBodyName}
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--tx3)", marginTop: "2px" }}>
-                          <span>{kit.items?.length || 0} items</span>
-                          <span>₹{totalValue.toLocaleString("en-IN")}</span>
-                        </div>
-                      </button>
-                    );
-                  })
+                      return (
+                        <button
+                          key={kit.id}
+                          onClick={() => setSelectedKitId(kit.id)}
+                          style={{
+                            width: "100%",
+                            textAlign: "left",
+                            padding: "10px",
+                            borderRadius: "6px",
+                            background: isActive ? "var(--sidebar-active)" : "transparent",
+                            color: isActive ? "var(--tx)" : "var(--tx2)",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px",
+                            marginBottom: "2px",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
+                            <span style={{ fontWeight: isActive ? 600 : 500, fontSize: "12.5px" }}>{kit.name}</span>
+                            <Badge variant={getAvailabilityBadgeVariant(availability)}>
+                              {availability}
+                            </Badge>
+                          </div>
+                          <div style={{ fontSize: "10.5px", color: "var(--tx3)" }}>
+                            {mainBodyName}
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--tx3)", marginTop: "2px" }}>
+                            <span>{kit.items?.length || 0} items</span>
+                            <span>₹{totalValue.toLocaleString("en-IN")}</span>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Pagination */}
+                {filteredKits.length > ITEMS_PER_PAGE && (
+                  <div style={{ padding: "8px 6px", display: "flex", justifyContent: "center", alignItems: "center", gap: "4px", borderTop: "1px solid var(--b1)" }}>
+                    <button
+                      className="btn"
+                      style={{ padding: "3px 8px", fontSize: "10px" }}
+                      disabled={page <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    >
+                      {"\u2039"}
+                    </button>
+                    <span style={{ fontSize: "10px", color: "var(--tx3)", padding: "0 4px" }}>
+                      {page} / {totalPages}
+                    </span>
+                    <button
+                      className="btn"
+                      style={{ padding: "3px 8px", fontSize: "10px" }}
+                      disabled={page >= totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    >
+                      {"\u203A"}
+                    </button>
+                  </div>
                 )}
-              </div>
+              </>
             )}
           </aside>
 
