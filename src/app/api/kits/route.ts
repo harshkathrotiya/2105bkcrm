@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { getAllKits, createKit, getKitAvailabilityStatus } from "@/lib/queries/kits";
+import { getAllKits, createKit, getAllKitsWithAvailability } from "@/lib/queries/kits";
 import { Validator } from "@/lib/validate";
 
 export async function GET(request: NextRequest) {
@@ -17,17 +17,11 @@ export async function GET(request: NextRequest) {
       if (v.hasErrors()) return v.response();
     }
 
-    const kits = await getAllKits();
-
     if (startDate && endDate) {
-      const kitsWithStatus = await Promise.all(kits.map(async (kit) => ({
-        ...kit,
-        availabilityStatus: await getKitAvailabilityStatus(kit.id, startDate, endDate),
-      })));
-      return Response.json(kitsWithStatus);
+      return Response.json(await getAllKitsWithAvailability(startDate, endDate));
     }
 
-    return Response.json(kits);
+    return Response.json(await getAllKits());
   } catch (err) {
     console.error("[GET /api/kits]", err);
     return Response.json({ error: "Failed to fetch kits" }, { status: 500 });

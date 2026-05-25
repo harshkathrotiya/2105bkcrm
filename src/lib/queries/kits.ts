@@ -47,6 +47,83 @@ export async function getAllKits(): Promise<Kit[]> {
   return rows.map(mapKit);
 }
 
+type KitAvailabilityStatus = "AVAILABLE" | "PARTIAL" | "UNAVAILABLE";
+
+const OUT_OF_SERVICE_STATUSES = new Set(["MAINTENANCE", "SOLD", "RETIRED"]);
+
+function getKitAvailabilityFromBookings(
+  kit: Kit,
+  bookedEquipmentIds: Set<number>,
+  bookedKitIds: Set<number>,
+): KitAvailabilityStatus {
+  const items = kit.items ?? [];
+  const mainBodyId = kit.mainBodyId;
+  const accessories = items.filter((item) => item.id !== mainBodyId);
+
+  const isItemUnavailable = (item: NonNullable<Kit["items"]>[number]) =>
+    bookedEquipmentIds.has(item.id) ||
+    (item.kitId !== null && item.kitId !== undefined && bookedKitIds.has(item.kitId)) ||
+    OUT_OF_SERVICE_STATUSES.has(item.status);
+
+  if (mainBodyId) {
+    const mainBodyItem = items.find((item) => item.id === mainBodyId);
+    if (!mainBodyItem || isItemUnavailable(mainBodyItem)) {
+      return "UNAVAILABLE";
+    }
+
+    return accessories.some(isItemUnavailable) ? "PARTIAL" : "AVAILABLE";
+  }
+
+  if (accessories.length === 0) return "AVAILABLE";
+
+  const unavailableAccessoriesCount = accessories.filter(isItemUnavailable).length;
+  if (unavailableAccessoriesCount === 0) return "AVAILABLE";
+  if (unavailableAccessoriesCount === accessories.length) return "UNAVAILABLE";
+  return "PARTIAL";
+}
+
+export async function getAllKitsWithAvailability(startDate: string, endDate: string): Promise<Kit[]> {
+  const kits = await getAllKits();
+  const equipmentIds = kits.flatMap((kit) => kit.items?.map((item) => item.id) ?? []);
+  const kitIds = kits.map((kit) => kit.id);
+
+  if (equipmentIds.length === 0 && kitIds.length === 0) {
+    return kits.map((kit) => ({ ...kit, availabilityStatus: "AVAILABLE" }));
+  }
+
+  const bookings = await db.equipmentBooking.findMany({
+    where: {
+      status: { not: "RETURNED" },
+      booked_from: { lte: endDate },
+      booked_to: { gte: startDate },
+      OR: [
+        { equipment_id: { in: equipmentIds } },
+        { kit_id: { in: kitIds } },
+      ],
+    },
+    select: {
+      equipment_id: true,
+      kit_id: true,
+    },
+  });
+
+  const bookedEquipmentIds = new Set(
+    bookings
+      .map((booking) => booking.equipment_id)
+      .filter((id): id is number => id !== null),
+  );
+  const bookedKitIds = new Set(
+    bookings
+      .map((booking) => booking.kit_id)
+      .filter((id): id is number => id !== null),
+  );
+
+  return kits.map((kit) => ({
+    ...kit,
+    availabilityStatus: getKitAvailabilityFromBookings(kit, bookedEquipmentIds, bookedKitIds),
+  }));
+}
+
 export async function getKitById(id: number): Promise<Kit | undefined> {
   const row = await db.kit.findUnique({
     where: { id },
