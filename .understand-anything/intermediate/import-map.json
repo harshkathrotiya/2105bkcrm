@@ -1,0 +1,321 @@
+{
+  "scriptCompleted": true,
+  "stats": {
+    "filesScanned": 149,
+    "filesWithImports": 40,
+    "totalEdges": 122
+  },
+  "importMap": {
+    ".understand-anything/.understandignore": [],
+    "AGENTS.md": [],
+    "BK_Media_Staff_Functional_Requirements.md": [],
+    "BK_Media_Staff_UI.html": [],
+    "CLAUDE.md": [],
+    "eslint.config.mjs": [],
+    "next.config.ts": [],
+    "package.json": [],
+    "postcss.config.mjs": [],
+    "prisma.config.ts": [],
+    "prisma/schema.prisma": [],
+    "prisma/seed.ts": [],
+    "README.md": [],
+    "src/app/api/calendar/[id]/route.ts": [],
+    "src/app/api/calendar/bulk-delete/route.ts": [],
+    "src/app/api/calendar/bulk/route.ts": [],
+    "src/app/api/calendar/route.ts": [],
+    "src/app/api/clients/[id]/route.ts": [],
+    "src/app/api/clients/route.ts": [],
+    "src/app/api/equipment-bookings/[id]/confirm/route.ts": [],
+    "src/app/api/equipment-bookings/[id]/return/route.ts": [],
+    "src/app/api/equipment-bookings/bulk-confirm/route.ts": [],
+    "src/app/api/equipment-bookings/route.ts": [],
+    "src/app/api/equipment/[id]/route.ts": [],
+    "src/app/api/equipment/asset-summary/route.ts": [],
+    "src/app/api/equipment/import-csv/route.ts": [],
+    "src/app/api/equipment/route.ts": [],
+    "src/app/api/inquiries/[id]/route.ts": [],
+    "src/app/api/inquiries/route.ts": [],
+    "src/app/api/invoices/[id]/route.ts": [],
+    "src/app/api/invoices/route.ts": [],
+    "src/app/api/kits/[id]/add-item/route.ts": [],
+    "src/app/api/kits/[id]/remove-item/[equipmentId]/route.ts": [],
+    "src/app/api/kits/[id]/route.ts": [],
+    "src/app/api/kits/route.ts": [],
+    "src/app/api/quotations/[id]/route.ts": [],
+    "src/app/api/quotations/route.ts": [],
+    "src/app/api/staff-assignments/[id]/route.ts": [],
+    "src/app/api/staff-assignments/check-duplicate/route.ts": [],
+    "src/app/api/staff-assignments/confirm-duplicate/route.ts": [],
+    "src/app/api/staff-assignments/route.ts": [],
+    "src/app/api/staff-payments/bulk/route.ts": [],
+    "src/app/api/staff-payments/monthly-report/route.ts": [],
+    "src/app/api/staff-payments/route.ts": [],
+    "src/app/api/staff/[id]/history/route.ts": [],
+    "src/app/api/staff/[id]/reactivate/route.ts": [],
+    "src/app/api/staff/[id]/route.ts": [],
+    "src/app/api/staff/[id]/summary/route.ts": [],
+    "src/app/api/staff/availability/route.ts": [],
+    "src/app/api/staff/inactive/route.ts": [],
+    "src/app/api/staff/route.ts": [],
+    "src/app/api/vendors/[id]/history/route.ts": [],
+    "src/app/api/vendors/[id]/route.ts": [],
+    "src/app/api/vendors/route.ts": [],
+    "src/app/api/warehouse/check/route.ts": [],
+    "src/app/calendar/page.tsx": [],
+    "src/app/clients/[id]/page.tsx": [],
+    "src/app/clients/new/page.tsx": [],
+    "src/app/clients/page.tsx": [],
+    "src/app/equipment/[id]/edit/page.tsx": [],
+    "src/app/equipment/[id]/page.tsx": [],
+    "src/app/equipment/new/page.tsx": [],
+    "src/app/equipment/page.tsx": [],
+    "src/app/globals.css": [],
+    "src/app/inquiries/new/page.tsx": [],
+    "src/app/inquiries/page.tsx": [],
+    "src/app/invoices/[id]/new/page.tsx": [],
+    "src/app/invoices/[id]/page.tsx": [],
+    "src/app/invoices/[id]/payment/page.tsx": [],
+    "src/app/invoices/page.tsx": [],
+    "src/app/kits/page.tsx": [],
+    "src/app/layout.tsx": [
+      "src/app/globals.css"
+    ],
+    "src/app/page.tsx": [],
+    "src/app/quotations/[id]/approval/page.tsx": [],
+    "src/app/quotations/[id]/pdf/page.tsx": [],
+    "src/app/quotations/new/page.tsx": [],
+    "src/app/quotations/page.tsx": [],
+    "src/app/reports/assets/pdf/page.tsx": [],
+    "src/app/staff/[id]/edit/page.tsx": [],
+    "src/app/staff/[id]/page.tsx": [],
+    "src/app/staff/assign/page.tsx": [],
+    "src/app/staff/availability/page.tsx": [],
+    "src/app/staff/inactive/page.tsx": [],
+    "src/app/staff/new/page.tsx": [],
+    "src/app/staff/page.tsx": [],
+    "src/app/staff/payments/page.tsx": [],
+    "src/app/staff/reports/page.tsx": [],
+    "src/app/vendors/page.tsx": [],
+    "src/app/warehouse/check/page.tsx": [],
+    "src/components/layout/AppSidebar.tsx": [],
+    "src/components/layout/SiteHeader.tsx": [],
+    "src/components/screens/Screen01ClientList.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen02AddClient.tsx": [
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen02EditClient.tsx": [
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen03Calendar.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen04NewInquiry.tsx": [
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen05QuotationForm.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen06QuotationPDF.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen07Approval.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx",
+      "src/components/ui/Timeline.tsx"
+    ],
+    "src/components/screens/Screen08Invoice.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen09PaymentTracking.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx",
+      "src/components/ui/Timeline.tsx"
+    ],
+    "src/components/screens/Screen10InquiryList.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen11QuotationList.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen12InvoiceList.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen13EquipmentList.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen14AddEditEquipment.tsx": [
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen15EquipmentDetail.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen16KitList.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen17WarehouseCheck.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen18VendorList.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx",
+      "src/components/ui/Timeline.tsx"
+    ],
+    "src/components/screens/Screen19AssetReportPDF.tsx": [
+      "src/components/ui/LoadingSkeleton.tsx"
+    ],
+    "src/components/screens/Screen20StaffList.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen21AddEditStaff.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen22StaffProfile.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen23AssignPosition.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen24PerEventPayment.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen25MonthlyPaymentReport.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/screens/Screen26AvailabilityCheck.tsx": [
+      "src/components/ui/Badge.tsx",
+      "src/components/ui/LoadingSkeleton.tsx",
+      "src/components/ui/ScreenFrame.tsx",
+      "src/components/ui/SectionHeader.tsx"
+    ],
+    "src/components/ui/Badge.tsx": [],
+    "src/components/ui/LoadingSkeleton.tsx": [],
+    "src/components/ui/ScreenFrame.tsx": [],
+    "src/components/ui/SectionHeader.tsx": [],
+    "src/components/ui/Timeline.tsx": [],
+    "src/lib/api.ts": [
+      "src/lib/types.ts"
+    ],
+    "src/lib/calendar-context.tsx": [
+      "src/lib/api.ts",
+      "src/lib/types.ts"
+    ],
+    "src/lib/clients-context.tsx": [
+      "src/lib/api.ts",
+      "src/lib/types.ts"
+    ],
+    "src/lib/db.ts": [],
+    "src/lib/equipment-context.tsx": [
+      "src/lib/api.ts",
+      "src/lib/types.ts"
+    ],
+    "src/lib/inquiries-context.tsx": [
+      "src/lib/api.ts",
+      "src/lib/types.ts"
+    ],
+    "src/lib/invoices-context.tsx": [
+      "src/lib/types.ts"
+    ],
+    "src/lib/kits-context.tsx": [
+      "src/lib/api.ts",
+      "src/lib/types.ts"
+    ],
+    "src/lib/queries/calendar.ts": [],
+    "src/lib/queries/clients.ts": [],
+    "src/lib/queries/equipment.ts": [],
+    "src/lib/queries/inquiries.ts": [],
+    "src/lib/queries/invoices.ts": [],
+    "src/lib/queries/kits.ts": [
+      "src/lib/queries/equipment.ts"
+    ],
+    "src/lib/queries/quotations.ts": [],
+    "src/lib/queries/staff.ts": [],
+    "src/lib/queries/vendors.ts": [],
+    "src/lib/quotations-context.tsx": [
+      "src/lib/api.ts",
+      "src/lib/types.ts"
+    ],
+    "src/lib/staff-context.tsx": [
+      "src/lib/api.ts",
+      "src/lib/types.ts"
+    ],
+    "src/lib/store.tsx": [
+      "src/lib/calendar-context.tsx",
+      "src/lib/clients-context.tsx",
+      "src/lib/equipment-context.tsx",
+      "src/lib/inquiries-context.tsx",
+      "src/lib/invoices-context.tsx",
+      "src/lib/kits-context.tsx",
+      "src/lib/quotations-context.tsx",
+      "src/lib/staff-context.tsx",
+      "src/lib/vendors-context.tsx"
+    ],
+    "src/lib/theme-context.tsx": [],
+    "src/lib/types.ts": [],
+    "src/lib/utils.ts": [],
+    "src/lib/validate.ts": [],
+    "src/lib/vendors-context.tsx": [
+      "src/lib/api.ts",
+      "src/lib/types.ts"
+    ],
+    "tsconfig.json": []
+  }
+}
