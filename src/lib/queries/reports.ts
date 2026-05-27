@@ -64,13 +64,13 @@ export async function getPLReport(inquiryId: string) {
   const expenseData = await getExpenseReport(inquiryId);
   if (!expenseData) return null;
 
-  // Find approved quotation for revenue, fallback to draft
+  // Find approved quotation for revenue, fallback to draft/sent (excluding revised)
   const quotations = await db.quotation.findMany({
     where: { inquiry_id: inquiryId },
     orderBy: { created_at: "desc" },
   });
   
-  const approvedQuotation = quotations.find(q => q.status === "Approved") || quotations[0] || null;
+  const approvedQuotation = quotations.find(q => q.status === "Approved") || quotations.find(q => q.status !== "Revised") || null;
 
   const revenue = approvedQuotation ? approvedQuotation.total : 0;
   const subtotalRevenue = approvedQuotation ? approvedQuotation.subtotal : 0;

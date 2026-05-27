@@ -37,12 +37,22 @@ export default function Screen23AssignPosition() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Availability state
+  const [staffAvailability, setStaffAvailability] = useState<Record<number, { status: "FREE" | "PARTIAL" | "BUSY"; conflicts: any[] }>>({});
+
   // Duplicate warning state
   const [showDupWarning, setShowDupWarning] = useState(false);
   const [dupStaff, setDupStaff] = useState<Staff | null>(null);
   const [dupPositionName, setDupPositionName] = useState("");
   const [dupPreviousPosition, setDupPreviousPosition] = useState("");
   const [dupPositionNo, setDupPositionNo] = useState<number | null>(null);
+
+  // Overlap warning state
+  const [showOverlapWarning, setShowOverlapWarning] = useState(false);
+  const [overlapStaff, setOverlapStaff] = useState<Staff | null>(null);
+  const [overlapPositionNo, setOverlapPositionNo] = useState<number | null>(null);
+  const [overlapPositionName, setOverlapPositionName] = useState("");
+  const [overlapConflictsList, setOverlapConflictsList] = useState<any[]>([]);
 
   // Load Inquiry, Quotation, and Existing Assignments
   useEffect(() => {
@@ -58,7 +68,8 @@ export default function Screen23AssignPosition() {
         ]);
 
         if (active) {
-          setInquiry(warehouseCheckData.inquiry);
+          const inq = warehouseCheckData.inquiry;
+          setInquiry(inq);
           setQuotation(warehouseCheckData.quotation as unknown as Quotation);
           setExistingAssignments(assignmentsData);
 
@@ -80,6 +91,23 @@ export default function Screen23AssignPosition() {
           setSelectedStaff(initialSelections);
           setConfirmedDuplicates(confirmedDups);
           setReportingTimes(initialTimes);
+
+          // Fetch staff availability
+          if (inq && inq.startDate && inq.endDate) {
+            try {
+              const availability = await api.checkStaffAvailability(inq.startDate, inq.endDate);
+              const availabilityMap: Record<number, { status: "FREE" | "PARTIAL" | "BUSY"; conflicts: any[] }> = {};
+              availability.forEach((s) => {
+                availabilityMap[s.id] = {
+                  status: s.status,
+                  conflicts: s.conflicts,
+                };
+              });
+              setStaffAvailability(availabilityMap);
+            } catch (err) {
+              console.error("Failed to fetch staff availability:", err);
+            }
+          }
         }
       } catch (err) {
         console.error("Failed to load position assignments data:", err);
@@ -155,11 +183,26 @@ export default function Screen23AssignPosition() {
     const targetStaff = staff.find((s) => s.id === staffId);
     if (!targetStaff) return;
 
-    // Check if they are already assigned to another position on this screen
-    const duplicateInPosition = checkLocalDuplicate(staffId, positionNo);
+    // 1. Check for overlapping conflicts from DB
+    const avail = staffAvailability[staffId];
+    if (avail && (avail.status === "BUSY" || avail.status === "PARTIAL")) {
+      const pos = positions.find((p) => p.no === positionNo);
+      setOverlapStaff(targetStaff);
+      setOverlapPositionNo(positionNo);
+      setOverlapPositionName(pos ? pos.position : `Position #${positionNo}`);
+      setOverlapConflictsList(avail.conflicts || []);
+      setShowOverlapWarning(true);
+      return;
+    }
+
+    // 2. Proceed with local duplicate check
+    proceedWithLocalDuplicateCheck(targetStaff, positionNo);
+  };
+
+  const proceedWithLocalDuplicateCheck = (targetStaff: Staff, positionNo: number) => {
+    const duplicateInPosition = checkLocalDuplicate(targetStaff.id, positionNo);
 
     if (duplicateInPosition) {
-      // If it is a duplicate, show confirmation warning
       const pos = positions.find((p) => p.no === positionNo);
       setDupStaff(targetStaff);
       setDupPositionNo(positionNo);
@@ -167,9 +210,28 @@ export default function Screen23AssignPosition() {
       setDupPreviousPosition(duplicateInPosition);
       setShowDupWarning(true);
     } else {
-      // Assign normally
-      setSelectedStaff((prev) => ({ ...prev, [positionNo]: staffId }));
+      setSelectedStaff((prev) => ({ ...prev, [positionNo]: targetStaff.id }));
     }
+  };
+
+  // Confirm Overlap Dialog click
+  const handleConfirmOverlap = () => {
+    if (overlapStaff && overlapPositionNo) {
+      const staffMember = overlapStaff;
+      const posNo = overlapPositionNo;
+      setShowOverlapWarning(false);
+      setOverlapStaff(null);
+      setOverlapPositionNo(null);
+      proceedWithLocalDuplicateCheck(staffMember, posNo);
+    }
+  };
+
+  // Cancel Overlap Dialog click
+  const handleCancelOverlap = () => {
+    setShowOverlapWarning(false);
+    setOverlapStaff(null);
+    setOverlapPositionNo(null);
+    setOverlapConflictsList([]);
   };
 
   // Confirm Duplicate Dialog click
@@ -417,6 +479,48 @@ export default function Screen23AssignPosition() {
           {/* Main Grid Content */}
           <div style={{ flex: 1, padding: "16px", background: "var(--cnt-bg)", minHeight: "480px" }}>
             
+            {/* Overlap Assignment Warning Card */}
+            {showOverlapWarning && overlapStaff && (
+              <div
+                className="warn"
+                style={{
+                  background: "#2E1F0A",
+                  border: "1px solid #4A3010",
+                  borderRadius: "8px",
+                  padding: "14px",
+                  marginBottom: "16px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                  <div style={{ fontSize: "20px", color: "var(--acc)", lineHeight: 1 }}>⚠</div>
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ fontSize: "13px", color: "var(--tx)", display: "block", marginBottom: "4px" }}>
+                      Overlapping Booking Conflict Warning
+                    </strong>
+                    <div style={{ fontSize: "12px", color: "var(--tx2)", marginBottom: "10px", lineHeight: "1.5" }}>
+                      <strong>{overlapStaff.name}</strong> has other confirmed booking(s) during these dates:
+                      <ul style={{ listStyleType: "disc", paddingLeft: "20px", marginTop: "4px" }}>
+                        {overlapConflictsList.map((c, idx) => (
+                          <li key={idx}>
+                            <strong>{c.eventName || "Event"}</strong> ({c.startDate} to {c.endDate})
+                          </li>
+                        ))}
+                      </ul>
+                      Do you still want to assign them to <strong>{overlapPositionName}</strong>?
+                    </div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button onClick={handleConfirmOverlap} className="btn btn-success" style={{ padding: "4px 10px" }}>
+                        Yes, Assign Anyway
+                      </button>
+                      <button onClick={handleCancelOverlap} className="btn" style={{ padding: "4px 10px" }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Duplicate Assignment Warning Card */}
             {showDupWarning && dupStaff && (
               <div
@@ -496,18 +600,26 @@ export default function Screen23AssignPosition() {
                             >
                               <option value="">-- Select Operator --</option>
                               <optgroup label="In-house Staff">
-                                {groupedStaff.inHouse.map((s) => (
-                                  <option key={s.id} value={s.id}>
-                                    {s.name} ({s.role})
-                                  </option>
-                                ))}
+                                {groupedStaff.inHouse.map((s) => {
+                                  const avail = staffAvailability[s.id];
+                                  const statusStr = avail && avail.status !== "FREE" ? ` [${avail.status}]` : "";
+                                  return (
+                                    <option key={s.id} value={s.id}>
+                                      {s.name} ({s.role}){statusStr}
+                                    </option>
+                                  );
+                                })}
                               </optgroup>
                               <optgroup label="External / Freelancers">
-                                {groupedStaff.external.map((s) => (
-                                  <option key={s.id} value={s.id}>
-                                    {s.name} ({s.role}) {s.withEquipment ? " [Gear Fallback]" : ""}
-                                  </option>
-                                ))}
+                                {groupedStaff.external.map((s) => {
+                                  const avail = staffAvailability[s.id];
+                                  const statusStr = avail && avail.status !== "FREE" ? ` [${avail.status}]` : "";
+                                  return (
+                                    <option key={s.id} value={s.id}>
+                                      {s.name} ({s.role}) {s.withEquipment ? " [Gear Fallback]" : ""}{statusStr}
+                                    </option>
+                                  );
+                                })}
                               </optgroup>
                             </select>
                           </td>

@@ -5,113 +5,93 @@ import {
   useContext,
   useReducer,
   useCallback,
+  useEffect,
   type ReactNode,
-  type Dispatch,
 } from "react";
 import type { Invoice } from "./types";
+import * as api from "./api";
 
-const STORAGE_KEY = "bk-crm-invoices";
-
+// ── State ────────────────────────────────────────────────────────────────────
 interface InvoicesState {
   invoices: Invoice[];
+  loading: boolean;
 }
 
-function loadOrSeed(): Invoice[] {
-  if (typeof window === "undefined") return seedData();
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  const seed = seedData();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
-  return seed;
-}
+const initialState: InvoicesState = { invoices: [], loading: true };
 
-function persist(state: InvoicesState) {
-  if (typeof window !== "undefined") {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.invoices)); } catch {}
-  }
-}
-
-function seedData(): Invoice[] {
-  const now = new Date();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const y = now.getFullYear();
-  const d = (day: number) => `${y}-${m}-${String(day).padStart(2, "0")}`;
-  return [
-    {
-      id: "inv-1",
-      quotationId: "quote-1",
-      invoiceNo: "BKM-INV-26-27/05/08",
-      clientName: "Adani Group",
-      eventName: "Annual Conference",
-      startDate: d(10),
-      endDate: d(12),
-      venue: "Grand Bhagwati, Ahmedabad",
-      videographyAmount: 180000,
-      photographyAmount: 39000,
-      advance: 129210,
-      balance: 129210,
-      status: "Partial paid",
-      advanceReceived: true,
-      advanceReceivedAt: d(11),
-      advanceRef: "UPI123456",
-      advanceMethod: "UPI",
-      balanceReceived: false,
-      balanceReceivedAt: null,
-      balanceRef: "",
-      balanceMethod: "",
-      hddDelivered: false,
-      createdAt: d(13),
-      dueDate: d(20),
-    },
-  ];
-}
-
-const initialState: InvoicesState = { invoices: typeof window === "undefined" ? seedData() : loadOrSeed() };
-
+// ── Actions ──────────────────────────────────────────────────────────────────
 type InvoicesAction =
-  | { type: "ADD_INVOICE"; payload: Invoice }
-  | { type: "UPDATE_INVOICE"; payload: Partial<Invoice> & { id: string } }
-  | { type: "DELETE_INVOICE"; payload: string };
+  | { type: "SET_INVOICES"; payload: Invoice[] }
+  | { type: "SET_LOADING"; payload: boolean };
 
-function invoicesReducer(state: InvoicesState, action: InvoicesAction): InvoicesState {
-  let next: InvoicesState;
+function reducer(state: InvoicesState, action: InvoicesAction): InvoicesState {
   switch (action.type) {
-    case "ADD_INVOICE":
-      next = { ...state, invoices: [...state.invoices, action.payload] };
-      break;
-    case "UPDATE_INVOICE":
-      next = {
-        ...state,
-        invoices: state.invoices.map((inv) =>
-          inv.id === action.payload.id ? { ...inv, ...action.payload } : inv
-        ),
-      };
-      break;
-    case "DELETE_INVOICE":
-      next = {
-        ...state,
-        invoices: state.invoices.filter((inv) => inv.id !== action.payload),
-      };
-      break;
+    case "SET_INVOICES":
+      return { ...state, invoices: action.payload, loading: false };
+    case "SET_LOADING":
+      return { ...state, loading: action.payload };
     default:
       return state;
   }
-  persist(next);
-  return next;
 }
 
+// ── Context shape (backwards-compatible) ──────────────────────────────────────
 interface InvoicesContextType {
   invoices: Invoice[];
-  dispatchInvoices: Dispatch<InvoicesAction>;
+  loading: boolean;
+  dispatchInvoices: (action: {
+    type: "ADD_INVOICE" | "UPDATE_INVOICE" | "DELETE_INVOICE";
+    payload: any;
+  }) => Promise<void>;
   getInvoice: (id: string) => Invoice | undefined;
 }
 
 const InvoicesContext = createContext<InvoicesContextType | null>(null);
 
+// ── Provider ──────────────────────────────────────────────────────────────────
 export function InvoicesProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(invoicesReducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  // Load on mount
+  const load = useCallback(async () => {
+    dispatch({ type: "SET_LOADING", payload: true });
+    try {
+      const data = await api.fetchInvoices();
+      dispatch({ type: "SET_INVOICES", payload: data });
+    } catch {
+      dispatch({ type: "SET_INVOICES", payload: [] });
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const dispatchInvoices = useCallback(
+    async (action: {
+      type: "ADD_INVOICE" | "UPDATE_INVOICE" | "DELETE_INVOICE";
+      payload: any;
+    }) => {
+      try {
+        switch (action.type) {
+          case "ADD_INVOICE":
+            await api.createInvoice(action.payload);
+            break;
+          case "UPDATE_INVOICE":
+            await api.updateInvoice(action.payload.id, action.payload);
+            break;
+          case "DELETE_INVOICE":
+            await api.deleteInvoice(action.payload);
+            break;
+        }
+        // Reload from server after mutation
+        await load();
+      } catch (err) {
+        console.error("dispatchInvoices error:", err);
+      }
+    },
+    [load]
+  );
 
   const getInvoice = useCallback(
     (id: string) => state.invoices.find((inv) => inv.id === id),
@@ -120,7 +100,12 @@ export function InvoicesProvider({ children }: { children: ReactNode }) {
 
   return (
     <InvoicesContext.Provider
-      value={{ invoices: state.invoices, dispatchInvoices: dispatch, getInvoice }}
+      value={{
+        invoices: state.invoices,
+        loading: state.loading,
+        dispatchInvoices,
+        getInvoice,
+      }}
     >
       {children}
     </InvoicesContext.Provider>

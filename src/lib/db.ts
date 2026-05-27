@@ -7,6 +7,8 @@ import { config as loadEnv } from "dotenv";
 // Load .env explicitly for local development
 loadEnv({ path: path.resolve(process.cwd(), ".env") });
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 const globalForPrisma = globalThis as unknown as {
   prismaPool: pg.Pool | undefined;
   prisma: PrismaClient | undefined;
@@ -14,7 +16,12 @@ const globalForPrisma = globalThis as unknown as {
 
 const pool =
   globalForPrisma.prismaPool ??
-  new pg.Pool({ connectionString: process.env.DIRECT_URL! });
+  new pg.Pool({
+    connectionString: process.env.DIRECT_URL!,
+    ssl: process.env.DIRECT_URL?.includes("sslmode=require")
+      ? { rejectUnauthorized: false }
+      : undefined,
+  });
 
 const adapter = new PrismaPg(pool);
 

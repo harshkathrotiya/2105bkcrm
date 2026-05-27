@@ -137,8 +137,9 @@ export async function getKitById(id: number): Promise<Kit | undefined> {
   return mapKit(row);
 }
 
-export async function assignMainBodyToKit(kitId: number, equipmentId: number, quantityToAdd?: number): Promise<number | null> {
-  const eq = await db.equipment.findFirst({
+export async function assignMainBodyToKit(kitId: number, equipmentId: number, quantityToAdd?: number, tx?: any): Promise<number | null> {
+  const client = tx || db;
+  const eq = await client.equipment.findFirst({
     where: { id: equipmentId, status: { not: "RETIRED" } }
   });
   if (!eq) return null;
@@ -147,19 +148,19 @@ export async function assignMainBodyToKit(kitId: number, equipmentId: number, qu
   if (targetQty <= 0 || targetQty > eq.quantity) return null;
 
   if (targetQty === eq.quantity) {
-    await db.equipment.update({
+    await client.equipment.update({
       where: { id: equipmentId },
       data: { kit_id: kitId }
     });
     return equipmentId;
   } else {
-    const sns = eq.serial_number ? eq.serial_number.split("\n").map(s => s.trim()).filter(Boolean) : [];
+    const sns = eq.serial_number ? eq.serial_number.split("\n").map((s: string) => s.trim()).filter(Boolean) : [];
     const addedSns = sns.slice(0, targetQty).join("\n");
     const remainingSns = sns.slice(targetQty).join("\n");
 
     let newId: number | null = null;
-    await db.$transaction(async (tx) => {
-      const newEq = await tx.equipment.create({
+    const runUpdates = async (t: any) => {
+      const newEq = await t.equipment.create({
         data: {
           product_name: eq.product_name,
           category: eq.category,
@@ -179,14 +180,20 @@ export async function assignMainBodyToKit(kitId: number, equipmentId: number, qu
       });
       newId = newEq.id;
 
-      await tx.equipment.update({
+      await t.equipment.update({
         where: { id: equipmentId },
         data: {
           quantity: eq.quantity - targetQty,
           serial_number: remainingSns || null,
         }
       });
-    });
+    };
+
+    if (tx) {
+      await runUpdates(tx);
+    } else {
+      await db.$transaction(runUpdates);
+    }
 
     return newId;
   }
@@ -200,7 +207,7 @@ export async function createKit(kit: {
   accessories?: { id: number; quantity: number }[];
 }): Promise<Kit> {
   const nowStr = new Date().toISOString();
-  let kitId = 0;
+  let resultKit: Kit | null = null;
 
   await db.$transaction(async (tx) => {
     const newKit = await tx.kit.create({
@@ -211,30 +218,42 @@ export async function createKit(kit: {
         created_at: nowStr,
       }
     });
-    kitId = newKit.id;
-  });
+    const kitId = newKit.id;
 
-  const finalMainBodyId = kit.mainBodyId ?? null;
-  if (finalMainBodyId) {
-    const linkedId = await assignMainBodyToKit(kitId, finalMainBodyId, kit.mainBodyQty ?? undefined);
-    if (linkedId) {
-      await db.kit.update({
-        where: { id: kitId },
-        data: { main_body_id: linkedId }
-      });
-    }
-  }
-
-  if (kit.accessories && kit.accessories.length > 0) {
-    for (const acc of kit.accessories) {
-      const added = await addEquipmentToKit(kitId, acc.id, acc.quantity);
-      if (!added) {
-        throw new Error(`Failed to add accessory ${acc.id} to kit`);
+    const finalMainBodyId = kit.mainBodyId ?? null;
+    if (finalMainBodyId) {
+      const linkedId = await assignMainBodyToKit(kitId, finalMainBodyId, kit.mainBodyQty ?? undefined, tx);
+      if (linkedId) {
+        await tx.kit.update({
+          where: { id: kitId },
+          data: { main_body_id: linkedId }
+        });
       }
     }
-  }
 
-  const resultKit = await getKitById(kitId);
+    if (kit.accessories && kit.accessories.length > 0) {
+      for (const acc of kit.accessories) {
+        const added = await addEquipmentToKit(kitId, acc.id, acc.quantity, tx);
+        if (!added) {
+          throw new Error(`Failed to add accessory ${acc.id} to kit`);
+        }
+      }
+    }
+
+    const row = await tx.kit.findUnique({
+      where: { id: kitId },
+      include: {
+        equipment: {
+          where: { status: { not: "RETIRED" } }
+        }
+      }
+    });
+    if (!row) {
+      throw new Error("Failed to retrieve newly created kit");
+    }
+    resultKit = mapKit(row);
+  });
+
   if (!resultKit) {
     throw new Error("Failed to retrieve newly created kit");
   }
@@ -292,8 +311,9 @@ export async function deleteKit(id: number): Promise<boolean> {
   }
 }
 
-export async function addEquipmentToKit(kitId: number, equipmentId: number, quantityToAdd?: number): Promise<boolean> {
-  const eq = await db.equipment.findFirst({
+export async function addEquipmentToKit(kitId: number, equipmentId: number, quantityToAdd?: number, tx?: any): Promise<boolean> {
+  const client = tx || db;
+  const eq = await client.equipment.findFirst({
     where: { id: equipmentId, status: { not: "RETIRED" } }
   });
   if (!eq) return false;
@@ -302,18 +322,18 @@ export async function addEquipmentToKit(kitId: number, equipmentId: number, quan
   if (targetQty <= 0 || targetQty > eq.quantity) return false;
 
   if (targetQty === eq.quantity) {
-    await db.equipment.update({
+    await client.equipment.update({
       where: { id: equipmentId },
       data: { kit_id: kitId }
     });
     return true;
   } else {
-    const sns = eq.serial_number ? eq.serial_number.split("\n").map(s => s.trim()).filter(Boolean) : [];
+    const sns = eq.serial_number ? eq.serial_number.split("\n").map((s: string) => s.trim()).filter(Boolean) : [];
     const addedSns = sns.slice(0, targetQty).join("\n");
     const remainingSns = sns.slice(targetQty).join("\n");
 
-    await db.$transaction(async (tx) => {
-      await tx.equipment.create({
+    const runUpdates = async (t: any) => {
+      await t.equipment.create({
         data: {
           product_name: eq.product_name,
           category: eq.category,
@@ -332,14 +352,20 @@ export async function addEquipmentToKit(kitId: number, equipmentId: number, quan
         }
       });
 
-      await tx.equipment.update({
+      await t.equipment.update({
         where: { id: equipmentId },
         data: {
           quantity: eq.quantity - targetQty,
           serial_number: remainingSns || null,
         }
       });
-    });
+    };
+
+    if (tx) {
+      await runUpdates(tx);
+    } else {
+      await db.$transaction(runUpdates);
+    }
 
     return true;
   }

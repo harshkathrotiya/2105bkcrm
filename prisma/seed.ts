@@ -10,7 +10,14 @@ import { config as loadEnv } from "dotenv";
 
 loadEnv({ path: path.resolve(__dirname, "../.env") });
 
-const pool = new pg.Pool({ connectionString: process.env.DIRECT_URL! });
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+const pool = new pg.Pool({
+  connectionString: process.env.DIRECT_URL!,
+  ssl: process.env.DIRECT_URL?.includes("sslmode=require")
+    ? { rejectUnauthorized: false }
+    : undefined,
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter } as any);
 

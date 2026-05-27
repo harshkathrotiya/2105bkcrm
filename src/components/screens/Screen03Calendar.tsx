@@ -404,6 +404,20 @@ export default function Screen03Calendar() {
           className={`grid gap-[1px] rounded-lg overflow-hidden ${viewMode === "day" ? "grid-cols-1" : "grid-cols-7"}`}
           style={{ background: "var(--b1)", border: "1px solid var(--b1)", marginTop: "16px" }}
         >
+          {viewMode !== "day" && dayLabels.map((label, idx) => (
+            <div
+              key={`header-${idx}`}
+              className="bg-s2 text-tx3 text-center font-semibold text-[10px] uppercase tracking-wider py-2"
+              style={{
+                gridRow: 1,
+                gridColumn: idx + 1,
+                borderBottom: "1px solid var(--b1)",
+              }}
+            >
+              {label}
+            </div>
+          ))}
+
           {viewMode === "day" ? (
             cells.map((cell, i) => (
               <div key={i} className="bg-s1 relative" style={{ minHeight: "300px", padding: "8px" }}>
