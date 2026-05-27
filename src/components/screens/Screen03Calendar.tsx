@@ -6,7 +6,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import { useCalendar } from "@/lib/store";
+import { useCalendar, useInquiries, useClients } from "@/lib/store";
 import type { CalendarEvent } from "@/lib/store";
 
 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -41,11 +41,67 @@ function parseEventId(id: string) {
 
 export default function Screen03Calendar() {
   const { calendarEvents } = useCalendar();
+  const { inquiries } = useInquiries();
+  const { clients } = useClients();
   const today = new Date();
   
   const [viewDate, setViewDate] = useState(today);
   const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+
+  const targetInquiryId = useMemo(() => {
+    if (!selectedEvent) return "";
+    
+    // 1. Try to parse inquiryId from event.id (e.g., cal-inq-xxx-0 -> inq-xxx)
+    const id = selectedEvent.id;
+    let cleanId = id;
+    if (id.startsWith("cal-")) {
+      cleanId = id.substring(4); // Remove "cal-"
+      if (cleanId.includes("-confirmed-")) {
+        cleanId = cleanId.split("-confirmed-")[0];
+      } else {
+        const lastDash = cleanId.lastIndexOf("-");
+        if (lastDash !== -1) {
+          cleanId = cleanId.substring(0, lastDash);
+        }
+      }
+    }
+    
+    // Check if this is a valid inquiry ID
+    let found = inquiries.find((inq) => inq.id === cleanId);
+    if (found) return found.id;
+
+    // 2. Fallback: Try to map legacy seed IDs or name matches
+    // e.g. cal-1 -> inq-1, cal-2 -> inq-1, etc.
+    if (id.startsWith("cal-")) {
+      const numStr = id.replace("cal-", "");
+      const num = parseInt(numStr, 10);
+      if (!isNaN(num)) {
+        if (num >= 1 && num <= 3) return "inq-1";
+        if (num === 4 || num === 5) return "inq-2";
+        if (num === 6 || num === 7) return "inq-3";
+        if (num === 8) return "inq-5";
+        if (num === 9) return "inq-6";
+        if (num === 10) return "inq-7";
+      }
+    }
+
+    // 3. Fallback: Search by label similarity
+    const labelLower = selectedEvent.label.toLowerCase();
+    const match = inquiries.find((inq) => {
+      const client = clients.find((c) => c.id === inq.clientId);
+      if (client) {
+        const clientName = client.name.toLowerCase();
+        return labelLower.includes(clientName) || clientName.includes(labelLower) ||
+               inq.eventType.toLowerCase().includes(labelLower) || labelLower.includes(inq.eventType.toLowerCase());
+      }
+      return inq.eventType.toLowerCase().includes(labelLower) || labelLower.includes(inq.eventType.toLowerCase());
+    });
+    
+    if (match) return match.id;
+
+    return "";
+  }, [selectedEvent, inquiries, clients]);
 
   const navigate = (delta: number) => {
     const nextDate = new Date(viewDate);
@@ -536,7 +592,7 @@ export default function Screen03Calendar() {
                 Close
               </button>
               <Link
-                href={`/inquiries?search=${encodeURIComponent(selectedEvent.label)}`}
+                href={targetInquiryId ? `/inquiries/new?id=${targetInquiryId}` : `/inquiries`}
                 className="btn btn-primary flex-1 justify-center text-center"
                 onClick={() => setSelectedEvent(null)}
               >

@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import SiteHeader from "@/components/layout/SiteHeader";
-import AppSidebar from "@/components/layout/AppSidebar";
 import { StoreProvider } from "@/lib/store";
 import { ThemeProvider } from "@/lib/theme-context";
+import AppLayout from "@/components/layout/AppLayout";
 
 const ibmPlexSans = IBM_Plex_Sans({
   variable: "--font-ibm-plex-sans",
@@ -55,16 +54,11 @@ export default function RootLayout({
       <body className="font-sans bg-bg text-tx min-h-screen">
         <ThemeProvider>
           <StoreProvider>
-            <div className="app-layout">
-              <SiteHeader />
-              <div className="app-body">
-                <AppSidebar />
-                <main className="app-content">{children}</main>
-              </div>
-            </div>
+            <AppLayout>{children}</AppLayout>
           </StoreProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
+
