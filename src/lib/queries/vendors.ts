@@ -27,7 +27,15 @@ export async function getAllVendors(): Promise<(Vendor & { timesUsed: number })[
 }
 
 export async function getVendorById(id: number): Promise<Vendor | undefined> {
-  const v = await db.vendor.findUnique({ where: { id } });
+  const v = await db.vendor.findUnique({
+    where: { id },
+    include: {
+      equipments: {
+        where: { status: { not: "RETIRED" } },
+        orderBy: { id: "desc" },
+      },
+    },
+  });
   if (!v) return undefined;
 
   return {
@@ -41,6 +49,28 @@ export async function getVendorById(id: number): Promise<Vendor | undefined> {
     notes: v.notes,
     isActive: v.is_active === 1,
     createdAt: v.created_at,
+    equipments: v.equipments ? v.equipments.map((row: any) => ({
+      id: row.id,
+      productName: row.product_name,
+      category: row.category,
+      quantity: row.quantity,
+      serialNumber: row.serial_number,
+      bodyName: row.body_name,
+      kitId: row.kit_id,
+      kitName: null,
+      respPerson: row.resp_person,
+      purchaseDate: row.purchase_date,
+      purchaseFrom: row.purchase_from,
+      billNumber: row.bill_number,
+      purchasePrice: row.purchase_price,
+      status: row.status,
+      notes: row.notes,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      ownershipType: (row.ownership_type as "INHOUSE" | "VENDOR") || "INHOUSE",
+      vendorId: row.vendor_id || null,
+      vendorName: v.name,
+    })) : [],
   };
 }
 

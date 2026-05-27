@@ -311,6 +311,7 @@ export async function getStaffAssignments(inquiryId: string) {
       totalAmount: a.total_amount,
       isDuplicate: a.is_duplicate === 1,
       confirmedDup: a.confirmed_dup === 1,
+      reportingTime: a.reporting_time,
       createdAt: a.created_at,
       staffName: a.staff?.name,
       staffType: a.staff?.staff_type,
@@ -353,6 +354,7 @@ export async function assignStaff(assignment: Omit<StaffAssignment, "id" | "tota
         total_amount: totalAmount,
         is_duplicate: isDuplicate,
         confirmed_dup: 0,
+        reporting_time: assignment.reportingTime ?? "09:00 AM",
         created_at: nowStr,
       }
     });

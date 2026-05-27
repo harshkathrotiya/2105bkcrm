@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BK Media CRM — Kit 1 Video Department UI</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0A0A;--s1:#111111;--s2:#181818;--b1:#1E1E1E;--b2:#2A2A2A;
+  --acc:#F5A623;--tx:#E8E8E8;--tx2:#888888;--tx3:#444444;
+  --gr:#2DD4A0;--bl:#4F8EF7;--rd:#F56060;--yl:#F5C842;
+  --radius:8px;--radius-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+a{color:inherit;text-decoration:none}
+
+/* SITE HEADER */
+.site-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid var(--b1);position:sticky;top:0;background:var(--bg);z-index:100}
+.site-logo{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--acc);letter-spacing:.1em}
+.site-meta{font-size:11px;color:var(--tx3);font-family:monospace}
+
+/* NAV */
+.top-nav{display:flex;gap:4px;padding:0 32px;border-bottom:1px solid var(--b1);background:var(--bg);position:sticky;top:49px;z-index:90;overflow-x:auto}
+.tnb{font-size:11px;padding:11px 14px;color:var(--tx3);background:none;border:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;font-family:inherit;letter-spacing:.04em}
+.tnb:hover{color:var(--tx2)}
+.tnb.act{color:var(--acc);border-bottom-color:var(--acc);font-weight:500}
+
+/* MAIN */
+.main{padding:0 32px 80px}
+
+/* SECTION */
+.section{padding:40px 0 20px}
+.sec-label{font-family:monospace;font-size:10px;color:var(--tx3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.sec-title{font-size:22px;font-weight:300;color:var(--tx);margin-bottom:24px;letter-spacing:-.01em}
+.sec-title strong{font-weight:600;color:var(--acc)}
+
+/* SCREEN WRAP */
+.sw{margin-bottom:40px}
+.sw-label{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sw-num{font-family:monospace;font-size:11px;color:var(--tx3)}
+.sw-name{font-size:14px;font-weight:500}
+.sw-tag{font-size:10px;font-weight:500;padding:2px 8px;border-radius:12px;letter-spacing:.04em}
+.tag-v{background:#0A1A3A;color:#4F8EF7}
+.tag-s{background:#0A2A1A;color:#2DD4A0}
+.sw-desc{font-size:12px;color:var(--tx3);margin-top:8px;line-height:1.6;max-width:720px}
+
+/* SCREEN FRAME */
+.sf{background:var(--s1);border:1px solid var(--b1);border-radius:var(--radius-lg);overflow:hidden}
+
+/* TOPBAR */
+.tb{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#0D0D0D;border-bottom:1px solid var(--b1)}
+.tb-logo{font-family:monospace;font-size:10px;color:var(--acc);letter-spacing:.1em}
+.tb-bc{font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:4px}
+.tb-bc span{color:var(--tx2)}
+.tb-actions{display:flex;gap:6px}
+
+/* SIDEBAR + BODY */
+.sb-body{display:flex}
+.sb{width:170px;background:var(--s2);border-right:1px solid var(--b1);padding:10px 0;flex-shrink:0}
+.sb-item{padding:7px 14px;font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:7px;border-left:2px solid transparent}
+.sb-item.act{background:var(--s1);color:var(--tx);border-left-color:var(--acc);font-weight:500}
+.sb-sec{padding:6px 14px 3px;font-size:9px;color:#333;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+.cnt{flex:1;padding:14px;background:#0C0C0C;min-height:480px}
+
+/* BUTTONS */
+.btn{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--b2);background:var(--s2);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:inherit}
+.btn:hover{background:var(--b1);color:var(--tx)}
+.btn-primary{background:var(--bl);color:#fff;border-color:var(--bl)}
+.btn-primary:hover{background:#3A7BE8}
+.btn-success{background:#0F2E22;color:var(--gr);border-color:#1A4A34}
+.btn-warning{background:#2E1F0A;color:var(--acc);border-color:#4A3010}
+.btn-danger{background:#2E0A0A;color:var(--rd);border-color:#4A1818}
+
+/* BADGE */
+.bdg{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:500;display:inline-block}
+.bdg-gr{background:#0F2E22;color:#2DD4A0}
+.bdg-am{background:#2E1F0A;color:#F5A623}
+.bdg-bl{background:#0A1A3A;color:#4F8EF7}
+.bdg-rd{background:#2E0A0A;color:#F56060}
+.bdg-gy{background:#1A1A1A;color:#888}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.met{background:var(--s2);border-radius:var(--radius);padding:10px 12px;border:1px solid var(--b1)}
+.met-l{font-size:10px;color:var(--tx3);margin-bottom:3px}
+.met-v{font-size:18px;font-weight:500}
+.met-v.g{color:var(--gr)}.met-v.a{color:var(--acc)}.met-v.b{color:var(--bl)}.met-v.r{color:var(--rd)}
+
+/* CARD */
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.card-t{font-size:12px;font-weight:500;color:var(--tx2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* FORM */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.span2{grid-column:span 2}
+.field{display:flex;flex-direction:column;gap:4px}
+.flbl{font-size:10px;color:var(--tx3)}
+.finp{background:var(--s2);border:1px solid var(--b1);border-radius:6px;height:28px;padding:0 8px;font-size:11px;color:var(--tx);font-family:inherit;width:100%}
+.fsel{background:var(--s2);border:1px solid var(--b1);border-radius:6px;height:28px;padding:0 8px;font-size:11px;color:var(--tx);font-family:inherit;width:100%}
+.ftxt{background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--tx);font-family:inherit;width:100%;min-height:52px;resize:none}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:11px}
+.tbl th{text-align:left;color:var(--tx3);padding:0 8px 7px;border-bottom:1px solid var(--b1);font-weight:500;font-size:10px;letter-spacing:.04em}
+.tbl td{padding:8px 8px;border-bottom:1px solid var(--b2);color:var(--tx2);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl .tr{text-align:right;font-family:monospace}.tbl .tc{text-align:center}
+
+/* PDF FRAME */
+.pdf-frame{background:#fff;border-radius:var(--radius);padding:20px 24px;color:#1a1a1a;font-size:11px}
+.pdf-hdr{display:flex;justify-content:space-between;padding-bottom:12px;border-bottom:2px solid #1a1a1a;margin-bottom:12px}
+.pdf-co{font-size:16px;font-weight:700}
+.pdf-co-sub{font-size:9px;color:#666;margin-top:2px;line-height:1.6}
+.pdf-doc{text-align:right}
+.pdf-doc-lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#999;margin-bottom:2px}
+.pdf-doc-num{font-size:13px;font-weight:700}
+.pdf-doc-sub{font-size:9px;color:#666;margin-top:2px}
+.pdf-strip{background:#F5F5F0;border-radius:4px;padding:8px 10px;margin-bottom:10px;display:grid;gap:6px}
+.psi-l{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:1px}
+.psi-v{font-size:11px;font-weight:600}
+.pdf-tbl{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:10px}
+.pdf-tbl th{text-align:left;color:#888;padding:0 6px 5px;border-bottom:1px solid #ddd;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:.04em}
+.pdf-tbl td{padding:6px 6px;border-bottom:1px solid #F0F0E8;color:#444}
+.pdf-tbl td:first-child{color:#1a1a1a}
+.pdf-tbl tr:last-child td{border-bottom:none}
+.pdf-totals{display:flex;justify-content:flex-end;margin-top:8px}
+.pdf-totals-box{width:200px}
+.pdf-trow{display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid #E8E8E0}
+.pdf-trow:last-child{border-bottom:none;font-weight:700;font-size:13px;padding-top:7px}
+.pdf-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;padding-top:10px;border-top:1px solid #E0E0D8}
+.pdf-sign{text-align:center;width:120px}
+.pdf-sign-line{height:1px;background:#888;margin-bottom:4px}
+.pdf-sign-lbl{font-size:8px;color:#888}
+
+/* ROW ITEM */
+.row-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b1)}
+.row-item:last-child{border-bottom:none}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--b1);margin:10px 0}
+
+/* 2 COL */
+.two-col{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+
+/* FLOW */
+.flow{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.flow-step{font-size:10px;padding:5px 10px;border-radius:20px;font-family:monospace;letter-spacing:.04em;white-space:nowrap}
+.flow-done{background:#0F2E22;color:var(--gr)}
+.flow-curr{background:var(--bl);color:#fff}
+.flow-next{background:var(--s2);color:var(--tx3);border:1px solid var(--b1)}
+.flow-arr{color:var(--tx3);font-size:10px}
+
+/* STATUS TIMELINE */
+.tl-item{display:flex;gap:10px;padding-bottom:12px}
+.tl-item:last-child{padding-bottom:0}
+.tl-left{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.tl-line{width:1px;flex:1;background:var(--b1);margin-top:3px}
+.tl-title{font-size:12px;font-weight:500;color:var(--tx)}
+.tl-time{font-size:10px;color:var(--tx3);margin-top:1px}
+
+/* PBAR */
+.pbar{height:4px;background:var(--b1);border-radius:2px;margin-top:5px}
+.pbar-fill{height:100%;border-radius:2px}
+.pf-g{background:var(--gr)}.pf-a{background:var(--acc)}.pf-b{background:var(--bl)}.pf-r{background:var(--rd)}
+
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<header class="site-hdr">
+  <div class="site-logo">BK MEDIA CRM</div>
+  <div class="site-meta">KIT 1 — VIDEO DEPARTMENT · ALL SCREENS</div>
+</header>
+
+<nav class="top-nav">
+  <button class="tnb act" onclick="navTo(this,'s1')">01 Client list</button>
+  <button class="tnb" onclick="navTo(this,'s2')">02 Add client</button>
+  <button class="tnb" onclick="navTo(this,'s3')">03 Calendar</button>
+  <button class="tnb" onclick="navTo(this,'s4')">04 New inquiry</button>
+  <button class="tnb" onclick="navTo(this,'s5')">05 Quotation form</button>
+  <button class="tnb" onclick="navTo(this,'s6')">06 Quotation PDF</button>
+  <button class="tnb" onclick="navTo(this,'s7')">07 Approval screen</button>
+  <button class="tnb" onclick="navTo(this,'s8')">08 Invoice</button>
+  <button class="tnb" onclick="navTo(this,'s9')">09 Payment tracking</button>
+</nav>
+
+<div class="main">
+
+<!-- ═══ 01 CLIENT LIST ═══ -->
+<div class="section" id="s1">
+  <div class="sec-label">Screen 01</div>
+  <div class="sec-title">Client <strong>list</strong></div>
+  <div class="sw">
+    <div class="sf">
+      <div class="tb">
+        <div class="tb-logo">BK MEDIA CRM</div>
+        <div class="tb-bc"><span>Clients</span></div>
+        <div class="tb-actions"><button class="btn btn-primary">+ New client</button></div>
+      </div>
+      <div class="sb-body">
+        <div class="sb">
+          <div class="sb-sec">Main</div>
+          <div class="sb-item">Dashboard</div>
+          <div class="sb-item act">Clients</div>
+          <div class="sb-item">Calendar</div>
+          <div class="sb-item">Inquiries</div>
+          <div class="sb-sec">Video dept</div>
+          <div class="sb-item">Quotations</div>
+          <div class="sb-item">Invoices</div>
+        </div>
+        <div class="cnt">
+          <div class="metrics">
+            <div class="met"><div class="met-l">Total clients</div><div class="met-v">24</div></div>
+            <div class="met"><div class="met-l">Active events</div><div class="met-v b">6</div></div>
+            <div class="met"><div class="met-l">This month</div><div class="met-v g">4</div></div>
+            <div class="met"><div class="met-l">Pending quotes</div><div class="met-v a">3</div></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <div class="finp" style="flex:1;display:flex;align-items:center;color:var(--tx3);font-size:11px">Search clients...</div>
+              <div class="fsel" style="width:130px;display:flex;align-items:center">All clients ▾</div>
+            </div>
+            <table class="tbl">
+              <thead><tr>
+                <th style="width:32px"></th>
+                <th>Client name</th>
+                <th style="width:120px">Mobile</th>
+                <th style="width:140px">Contact person</th>
+                <th style="width:80px" class="tc">Events</th>
+                <th style="width:90px">Status</th>
+              </tr></thead>
+              <tbody>
+                <tr><td><div style="width:28px;height:28px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#3C3489">AG</div></td><td><div style="font-weight:500;color:var(--tx)">Adani Group</div><div style="font-size:10px;color:var(--tx3)">Vikram Shah</div></td><td>98250 11111</td><td>Vikram Shah</td><td class="tc"><span class="bdg bdg-bl">5</span></td><td><span class="bdg bdg-gr">Active</span></td></tr>
+                <tr><td><div style="width:28px;height:28px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#085041">TP</div></td><td><div style="font-weight:500;color:var(--tx)">Torrent Pharma</div><div style="font-size:10px;color:var(--tx3)">Priya Mehta</div></td><td>98250 22222</td><td>Priya Mehta</td><td class="tc"><span class="bdg bdg-bl">3</span></td><td><span class="bdg bdg-gr">Active</span></td></tr>
+                <tr><td><div style="width:28px;height:28px;border-radius:50%;background:#FAECE7;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#712B13">PF</div></td><td><div style="font-weight:500;color:var(--tx)">Patel Family</div><div style="font-size:10px;color:var(--tx3)">Rajesh Patel</div></td><td>98250 33333</td><td>Rajesh Patel</td><td class="tc"><span class="bdg bdg-bl">1</span></td><td><span class="bdg bdg-gr">Active</span></td></tr>
+                <tr><td><div style="width:28px;height:28px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#0C447C">DT</div></td><td><div style="font-weight:500;color:var(--tx)">Dholera Trust</div><div style="font-size:10px;color:var(--tx3)">Swami Mahraj</div></td><td>98250 44444</td><td>Swami Mahraj</td><td class="tc"><span class="bdg bdg-bl">2</span></td><td><span class="bdg bdg-gr">Active</span></td></tr>
+                <tr><td><div style="width:28px;height:28px;border-radius:50%;background:#FAEEDA;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#633806">GC</div></td><td><div style="font-weight:500;color:var(--tx)">GIFT City Corp</div><div style="font-size:10px;color:var(--tx3)">Amit Kumar</div></td><td>98250 55555</td><td>Amit Kumar</td><td class="tc"><span class="bdg bdg-bl">1</span></td><td><span class="bdg bdg-am">Inactive</span></td></tr>
+              </tbody>
+            </table>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;font-size:11px;color:var(--tx3)">
+              <span>1–5 of 24</span>
+              <div style="display:flex;gap:4px">
+                <button class="btn">‹ Prev</button>
+                <button class="btn btn-primary" style="padding:5px 10px">1</button>
+                <button class="btn">2</button>
+                <button class="btn">Next ›</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sw-desc">Client list — search, status filter, pagination. Row click → client detail page.</div>
+  </div>
+</div>
+
+<!-- ═══ 02 ADD CLIENT ═══ -->
+<div class="section" id="s2">
+  <div class="sec-label">Screen 02</div>
+  <div class="sec-title">Add / Edit <strong>client</strong></div>
+  <div class="sw">
+    <div class="sf">
+      <div class="tb">
+        <div class="tb-bc">Clients › New client</div>
+        <div class="tb-actions"><button class="btn">Reset</button><button class="btn btn-success">Save client ↗</button></div>
+      </div>
+      <div class="sb-body">
+        <div class="sb">
+          <div class="sb-sec">Main</div>
+          <div class="sb-item act">Clients</div>
+          <div class="sb-item">Calendar</div>
+          <div class="sb-item">Inquiries</div>
+        </div>
+        <div class="cnt">
+          <div class="two-col">
+            <div>
+              <div class="card">
+                <div class="card-t">Basic information</div>
+                <div class="fgrid">
+                  <div class="field span2"><div class="flbl">Client name *</div><div class="finp"></div></div>
+                  <div class="field"><div class="flbl">Mobile number * (10 digits)</div><div class="finp"></div></div>
+                  <div class="field"><div class="flbl">Contact person *</div><div class="finp"></div></div>
+                  <div class="field span2"><div class="flbl">Email (optional)</div><div class="finp"></div></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-t">Tax information</div>
+                <div class="fgrid">
+                  <div class="field"><div class="flbl">GST number (15 char)</div><div class="finp" style="font-family:monospace;font-size:11px">24XXXXX1234X1ZX</div></div>
+                  <div class="field"><div class="flbl">PAN number (10 char)</div><div class="finp" style="font-family:monospace;font-size:11px">ABCDE1234F</div></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-t">Address</div>
+                <div class="fgrid">
+                  <div class="field span2"><div class="flbl">Address line</div><div class="ftxt"></div></div>
+                  <div class="field"><div class="flbl">City *</div><div class="finp">Vadodara</div></div>
+                  <div class="field"><div class="flbl">District *</div><div class="finp">Vadodara</div></div>
+                  <div class="field"><div class="flbl">State *</div><div class="fsel">Gujarat ▾</div></div>
+                  <div class="field"><div class="flbl">PIN code</div><div class="finp">390001</div></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card">
+                <div class="card-t">Preview</div>
+                <div style="background:var(--s2);border-radius:var(--radius);padding:14px;text-align:center;margin-bottom:12px">
+                  <div style="width:48px;height:48px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500;color:#3C3489;margin:0 auto 10px">AG</div>
+                  <div style="font-size:14px;font-weight:500">Adani Group</div>
+                  <div style="font-size:11px;color:var(--tx3);margin-top:3px">Vikram Shah</div>
+                  <div style="font-size:11px;color:var(--tx3);margin-top:2px">98250 11111</div>
+                </div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">GST</span><span style="font-family:monospace;font-size:11px">24AAACA1234R1ZX</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">PAN</span><span style="font-family:monospace;font-size:11px">AAACA1234R</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">City</span><span style="font-size:11px">Ahmedabad</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">District</span><span style="font-size:11px">Ahmedabad</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">State</span><span style="font-size:11px">Gujarat</span></div>
+              </div>
+              <div class="card">
+                <div class="card-t">Validation</div>
+                <div style="display:flex;flex-direction:column;gap:5px;font-size:11px">
+                  <div style="display:flex;align-items:center;gap:6px;color:var(--gr)">✓ Client name</div>
+                  <div style="display:flex;align-items:center;gap:6px;color:var(--gr)">✓ Mobile (10 digits)</div>
+                  <div style="display:flex;align-items:center;gap:6px;color:var(--gr)">✓ Contact person</div>
+                  <div style="display:flex;align-items:center;gap:6px;color:var(--gr)">✓ City / District / State</div>
+                  <div style="display:flex;align-items:center;gap:6px;color:var(--tx3)">○ Email (optional)</div>
+                  <div style="display:flex;align-items:center;gap:6px;color:var(--tx3)">○ GST (optional)</div>
+                  <div style="display:flex;align-items:center;gap:6px;color:var(--tx3)">○ PAN (optional)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sw-desc">Add/Edit client. Required: name, mobile (10 digits only), contact person, city, district, state. Optional: email, GST, PAN, address, PIN. Live preview on right. Same form for edit.</div>
+  </div>
+</div>
+
+<!-- ═══ 03 CALENDAR ═══ -->
+<div class="section" id="s3">
+  <div class="sec-label">Screen 03</div>
+  <div class="sec-title">Calendar <strong>view</strong></div>
+  <div class="sw">
+    <div class="sf">
+      <div class="tb">
+        <div class="tb-bc">Calendar — May 2026</div>
+        <div class="tb-actions"><button class="btn">‹ Prev</button><button class="btn">Today</button><button class="btn">Next ›</button><button class="btn btn-primary">+ New inquiry</button></div>
+      </div>
+      <div class="sb-body">
+        <div class="sb">
+          <div class="sb-sec">Main</div>
+          <div class="sb-item">Dashboard</div>
+          <div class="sb-item">Clients</div>
+          <div class="sb-item act">Calendar</div>
+          <div class="sb-item">Inquiries</div>
+          <div class="sb-sec">Video dept</div>
+          <div class="sb-item">Quotations</div>
+        </div>
+        <div class="cnt">
+          <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;align-items:center">
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#0A1A3A"></div><span style="color:var(--tx3)">Inquiry</span></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#2E1F0A"></div><span style="color:var(--tx3)">Quotation sent</span></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:10px;height:10px;border-radius:2px;background:#0F2E22"></div><span style="color:var(--tx3)">Confirmed</span></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--b1);border:1px solid var(--b1);border-radius:var(--radius)">
+            <div style="background:var(--s2);padding:6px;text-align:center;font-size:10px;color:var(--tx3)">Sun</div>
+            <div style="background:var(--s2);padding:6px;text-align:center;font-size:10px;color:var(--tx3)">Mon</div>
+            <div style="background:var(--s2);padding:6px;text-align:center;font-size:10px;color:var(--tx3)">Tue</div>
+            <div style="background:var(--s2);padding:6px;text-align:center;font-size:10px;color:var(--tx3)">Wed</div>
+            <div style="background:var(--s2);padding:6px;text-align:center;font-size:10px;color:var(--tx3)">Thu</div>
+            <div style="background:var(--s2);padding:6px;text-align:center;font-size:10px;color:var(--tx3)">Fri</div>
+            <div style="background:var(--s2);padding:6px;text-align:center;font-size:10px;color:var(--tx3)">Sat</div>
+            <!-- Row 1 -->
+            <div style="background:var(--s1);min-height:64px;padding:5px"></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">1</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">2</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">3</div></div>
+            <!-- Row 2: 4-10 -->
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">4</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">5</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">6</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">7</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">8</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">9</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">10</div><div style="font-size:9px;padding:2px 4px;border-radius:3px;background:#0F2E22;color:#2DD4A0;margin-bottom:2px">Adani Meet</div></div>
+            <!-- Row 3: 11-17 -->
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">11</div><div style="font-size:9px;padding:2px 4px;border-radius:3px;background:#0F2E22;color:#2DD4A0;margin-bottom:2px">↔ Adani</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">12</div><div style="font-size:9px;padding:2px 4px;border-radius:3px;background:#0F2E22;color:#2DD4A0;margin-bottom:2px">↔ Adani</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">13</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">14</div><div style="font-size:9px;padding:2px 4px;border-radius:3px;background:#2E1F0A;color:#F5A623;margin-bottom:2px">Torrent Launch</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">15</div><div style="font-size:9px;padding:2px 4px;border-radius:3px;background:#2E1F0A;color:#F5A623;margin-bottom:2px">↔ Torrent</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">16</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">17</div></div>
+            <!-- Row 4: 18-24 -->
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">18</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">19</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx2);font-weight:500;margin-bottom:3px;background:#1A1A2A;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center">20</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">21</div><div style="font-size:9px;padding:2px 4px;border-radius:3px;background:#0A1A3A;color:#4F8EF7;margin-bottom:2px">Patel Wedding</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">22</div><div style="font-size:9px;padding:2px 4px;border-radius:3px;background:#0A1A3A;color:#4F8EF7;margin-bottom:2px">↔ Patel</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">23</div></div>
+            <div style="background:var(--s1);min-height:64px;padding:5px"><div style="font-size:11px;color:var(--tx3);margin-bottom:3px">24</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sw-desc">Monthly calendar. Events show by date range with color — Blue=Inquiry, Amber=Quotation sent, Green=Confirmed. Event tap → detail popup. Month navigate. Today highlight.</div>
+  </div>
+</div>
+
+<!-- ═══ 04 NEW INQUIRY ═══ -->
+<div class="section" id="s4">
+  <div class="sec-label">Screen 04</div>
+  <div class="sec-title">New <strong>inquiry</strong></div>
+  <div class="sw">
+    <div class="sf">
+      <div class="tb">
+        <div class="tb-bc">Inquiries › New inquiry</div>
+        <div class="tb-actions"><button class="btn">Reset</button><button class="btn btn-success">Save inquiry ↗</button></div>
+      </div>
+      <div class="sb-body">
+        <div class="sb">
+          <div class="sb-sec">Main</div>
+          <div class="sb-item">Dashboard</div>
+          <div class="sb-item">Clients</div>
+          <div class="sb-item">Calendar</div>
+          <div class="sb-item act">Inquiries</div>
+        </div>
+        <div class="cnt">
+          <div class="two-col">
+            <div>
+              <div class="card">
+                <div class="card-t">Inquiry details</div>
+                <div class="fgrid">
+                  <div class="field span2">
+                    <div class="flbl">Select client *</div>
+                    <div class="fsel">Adani Group — Vikram Shah ▾</div>
+                    <div style="background:var(--s2);border-radius:6px;padding:7px 10px;margin-top:5px;font-size:11px">
+                      <div style="font-weight:500;color:var(--tx)">Adani Group</div>
+                      <div style="color:var(--tx3);margin-top:1px">+91 98250 11111</div>
+                    </div>
+                  </div>
+                  <div class="field span2">
+                    <div class="flbl">Event type *</div>
+                    <div class="fsel">Corporate event ▾</div>
+                  </div>
+                  <div class="field span2">
+                    <div class="flbl">Start date &amp; time *</div>
+                    <div style="display:grid;grid-template-columns:1fr 100px;gap:6px">
+                      <div class="finp">2026-05-10</div>
+                      <div class="finp">09:00 AM</div>
+                    </div>
+                  </div>
+                  <div class="field span2">
+                    <div class="flbl">End date &amp; time *</div>
+                    <div style="display:grid;grid-template-columns:1fr 100px;gap:6px">
+                      <div class="finp">2026-05-12</div>
+                      <div class="finp">09:00 PM</div>
+                    </div>
+                    <div style="font-size:10px;color:var(--tx3);margin-top:3px">End date, start date કરતા ઓછી ન હોય</div>
+                  </div>
+                  <div class="field span2">
+                    <div style="background:#0A1A3A;border-radius:6px;padding:8px 12px;display:flex;align-items:center;gap:16px;font-size:11px;color:var(--bl)">
+                      <div>📅 <strong>3 days</strong></div>
+                      <div style="width:1px;height:18px;background:#1A2A4A"></div>
+                      <div>🕐 <strong>60 hours</strong></div>
+                      <div style="width:1px;height:18px;background:#1A2A4A"></div>
+                      <div>9:00 AM → 9:00 PM</div>
+                    </div>
+                  </div>
+                  <div class="field span2">
+                    <div class="flbl">Venue *</div>
+                    <div class="finp">Grand Bhagwati, Ahmedabad</div>
+                  </div>
+                  <div class="field span2">
+                    <div class="flbl">Special notes (optional)</div>
+                    <div class="ftxt"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card">
+                <div class="card-t">Summary</div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Client</span><span style="font-size:11px;font-weight:500">Adani Group</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Event type</span><span style="font-size:11px">Corporate event</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Start</span><span style="font-size:11px">10 May, 9:00 AM</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">End</span><span style="font-size:11px">12 May, 9:00 PM</span></div>
+                <div class="row-item"><span style="font-size:11px;font-weight:500">Duration</span><span style="font-size:13px;font-weight:500;color:var(--bl)">3 days</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Venue</span><span style="font-size:11px;text-align:right;max-width:140px">Grand Bhagwati, Ahmedabad</span></div>
+              </div>
+              <div class="card">
+                <div class="card-t">Date preview</div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 0">
+                  <div style="text-align:center"><div style="font-size:10px;color:var(--tx3)">May 2026</div><div style="font-size:24px;font-weight:500;color:var(--bl)">10</div></div>
+                  <div style="font-size:20px;color:var(--tx3)">→</div>
+                  <div style="text-align:center"><div style="font-size:10px;color:var(--tx3)">May 2026</div><div style="font-size:24px;font-weight:500;color:var(--bl)">12</div></div>
+                  <div style="background:#0A1A3A;color:var(--bl);border-radius:var(--radius);padding:8px 12px;text-align:center"><div style="font-size:20px;font-weight:500">3</div><div style="font-size:10px">days</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sw-desc">New inquiry form. Fields: Select client (shows phone), Event type, Start date+time, End date+time (validation: end ≥ start), auto duration, Venue, Notes. Live summary on right.</div>
+  </div>
+</div>
+
+<!-- ═══ 05 QUOTATION FORM ═══ -->
+<div class="section" id="s5">
+  <div class="sec-label">Screen 05</div>
+  <div class="sec-title">Quotation <strong>form</strong></div>
+  <div class="sw">
+    <div class="sf">
+      <div class="tb">
+        <div class="tb-bc">Inquiries › BKM/26-27/05/16 › Quotation</div>
+        <div class="tb-actions"><button class="btn">Preview PDF</button><button class="btn btn-success">Save quotation ↗</button></div>
+      </div>
+      <div class="sb-body">
+        <div class="sb">
+          <div class="sb-sec">Main</div>
+          <div class="sb-item">Dashboard</div>
+          <div class="sb-item">Clients</div>
+          <div class="sb-item">Calendar</div>
+          <div class="sb-item">Inquiries</div>
+          <div class="sb-sec">Video dept</div>
+          <div class="sb-item act">Quotations</div>
+          <div class="sb-item">Invoices</div>
+        </div>
+        <div class="cnt">
+          <div style="background:var(--s2);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <div><div style="font-size:10px;color:var(--tx3);margin-bottom:2px">Client</div><div style="font-size:12px;font-weight:500">Adani Group</div></div>
+            <div><div style="font-size:10px;color:var(--tx3);margin-bottom:2px">Event</div><div style="font-size:12px;font-weight:500">Annual Conference</div></div>
+            <div><div style="font-size:10px;color:var(--tx3);margin-bottom:2px">Quotation no.</div><div style="font-size:12px;font-weight:500;font-family:monospace;color:var(--bl)">BKM/26-27/05/16</div></div>
+            <div><div style="font-size:10px;color:var(--tx3);margin-bottom:2px">Dates</div><div style="font-size:12px;font-weight:500">10–12 May 2026</div></div>
+            <div><div style="font-size:10px;color:var(--tx3);margin-bottom:2px">Days</div><div style="font-size:12px;font-weight:500;color:var(--bl)">3 days</div></div>
+            <div><div style="font-size:10px;color:var(--tx3);margin-bottom:2px">Status</div><div><span class="bdg bdg-am">Draft</span></div></div>
+          </div>
+          <div class="two-col">
+            <div>
+              <div class="card">
+                <div class="card-t">Equipment table <button class="btn" style="margin-left:auto;font-size:10px">+ Add row</button></div>
+                <div style="overflow-x:auto">
+                  <table class="tbl" style="min-width:500px">
+                    <thead><tr>
+                      <th style="width:24px">No.</th>
+                      <th style="width:150px">Position</th>
+                      <th style="width:130px">Equipment type</th>
+                      <th style="width:90px;text-align:right">Rate/day (₹)</th>
+                      <th style="width:50px;text-align:center">Days</th>
+                      <th style="width:90px;text-align:right">Amount (₹)</th>
+                      <th style="width:26px"></th>
+                    </tr></thead>
+                    <tbody>
+                      <tr><td style="color:var(--tx3)">1</td><td><div class="fsel" style="font-size:10px">Center Tally ▾</div></td><td><div class="finp" style="font-size:10px;background:#1A1A1A;color:var(--tx3)">FS6</div></td><td><div class="finp" style="font-size:10px;text-align:right">20,000</div></td><td><div class="finp" style="font-size:10px;text-align:center">3</div></td><td style="text-align:right;font-weight:500;color:var(--gr);font-family:monospace">₹60,000</td><td><button class="btn btn-danger" style="font-size:9px;padding:2px 5px">✕</button></td></tr>
+                      <tr><td style="color:var(--tx3)">2</td><td><div class="fsel" style="font-size:10px">Center Semi Wide ▾</div></td><td><div class="finp" style="font-size:10px;background:#1A1A1A;color:var(--tx3)">FS6</div></td><td><div class="finp" style="font-size:10px;text-align:right">20,000</div></td><td><div class="finp" style="font-size:10px;text-align:center">3</div></td><td style="text-align:right;font-weight:500;color:var(--gr);font-family:monospace">₹60,000</td><td><button class="btn btn-danger" style="font-size:9px;padding:2px 5px">✕</button></td></tr>
+                      <tr><td style="color:var(--tx3)">3</td><td><div class="fsel" style="font-size:10px">Wireless 1 ▾</div></td><td><div class="finp" style="font-size:10px;background:#1A1A1A;color:var(--tx3)">FX3 + Wireless</div></td><td><div class="finp" style="font-size:10px;text-align:right">10,000</div></td><td><div class="finp" style="font-size:10px;text-align:center">3</div></td><td style="text-align:right;font-weight:500;color:var(--gr);font-family:monospace">₹30,000</td><td><button class="btn btn-danger" style="font-size:9px;padding:2px 5px">✕</button></td></tr>
+                      <tr><td style="color:var(--tx3)">4</td><td><div class="fsel" style="font-size:10px">Photo 1 ▾</div></td><td><div class="finp" style="font-size:10px;background:#1A1A1A;color:var(--tx3)">DSLR</div></td><td><div class="finp" style="font-size:10px;text-align:right">8,000</div></td><td><div class="finp" style="font-size:10px;text-align:center">3</div></td><td style="text-align:right;font-weight:500;color:var(--gr);font-family:monospace">₹24,000</td><td><button class="btn btn-danger" style="font-size:9px;padding:2px 5px">✕</button></td></tr>
+                      <tr><td style="color:var(--tx3)">5</td><td><div class="fsel" style="font-size:10px">Video Crane 32 Feet ▾</div></td><td><div class="finp" style="font-size:10px;background:#1A1A1A;color:var(--tx3)">Crane 32 Feet</div></td><td><div class="finp" style="font-size:10px;text-align:right">15,000</div></td><td><div class="finp" style="font-size:10px;text-align:center">3</div></td><td style="text-align:right;font-weight:500;color:var(--gr);font-family:monospace">₹45,000</td><td><button class="btn btn-danger" style="font-size:9px;padding:2px 5px">✕</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <button class="btn" style="width:100%;margin-top:8px;justify-content:center;border-style:dashed;color:var(--bl)">+ Add equipment row</button>
+              </div>
+            </div>
+            <div>
+              <div class="card">
+                <div class="card-t">Calculation</div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Subtotal</span><span style="font-family:monospace;font-weight:500">₹2,19,000</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">CGST 9%</span><span style="font-family:monospace">₹19,710</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">SGST 9%</span><span style="font-family:monospace">₹19,710</span></div>
+                <div style="display:flex;justify-content:space-between;padding-top:10px;font-size:14px;font-weight:500;border-top:1px solid var(--b1);margin-top:4px">
+                  <span>Total</span><span style="color:var(--bl);font-family:monospace">₹2,58,420</span>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-t">Note</div>
+                <div style="font-size:11px;color:var(--tx3);line-height:1.7">
+                  Client ને PDF માં ફક્ત:<br>
+                  Position · Equipment · Days<br>
+                  <span style="color:var(--rd)">Rate/amount client ને show નહીં થાય</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sw-desc">Quotation equipment table. Position dropdown → equipment type auto fill (read-only) + rate auto fill (editable). Days auto from event (editable). Amount = rate × days. CGST + SGST + Total live calculate.</div>
+  </div>
+</div>
+
+<!-- ═══ 06 QUOTATION PDF ═══ -->
+<div class="section" id="s6">
+  <div class="sec-label">Screen 06</div>
+  <div class="sec-title">Quotation <strong>PDF preview</strong></div>
+  <div class="sw">
+    <div class="sf">
+      <div class="tb">
+        <div class="tb-bc">BKM/26-27/05/16 › Quotation PDF</div>
+        <div class="tb-actions">
+          <span class="bdg bdg-am" style="margin-right:4px">Draft</span>
+          <button class="btn">+ Revise</button>
+          <button class="btn btn-success">✓ Mark approved</button>
+          <button class="btn">WhatsApp ↗</button>
+          <button class="btn btn-primary">Download PDF</button>
+        </div>
+      </div>
+      <div class="sb-body">
+        <div class="sb">
+          <div class="sb-sec">Main</div>
+          <div class="sb-item">Clients</div>
+          <div class="sb-item">Calendar</div>
+          <div class="sb-item">Inquiries</div>
+          <div class="sb-sec">Video dept</div>
+          <div class="sb-item act">Quotations</div>
+        </div>
+        <div class="cnt">
+          <div style="background:#1A1A0A;border:1px solid #2A2A10;border-radius:var(--radius);padding:8px 12px;margin-bottom:12px;font-size:11px;color:var(--acc)">
+            ⚠ Internal: Client ને item rates show નહીં થાય — Position + Equipment + Days only
+          </div>
+          <div class="two-col">
+            <div>
+              <div class="pdf-frame">
+                <div class="pdf-hdr">
+                  <div>
+                    <div class="pdf-co">BK Media</div>
+                    <div class="pdf-co-sub">Media Production Services · Vadodara, Gujarat<br>+91 98250 00000 · info@bkmedia.in · GST: 24XXXXX1234X1ZX</div>
+                  </div>
+                  <div class="pdf-doc">
+                    <div class="pdf-doc-lbl">Quotation</div>
+                    <div class="pdf-doc-num">BKM/26-27/05/16</div>
+                    <div class="pdf-doc-sub">Date: 10 May 2026</div>
+                    <div class="pdf-doc-sub">Valid: 15 days</div>
+                  </div>
+                </div>
+                <div style="font-size:11px;margin-bottom:8px;color:#333"><strong>Adani Group</strong> — Attn: Vikram Shah</div>
+                <div class="pdf-strip" style="grid-template-columns:repeat(4,1fr)">
+                  <div><div class="psi-l">Event</div><div class="psi-v">Annual Conference</div></div>
+                  <div><div class="psi-l">Dates</div><div class="psi-v">10–12 May 2026</div></div>
+                  <div><div class="psi-l">Days</div><div class="psi-v">3 days</div></div>
+                  <div><div class="psi-l">Venue</div><div class="psi-v">Grand Bhagwati, Ahmedabad</div></div>
+                </div>
+                <table class="pdf-tbl">
+                  <thead><tr>
+                    <th style="width:28px">No.</th>
+                    <th>Position</th>
+                    <th>Equipment description</th>
+                    <th style="width:46px;text-align:center">Days</th>
+                  </tr></thead>
+                  <tbody>
+                    <tr><td>1</td><td>Center Tally</td><td>Sony FS6 professional video camera</td><td style="text-align:center">3</td></tr>
+                    <tr><td>2</td><td>Center Semi Wide</td><td>Sony FS6 professional video camera</td><td style="text-align:center">3</td></tr>
+                    <tr><td>3</td><td>Wireless 1</td><td>Sony FX3 with wireless transmitter</td><td style="text-align:center">3</td></tr>
+                    <tr><td>4</td><td>Photo 1</td><td>DSLR professional photography</td><td style="text-align:center">3</td></tr>
+                    <tr><td>5</td><td>Video Crane 32 Feet</td><td>32 foot videography crane</td><td style="text-align:center">3</td></tr>
+                  </tbody>
+                </table>
+                <div class="pdf-totals">
+                  <div class="pdf-totals-box">
+                    <div class="pdf-trow"><span>Subtotal</span><span>₹2,19,000</span></div>
+                    <div class="pdf-trow"><span>CGST @ 9%</span><span>₹19,710</span></div>
+                    <div class="pdf-trow"><span>SGST @ 9%</span><span>₹19,710</span></div>
+                    <div class="pdf-trow"><span>Total</span><span style="color:#1050A0">₹2,58,420</span></div>
+                  </div>
+                </div>
+                <div class="pdf-footer">
+                  <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-lbl">BK Media — Authorised</div></div>
+                  <div style="width:40px;height:40px;border-radius:50%;border:1.5px solid #888;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#888">STAMP</div>
+                  <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-lbl">Client acceptance</div></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card">
+                <div class="card-t">Status &amp; actions</div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Created</span><span style="font-size:11px">10 May · Draft</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Sent</span><span style="font-size:11px;color:var(--tx3)">Not yet</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Approved</span><span style="font-size:11px;color:var(--tx3)">Not yet</span></div>
+                <div class="divider"></div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <button class="btn" style="justify-content:center">WhatsApp send ↗</button>
+                  <button class="btn" style="justify-content:center">Email send ↗</button>
+                  <button class="btn btn-success" style="justify-content:center">✓ Mark approved</button>
+                  <button class="btn" style="justify-content:center">+ Create revision</button>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-t">Revision history</div>
+                <div class="row-item"><span style="font-family:monospace;font-size:11px">BKM/26-27/05/16</span><span class="bdg bdg-bl">Current</span></div>
+                <div style="font-size:10px;color:var(--tx3);margin-top:6px">Revision create → BKM/26-27/05/16-1 format</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sw-desc">Quotation PDF preview. Client sees: Position + Equipment + Days only — NO rates shown. Subtotal + CGST 9% + SGST 9% + Total. WhatsApp/Email/Download. Mark approved button. Revision tracking.</div>
+  </div>
+</div>
+
+<!-- ═══ 07 APPROVAL SCREEN ═══ -->
+<div class="section" id="s7">
+  <div class="sec-label">Screen 07</div>
+  <div class="sec-title">Quotation <strong>approval</strong></div>
+  <div class="sw">
+    <div class="sf">
+      <div class="tb">
+        <div class="tb-bc">BKM/26-27/05/16 › Approval</div>
+        <div class="tb-actions">
+          <span class="bdg bdg-am" style="margin-right:4px">Sent to client</span>
+          <button class="btn btn-success">✓ Mark approved</button>
+        </div>
+      </div>
+      <div class="sb-body">
+        <div class="sb">
+          <div class="sb-sec">Main</div>
+          <div class="sb-item">Clients</div>
+          <div class="sb-item">Calendar</div>
+          <div class="sb-item">Inquiries</div>
+          <div class="sb-sec">Video dept</div>
+          <div class="sb-item act">Quotations</div>
+        </div>
+        <div class="cnt">
+          <div class="flow">
+            <span class="flow-step flow-done">Inquiry</span><span class="flow-arr">›</span>
+            <span class="flow-step flow-done">Quotation</span><span class="flow-arr">›</span>
+            <span class="flow-step flow-curr">Approval</span><span class="flow-arr">›</span>
+            <span class="flow-step flow-next">Invoice</span><span class="flow-arr">›</span>
+            <span class="flow-step flow-next">Payment</span>
+          </div>
+          <div class="two-col">
+            <div>
+              <div class="card">
+                <div class="card-t">Quotation summary</div>
+                <div style="background:var(--s2);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px">
+                  <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Client</span><span style="font-size:12px;font-weight:500">Adani Group</span></div>
+                  <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Quotation no.</span><span style="font-family:monospace;font-size:11px;color:var(--bl)">BKM/26-27/05/16</span></div>
+                  <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Total amount</span><span style="font-family:monospace;font-size:14px;font-weight:500;color:var(--gr)">₹2,58,420</span></div>
+                  <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Sent on</span><span style="font-size:11px">10 May 2026</span></div>
+                  <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Valid till</span><span style="font-size:11px">25 May 2026</span></div>
+                </div>
+                <div class="card-t" style="margin-top:4px">Mark as approved</div>
+                <div class="fgrid">
+                  <div class="field span2">
+                    <div class="flbl">Approval date</div>
+                    <div class="finp">2026-05-11</div>
+                  </div>
+                  <div class="field span2">
+                    <div class="flbl">Signed copy upload (optional)</div>
+                    <div style="height:52px;background:var(--s2);border:1px dashed var(--b2);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--tx3)">
+                      ↑ Upload signed quotation PDF
+                    </div>
+                  </div>
+                  <div class="field span2">
+                    <div class="flbl">Notes</div>
+                    <div class="ftxt" style="min-height:44px"></div>
+                  </div>
+                </div>
+                <button class="btn btn-success" style="width:100%;justify-content:center;margin-top:10px;font-size:12px">✓ Confirm approval → Generate invoice</button>
+              </div>
+            </div>
+            <div>
+              <div class="card">
+                <div class="card-t">Timeline</div>
+                <div class="tl-item">
+                  <div class="tl-left"><div class="tl-dot" style="background:var(--gr)"></div><div class="tl-line"></div></div>
+                  <div><div class="tl-title">Inquiry created</div><div class="tl-time">09 May 2026 · 10:30 AM</div></div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-left"><div class="tl-dot" style="background:var(--gr)"></div><div class="tl-line"></div></div>
+                  <div><div class="tl-title">Quotation generated</div><div class="tl-time">09 May 2026 · 11:00 AM</div></div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-left"><div class="tl-dot" style="background:var(--acc)"></div><div class="tl-line"></div></div>
+                  <div><div class="tl-title">Sent to client — WhatsApp</div><div class="tl-time">10 May 2026 · 9:15 AM</div></div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-left"><div class="tl-dot" style="background:var(--b2)"></div></div>
+                  <div><div class="tl-title" style="color:var(--tx3)">Approval pending...</div><div class="tl-time">Waiting</div></div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-t">Advance payment</div>
+                <div style="font-size:11px;color:var(--tx3);margin-bottom:8px">Approval confirm → advance payment track</div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">50% advance</span><span style="font-family:monospace;font-weight:500;color:var(--acc)">₹1,29,210</span></div>
+                <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Advance status</span><span class="bdg bdg-am">Pending</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sw-desc">Quotation approval screen. Shows quotation summary, approval date, signed copy upload. Confirm approval → status changes to Confirmed, generates invoice. Timeline shows full history.</div>
+  </div>
+</div>
+
+<!-- ═══ 08 INVOICE ═══ -->
+<div class="section" id="s8">
+  <div class="sec-label">Screen 08</div>
+  <div class="sec-title"><strong>Invoice</strong></div>
+  <div class="sw">
+    <div class="sf">
+      <div class="tb">
+        <div class="tb-bc">BKM/26-27/05/16 › Invoice BKM-INV-26-27/05/08</div>
+        <div class="tb-actions">
+          <span class="bdg bdg-am" style="margin-right:4px">Partial paid</span>
+          <button class="btn">WhatsApp ↗</button>
+          <button class="btn btn-primary">Download PDF</button>
+        </div>
+      </div>
+      <div class="sb-body">
+        <div class="sb">
+          <div class="sb-sec">Main</div>
+          <div class="sb-item">Clients</div>
+          <div class="sb-item">Calendar</div>
+          <div class="sb-item">Inquiries</div>
+          <div class="sb-sec">Video dept</div>
+          <div class="sb-item">Quotations</div>
+          <div class="sb-item act">Invoices</div>
+        </div>
+        <div class="cnt">
+          <div style="background:#1A1A0A;border:1px solid #2A2A10;border-radius:var(--radius);padding:8px 12px;margin-bottom:12px;font-size:11px;color:var(--acc)">
+            ⚠ Video invoice: ફક્ત 2 line items — Videography services + Photography services. Item rates show નહીં.
+          </div>
+          <div class="two-col">
+            <div>
+              <div class="pdf-frame">
+                <div class="pdf-hdr">
+                  <div>
+                    <div class="pdf-co">BK Media</div>
+                    <div class="pdf-co-sub">Vadodara, Gujarat · GST: 24XXXXX1234X1ZX<br>+91 98250 00000 · info@bkmedia.in</div>
+                  </div>
+                  <div class="pdf-doc">
+                    <div class="pdf-doc-lbl">Tax invoice</div>
+                    <div class="pdf-doc-num">BKM-INV-26-27/05/08</div>
+                    <div class="pdf-doc-sub">Date: 13 May 2026</div>
+                    <div class="pdf-doc-sub">Due: 20 May 2026</div>
+                  </div>
+                </div>
+                <div style="font-size:11px;margin-bottom:8px;color:#333"><strong>Adani Group</strong> — Ref: BKM/26-27/05/16</div>
+                <div class="pdf-strip" style="grid-template-columns:repeat(3,1fr)">
+                  <div><div class="psi-l">Event</div><div class="psi-v">Annual Conference</div></div>
+                  <div><div class="psi-l">Dates</div><div class="psi-v">10–12 May 2026</div></div>
+                  <div><div class="psi-l">Venue</div><div class="psi-v">Grand Bhagwati, Ahmedabad</div></div>
+                </div>
+                <table class="pdf-tbl">
+                  <thead><tr>
+                    <th style="width:28px">No.</th>
+                    <th>Service description</th>
+                    <th style="width:46px;text-align:center">Days</th>
+                    <th style="width:90px;text-align:right">Amount (₹)</th>
+                  </tr></thead>
+                  <tbody>
+                    <tr><td>1</td><td><strong>Videography services</strong><br><span style="font-size:9px;color:#666">Annual Conference · Grand Bhagwati · 10–12 May</span></td><td style="text-align:center">3</td><td style="text-align:right;font-weight:700">1,80,000</td></tr>
+                    <tr><td>2</td><td><strong>Photography services</strong><br><span style="font-size:9px;color:#666">Annual Conference · Grand Bhagwati · 10–12 May</span></td><td style="text-align:center">3</td><td style="text-align:right;font-weight:700">39,000</td></tr>
+                  </tbody>
+                </table>
+                <div class="pdf-totals">
+                  <div class="pdf-totals-box">
+                    <div class="pdf-trow"><span>Amount before tax</span><span>₹2,19,000</span></div>
+                    <div class="pdf-trow"><span>CGST @ 9%</span><span>₹19,710</span></div>
+                    <div class="pdf-trow"><span>SGST @ 9%</span><span>₹19,710</span></div>
+                    <div class="pdf-trow"><span>Gross total</span><span style="font-weight:700">₹2,58,420</span></div>
+                    <div class="pdf-trow" style="color:#1A7A40"><span>Less: Advance (50%)</span><span>— ₹1,29,210</span></div>
+                    <div class="pdf-trow"><span>Balance payable</span><span style="color:#1050A0">₹1,29,210</span></div>
+                  </div>
+                </div>
+                <div style="background:#F8F8F0;border-radius:4px;padding:8px 10px;font-size:9px;margin-top:8px;color:#666">
+                  Terms: Hard disk delivery only after receipt of full payment.
+                </div>
+                <div class="pdf-footer">
+                  <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-lbl">BK Media — Authorised</div></div>
+                  <div style="width:40px;height:40px;border-radius:50%;border:1.5px solid #888;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#888">STAMP</div>
+                  <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-lbl">Client signature</div></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="metrics" style="grid-template-columns:1fr 1fr">
+                <div class="met"><div class="met-l">Invoice total</div><div class="met-v b" style="font-size:14px">₹2,58,420</div></div>
+                <div class="met"><div class="met-l">Balance due</div><div class="met-v a" style="font-size:14px">₹1,29,210</div></div>
+              </div>
+              <div class="card">
+                <div class="card-t">Payment tracking</div>
+                <div style="background:#0F2E22;border:1px solid #1A4A34;border-radius:var(--radius);padding:10px 12px;margin-bottom:8px">
+                  <div style="font-size:12px;font-weight:500;margin-bottom:2px">Advance — 50%</div>
+                  <div style="font-size:10px;color:var(--tx3);margin-bottom:6px">Received: 11 May · UPI</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-family:monospace;font-weight:500;font-size:14px">₹1,29,210</span>
+                    <span class="bdg bdg-gr">Received</span>
+                  </div>
+                </div>
+                <div style="background:#2E1F0A;border:1px solid #4A3010;border-radius:var(--radius);padding:10px 12px;margin-bottom:10px">
+                  <div style="font-size:12px;font-weight:500;margin-bottom:2px">Balance — 50%</div>
+                  <div style="font-size:10px;color:var(--tx3);margin-bottom:6px">Due: 20 May 2026</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-family:monospace;font-weight:500;font-size:14px">₹1,29,210</span>
+                    <span class="bdg bdg-am">Pending</span>
+                  </div>
+                </div>
+                <button class="btn btn-success" style="width:100%;justify-content:center">✓ Mark balance received ↗</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sw-desc">Video invoice — exactly 2 line items: Videography services + Photography services. No item rates shown to client. CGST + SGST + advance deduction + balance. Payment tracking.</div>
+  </div>
+</div>
+
+<!-- ═══ 09 PAYMENT TRACKING ═══ -->
+<div class="section" id="s9">
+  <div class="sec-label">Screen 09</div>
+  <div class="sec-title">Payment <strong>tracking</strong></div>
+  <div class="sw">
+    <div class="sf">
+      <div class="tb">
+        <div class="tb-bc">Invoices › BKM-INV-26-27/05/08 › Payment</div>
+        <div class="tb-actions">
+          <span class="bdg bdg-gr">Fully paid</span>
+        </div>
+      </div>
+      <div class="sb-body">
+        <div class="sb">
+          <div class="sb-sec">Main</div>
+          <div class="sb-item">Clients</div>
+          <div class="sb-item">Calendar</div>
+          <div class="sb-item">Inquiries</div>
+          <div class="sb-sec">Video dept</div>
+          <div class="sb-item">Quotations</div>
+          <div class="sb-item act">Invoices</div>
+        </div>
+        <div class="cnt">
+          <div class="metrics">
+            <div class="met"><div class="met-l">Invoice total</div><div class="met-v">₹2,58,420</div></div>
+            <div class="met"><div class="met-l">Received</div><div class="met-v g">₹2,58,420</div></div>
+            <div class="met"><div class="met-l">Balance</div><div class="met-v g">₹0</div></div>
+            <div class="met"><div class="met-l">HDD delivery</div><div class="met-v" style="font-size:12px;margin-top:4px"><span class="bdg bdg-bl">Pending</span></div></div>
+          </div>
+          <div class="two-col">
+            <div>
+              <div class="card">
+                <div class="card-t">Payment history</div>
+                <div style="background:#0F2E22;border:1px solid #1A4A34;border-radius:var(--radius);padding:12px 14px;margin-bottom:8px">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                    <div>
+                      <div style="font-size:13px;font-weight:500">Advance payment — 50%</div>
+                      <div style="font-size:11px;color:var(--tx3);margin-top:2px">11 May 2026 · UPI · Ref: UPI123456</div>
+                    </div>
+                    <span class="bdg bdg-gr">Received</span>
+                  </div>
+                  <div style="font-size:16px;font-weight:500;font-family:monospace;color:var(--gr)">₹1,29,210</div>
+                </div>
+                <div style="background:#0F2E22;border:1px solid #1A4A34;border-radius:var(--radius);padding:12px 14px">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+                    <div>
+                      <div style="font-size:13px;font-weight:500">Balance payment — 50%</div>
+                      <div style="font-size:11px;color:var(--tx3);margin-top:2px">18 May 2026 · Bank transfer · Ref: NEFT789012</div>
+                    </div>
+                    <span class="bdg bdg-gr">Received</span>
+                  </div>
+                  <div style="font-size:16px;font-weight:500;font-family:monospace;color:var(--gr)">₹1,29,210</div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-t">Record new payment</div>
+                <div class="fgrid">
+                  <div class="field"><div class="flbl">Amount (₹)</div><div class="finp">1,29,210</div></div>
+                  <div class="field"><div class="flbl">Payment type</div><div class="fsel">Balance ▾</div></div>
+                  <div class="field"><div class="flbl">Payment method</div><div class="fsel">Bank transfer ▾</div></div>
+                  <div class="field"><div class="flbl">Reference no.</div><div class="finp">NEFT789012</div></div>
+                  <div class="field"><div class="flbl">Date</div><div class="finp">2026-05-18</div></div>
+                  <div class="field"><div class="flbl">Notes</div><div class="finp"></div></div>
+                </div>
+                <button class="btn btn-success" style="width:100%;justify-content:center;margin-top:10px">✓ Record payment ↗</button>
+              </div>
+            </div>
+            <div>
+              <div class="card">
+                <div class="card-t">HDD delivery</div>
+                <div style="background:var(--s2);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px">
+                  <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Total data</span><span style="font-family:monospace;font-weight:500">480 GB</span></div>
+                  <div class="row-item"><span style="font-size:11px;color:var(--tx3)">HDD size</span><span class="bdg bdg-am">1 TB</span></div>
+                  <div class="row-item"><span style="font-size:11px;color:var(--tx3)">Status</span><span class="bdg bdg-bl">Payment received — ready</span></div>
+                </div>
+                <button class="btn btn-success" style="width:100%;justify-content:center">✓ Mark HDD delivered ↗</button>
+                <div style="font-size:10px;color:var(--tx3);margin-top:6px;text-align:center">HDD deliver only after full payment</div>
+              </div>
+              <div class="card">
+                <div class="card-t">Timeline</div>
+                <div class="tl-item">
+                  <div class="tl-left"><div class="tl-dot" style="background:var(--gr)"></div><div class="tl-line"></div></div>
+                  <div><div class="tl-title">Advance received — ₹1,29,210</div><div class="tl-time">11 May 2026 · UPI</div></div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-left"><div class="tl-dot" style="background:var(--gr)"></div><div class="tl-line"></div></div>
+                  <div><div class="tl-title">Balance received — ₹1,29,210</div><div class="tl-time">18 May 2026 · Bank transfer</div></div>
+                </div>
+                <div class="tl-item">
+                  <div class="tl-left"><div class="tl-dot" style="background:var(--b2)"></div></div>
+                  <div><div class="tl-title" style="color:var(--tx3)">HDD delivery pending</div><div class="tl-time">Ready to deliver</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sw-desc">Payment tracking. Record advance + balance separately. Payment methods: Cash/UPI/Bank transfer/Cheque. Reference number field. HDD delivery unlocks after full payment. Full timeline history.</div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<script>
+function navTo(btn,id){
+  document.querySelectorAll('.tnb').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  const el=document.getElementById(id);
+  if(el){const top=el.getBoundingClientRect().top+window.pageYOffset-95;window.scrollTo({top,behavior:'smooth'});}
+}
+window.addEventListener('scroll',()=>{
+  const ids=['s1','s2','s3','s4','s5','s6','s7','s8','s9'];
+  const btns=document.querySelectorAll('.tnb');
+  for(let i=ids.length-1;i>=0;i--){
+    const el=document.getElementById(ids[i]);
+    if(el&&el.getBoundingClientRect().top<=110){btns.forEach(b=>b.classList.remove('act'));btns[i].classList.add('act');break;}
+  }
+});
+</script>
+</body>
+</html>

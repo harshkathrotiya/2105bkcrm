@@ -22,6 +22,23 @@ const eventColors: Record<CalendarEvent["type"], { bg: string; text: string; dot
   completed: { bg: "var(--sem-gy-bg)", text: "var(--sem-gy-tx)", dot: "var(--sem-gy-bg)" },
 };
 
+function parseEventId(id: string) {
+  if (!id.startsWith("cal-")) return { groupKey: id, index: 0 };
+  
+  if (id.includes("-confirmed-")) {
+    const parts = id.split("-confirmed-");
+    const groupKey = parts[0] + "-confirmed";
+    const index = parseInt(parts[1], 10) || 0;
+    return { groupKey, index };
+  } else {
+    const lastDash = id.lastIndexOf("-");
+    if (lastDash === -1) return { groupKey: id, index: 0 };
+    const groupKey = id.substring(0, lastDash);
+    const index = parseInt(id.substring(lastDash + 1), 10) || 0;
+    return { groupKey, index };
+  }
+}
+
 export default function Screen03Calendar() {
   const { calendarEvents } = useCalendar();
   const today = new Date();
@@ -129,6 +146,132 @@ export default function Screen03Calendar() {
     }
   }, [viewDate, viewMode, viewMonth, viewYear]);
 
+  const weeksData = useMemo(() => {
+    if (viewMode === "day") return [];
+    const arr = [];
+    const weeksCount = cells.length / 7;
+    
+    for (let w = 0; w < weeksCount; w++) {
+      const weekCells = cells.slice(w * 7, w * 7 + 7);
+      
+      const weekEvents: { evt: CalendarEvent; dayIndex: number }[] = [];
+      weekCells.forEach((cell, dayIndex) => {
+        if (!cell) return;
+        const key = `${cell.year}-${cell.month}-${cell.date}`;
+        const dayEvts = eventsByDate[key] || [];
+        dayEvts.forEach((evt) => {
+          weekEvents.push({ evt, dayIndex });
+        });
+      });
+      
+      const groups: Record<string, {
+        groupKey: string;
+        label: string;
+        type: string;
+        dayIndices: number[];
+        events: CalendarEvent[];
+      }> = {};
+      
+      weekEvents.forEach(({ evt, dayIndex }) => {
+        const { groupKey } = parseEventId(evt.id);
+        if (!groups[groupKey]) {
+          groups[groupKey] = {
+            groupKey,
+            label: evt.label.replace(/^↔\s*/, ""),
+            type: evt.type,
+            dayIndices: [],
+            events: [],
+          };
+        }
+        groups[groupKey].dayIndices.push(dayIndex);
+        groups[groupKey].events.push(evt);
+      });
+      
+      const segments: {
+        groupKey: string;
+        label: string;
+        type: string;
+        startCol: number;
+        endCol: number;
+        event: CalendarEvent;
+      }[] = [];
+      
+      Object.values(groups).forEach((group) => {
+        const sortedIndices = [...group.dayIndices].sort((a, b) => a - b);
+        let currentSegment: number[] = [];
+        
+        sortedIndices.forEach((idx) => {
+          if (currentSegment.length === 0) {
+            currentSegment.push(idx);
+          } else if (idx === currentSegment[currentSegment.length - 1] + 1) {
+            currentSegment.push(idx);
+          } else {
+            segments.push({
+              groupKey: group.groupKey,
+              label: group.label,
+              type: group.type,
+              startCol: currentSegment[0] + 1,
+              endCol: currentSegment[currentSegment.length - 1] + 1,
+              event: group.events[0],
+            });
+            currentSegment = [idx];
+          }
+        });
+        
+        if (currentSegment.length > 0) {
+          segments.push({
+            groupKey: group.groupKey,
+            label: group.label,
+            type: group.type,
+            startCol: currentSegment[0] + 1,
+            endCol: currentSegment[currentSegment.length - 1] + 1,
+            event: group.events[0],
+          });
+        }
+      });
+      
+      segments.sort((a, b) => {
+        const spanA = a.endCol - a.startCol;
+        const spanB = b.endCol - b.startCol;
+        if (spanB !== spanA) return spanB - spanA;
+        return a.label.localeCompare(b.label);
+      });
+      
+      const tracks: typeof segments[] = [];
+      segments.forEach((seg) => {
+        let assignedTrack = -1;
+        for (let t = 0; t < tracks.length; t++) {
+          const isOverlap = tracks[t].some((existing) => {
+            return !(seg.endCol < existing.startCol || seg.startCol > existing.endCol);
+          });
+          if (!isOverlap) {
+            assignedTrack = t;
+            break;
+          }
+        }
+        if (assignedTrack === -1) {
+          tracks.push([seg]);
+        } else {
+          tracks[assignedTrack].push(seg);
+        }
+      });
+      
+      const segmentsWithTrack = segments.map((seg) => {
+        const trackIndex = tracks.findIndex((t) => t.includes(seg));
+        return { ...seg, trackIndex };
+      });
+      
+      arr.push({
+        weekIndex: w,
+        cells: weekCells,
+        segments: segmentsWithTrack,
+        totalTracks: tracks.length,
+      });
+    }
+    
+    return arr;
+  }, [cells, eventsByDate, viewMode]);
+
   const isToday = (y: number, m: number, d: number) =>
     d === today.getDate() &&
     (m - 1) === today.getMonth() &&
@@ -198,72 +341,151 @@ export default function Screen03Calendar() {
               ></div>
               <span className="text-tx3">{label}</span>
             </div>
-          ))}
+          ))}`
         </div>
-
         {/* Calendar Grid */}
         <div
           className={`grid gap-[1px] rounded-lg overflow-hidden ${viewMode === "day" ? "grid-cols-1" : "grid-cols-7"}`}
-          style={{ background: "var(--b1)", border: "1px solid var(--b1)" }}
+          style={{ background: "var(--b1)", border: "1px solid var(--b1)", marginTop: "16px" }}
         >
-          {viewMode !== "day" && dayLabels.map((d, i) => (
-            <div
-              key={`hdr-${i}`}
-              className="bg-s2 text-center text-tx2 font-medium tracking-wide uppercase"
-              style={{ padding: "10px 4px", fontSize: "11px" }}
-            >
-              {d}
-            </div>
-          ))}
-          {cells.map((cell, i) => (
-            <div key={i} className="bg-s1 relative" style={{ minHeight: viewMode === "month" ? "110px" : "300px", padding: "8px" }}>
-              {cell && (
-                <>
-                  <div className={`flex ${viewMode === 'day' ? 'justify-start mb-4' : 'justify-end mb-[6px]'}`}>
-                    {viewMode === 'day' && (
-                       <span className="text-tx3 text-[14px] font-medium mr-2 self-center">
-                         {dayLabels[new Date(cell.year, cell.month - 1, cell.date).getDay()]}, 
-                       </span>
-                    )}
-                    <span
-                      className={`inline-flex items-center justify-center rounded-full font-medium ${isToday(cell.year, cell.month, cell.date) ? "shadow-sm" : "text-tx3"}`}
-                      style={{
-                        width: viewMode === "day" ? "32px" : "24px",
-                        height: viewMode === "day" ? "32px" : "24px",
-                        fontSize: viewMode === "day" ? "14px" : "12px",
-                        background: isToday(cell.year, cell.month, cell.date) ? "var(--cal-today-dot)" : "transparent",
-                        color: isToday(cell.year, cell.month, cell.date) ? "var(--s1)" : "inherit"
-                      }}
-                    >
-                      {cell.date}
-                    </span>
-                  </div>
-                  <div className="flex flex-col" style={{ gap: viewMode === "day" ? "8px" : "4px" }}>
-                    {eventsByDate[`${cell.year}-${cell.month}-${cell.date}`]?.map((evt) => {
-                      const colors = eventColors[evt.type];
+          {viewMode === "day" ? (
+            cells.map((cell, i) => (
+              <div key={i} className="bg-s1 relative" style={{ minHeight: "300px", padding: "8px" }}>
+                {cell && (
+                  <>
+                    <div className="flex justify-start mb-4">
+                      <span className="text-tx3 text-[14px] font-medium mr-2 self-center">
+                        {dayLabels[new Date(cell.year, cell.month - 1, cell.date).getDay()]}, 
+                      </span>
+                      <span
+                        className={`inline-flex items-center justify-center rounded-full font-medium ${isToday(cell.year, cell.month, cell.date) ? "shadow-sm" : "text-tx3"}`}
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          fontSize: "14px",
+                          background: isToday(cell.year, cell.month, cell.date) ? "var(--cal-today-dot)" : "transparent",
+                          color: isToday(cell.year, cell.month, cell.date) ? "var(--s1)" : "inherit"
+                        }}
+                      >
+                        {cell.date}
+                      </span>
+                    </div>
+                    <div className="flex flex-col" style={{ gap: "8px" }}>
+                      {eventsByDate[`${cell.year}-${cell.month}-${cell.date}`]?.map((evt) => {
+                        const colors = eventColors[evt.type];
+                        return (
+                          <button
+                            key={evt.id}
+                            className="w-full text-left truncate hover:opacity-80 transition-opacity cursor-pointer font-medium"
+                            style={{ 
+                              background: colors.bg, 
+                              color: colors.text,
+                              padding: "10px 12px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              border: `1px solid ${colors.dot}40`
+                            }}
+                            onClick={() => setSelectedEvent(evt)}
+                          >
+                            {evt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            ))
+          ) : (
+            weeksData.map((week, wIdx) => {
+              const weekRow = wIdx + 2;
+              const totalTracks = week.totalTracks;
+              const weekHeight = Math.max(viewMode === "month" ? 110 : 300, 36 + totalTracks * 24);
+              
+              return (
+                <div key={`week-${wIdx}`} style={{ display: "contents" }}>
+                  {/* 1. Cell backgrounds */}
+                  {week.cells.map((cell, dIdx) => {
+                    const col = dIdx + 1;
+                    return (
+                      <div 
+                        key={`cell-${wIdx}-${dIdx}`}
+                        className="bg-s1 relative"
+                        style={{
+                          gridRow: weekRow,
+                          gridColumn: col,
+                          minHeight: `${weekHeight}px`,
+                          padding: "8px",
+                          borderBottom: "1px solid var(--b1)",
+                          borderRight: dIdx < 6 ? "1px solid var(--b1)" : "none",
+                        }}
+                      >
+                        {cell && (
+                          <div className="flex justify-end mb-[6px]">
+                            <span
+                              className={`inline-flex items-center justify-center rounded-full font-medium ${isToday(cell.year, cell.month, cell.date) ? "shadow-sm" : "text-tx3"}`}
+                              style={{
+                                width: "24px",
+                                height: "24px",
+                                fontSize: "12px",
+                                background: isToday(cell.year, cell.month, cell.date) ? "var(--cal-today-dot)" : "transparent",
+                                color: isToday(cell.year, cell.month, cell.date) ? "var(--s1)" : "inherit"
+                              }}
+                            >
+                              {cell.date}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* 2. Spanning events container */}
+                  <div
+                    key={`events-overlay-${wIdx}`}
+                    style={{
+                      gridRow: weekRow,
+                      gridColumn: "1 / span 7",
+                      position: "relative",
+                      pointerEvents: "none",
+                      height: "100%",
+                      width: "100%",
+                    }}
+                  >
+                    {week.segments.map((seg, sIdx) => {
+                      const colors = eventColors[seg.type as CalendarEvent["type"]] || eventColors.inquiry;
+                      const leftPercent = (seg.startCol - 1) * 14.2857;
+                      const widthPercent = (seg.endCol - seg.startCol + 1) * 14.2857;
+                      
                       return (
                         <button
-                          key={evt.id}
-                          className="w-full text-left truncate hover:opacity-80 transition-opacity cursor-pointer font-medium"
-                          style={{ 
-                            background: colors.bg, 
+                          key={`${seg.groupKey}-${sIdx}`}
+                          className="absolute text-left truncate hover:opacity-80 transition-opacity cursor-pointer font-medium"
+                          style={{
+                            left: `calc(${leftPercent}% + 4px)`,
+                            width: `calc(${widthPercent}% - 8px)`,
+                            top: `${36 + seg.trackIndex * 24}px`,
+                            height: "20px",
+                            background: colors.bg,
                             color: colors.text,
-                            padding: viewMode === "day" ? "10px 12px" : "4px 8px",
-                            borderRadius: "6px",
-                            fontSize: viewMode === "day" ? "12px" : "10.5px",
-                            border: `1px solid ${colors.dot}40`
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            fontSize: "10px",
+                            border: `1px solid ${colors.dot}40`,
+                            pointerEvents: "auto",
+                            zIndex: 5,
                           }}
-                          onClick={() => setSelectedEvent(evt)}
+                          onClick={() => setSelectedEvent(seg.event)}
                         >
-                          {evt.label}
+                          {seg.label}
                         </button>
                       );
                     })}
                   </div>
-                </>
-              )}
-            </div>
-          ))}
+                </div>
+              );
+            })
+          )}
         </div>
       </ScreenFrame>
 

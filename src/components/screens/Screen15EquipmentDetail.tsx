@@ -209,6 +209,28 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                 <span className="text-[11px] text-tx3">Responsible Person</span>
                 <span className="text-[12px] font-medium">{item.respPerson || <span style={{ color: "var(--tx3)" }}>—</span>}</span>
               </div>
+              <div className="row-item">
+                <span className="text-[11px] text-tx3">Ownership</span>
+                <span className="text-[12px] font-medium">
+                  {item.ownershipType === "VENDOR" ? (
+                    item.vendorId ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        <Badge variant="am">Vendor</Badge>
+                        <Link
+                          href={`/vendors?vendorId=${item.vendorId}`}
+                          style={{ color: "var(--bl)", fontWeight: 600, textDecoration: "underline" }}
+                        >
+                          {item.vendorName || `Vendor #${item.vendorId}`}
+                        </Link>
+                      </span>
+                    ) : (
+                      <Badge variant="am">Vendor Owned (Unassigned)</Badge>
+                    )
+                  ) : (
+                    <Badge variant="gr">In-House</Badge>
+                  )}
+                </span>
+              </div>
               {item.category === "ACCESSORY" && (
                 <div className="row-item">
                   <span className="text-[11px] text-tx3">Main Body Association</span>

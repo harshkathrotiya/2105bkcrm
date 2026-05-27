@@ -36,7 +36,11 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
     purchasePrice: "" as string | number,
     status: "AVAILABLE" as "AVAILABLE" | "IN_USE" | "MAINTENANCE" | "SOLD" | "RETIRED",
     notes: "",
+    ownershipType: "INHOUSE" as "INHOUSE" | "VENDOR",
+    vendorId: "" as string | number,
   });
+
+  const [vendors, setVendors] = useState<any[]>([]);
 
   // Fetch equipment item details if editing
   useEffect(() => {
@@ -61,6 +65,8 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
             purchasePrice: data.purchasePrice !== null && data.purchasePrice !== undefined ? data.purchasePrice : "",
             status: data.status || "AVAILABLE",
             notes: data.notes || "",
+            ownershipType: data.ownershipType || "INHOUSE",
+            vendorId: data.vendorId !== null && data.vendorId !== undefined ? data.vendorId : "",
           });
         }
       } catch (err: any) {
@@ -77,21 +83,40 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
     };
   }, [isEdit, equipmentId]);
 
+  // Fetch active vendors
+  useEffect(() => {
+    let active = true;
+    async function loadVendors() {
+      try {
+        const list = await api.fetchVendors();
+        if (active) setVendors(list.filter((v) => v.isActive));
+      } catch (err) {
+        console.error("Failed to load vendors:", err);
+      }
+    }
+    loadVendors();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const update = (field: string, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const validations = useMemo(() => {
     const priceNum = Number(form.purchasePrice);
+    const hasVendorId = form.ownershipType === "VENDOR" ? (form.vendorId !== "" && form.vendorId !== null && form.vendorId !== undefined) : true;
     return {
       productName: form.productName.trim().length >= 2,
       category: ["CAMERA", "VIDEO_MIXER", "VIDEO_RECORDER", "AUDIO_MIXER", "WIRELESS_TX", "UPS", "ACCESSORY"].includes(form.category),
       quantity: Number(form.quantity) >= 1,
       purchasePrice: form.purchasePrice === "" || (!isNaN(priceNum) && priceNum >= 0),
+      vendorSelected: hasVendorId,
     };
   }, [form]);
 
-  const allRequired = validations.productName && validations.category && validations.quantity && validations.purchasePrice;
+  const allRequired = validations.productName && validations.category && validations.quantity && validations.purchasePrice && validations.vendorSelected;
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -110,6 +135,8 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
         purchaseFrom: form.purchaseFrom.trim() || null,
         billNumber: form.billNumber.trim() || null,
         notes: form.notes.trim() || null,
+        ownershipType: form.ownershipType,
+        vendorId: form.ownershipType === "VENDOR" && form.vendorId ? Number(form.vendorId) : null,
       };
 
       if (isEdit) {
@@ -280,6 +307,45 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                   />
                 </div>
 
+                <div className="field">
+                  <div className="flbl">Ownership *</div>
+                  <select
+                    className="fsel"
+                    value={form.ownershipType}
+                    onChange={(e) => {
+                      const val = e.target.value as "INHOUSE" | "VENDOR";
+                      setForm(prev => ({
+                        ...prev,
+                        ownershipType: val,
+                        vendorId: val === "INHOUSE" ? "" : prev.vendorId
+                      }));
+                    }}
+                    required
+                  >
+                    <option value="INHOUSE">In-House</option>
+                    <option value="VENDOR">Outsourced (Vendor)</option>
+                  </select>
+                </div>
+
+                {form.ownershipType === "VENDOR" && (
+                  <div className="field">
+                    <div className="flbl">Vendor *</div>
+                    <select
+                      className="fsel"
+                      value={form.vendorId}
+                      onChange={(e) => update("vendorId", e.target.value)}
+                      required
+                    >
+                      <option value="">-- Select Vendor --</option>
+                      {vendors.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.name} ({v.specialization || "General"})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {form.category === "ACCESSORY" && (
                   <div className="field span2">
                     <div className="flbl">Main Body Association</div>
@@ -397,6 +463,12 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                   <span>{validations.purchasePrice ? "✓" : "○"}</span>
                   <span>Purchase Price (non-negative)</span>
                 </div>
+                {form.ownershipType === "VENDOR" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", color: validations.vendorSelected ? "var(--gr)" : "var(--tx3)" }}>
+                    <span>{validations.vendorSelected ? "✓" : "○"}</span>
+                    <span>Vendor Selection (Required)</span>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -5,6 +5,15 @@ import { useTheme } from "@/lib/theme-context";
 export default function SiteHeader() {
   const { theme, toggleTheme } = useTheme();
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/login";
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
+
   return (
     <header className="site-hdr">
       <div className="flex items-center gap-4">
@@ -44,12 +53,16 @@ export default function SiteHeader() {
           )}
         </button>
         <div className="w-[1px] h-4 bg-b1 mx-1 hidden sm:block" />
-        <div className="flex items-center gap-2 ml-1">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 ml-1 cursor-pointer bg-transparent border-none p-0 outline-none hover:opacity-85"
+          title="Sign Out"
+        >
           <div className="w-7 h-7 rounded-full bg-s2 border border-b1 flex items-center justify-center text-[11px] font-medium text-tx2">
             V
           </div>
-          <div className="text-[11px] text-tx hidden sm:block">Vikram</div>
-        </div>
+          <div className="text-[11px] text-tx hidden sm:block">Sign Out</div>
+        </button>
       </div>
     </header>
   );

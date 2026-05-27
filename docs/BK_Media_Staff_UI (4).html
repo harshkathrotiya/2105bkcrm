@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BK Media CRM — Staff Module</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0A0A0A;--s1:#111;--s2:#181818;--b1:#1E1E1E;--b2:#2A2A2A;--acc:#F5A623;--tx:#E8E8E8;--tx2:#888;--tx3:#444;--gr:#2DD4A0;--bl:#4F8EF7;--rd:#F56060}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid var(--b1);position:sticky;top:0;background:var(--bg);z-index:100}
+.logo{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:var(--acc);letter-spacing:.1em}
+.nav{display:flex;gap:0;padding:0 32px;border-bottom:1px solid var(--b1);background:var(--bg);position:sticky;top:49px;z-index:90;overflow-x:auto}
+.nb{font-size:11px;padding:11px 14px;color:var(--tx3);background:none;border:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;font-family:inherit;letter-spacing:.04em}
+.nb.act{color:var(--acc);border-bottom-color:var(--acc);font-weight:500}
+.main{padding:0 32px 80px}
+.sec{padding:36px 0 20px}
+.slabel{font-family:monospace;font-size:10px;color:var(--tx3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.stitle{font-size:20px;font-weight:300;color:var(--tx);margin-bottom:20px}
+.stitle strong{font-weight:600;color:var(--acc)}
+.sf{background:var(--s1);border:1px solid var(--b1);border-radius:12px;overflow:hidden;margin-bottom:8px}
+.tb{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#0D0D0D;border-bottom:1px solid var(--b1)}
+.tb-t{font-size:11px;color:var(--tx3)}
+.tb-t span{color:var(--tx2)}
+.tb-a{display:flex;gap:6px}
+.sb-body{display:flex}
+.sb{width:175px;background:var(--s2);border-right:1px solid var(--b1);padding:10px 0;flex-shrink:0}
+.si{padding:7px 14px;font-size:11px;color:var(--tx3);display:flex;align-items:center;justify-content:space-between;border-left:2px solid transparent}
+.si.act{background:var(--s1);color:var(--tx);border-left-color:var(--acc);font-weight:500}
+.ss{padding:6px 14px 3px;font-size:9px;color:#333;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+.cnt{flex:1;padding:14px;background:#0C0C0C;min-height:480px}
+.btn{font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--b2);background:var(--s2);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:inherit}
+.btn-p{background:var(--bl);color:#fff;border-color:var(--bl)}
+.btn-s{background:#0F2E22;color:var(--gr);border-color:#1A4A34}
+.btn-w{background:#2E1F0A;color:var(--acc);border-color:#4A3010}
+.bdg{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:500;display:inline-block}
+.bg{background:#0F2E22;color:#2DD4A0}
+.bb{background:#0A1A3A;color:#4F8EF7}
+.ba{background:#2E1F0A;color:#F5A623}
+.br{background:#2E0A0A;color:#F56060}
+.bgy{background:#1A1A1A;color:#888}
+.met{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.mc{background:var(--s2);border-radius:8px;padding:10px 12px;border:1px solid var(--b1)}
+.ml{font-size:10px;color:var(--tx3);margin-bottom:3px}
+.mv{font-size:18px;font-weight:500}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:14px;margin-bottom:10px}
+.ct{font-size:12px;font-weight:500;color:var(--tx2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.two{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:12px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.s2{grid-column:span 2}
+.field{display:flex;flex-direction:column;gap:4px}
+.flbl{font-size:10px;color:var(--tx3)}
+.req{color:var(--rd)}
+.finp{background:var(--s2);border:1px solid var(--b1);border-radius:6px;height:28px;padding:0 8px;font-size:11px;color:var(--tx);font-family:inherit;width:100%}
+.fsel{background:var(--s2);border:1px solid var(--b1);border-radius:6px;height:28px;padding:0 8px;font-size:11px;color:var(--tx);font-family:inherit;width:100%}
+.ftxt{background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--tx);font-family:inherit;width:100%;min-height:52px;resize:none}
+.tbl{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+.tbl th{text-align:left;color:var(--tx3);padding:0 8px 7px;border-bottom:1px solid var(--b1);font-weight:500;font-size:10px}
+.tbl td{padding:7px 8px;border-bottom:1px solid var(--b2);color:var(--tx2);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--s2);cursor:pointer}
+.tbl .tr{text-align:right;font-family:monospace}
+.tbl .tc{text-align:center}
+.row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--b1);font-size:11px}
+.row:last-child{border-bottom:none}
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.av1{background:#EEEDFE;color:#3C3489}.av2{background:#E1F5EE;color:#085041}.av3{background:#FAECE7;color:#712B13}
+.av4{background:#E6F1FB;color:#0C447C}.av5{background:#FAEEDA;color:#633806}.av6{background:#F1EFE8;color:#444441}
+.av7{background:#FCEBEB;color:#791F1F}.av8{background:#FBEAF0;color:#72243E}
+.warn{background:#2E1F0A;border:1px solid #4A3010;border-radius:8px;padding:14px;margin-bottom:12px}
+.divider{height:1px;background:var(--b1);margin:10px 0}
+.sdesc{font-size:12px;color:var(--tx3);margin-top:6px;line-height:1.6;max-width:720px}
+.tl-item{display:flex;gap:10px;padding-bottom:10px}
+.tl-item:last-child{padding-bottom:0}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.tl-line{width:1px;flex:1;background:var(--b1);margin-top:3px}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="logo">BK MEDIA CRM</div>
+  <div style="font-size:11px;color:var(--tx3);font-family:monospace">STAFF MODULE — ALL 7 SCREENS</div>
+</header>
+<nav class="nav">
+  <button class="nb act" onclick="go(this,'s1')">01 Staff list</button>
+  <button class="nb" onclick="go(this,'s2')">02 Add staff</button>
+  <button class="nb" onclick="go(this,'s3')">03 Staff profile</button>
+  <button class="nb" onclick="go(this,'s4')">04 Assign position</button>
+  <button class="nb" onclick="go(this,'s5')">05 Per event payment</button>
+  <button class="nb" onclick="go(this,'s6')">06 Monthly report</button>
+  <button class="nb" onclick="go(this,'s7')">07 Availability check</button>
+</nav>
+<div class="main">
+
+<!-- 01 STAFF LIST -->
+<div class="sec" id="s1">
+  <div class="slabel">Screen 01</div>
+  <div class="stitle">Staff <strong>list</strong></div>
+  <div class="sf">
+    <div class="tb">
+      <div class="tb-t"><span>Staff management</span></div>
+      <div class="tb-a">
+        <button class="btn">Export</button>
+        <button class="btn btn-p">+ Add staff</button>
+      </div>
+    </div>
+    <div class="sb-body">
+      <div class="sb">
+        <div class="ss">Filter by type</div>
+        <div class="si act"><span>All staff</span><span style="font-size:10px;color:var(--tx3)">11</span></div>
+        <div class="si"><span>In-house</span><span style="font-size:10px;color:var(--tx3)">7</span></div>
+        <div class="si"><span>External</span><span style="font-size:10px;color:var(--tx3)">4</span></div>
+        <div class="ss">Payment type</div>
+        <div class="si"><span>Monthly</span><span style="font-size:10px;color:var(--tx3)">3</span></div>
+        <div class="si"><span>Per day</span><span style="font-size:10px;color:var(--tx3)">8</span></div>
+        <div class="ss">Status</div>
+        <div class="si"><span>Available</span><span style="font-size:10px;color:var(--tx3)">8</span></div>
+        <div class="si"><span>Deployed</span><span style="font-size:10px;color:var(--tx3)">3</span></div>
+        <div class="ss">Pending payment</div>
+        <div style="padding:8px 14px">
+          <div style="font-size:10px;color:var(--tx3);margin-bottom:3px">Total due</div>
+          <div style="font-size:14px;font-weight:500;color:var(--acc)">Rs.47,500</div>
+        </div>
+      </div>
+      <div class="cnt">
+        <div class="met">
+          <div class="mc"><div class="ml">Total staff</div><div class="mv">11</div></div>
+          <div class="mc"><div class="ml">Available</div><div class="mv" style="color:var(--gr)">8</div></div>
+          <div class="mc"><div class="ml">Deployed</div><div class="mv" style="color:var(--bl)">3</div></div>
+          <div class="mc"><div class="ml">Pending payment</div><div class="mv" style="color:var(--acc)">Rs.47,500</div></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <div class="finp" style="flex:1;display:flex;align-items:center;color:var(--tx3)">Search by name, role, phone...</div>
+            <div class="fsel" style="width:130px;display:flex;align-items:center">All types</div>
+            <div class="fsel" style="width:120px;display:flex;align-items:center">All payment</div>
+          </div>
+          <table class="tbl">
+            <thead><tr>
+              <th style="width:32px"></th>
+              <th>Name</th>
+              <th style="width:85px">Type</th>
+              <th style="width:110px">Role</th>
+              <th style="width:120px">Payment</th>
+              <th style="width:90px">With equip.</th>
+              <th style="width:80px">Status</th>
+            </tr></thead>
+            <tbody>
+              <tr><td><div class="av av1" style="width:26px;height:26px;font-size:9px">RK</div></td><td><div style="font-weight:500;color:var(--tx)">Rishi Kumar</div><div style="font-size:10px">98250 11111</div></td><td><span class="bdg bg">In-house</span></td><td style="font-size:11px">Videographer</td><td style="font-size:11px;font-family:monospace">Rs.1,500/day</td><td class="tc" style="font-size:11px">No</td><td><span class="bdg bg">Available</span></td></tr>
+              <tr><td><div class="av av2" style="width:26px;height:26px;font-size:9px">DV</div></td><td><div style="font-weight:500;color:var(--tx)">Dev Vora</div><div style="font-size:10px">98250 22222</div></td><td><span class="bdg bg">In-house</span></td><td style="font-size:11px">Videographer</td><td style="font-size:11px;font-family:monospace">Rs.1,500/day</td><td class="tc" style="font-size:11px">No</td><td><span class="bdg bb">Deployed</span></td></tr>
+              <tr><td><div class="av av3" style="width:26px;height:26px;font-size:9px">MS</div></td><td><div style="font-weight:500;color:var(--tx)">Mehul Shah</div><div style="font-size:10px">98250 33333</div></td><td><span class="bdg bg">In-house</span></td><td style="font-size:11px">Photographer</td><td style="font-size:11px;font-family:monospace">Rs.45,000/mo</td><td class="tc" style="font-size:11px">No</td><td><span class="bdg bg">Available</span></td></tr>
+              <tr><td><div class="av av4" style="width:26px;height:26px;font-size:9px">HP</div></td><td><div style="font-weight:500;color:var(--tx)">Hetal Patel</div><div style="font-size:10px">98250 44444</div></td><td><span class="bdg bg">In-house</span></td><td style="font-size:11px">LED operator</td><td style="font-size:11px;font-family:monospace">Rs.1,200/day</td><td class="tc" style="font-size:11px">No</td><td><span class="bdg bb">Deployed</span></td></tr>
+              <tr><td><div class="av av5" style="width:26px;height:26px;font-size:9px">JR</div></td><td><div style="font-weight:500;color:var(--tx)">Jignesh Rao</div><div style="font-size:10px">98250 55555</div></td><td><span class="bdg ba">External</span></td><td style="font-size:11px">Crane operator</td><td style="font-size:11px;font-family:monospace">Rs.2,500/day</td><td class="tc"><span class="bdg bb" style="font-size:9px">+Crane</span></td><td><span class="bdg bg">Available</span></td></tr>
+              <tr><td><div class="av av6" style="width:26px;height:26px;font-size:9px">KP</div></td><td><div style="font-weight:500;color:var(--tx)">Karan Patel</div><div style="font-size:10px">98250 66666</div></td><td><span class="bdg ba">External</span></td><td style="font-size:11px">Drone operator</td><td style="font-size:11px;font-family:monospace">Rs.3,000/day</td><td class="tc"><span class="bdg bb" style="font-size:9px">+Drone</span></td><td><span class="bdg bb">Deployed</span></td></tr>
+              <tr><td><div class="av av7" style="width:26px;height:26px;font-size:9px">PJ</div></td><td><div style="font-weight:500;color:var(--tx)">Priya Joshi</div><div style="font-size:10px">98250 77777</div></td><td><span class="bdg bg">In-house</span></td><td style="font-size:11px">Editor</td><td style="font-size:11px;font-family:monospace">Rs.35,000/mo</td><td class="tc" style="font-size:11px">No</td><td><span class="bdg bg">Available</span></td></tr>
+              <tr><td><div class="av av8" style="width:26px;height:26px;font-size:9px">NP</div></td><td><div style="font-weight:500;color:var(--tx)">Nirav Parmar</div><div style="font-size:10px">98250 88888</div></td><td><span class="bdg bg">In-house</span></td><td style="font-size:11px">Videographer</td><td style="font-size:11px;font-family:monospace">Rs.1,200/day</td><td class="tc" style="font-size:11px">No</td><td><span class="bdg bg">Available</span></td></tr>
+            </tbody>
+          </table>
+          <div style="display:flex;justify-content:space-between;padding-top:10px;font-size:11px;color:var(--tx3)">
+            <span>1-8 of 11 staff</span>
+            <div style="display:flex;gap:4px">
+              <button class="btn">Prev</button>
+              <button class="btn btn-p" style="padding:5px 10px">1</button>
+              <button class="btn">2</button>
+              <button class="btn">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sdesc">Staff list. Filter: In-house / External / Monthly / Per day / Available / Deployed. With equipment column. Pending payment total in sidebar.</div>
+</div>
+
+<!-- 02 ADD STAFF -->
+<div class="sec" id="s2">
+  <div class="slabel">Screen 02</div>
+  <div class="stitle">Add / Edit <strong>staff</strong></div>
+  <div class="sf">
+    <div class="tb">
+      <div class="tb-t"><span>Staff</span> > <span>Add new staff</span></div>
+      <div class="tb-a"><button class="btn">Reset</button><button class="btn btn-s">Save staff</button></div>
+    </div>
+    <div class="sb-body">
+      <div class="sb">
+        <div class="ss">Navigation</div>
+        <div class="si">Staff list</div>
+        <div class="si act">Add staff</div>
+      </div>
+      <div class="cnt">
+        <div class="two">
+          <div>
+            <div class="card">
+              <div class="ct">Basic information</div>
+              <div class="fg">
+                <div class="field s2"><div class="flbl">Full name <span class="req">*</span></div><div class="finp"></div></div>
+                <div class="field"><div class="flbl">Mobile number <span class="req">*</span> (10 digits)</div><div class="finp"></div></div>
+                <div class="field"><div class="flbl">Role <span class="req">*</span></div>
+                  <select class="fsel"><option>Videographer</option><option>Photographer</option><option>Crane operator</option><option>Drone operator</option><option>LED operator</option><option>Audio operator</option><option>Editor</option><option>Photo editor</option><option>Other</option></select>
+                </div>
+                <div class="field"><div class="flbl">Staff type <span class="req">*</span></div>
+                  <select class="fsel"><option>In-house</option><option>External</option></select>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="ct">Payment details</div>
+              <div class="fg">
+                <div class="field s2">
+                  <div class="flbl">Payment type <span class="req">*</span></div>
+                  <select class="fsel" id="pt" onchange="togglePay()"><option value="pd">Per day</option><option value="mo">Monthly</option></select>
+                </div>
+                <div class="field s2" id="pd-f">
+                  <div class="flbl">Rate per day (Rs.) <span class="req">*</span></div>
+                  <div class="finp"></div>
+                  <div style="font-size:10px;color:var(--tx3);margin-top:3px">Event day pramane charge. Event na hoy tyare Rs.0.</div>
+                </div>
+                <div class="field s2" id="mo-f" style="display:none">
+                  <div class="flbl">Monthly salary (Rs.) <span class="req">*</span></div>
+                  <div class="finp"></div>
+                  <div style="font-size:10px;color:var(--tx3);margin-top:3px">Fixed salary. Event hoy ke na hoy, dar mahine.</div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="ct">Equipment (optional)</div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                <input type="checkbox" id="we" onchange="toggleEquip()" style="width:14px;height:14px">
+                <label for="we" style="font-size:12px;cursor:pointer;color:var(--tx)">Staff comes with own equipment</label>
+              </div>
+              <div id="eq-f" style="display:none">
+                <div class="field">
+                  <div class="flbl">Equipment description</div>
+                  <div class="finp"></div>
+                  <div style="font-size:10px;color:var(--tx3);margin-top:3px">e.g. Crane 32ft, DJI Drone, FPV</div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="ct">Aadhar card</div>
+              <div class="fg">
+                <div class="field s2">
+                  <div class="flbl">Aadhar number</div>
+                  <div class="finp" style="font-family:monospace;letter-spacing:.06em;color:var(--tx3)">XXXX XXXX XXXX</div>
+                </div>
+                <div style="height:60px;background:var(--s2);border:1px dashed var(--b2);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer">
+                  <div style="font-size:16px">+</div>
+                  <div style="font-size:10px;color:var(--tx3)">Aadhar front</div>
+                </div>
+                <div style="height:60px;background:var(--s2);border:1px dashed var(--b2);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer">
+                  <div style="font-size:16px">+</div>
+                  <div style="font-size:10px;color:var(--tx3)">Aadhar back</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="ct">Preview</div>
+              <div style="background:var(--s2);border-radius:8px;padding:14px;text-align:center;margin-bottom:12px">
+                <div class="av av1" style="width:48px;height:48px;font-size:16px;margin:0 auto 10px">?</div>
+                <div style="font-size:14px;font-weight:500">Staff name</div>
+                <div style="font-size:11px;color:var(--tx3);margin-top:3px">Role</div>
+              </div>
+              <div class="row"><span style="color:var(--tx3)">Type</span><span class="bdg bg">In-house</span></div>
+              <div class="row"><span style="color:var(--tx3)">Payment</span><span>Per day</span></div>
+              <div class="row"><span style="color:var(--tx3)">Rate</span><span style="font-family:monospace">Rs.--</span></div>
+              <div class="row"><span style="color:var(--tx3)">With equipment</span><span>No</span></div>
+              <div class="row"><span style="color:var(--tx3)">Aadhar</span><span style="color:var(--tx3)">Not uploaded</span></div>
+            </div>
+            <div class="card">
+              <div class="ct">Per day vs Monthly</div>
+              <div style="font-size:11px;color:var(--tx3);line-height:1.8">
+                <div style="color:var(--bl);font-weight:500;margin-bottom:4px">Per day staff:</div>
+                Event days x rate = payment<br>
+                Event na hoy to Rs.0<br><br>
+                <div style="color:var(--gr);font-weight:500;margin-bottom:4px">Monthly staff:</div>
+                Fixed salary every month<br>
+                Events thi independent
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sdesc">Add/Edit staff. Per day or monthly toggle. Equipment checkbox. Aadhar + upload. Live preview.</div>
+</div>
+
+<!-- 03 STAFF PROFILE -->
+<div class="sec" id="s3">
+  <div class="slabel">Screen 03</div>
+  <div class="stitle">Staff <strong>profile</strong></div>
+  <div class="sf">
+    <div class="tb">
+      <div class="tb-t"><span>Staff</span> > <span>Rishi Kumar</span></div>
+      <div class="tb-a"><button class="btn">Edit</button></div>
+    </div>
+    <div class="sb-body">
+      <div class="sb">
+        <div class="ss">Staff list</div>
+        <div class="si act">RK Rishi Kumar</div>
+        <div class="si">DV Dev Vora</div>
+        <div class="si">MS Mehul Shah</div>
+        <div class="si">HP Hetal Patel</div>
+        <div class="si">JR Jignesh Rao</div>
+        <div class="si">KP Karan Patel</div>
+      </div>
+      <div class="cnt">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:12px">
+          <div>
+            <div class="card">
+              <div style="text-align:center;padding:10px 0 14px">
+                <div class="av av1" style="width:56px;height:56px;font-size:18px;margin:0 auto 10px">RK</div>
+                <div style="font-size:16px;font-weight:500">Rishi Kumar</div>
+                <div style="font-size:12px;color:var(--tx3);margin-top:3px">Videographer</div>
+                <div style="display:flex;justify-content:center;gap:6px;margin-top:8px">
+                  <span class="bdg bg">In-house</span>
+                  <span class="bdg bg">Available</span>
+                </div>
+              </div>
+              <div class="row"><span style="color:var(--tx3)">Mobile</span><span style="font-family:monospace">98250 11111</span></div>
+              <div class="row"><span style="color:var(--tx3)">Payment type</span><span>Per day</span></div>
+              <div class="row"><span style="color:var(--tx3)">Rate per day</span><span style="font-family:monospace;font-weight:500;color:var(--tx)">Rs.1,500</span></div>
+              <div class="row"><span style="color:var(--tx3)">With equipment</span><span>No</span></div>
+              <div class="row"><span style="color:var(--tx3)">Aadhar no.</span><span style="font-family:monospace;font-size:11px">4521 8734 2190</span></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">
+                <div style="background:var(--s2);border-radius:6px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:var(--tx3)">
+                  <div style="color:var(--gr)">OK</div><div>Aadhar front</div>
+                </div>
+                <div style="background:var(--s2);border-radius:6px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:var(--tx3)">
+                  <div style="color:var(--gr)">OK</div><div>Aadhar back</div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="ct">FY 2026-27 summary</div>
+              <div class="row"><span style="color:var(--tx3)">Events worked</span><span style="font-weight:500">18</span></div>
+              <div class="row"><span style="color:var(--tx3)">Total days</span><span style="font-weight:500">42 days</span></div>
+              <div class="row"><span style="color:var(--tx3)">Total earned</span><span style="font-family:monospace;font-weight:500;color:var(--gr)">Rs.63,000</span></div>
+              <div class="row"><span style="color:var(--tx3)">Paid</span><span style="font-family:monospace;color:var(--gr)">Rs.54,000</span></div>
+              <div class="row"><span style="color:var(--tx3)">Pending</span><span style="font-family:monospace;color:var(--acc);font-weight:500">Rs.9,000</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="ct">Current deployment</div>
+              <div style="background:var(--s2);border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div style="font-size:12px;font-weight:500">No active event</div>
+                  <div style="font-size:10px;color:var(--tx3);margin-top:2px">Available for assignment</div>
+                </div>
+                <span class="bdg bg">Free</span>
+              </div>
+            </div>
+            <div class="card">
+              <div class="ct">Event history</div>
+              <table class="tbl">
+                <thead><tr>
+                  <th>Event</th>
+                  <th style="width:80px">Dates</th>
+                  <th style="width:48px" class="tc">Days</th>
+                  <th style="width:70px" class="tr">Amount</th>
+                  <th style="width:65px">Payment</th>
+                </tr></thead>
+                <tbody>
+                  <tr><td style="font-size:11px;font-weight:500;color:var(--tx)">Adani Annual Meet</td><td style="font-size:10px">10-12 May</td><td class="tc">3</td><td class="tr" style="font-size:11px">Rs.4,500</td><td><span class="bdg bg">Paid</span></td></tr>
+                  <tr><td style="font-size:11px;font-weight:500;color:var(--tx)">Torrent Pharma</td><td style="font-size:10px">14-15 May</td><td class="tc">2</td><td class="tr" style="font-size:11px">Rs.3,000</td><td><span class="bdg ba">Pending</span></td></tr>
+                  <tr><td style="font-size:11px;font-weight:500;color:var(--tx)">Dholera Mahotsav</td><td style="font-size:10px">15-20 Apr</td><td class="tc">6</td><td class="tr" style="font-size:11px">Rs.9,000</td><td><span class="bdg bg">Paid</span></td></tr>
+                  <tr><td style="font-size:11px;font-weight:500;color:var(--tx)">Patel Wedding</td><td style="font-size:10px">21-22 Mar</td><td class="tc">2</td><td class="tr" style="font-size:11px">Rs.3,000</td><td><span class="bdg bg">Paid</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <div class="ct">Payment timeline</div>
+              <div class="tl-item">
+                <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" style="background:var(--gr)"></div><div class="tl-line"></div></div>
+                <div><div style="font-size:12px;font-weight:500">Adani Meet - Center Tally</div><div style="font-size:10px;color:var(--tx3)">10-12 May - Rs.4,500 - Paid</div></div>
+              </div>
+              <div class="tl-item">
+                <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" style="background:var(--acc)"></div><div class="tl-line"></div></div>
+                <div><div style="font-size:12px;font-weight:500">Torrent Pharma - Videographer</div><div style="font-size:10px;color:var(--tx3)">14-15 May - Rs.3,000 - Pending</div></div>
+              </div>
+              <div class="tl-item">
+                <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" style="background:var(--b2)"></div></div>
+                <div><div style="font-size:12px;font-weight:500;color:var(--tx3)">Next event - TBD</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sdesc">Staff profile - full info, Aadhar status, FY summary, event history with payment status, timeline.</div>
+</div>
+
+<!-- 04 ASSIGN POSITION -->
+<div class="sec" id="s4">
+  <div class="slabel">Screen 04</div>
+  <div class="stitle">Position <strong>assignment</strong></div>
+  <div class="sf">
+    <div class="tb">
+      <div class="tb-t"><span>BKM/26-27/05/16</span> > <span>Operator assignment</span></div>
+      <div class="tb-a">
+        <button class="btn btn-w">+ Add external staff</button>
+        <button class="btn btn-s">Save assignments</button>
+      </div>
+    </div>
+    <div class="sb-body">
+      <div class="sb">
+        <div class="ss">Event</div>
+        <div style="padding:8px 14px;font-size:11px;color:var(--tx3);line-height:1.8">
+          <div style="font-weight:500;color:var(--tx)">Adani Annual Meet</div>
+          <div>10-12 May 2026</div>
+          <div style="color:var(--bl)">3 days</div>
+        </div>
+        <div class="ss">Summary</div>
+        <div style="padding:8px 14px;font-size:11px;color:var(--tx3);line-height:1.8">
+          <div>Positions: 6</div>
+          <div style="color:var(--gr)">Assigned: 4</div>
+          <div style="color:var(--acc)">Pending: 2</div>
+        </div>
+        <div class="ss">Staff cost</div>
+        <div style="padding:8px 14px">
+          <div style="font-size:10px;color:var(--tx3);margin-bottom:3px">Total (3 days)</div>
+          <div style="font-size:14px;font-weight:500;color:var(--bl)">Rs.21,000</div>
+        </div>
+      </div>
+      <div class="cnt">
+        <div class="warn" id="dup-warn">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="font-size:20px;flex-shrink:0">!</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500;color:var(--tx);margin-bottom:4px">Duplicate assignment - confirm?</div>
+              <div style="font-size:12px;color:var(--tx3);margin-bottom:10px">
+                Rishi Kumar already assigned to Center Tally.<br>
+                Assign to Center Semi Wide as well?
+              </div>
+              <div style="display:flex;gap:8px">
+                <button onclick="document.getElementById('dup-warn').style.display='none'" class="btn btn-s">Yes, assign both</button>
+                <button onclick="document.getElementById('dup-warn').style.display='none'" class="btn">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct">Position-wise operator selection</div>
+          <div style="overflow-x:auto">
+            <table class="tbl" style="min-width:640px">
+              <thead><tr>
+                <th style="width:24px">No.</th>
+                <th style="width:140px">Position</th>
+                <th style="width:100px">Equipment</th>
+                <th>Operator</th>
+                <th style="width:80px">Source</th>
+                <th style="width:80px">With equip.</th>
+                <th style="width:80px" class="tr">Pay/day</th>
+              </tr></thead>
+              <tbody>
+                <tr>
+                  <td style="color:var(--tx3)">1</td>
+                  <td style="font-weight:500;color:var(--tx);font-size:11px">Center Tally</td>
+                  <td style="font-size:10px">Sony FX6</td>
+                  <td>
+                    <select class="fsel" style="font-size:10px">
+                      <optgroup label="In-house"><option>Rishi Kumar</option><option>Dev Vora</option><option>Nirav Parmar</option></optgroup>
+                      <optgroup label="External"><option>Jignesh Rao</option><option>Karan Patel</option></optgroup>
+                    </select>
+                  </td>
+                  <td><span class="bdg bg">In-house</span></td>
+                  <td class="tc" style="font-size:10px">No</td>
+                  <td class="tr" style="font-size:11px;color:var(--gr);font-family:monospace">Rs.1,500</td>
+                </tr>
+                <tr style="background:#1A1000">
+                  <td style="color:var(--tx3)">2</td>
+                  <td style="font-weight:500;color:var(--tx);font-size:11px">Center Semi Wide</td>
+                  <td style="font-size:10px">Sony FX3</td>
+                  <td>
+                    <select class="fsel" style="font-size:10px;border-color:var(--acc)">
+                      <optgroup label="In-house"><option selected>Rishi Kumar (DUPLICATE)</option><option>Dev Vora</option></optgroup>
+                    </select>
+                  </td>
+                  <td><span class="bdg bg">In-house</span></td>
+                  <td class="tc" style="font-size:10px">No</td>
+                  <td class="tr" style="font-size:11px;color:var(--acc)">Duplicate!</td>
+                </tr>
+                <tr>
+                  <td style="color:var(--tx3)">3</td>
+                  <td style="font-weight:500;color:var(--tx);font-size:11px">Video Crane 32ft</td>
+                  <td style="font-size:10px">Crane 32ft</td>
+                  <td>
+                    <select class="fsel" style="font-size:10px">
+                      <optgroup label="External"><option>Jignesh Rao (Crane op.)</option></optgroup>
+                    </select>
+                  </td>
+                  <td><span class="bdg ba">External</span></td>
+                  <td class="tc"><span class="bdg bb" style="font-size:9px">+Crane</span></td>
+                  <td class="tr" style="font-size:11px;color:var(--gr);font-family:monospace">Rs.2,500</td>
+                </tr>
+                <tr>
+                  <td style="color:var(--tx3)">4</td>
+                  <td style="font-weight:500;color:var(--tx);font-size:11px">Drone</td>
+                  <td style="font-size:10px">DJI Drone</td>
+                  <td>
+                    <select class="fsel" style="font-size:10px">
+                      <optgroup label="External"><option>Karan Patel (Drone op.)</option></optgroup>
+                    </select>
+                  </td>
+                  <td><span class="bdg ba">External</span></td>
+                  <td class="tc"><span class="bdg bb" style="font-size:9px">+Drone</span></td>
+                  <td class="tr" style="font-size:11px;color:var(--gr);font-family:monospace">Rs.3,000</td>
+                </tr>
+                <tr>
+                  <td style="color:var(--tx3)">5</td>
+                  <td style="font-weight:500;color:var(--tx);font-size:11px">Photo 1</td>
+                  <td style="font-size:10px">DSLR</td>
+                  <td><select class="fsel" style="font-size:10px"><option>Select operator</option></select></td>
+                  <td style="color:var(--tx3)">--</td>
+                  <td class="tc" style="color:var(--tx3)">--</td>
+                  <td class="tr" style="color:var(--tx3)">--</td>
+                </tr>
+                <tr>
+                  <td style="color:var(--tx3)">6</td>
+                  <td style="font-weight:500;color:var(--tx);font-size:11px">Source PC</td>
+                  <td style="font-size:10px">PC</td>
+                  <td><select class="fsel" style="font-size:10px"><option>Select operator</option></select></td>
+                  <td style="color:var(--tx3)">--</td>
+                  <td class="tc" style="color:var(--tx3)">--</td>
+                  <td class="tr" style="color:var(--tx3)">--</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct">Staff payment summary</div>
+          <table class="tbl">
+            <thead><tr>
+              <th>Staff name</th>
+              <th style="width:80px">Type</th>
+              <th style="width:60px" class="tc">Positions</th>
+              <th style="width:80px" class="tr">Rate/day</th>
+              <th style="width:100px" class="tr">Total (3 days)</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="font-weight:500;color:var(--tx)">Rishi Kumar</td><td><span class="bdg bg">In-house</span></td><td class="tc" style="color:var(--acc)">2 !</td><td class="tr" style="font-size:11px;font-family:monospace">Rs.1,500</td><td class="tr" style="font-weight:500;color:var(--gr);font-family:monospace">Rs.4,500</td></tr>
+              <tr><td style="font-weight:500;color:var(--tx)">Jignesh Rao</td><td><span class="bdg ba">External</span></td><td class="tc">1</td><td class="tr" style="font-size:11px;font-family:monospace">Rs.2,500</td><td class="tr" style="font-weight:500;color:var(--gr);font-family:monospace">Rs.7,500</td></tr>
+              <tr><td style="font-weight:500;color:var(--tx)">Karan Patel</td><td><span class="bdg ba">External</span></td><td class="tc">1</td><td class="tr" style="font-size:11px;font-family:monospace">Rs.3,000</td><td class="tr" style="font-weight:500;color:var(--gr);font-family:monospace">Rs.9,000</td></tr>
+            </tbody>
+          </table>
+          <div style="text-align:right;font-size:13px;font-weight:500;padding-top:10px;border-top:1px solid var(--b1);margin-top:4px">
+            Total staff cost (3 days): <span style="color:var(--bl);font-family:monospace">Rs.21,000</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sdesc">Position assignment. Grouped dropdown In-house/External. Duplicate warning popup + amber row highlight. External staff with equipment shows badge. Payment summary at bottom.</div>
+</div>
+
+<!-- 05 PER EVENT PAYMENT -->
+<div class="sec" id="s5">
+  <div class="slabel">Screen 05</div>
+  <div class="stitle">Per event <strong>payment</strong></div>
+  <div class="sf">
+    <div class="tb">
+      <div class="tb-t"><span>BKM/26-27/05/16</span> > <span>Staff payments</span></div>
+      <div class="tb-a"><button class="btn btn-s">Pay all pending</button></div>
+    </div>
+    <div class="sb-body">
+      <div class="sb">
+        <div class="ss">Summary</div>
+        <div style="padding:8px 14px;font-size:11px;color:var(--tx3);line-height:1.8">
+          <div>Total: <span style="color:var(--tx)">Rs.21,000</span></div>
+          <div>Paid: <span style="color:var(--gr)">Rs.4,500</span></div>
+          <div>Pending: <span style="color:var(--acc)">Rs.16,500</span></div>
+        </div>
+        <div class="ss">Payment method</div>
+        <div style="padding:8px 14px">
+          <select class="fsel" style="font-size:11px"><option>UPI</option><option>Cash</option><option>Bank transfer</option><option>Cheque</option></select>
+        </div>
+      </div>
+      <div class="cnt">
+        <div class="met">
+          <div class="mc"><div class="ml">Total payable</div><div class="mv">Rs.21,000</div></div>
+          <div class="mc"><div class="ml">Paid</div><div class="mv" style="color:var(--gr)">Rs.4,500</div></div>
+          <div class="mc"><div class="ml">Pending</div><div class="mv" style="color:var(--acc)">Rs.16,500</div></div>
+          <div class="mc"><div class="ml">Staff count</div><div class="mv">3</div></div>
+        </div>
+        <div class="card">
+          <div class="ct">Payment per staff</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="background:#0F2E22;border:1px solid #1A4A34;border-radius:8px;padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="av av1" style="width:32px;height:32px;font-size:11px">RK</div>
+                  <div>
+                    <div style="font-size:13px;font-weight:500;color:var(--tx)">Rishi Kumar</div>
+                    <div style="font-size:10px;color:var(--tx3)">Videographer - In-house - 2 positions - 3 days</div>
+                  </div>
+                </div>
+                <span class="bdg bg">Paid</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+                <div style="font-size:11px;color:var(--tx3)">Rs.1,500/day x 3 days</div>
+                <div style="font-size:16px;font-weight:500;font-family:monospace;color:var(--gr)">Rs.4,500</div>
+              </div>
+              <div style="font-size:10px;color:var(--tx3);margin-top:4px">Paid: 12 May 2026 - UPI - Ref: UPI123456</div>
+            </div>
+            <div style="background:#1A1000;border:1px solid #4A3010;border-radius:8px;padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="av av5" style="width:32px;height:32px;font-size:11px">JR</div>
+                  <div>
+                    <div style="font-size:13px;font-weight:500;color:var(--tx)">Jignesh Rao</div>
+                    <div style="font-size:10px;color:var(--tx3)">Crane operator - External - 1 position - 3 days</div>
+                  </div>
+                </div>
+                <span class="bdg ba">Pending</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+                <div style="font-size:11px;color:var(--tx3)">Rs.2,500/day x 3 days</div>
+                <div style="font-size:16px;font-weight:500;font-family:monospace;color:var(--acc)">Rs.7,500</div>
+              </div>
+              <div style="display:flex;gap:6px;margin-top:10px">
+                <select class="fsel" style="width:130px;font-size:11px">
+                  <option>UPI</option><option>Cash</option><option>Bank transfer</option>
+                </select>
+                <div class="finp" style="flex:1;font-size:11px;display:flex;align-items:center;color:var(--tx3)">Ref / transaction ID</div>
+                <button class="btn btn-s" style="font-size:11px">Mark paid</button>
+              </div>
+            </div>
+            <div style="background:#1A1000;border:1px solid #4A3010;border-radius:8px;padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="av av6" style="width:32px;height:32px;font-size:11px">KP</div>
+                  <div>
+                    <div style="font-size:13px;font-weight:500;color:var(--tx)">Karan Patel</div>
+                    <div style="font-size:10px;color:var(--tx3)">Drone operator - External - 1 position - 3 days</div>
+                  </div>
+                </div>
+                <span class="bdg ba">Pending</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+                <div style="font-size:11px;color:var(--tx3)">Rs.3,000/day x 3 days</div>
+                <div style="font-size:16px;font-weight:500;font-family:monospace;color:var(--acc)">Rs.9,000</div>
+              </div>
+              <div style="display:flex;gap:6px;margin-top:10px">
+                <select class="fsel" style="width:130px;font-size:11px">
+                  <option>Cash</option><option>UPI</option><option>Bank transfer</option>
+                </select>
+                <div class="finp" style="flex:1;font-size:11px;display:flex;align-items:center;color:var(--tx3)">Ref / transaction ID</div>
+                <button class="btn btn-s" style="font-size:11px">Mark paid</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sdesc">Per-event payment. Each staff card: role, positions, days, rate x days = total. Green = paid with date+method. Amber = pending with payment method + ref field + Mark paid. Pay all pending bulk.</div>
+</div>
+
+<!-- 06 MONTHLY REPORT -->
+<div class="sec" id="s6">
+  <div class="slabel">Screen 06</div>
+  <div class="stitle">Monthly <strong>payment report</strong></div>
+  <div class="sf">
+    <div class="tb">
+      <div class="tb-t"><span>Staff</span> > <span>Payment report - May 2026</span></div>
+      <div class="tb-a">
+        <select class="fsel" style="width:130px;font-size:11px;height:28px"><option>May 2026</option><option>April 2026</option><option>March 2026</option></select>
+        <button class="btn">Download PDF</button>
+        <button class="btn btn-s">Pay all pending</button>
+      </div>
+    </div>
+    <div class="sb-body">
+      <div class="sb">
+        <div class="ss">Filter</div>
+        <div class="si act">All staff</div>
+        <div class="si">Pending only</div>
+        <div class="si">Paid</div>
+        <div class="ss">Payment type</div>
+        <div class="si">Per day (8)</div>
+        <div class="si">Monthly (3)</div>
+        <div class="ss">May totals</div>
+        <div style="padding:8px 14px;font-size:11px;line-height:1.8;color:var(--tx3)">
+          <div>Total: <span style="color:var(--tx)">Rs.86,500</span></div>
+          <div>Paid: <span style="color:var(--gr)">Rs.39,000</span></div>
+          <div>Pending: <span style="color:var(--acc)">Rs.47,500</span></div>
+        </div>
+      </div>
+      <div class="cnt">
+        <div class="met">
+          <div class="mc"><div class="ml">Total payable (May)</div><div class="mv">Rs.86,500</div></div>
+          <div class="mc"><div class="ml">Paid</div><div class="mv" style="color:var(--gr)">Rs.39,000</div></div>
+          <div class="mc"><div class="ml">Pending</div><div class="mv" style="color:var(--acc)">Rs.47,500</div></div>
+          <div class="mc"><div class="ml">Staff count</div><div class="mv">11</div></div>
+        </div>
+        <div class="card">
+          <div class="ct">Per day staff - May 2026</div>
+          <table class="tbl">
+            <thead><tr>
+              <th>Name</th>
+              <th style="width:80px">Type</th>
+              <th style="width:110px" class="tc">Events / Days</th>
+              <th style="width:80px" class="tr">Rate/day</th>
+              <th style="width:80px" class="tr">Total</th>
+              <th style="width:70px" class="tr">Paid</th>
+              <th style="width:80px" class="tr">Pending</th>
+              <th style="width:70px">Action</th>
+            </tr></thead>
+            <tbody>
+              <tr><td><div style="font-weight:500;color:var(--tx)">Rishi Kumar</div><div style="font-size:10px">Videographer</div></td><td><span class="bdg bg">In-house</span></td><td class="tc" style="font-size:11px">3 events / 8d</td><td class="tr" style="font-size:11px;font-family:monospace">Rs.1,500</td><td class="tr" style="font-size:11px;font-family:monospace;font-weight:500">Rs.12,000</td><td class="tr" style="font-size:11px;font-family:monospace;color:var(--gr)">Rs.7,500</td><td class="tr" style="font-size:11px;font-family:monospace;color:var(--acc)">Rs.4,500</td><td><button class="btn btn-s" style="font-size:10px;padding:3px 8px">Pay</button></td></tr>
+              <tr><td><div style="font-weight:500;color:var(--tx)">Dev Vora</div><div style="font-size:10px">Videographer</div></td><td><span class="bdg bg">In-house</span></td><td class="tc" style="font-size:11px">2 events / 5d</td><td class="tr" style="font-size:11px;font-family:monospace">Rs.1,500</td><td class="tr" style="font-size:11px;font-family:monospace;font-weight:500">Rs.7,500</td><td class="tr" style="font-size:11px;font-family:monospace;color:var(--gr)">Rs.7,500</td><td class="tr" style="font-size:11px;font-family:monospace;color:var(--gr)">Rs.0</td><td><span class="bdg bg" style="font-size:10px">Paid</span></td></tr>
+              <tr><td><div style="font-weight:500;color:var(--tx)">Hetal Patel</div><div style="font-size:10px">LED operator</div></td><td><span class="bdg bg">In-house</span></td><td class="tc" style="font-size:11px">1 event / 6d</td><td class="tr" style="font-size:11px;font-family:monospace">Rs.1,200</td><td class="tr" style="font-size:11px;font-family:monospace;font-weight:500">Rs.7,200</td><td class="tr" style="font-size:11px;font-family:monospace;color:var(--gr)">Rs.0</td><td class="tr" style="font-size:11px;font-family:monospace;color:var(--acc)">Rs.7,200</td><td><button class="btn btn-s" style="font-size:10px;padding:3px 8px">Pay</button></td></tr>
+              <tr><td><div style="font-weight:500;color:var(--tx)">Jignesh Rao</div><div style="font-size:10px">Crane op. External</div></td><td><span class="bdg ba">External</span></td><td class="tc" style="font-size:11px">2 events / 6d</td><td class="tr" style="font-size:11px;font-family:monospace">Rs.2,500</td><td class="tr" style="font-size:11px;font-family:monospace;font-weight:500">Rs.15,000</td><td class="tr" style="font-size:11px;font-family:monospace;color:var(--gr)">Rs.0</td><td class="tr" style="font-size:11px;font-family:monospace;color:var(--acc)">Rs.15,000</td><td><button class="btn btn-s" style="font-size:10px;padding:3px 8px">Pay</button></td></tr>
+              <tr><td><div style="font-weight:500;color:var(--tx)">Karan Patel</div><div style="font-size:10px">Drone op. External</div></td><td><span class="bdg ba">External</span></td><td class="tc" style="font-size:11px">2 events / 5d</td><td class="tr" style="font-size:11px;font-family:monospace">Rs.3,000</td><td class="tr" style="font-size:11px;font-family:monospace;font-weight:500">Rs.15,000</td><td class="tr" style="font-size:11px;font-family:monospace;color:var(--gr)">Rs.9,000</td><td class="tr" style="font-size:11px;font-family:monospace;color:var(--acc)">Rs.6,000</td><td><button class="btn btn-s" style="font-size:10px;padding:3px 8px">Pay</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="ct">Monthly salary staff - May 2026</div>
+          <table class="tbl">
+            <thead><tr>
+              <th>Name</th>
+              <th style="width:80px">Type</th>
+              <th style="width:130px" class="tr">Monthly salary</th>
+              <th style="width:80px">Status</th>
+              <th style="width:80px">Action</th>
+            </tr></thead>
+            <tbody>
+              <tr><td><div style="font-weight:500;color:var(--tx)">Mehul Shah</div><div style="font-size:10px">Photographer</div></td><td><span class="bdg bg">In-house</span></td><td class="tr" style="font-family:monospace;font-weight:500">Rs.45,000/month</td><td><span class="bdg ba">Pending</span></td><td><button class="btn btn-s" style="font-size:10px;padding:3px 8px">Pay</button></td></tr>
+              <tr><td><div style="font-weight:500;color:var(--tx)">Priya Joshi</div><div style="font-size:10px">Editor</div></td><td><span class="bdg bg">In-house</span></td><td class="tr" style="font-family:monospace;font-weight:500">Rs.35,000/month</td><td><span class="bdg bg">Paid</span></td><td><span class="bdg bg" style="font-size:10px">Done</span></td></tr>
+              <tr><td><div style="font-weight:500;color:var(--tx)">Smit Mehta</div><div style="font-size:10px">Photo editor</div></td><td><span class="bdg bg">In-house</span></td><td class="tr" style="font-family:monospace;font-weight:500">Rs.28,000/month</td><td><span class="bdg ba">Pending</span></td><td><button class="btn btn-s" style="font-size:10px;padding:3px 8px">Pay</button></td></tr>
+            </tbody>
+          </table>
+          <div style="background:#1A1A0A;border:1px solid var(--b2);border-radius:6px;padding:8px 12px;margin-top:10px;font-size:11px;color:var(--tx3)">
+            Monthly staff: Fixed salary every month. Independent of events.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sdesc">Monthly payment report. Per day: events x days x rate. Monthly: fixed salary. Two separate sections. Month selector. Download PDF. Pay all pending.</div>
+</div>
+
+<!-- 07 AVAILABILITY CHECK -->
+<div class="sec" id="s7">
+  <div class="slabel">Screen 07</div>
+  <div class="stitle">Staff <strong>availability check</strong></div>
+  <div class="sf">
+    <div class="tb">
+      <div class="tb-t"><span>Staff</span> > <span>Availability check</span></div>
+      <div class="tb-a"><button class="btn btn-p">Check availability</button></div>
+    </div>
+    <div class="sb-body">
+      <div class="sb">
+        <div class="ss">Check dates</div>
+        <div style="padding:8px 14px">
+          <div class="field" style="margin-bottom:8px"><div class="flbl">From date</div><div class="finp">2026-05-22</div></div>
+          <div class="field" style="margin-bottom:8px"><div class="flbl">To date</div><div class="finp">2026-05-25</div></div>
+          <div class="field" style="margin-bottom:8px"><div class="flbl">Role filter</div><div class="fsel">All roles</div></div>
+          <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:4px">Check</button>
+        </div>
+        <div class="ss">Result</div>
+        <div style="padding:8px 14px;font-size:11px;color:var(--tx3);line-height:1.8">
+          <div style="color:var(--gr)">Free: 6</div>
+          <div style="color:var(--acc)">Partial: 2</div>
+          <div style="color:var(--rd)">Busy: 3</div>
+        </div>
+      </div>
+      <div class="cnt">
+        <div class="met">
+          <div class="mc"><div class="ml">Total staff</div><div class="mv">11</div></div>
+          <div class="mc"><div class="ml">Available</div><div class="mv" style="color:var(--gr)">6</div></div>
+          <div class="mc"><div class="ml">Partial</div><div class="mv" style="color:var(--acc)">2</div></div>
+          <div class="mc"><div class="ml">Busy</div><div class="mv" style="color:var(--rd)">3</div></div>
+        </div>
+        <div class="card">
+          <div class="ct">Staff availability - 22 to 25 May 2026</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="background:#0F2E22;border:1px solid #1A4A34;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="av av1" style="width:30px;height:30px;font-size:10px">RK</div>
+                <div><div style="font-size:12px;font-weight:500;color:var(--tx)">Rishi Kumar</div><div style="font-size:10px;color:var(--tx3)">Videographer - In-house - Rs.1,500/day</div></div>
+              </div>
+              <span class="bdg bg">Free</span>
+            </div>
+            <div style="background:#0F2E22;border:1px solid #1A4A34;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="av av8" style="width:30px;height:30px;font-size:10px">NP</div>
+                <div><div style="font-size:12px;font-weight:500;color:var(--tx)">Nirav Parmar</div><div style="font-size:10px;color:var(--tx3)">Videographer - In-house - Rs.1,200/day</div></div>
+              </div>
+              <span class="bdg bg">Free</span>
+            </div>
+            <div style="background:#2E1F0A;border:1px solid #4A3010;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="av av2" style="width:30px;height:30px;font-size:10px">DV</div>
+                <div>
+                  <div style="font-size:12px;font-weight:500;color:var(--tx)">Dev Vora</div>
+                  <div style="font-size:10px;color:var(--tx3)">Videographer - In-house</div>
+                  <div style="font-size:10px;color:var(--acc);margin-top:2px">Partial: Busy 22-23 May - Torrent Pharma</div>
+                </div>
+              </div>
+              <span class="bdg ba">Partial</span>
+            </div>
+            <div style="background:#2E0A0A;border:1px solid #4A1818;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="av av4" style="width:30px;height:30px;font-size:10px">HP</div>
+                <div>
+                  <div style="font-size:12px;font-weight:500;color:var(--tx)">Hetal Patel</div>
+                  <div style="font-size:10px;color:var(--tx3)">LED operator - In-house</div>
+                  <div style="font-size:10px;color:var(--rd);margin-top:2px">Busy: Dholera Mahotsav (20-25 May)</div>
+                </div>
+              </div>
+              <span class="bdg br">Busy</span>
+            </div>
+            <div style="background:#2E0A0A;border:1px solid #4A1818;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="av av6" style="width:30px;height:30px;font-size:10px">KP</div>
+                <div>
+                  <div style="font-size:12px;font-weight:500;color:var(--tx)">Karan Patel</div>
+                  <div style="font-size:10px;color:var(--tx3)">Drone operator - External</div>
+                  <div style="font-size:10px;color:var(--rd);margin-top:2px">Busy: GIFT Summit (21-25 May)</div>
+                </div>
+              </div>
+              <span class="bdg br">Busy</span>
+            </div>
+            <div style="background:#2E0A0A;border:1px solid #4A1818;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="av av3" style="width:30px;height:30px;font-size:10px">MS</div>
+                <div>
+                  <div style="font-size:12px;font-weight:500;color:var(--tx)">Mehul Shah</div>
+                  <div style="font-size:10px;color:var(--tx3)">Photographer - In-house - Monthly salary</div>
+                  <div style="font-size:10px;color:var(--rd);margin-top:2px">Busy: Patel Wedding (22-23 May)</div>
+                </div>
+              </div>
+              <span class="bdg br">Busy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sdesc">Availability check for date range. Free (green), Partial (amber - some days overlap), Busy (red - fully occupied). Shows which event. Date + role filter in sidebar.</div>
+</div>
+
+</div>
+<script>
+function go(btn,id){
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  var el=document.getElementById(id);
+  if(el){var top=el.getBoundingClientRect().top+window.pageYOffset-95;window.scrollTo({top:top,behavior:'smooth'});}
+}
+function togglePay(){
+  var v=document.getElementById('pt').value;
+  document.getElementById('pd-f').style.display=v==='pd'?'':'none';
+  document.getElementById('mo-f').style.display=v==='mo'?'':'none';
+}
+function toggleEquip(){
+  var c=document.getElementById('we').checked;
+  document.getElementById('eq-f').style.display=c?'block':'none';
+}
+window.addEventListener('scroll',function(){
+  var ids=['s1','s2','s3','s4','s5','s6','s7'];
+  var btns=document.querySelectorAll('.nb');
+  for(var i=ids.length-1;i>=0;i--){
+    var el=document.getElementById(ids[i]);
+    if(el&&el.getBoundingClientRect().top<=110){btns.forEach(function(b){b.classList.remove('act');});btns[i].classList.add('act');break;}
+  }
+});
+</script>
+</body>
+</html>

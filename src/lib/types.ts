@@ -63,6 +63,8 @@ export interface Quotation {
   updatedAt?: string;
   sentAt: string | null;
   approvedAt: string | null;
+  revisionNumber?: number;
+  signedCopyUrl?: string;
 }
 
 export interface Invoice {
@@ -124,6 +126,9 @@ export interface Equipment {
   notes?: string | null;
   createdAt: string;
   updatedAt?: string | null;
+  ownershipType: "INHOUSE" | "VENDOR";
+  vendorId?: number | null;
+  vendorName?: string | null;
 }
 
 export interface Kit {
@@ -163,6 +168,7 @@ export interface Vendor {
   notes?: string | null;
   isActive: boolean;
   createdAt: string;
+  equipments?: Equipment[];
 }
 
 export interface Staff {
@@ -195,6 +201,7 @@ export interface StaffAssignment {
   totalAmount: number;
   isDuplicate: boolean;
   confirmedDup: boolean;
+  reportingTime?: string;
   createdAt: string;
 }
 

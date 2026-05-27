@@ -68,6 +68,19 @@ export async function PATCH(
       body.total = body.total ?? subtotal + body.cgst + body.sgst;
     }
 
+    // If signedCopyUrl is a base64 data URL, upload it first
+    if (body.signedCopyUrl && body.signedCopyUrl.startsWith("data:")) {
+      const { uploadFile } = await import("@/lib/storage");
+      const filename = body.signedCopyName || "signed-copy.pdf";
+      try {
+        const savedPath = await uploadFile(body.signedCopyUrl, filename);
+        body.signedCopyUrl = savedPath;
+      } catch (err) {
+        console.error("Signed copy upload failed:", err);
+        return Response.json({ error: "Failed to upload signed copy" }, { status: 500 });
+      }
+    }
+
     const updated = await updateQuotation(id, {
       ...body,
       clientName: body.clientName?.trim(),

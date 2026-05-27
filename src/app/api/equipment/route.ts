@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
     if (body.purchasePrice !== undefined) v.nonNegativeNumber("purchasePrice", "purchase price");
     if (body.status !== undefined) v.oneOf("status", EQUIPMENT_STATUSES);
     if (body.notes) v.maxLength("notes", 1000);
+    if (body.ownershipType !== undefined) v.oneOf("ownershipType", ["INHOUSE", "VENDOR"]);
+    if (body.vendorId !== undefined && body.vendorId !== null && body.vendorId !== "") v.positiveInteger("vendorId", "vendor ID");
     if (v.hasErrors()) return v.response();
 
     const item = await createEquipment({
@@ -64,6 +66,8 @@ export async function POST(request: NextRequest) {
       purchasePrice: body.purchasePrice ? parseFloat(body.purchasePrice) : null,
       status: body.status || "AVAILABLE",
       notes: body.notes?.trim() || null,
+      ownershipType: body.ownershipType || "INHOUSE",
+      vendorId: body.vendorId ? parseInt(body.vendorId, 10) : null,
     });
 
     return Response.json(item, { status: 201 });

@@ -25,6 +25,7 @@ export default function Screen07Approval({ quotationId }: Props) {
   );
   const [notes, setNotes] = useState("");
   const [signedCopyName, setSignedCopyName] = useState("");
+  const [signedCopyBase64, setSignedCopyBase64] = useState("");
   const [approved, setApproved] = useState(false);
   const [approving, setApproving] = useState(false);
 
@@ -45,6 +46,8 @@ export default function Screen07Approval({ quotationId }: Props) {
           id: quotation.id,
           status: "Approved",
           approvedAt: approvalDate,
+          signedCopyUrl: signedCopyBase64 || undefined,
+          signedCopyName: signedCopyName || undefined,
         },
       });
 
@@ -301,6 +304,15 @@ export default function Screen07Approval({ quotationId }: Props) {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         setSignedCopyName(file?.name ?? "");
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setSignedCopyBase64(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        } else {
+                          setSignedCopyBase64("");
+                        }
                       }}
                     />
                     <span className="approval-upload-title">

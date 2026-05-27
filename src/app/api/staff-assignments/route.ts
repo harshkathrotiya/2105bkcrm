@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       positionName: body.positionName || null,
       daysAssigned: parseInt(body.daysAssigned, 10),
       ratePerDay: parseFloat(body.ratePerDay),
+      reportingTime: body.reportingTime || "09:00 AM",
     });
 
     return Response.json(assignment, { status: 201 });

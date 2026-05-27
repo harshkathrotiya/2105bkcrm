@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -18,6 +20,17 @@ export default function Screen18VendorList() {
   const [vendorHistory, setVendorHistory] = useState<any[]>([]);
   const [vendorYtdSpend, setVendorYtdSpend] = useState<number>(0);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  // Associated Equipment State
+  const [fullVendorDetails, setFullVendorDetails] = useState<any>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [allEquipment, setAllEquipment] = useState<any[]>([]);
+  const [equipmentLoading, setEquipmentLoading] = useState(false);
+  const [selectedEquipId, setSelectedEquipId] = useState<string>("");
+  const [linking, setLinking] = useState(false);
+
+  const searchParams = useSearchParams();
+  const urlVendorId = searchParams ? searchParams.get("vendorId") : null;
 
   // Search and Filter States
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,16 +70,44 @@ export default function Screen18VendorList() {
     setTimeout(() => setToast({ show: false, msg: "" }), 2000);
   };
 
-  // Fetch selected vendor history and YTD spend
+  // Load selected vendor from URL parameters
+  useEffect(() => {
+    if (urlVendorId) {
+      const vid = parseInt(urlVendorId, 10);
+      if (!isNaN(vid)) {
+        setSelectedVendorId(vid);
+      }
+    }
+  }, [urlVendorId]);
+
+  // Load all equipment for linking dropdown
+  const loadEquipment = async () => {
+    try {
+      setEquipmentLoading(true);
+      const res = await api.fetchEquipment({ limit: 1000 });
+      setAllEquipment(res.items);
+    } catch (err) {
+      console.error("Failed to load equipment:", err);
+    } finally {
+      setEquipmentLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadEquipment();
+  }, []);
+
+  // Fetch selected vendor details, history and YTD spend
   useEffect(() => {
     let active = true;
 
-    const fetchHistory = async () => {
+    const fetchDetailsAndHistory = async () => {
       if (selectedVendorId === null) {
-        await Promise.resolve(); // yields execution to prevent render phase state setting
+        await Promise.resolve();
         if (!active) return;
-        setVendorHistory((prev) => (prev.length === 0 ? prev : []));
-        setVendorYtdSpend((prev) => (prev === 0 ? prev : 0));
+        setVendorHistory([]);
+        setVendorYtdSpend(0);
+        setFullVendorDetails(null);
         return;
       }
 
@@ -74,20 +115,26 @@ export default function Screen18VendorList() {
         await Promise.resolve();
         if (!active) return;
         setHistoryLoading(true);
-        const res = await api.fetchVendorHistory(selectedVendorId);
+        setDetailsLoading(true);
+        const [historyRes, vendorDetails] = await Promise.all([
+          api.fetchVendorHistory(selectedVendorId),
+          api.fetchVendor(selectedVendorId),
+        ]);
         if (!active) return;
-        setVendorHistory(res.history);
-        setVendorYtdSpend(res.ytdSpend);
+        setVendorHistory(historyRes.history);
+        setVendorYtdSpend(historyRes.ytdSpend);
+        setFullVendorDetails(vendorDetails);
       } catch (err) {
-        console.error("Error fetching vendor history:", err);
+        console.error("Error fetching vendor details/history:", err);
       } finally {
         if (active) {
           setHistoryLoading(false);
+          setDetailsLoading(false);
         }
       }
     };
 
-    fetchHistory();
+    fetchDetailsAndHistory();
 
     return () => {
       active = false;
@@ -297,6 +344,49 @@ export default function Screen18VendorList() {
     if (selectedVendorId === null) return null;
     return vendors.find((v) => v.id === selectedVendorId) || null;
   }, [vendors, selectedVendorId]);
+
+  const handleLinkEquipment = async () => {
+    if (!selectedVendorId || !selectedEquipId) return;
+    try {
+      setLinking(true);
+      await api.updateEquipment(parseInt(selectedEquipId, 10), {
+        ownershipType: "VENDOR",
+        vendorId: selectedVendorId,
+      });
+      setSelectedEquipId("");
+      triggerToast("Equipment linked successfully!");
+      // Refresh details
+      const vendorDetails = await api.fetchVendor(selectedVendorId);
+      setFullVendorDetails(vendorDetails);
+      // Reload overall equipment options
+      await loadEquipment();
+    } catch (err: any) {
+      alert(err.message || "Failed to link equipment");
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const handleUnlinkEquipment = async (equipId: number) => {
+    if (!selectedVendorId) return;
+    if (!confirm("Are you sure you want to unlink this equipment? It will revert to In-house ownership.")) {
+      return;
+    }
+    try {
+      await api.updateEquipment(equipId, {
+        ownershipType: "INHOUSE",
+        vendorId: null,
+      });
+      triggerToast("Equipment unlinked successfully!");
+      // Refresh details
+      const vendorDetails = await api.fetchVendor(selectedVendorId);
+      setFullVendorDetails(vendorDetails);
+      // Reload overall equipment options
+      await loadEquipment();
+    } catch (err: any) {
+      alert(err.message || "Failed to unlink equipment");
+    }
+  };
 
   // Format Timeline items from history
   const timelineItems = useMemo(() => {
@@ -552,6 +642,78 @@ export default function Screen18VendorList() {
                 <div style={{ fontSize: "18px", fontWeight: 600, color: "var(--tx)", marginTop: "4px" }}>
                   {selectedVendor.timesUsed}
                 </div>
+              </div>
+            </div>
+
+            {/* Associated Equipment Section */}
+            <div style={{ borderTop: "1px solid var(--b1)", paddingTop: "16px" }}>
+              <h4 style={{ margin: "0 0 12px 0", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                  <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                  <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                  <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                </svg>
+                Associated Equipment ({fullVendorDetails?.equipments?.length || 0})
+              </h4>
+
+              {detailsLoading ? (
+                <div style={{ fontSize: "11px", color: "var(--tx3)", fontStyle: "italic" }}>Loading associated items...</div>
+              ) : !fullVendorDetails?.equipments || fullVendorDetails.equipments.length === 0 ? (
+                <div style={{ fontSize: "11.5px", color: "var(--tx3)", fontStyle: "italic", background: "var(--alt2)", padding: "10px", borderRadius: "4px", marginBottom: "12px" }}>
+                  No equipment associated with this vendor.
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px", maxHeight: "180px", overflowY: "auto", paddingRight: "4px" }}>
+                  {fullVendorDetails.equipments.map((eq: any) => (
+                    <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--alt)", padding: "8px 10px", borderRadius: "6px", border: "1px solid var(--b1)" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <Link href={`/equipment/${eq.id}`} style={{ fontSize: "12px", fontWeight: 500, color: "var(--bl)", textDecoration: "underline" }}>
+                          {eq.productName}
+                        </Link>
+                        <span style={{ fontSize: "10px", color: "var(--tx3)" }}>
+                          S/N: {eq.serialNumber || "—"} | Qty: {eq.quantity}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-danger"
+                        style={{ padding: "2px 6px", fontSize: "10px" }}
+                        onClick={() => handleUnlinkEquipment(eq.id)}
+                        title="Unlink this equipment from vendor"
+                      >
+                        Unlink
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px" }}>
+                <select
+                  className="fsel"
+                  style={{ flex: 1, padding: "5px 8px", fontSize: "11.5px" }}
+                  value={selectedEquipId}
+                  onChange={(e) => setSelectedEquipId(e.target.value)}
+                >
+                  <option value="">-- Link Equipment --</option>
+                  {allEquipment
+                    .filter((eq) => eq.ownershipType !== "VENDOR" || eq.vendorId !== selectedVendorId)
+                    .map((eq) => (
+                      <option key={eq.id} value={eq.id}>
+                        {eq.productName} ({eq.category})
+                      </option>
+                    ))}
+                </select>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ padding: "5px 12px", fontSize: "11.5px" }}
+                  onClick={handleLinkEquipment}
+                  disabled={!selectedEquipId || linking}
+                >
+                  {linking ? "Linking..." : "Link"}
+                </button>
               </div>
             </div>
 

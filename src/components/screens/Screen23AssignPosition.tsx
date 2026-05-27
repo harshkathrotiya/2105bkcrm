@@ -33,6 +33,7 @@ export default function Screen23AssignPosition() {
   const [existingAssignments, setExistingAssignments] = useState<StaffAssignment[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<Record<number, number>>({}); // position.no -> staffId
   const [confirmedDuplicates, setConfirmedDuplicates] = useState<Record<number, boolean>>({}); // staffId -> confirmed
+  const [reportingTimes, setReportingTimes] = useState<Record<number, string>>({}); // position.no -> time string
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -61,13 +62,15 @@ export default function Screen23AssignPosition() {
           setQuotation(warehouseCheckData.quotation as unknown as Quotation);
           setExistingAssignments(assignmentsData);
 
-          // Populate selectedStaff from existing assignments
+          // Populate selectedStaff and reportingTimes from existing assignments
           const initialSelections: Record<number, number> = {};
           const confirmedDups: Record<number, boolean> = {};
+          const initialTimes: Record<number, string> = {};
 
           assignmentsData.forEach((a) => {
             if (a.positionNo !== null && a.positionNo !== undefined) {
               initialSelections[a.positionNo] = a.staffId;
+              initialTimes[a.positionNo] = a.reportingTime || "09:00 AM";
               if (a.confirmedDup) {
                 confirmedDups[a.staffId] = true;
               }
@@ -76,6 +79,7 @@ export default function Screen23AssignPosition() {
 
           setSelectedStaff(initialSelections);
           setConfirmedDuplicates(confirmedDups);
+          setReportingTimes(initialTimes);
         }
       } catch (err) {
         console.error("Failed to load position assignments data:", err);
@@ -246,8 +250,11 @@ export default function Screen23AssignPosition() {
       // 1. Determine deleted assignments
       const toDelete = existingAssignments.filter((ea) => {
         if (ea.positionNo === null || ea.positionNo === undefined) return false;
-        // Delete if not selected anymore, or if selected staff has changed
-        return !selectedStaff[ea.positionNo] || selectedStaff[ea.positionNo] !== ea.staffId;
+        // Delete if not selected anymore, if selected staff has changed, or if reporting time has changed
+        const currentStaffId = selectedStaff[ea.positionNo];
+        const currentTime = reportingTimes[ea.positionNo] || "09:00 AM";
+        const oldTime = ea.reportingTime || "09:00 AM";
+        return !currentStaffId || currentStaffId !== ea.staffId || currentTime !== oldTime;
       });
 
       // 2. Determine new assignments to insert
@@ -257,6 +264,7 @@ export default function Screen23AssignPosition() {
         positionName: string;
         ratePerDay: number;
         daysAssigned: number;
+        reportingTime?: string;
       }[] = [];
 
       Object.entries(selectedStaff).forEach(([posNoStr, staffId]) => {
@@ -264,9 +272,11 @@ export default function Screen23AssignPosition() {
         const pos = positions.find((p) => p.no === posNo);
         if (!pos) return;
 
-        // Check if an existing assignment matches
+        const reportingTime = reportingTimes[posNo] || "09:00 AM";
+
+        // Check if an existing assignment matches both staffId and reportingTime
         const existing = existingAssignments.find(
-          (ea) => ea.positionNo === posNo && ea.staffId === staffId
+          (ea) => ea.positionNo === posNo && ea.staffId === staffId && (ea.reportingTime || "09:00 AM") === reportingTime
         );
 
         if (!existing) {
@@ -279,6 +289,7 @@ export default function Screen23AssignPosition() {
             positionName: pos.position,
             ratePerDay: rate,
             daysAssigned: eventDays,
+            reportingTime,
           });
         }
       });
@@ -297,6 +308,7 @@ export default function Screen23AssignPosition() {
           positionName: c.positionName,
           ratePerDay: c.ratePerDay,
           daysAssigned: c.daysAssigned,
+          reportingTime: c.reportingTime || "09:00 AM",
         });
 
         // If duplicate is confirmed locally, confirm duplicate in DB as well
@@ -448,12 +460,13 @@ export default function Screen23AssignPosition() {
                   <thead>
                     <tr>
                       <th style={{ width: "45px" }} className="tc">No.</th>
-                      <th style={{ width: "160px" }}>Position</th>
-                      <th style={{ width: "130px" }}>Equipment Required</th>
+                      <th style={{ width: "150px" }}>Position</th>
+                      <th style={{ width: "110px" }}>Equipment Required</th>
                       <th>Operator Select</th>
-                      <th style={{ width: "100px" }}>Source</th>
-                      <th style={{ width: "110px" }}>With Equip.</th>
-                      <th style={{ width: "100px" }} className="tr">Pay / Day</th>
+                      <th style={{ width: "110px" }}>Reporting Time</th>
+                      <th style={{ width: "90px" }}>Source</th>
+                      <th style={{ width: "90px" }}>With Equip.</th>
+                      <th style={{ width: "90px" }} className="tr">Pay / Day</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -497,6 +510,27 @@ export default function Screen23AssignPosition() {
                                 ))}
                               </optgroup>
                             </select>
+                          </td>
+                          <td>
+                            {staffId ? (
+                              <input
+                                type="text"
+                                className="finp font-mono"
+                                style={{
+                                  fontSize: "11.5px",
+                                  padding: "2px 6px",
+                                  width: "90px",
+                                }}
+                                placeholder="09:00 AM"
+                                value={reportingTimes[pos.no] || "09:00 AM"}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setReportingTimes((prev) => ({ ...prev, [pos.no]: val }));
+                                }}
+                              />
+                            ) : (
+                              <span style={{ color: "var(--tx3)" }}>--</span>
+                            )}
                           </td>
                           <td>
                             {staffMember ? (

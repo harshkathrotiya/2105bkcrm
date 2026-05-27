@@ -40,6 +40,8 @@ export async function PATCH(
     if (body.purchasePrice !== undefined && body.purchasePrice !== null) v.nonNegativeNumber("purchasePrice", "purchase price");
     if (body.status !== undefined) v.oneOf("status", EQUIPMENT_STATUSES);
     if (body.notes !== undefined && body.notes) v.maxLength("notes", 1000);
+    if (body.ownershipType !== undefined) v.oneOf("ownershipType", ["INHOUSE", "VENDOR"]);
+    if (body.vendorId !== undefined && body.vendorId !== null && body.vendorId !== "") v.positiveInteger("vendorId", "vendor ID");
     if (v.hasErrors()) return v.response();
 
     const patch: any = { ...body };
@@ -47,6 +49,8 @@ export async function PATCH(
     if (body.quantity !== undefined) patch.quantity = parseInt(body.quantity, 10);
     if (body.purchasePrice !== undefined) patch.purchasePrice = body.purchasePrice ? parseFloat(body.purchasePrice) : null;
     if (body.kitId !== undefined) patch.kitId = body.kitId ? parseInt(body.kitId, 10) : null;
+    if (body.ownershipType !== undefined) patch.ownershipType = body.ownershipType;
+    if (body.vendorId !== undefined) patch.vendorId = body.vendorId ? parseInt(body.vendorId, 10) : null;
 
     const updated = await updateEquipment(parseInt(id, 10), patch);
     if (!updated) {

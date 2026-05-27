@@ -391,7 +391,14 @@ export default function Screen13EquipmentList() {
                           >
                             <td>{item.id}</td>
                             <td>
-                              <div style={{ fontWeight: 500, color: "var(--tx)" }}>{item.productName}</div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span style={{ fontWeight: 500, color: "var(--tx)" }}>{item.productName}</span>
+                                {item.ownershipType === "VENDOR" && (
+                                  <Badge variant="am">
+                                    Vendor: {item.vendorName || "Outsourced"}
+                                  </Badge>
+                                )}
+                              </div>
                               {item.bodyName && (
                                 <div style={{ fontSize: "10px", color: "var(--tx3)", marginTop: "1px" }}>
                                   Main Body: {item.bodyName}

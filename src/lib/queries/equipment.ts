@@ -32,6 +32,9 @@ function mapEquipment(row: any): Equipment {
     notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ownershipType: (row.ownership_type as "INHOUSE" | "VENDOR") || "INHOUSE",
+    vendorId: row.vendor_id || null,
+    vendorName: row.vendor?.name || null,
   };
 }
 
@@ -59,7 +62,7 @@ export async function getEquipment(filters: EquipmentFilters = {}): Promise<{ it
   const [rows, total] = await Promise.all([
     db.equipment.findMany({
       where,
-      include: { kit: true },
+      include: { kit: true, vendor: true },
       orderBy: { id: "desc" },
       take: filters.limit,
       skip: filters.offset,
@@ -76,7 +79,7 @@ export async function getEquipment(filters: EquipmentFilters = {}): Promise<{ it
 export async function getEquipmentById(id: number): Promise<Equipment | undefined> {
   const row = await db.equipment.findUnique({
     where: { id },
-    include: { kit: true },
+    include: { kit: true, vendor: true },
   });
   return row ? mapEquipment(row) : undefined;
 }
@@ -136,7 +139,7 @@ export async function getEquipmentDetailsById(id: number) {
 export async function getEquipmentByKitId(kitId: number): Promise<Equipment[]> {
   const rows = await db.equipment.findMany({
     where: { kit_id: kitId },
-    include: { kit: true },
+    include: { kit: true, vendor: true },
   });
   return rows.map(mapEquipment);
 }
@@ -159,8 +162,10 @@ export async function createEquipment(item: Omit<Equipment, "id" | "createdAt">)
       status: item.status || "AVAILABLE",
       notes: item.notes ?? null,
       created_at: nowStr,
+      ownership_type: item.ownershipType || "INHOUSE",
+      vendor_id: item.vendorId ?? null,
     },
-    include: { kit: true }
+    include: { kit: true, vendor: true }
   });
 
   return mapEquipment(row);
@@ -190,8 +195,10 @@ export async function updateEquipment(id: number, patch: Partial<Omit<Equipment,
       status: merged.status,
       notes: merged.notes ?? null,
       updated_at: nowStr,
+      ownership_type: merged.ownershipType || "INHOUSE",
+      vendor_id: merged.vendorId ?? null,
     },
-    include: { kit: true }
+    include: { kit: true, vendor: true }
   });
 
   return mapEquipment(row);

@@ -16,9 +16,11 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
   const invoice = invoices.find((inv) => inv.id === invoiceId) ?? invoices[invoices.length - 1];
 
   const [formAmount, setFormAmount] = useState(
-    invoice ? invoice.balance.toString() : ""
+    invoice ? (invoice.advanceReceived ? invoice.balance.toString() : invoice.advance.toString()) : ""
   );
-  const [formType, setFormType] = useState("Balance");
+  const [formType, setFormType] = useState(
+    invoice && !invoice.advanceReceived ? "Advance" : "Balance"
+  );
   const [formMethod, setFormMethod] = useState("Bank transfer");
   const [formRef, setFormRef] = useState("");
   const [formDate, setFormDate] = useState("");
@@ -39,17 +41,32 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
   }, []);
 
   const handleRecordPayment = () => {
-    if (!invoice || invoice.balanceReceived) return;
+    if (!invoice) return;
+    const isAdvance = formType === "Advance";
+    if (isAdvance && invoice.advanceReceived) return;
+    if (!isAdvance && invoice.balanceReceived) return;
+
+    const payload: any = {
+      id: invoice.id,
+    };
+
+    if (isAdvance) {
+      payload.advanceReceived = true;
+      payload.advanceReceivedAt = formDate;
+      payload.advanceRef = formRef;
+      payload.advanceMethod = formMethod;
+      payload.status = invoice.balanceReceived ? "Paid" : "Partial paid";
+    } else {
+      payload.balanceReceived = true;
+      payload.balanceReceivedAt = formDate;
+      payload.balanceRef = formRef;
+      payload.balanceMethod = formMethod;
+      payload.status = invoice.advanceReceived ? "Paid" : "Partial paid";
+    }
+
     dispatchInvoices({
       type: "UPDATE_INVOICE",
-      payload: {
-        id: invoice.id,
-        balanceReceived: true,
-        balanceReceivedAt: formDate,
-        balanceRef: formRef,
-        balanceMethod: formMethod,
-        status: invoice.advanceReceived ? "Paid" : "Partial paid",
-      },
+      payload,
     });
   };
 
@@ -183,7 +200,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
               </div>
             </div>
 
-            {!invoice.balanceReceived && (
+            {!(invoice.advanceReceived && invoice.balanceReceived) && (
               <div className="card">
                 <div className="card-t">Record new payment</div>
                 <div className="fgrid">
@@ -200,10 +217,18 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                     <select
                       className="fsel"
                       value={formType}
-                      onChange={(e) => setFormType(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormType(val);
+                        if (val === "Advance") {
+                          setFormAmount(invoice.advance.toString());
+                        } else {
+                          setFormAmount(invoice.balance.toString());
+                        }
+                      }}
                     >
-                      <option>Balance</option>
-                      <option>Advance</option>
+                      {!invoice.balanceReceived && <option value="Balance">Balance</option>}
+                      {!invoice.advanceReceived && <option value="Advance">Advance</option>}
                     </select>
                   </div>
                   <div className="field">

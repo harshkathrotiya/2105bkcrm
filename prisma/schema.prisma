@@ -42,6 +42,10 @@ model Inquiry {
   venue              String             @default("")
   notes              String             @default("")
   status             String             @default("New")
+  department         String             @default("VIDEO")
+  power_requirements String             @default("")
+  tables_space       String             @default("")
+  other_requirements String             @default("")
   created_at         String
   updated_at         String?
   quotations         Quotation[]
@@ -53,27 +57,29 @@ model Inquiry {
 }
 
 model Quotation {
-  id          String    @id
-  inquiry_id  String
-  inquiry     Inquiry   @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
-  client_name String
-  event_name  String
-  quote_no    String
-  start_date  String
-  end_date    String
-  days        Int       @default(1)
-  venue       String    @default("")
-  status      String    @default("Draft")
-  equipment   String    @default("[]")
-  subtotal    Float     @default(0)
-  cgst        Float     @default(0)
-  sgst        Float     @default(0)
-  total       Float     @default(0)
-  created_at  String
-  updated_at  String?
-  sent_at     String?
-  approved_at String?
-  invoices    Invoice[]
+  id              String    @id
+  inquiry_id      String
+  inquiry         Inquiry   @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  client_name     String
+  event_name      String
+  quote_no        String
+  start_date      String
+  end_date        String
+  days            Int       @default(1)
+  venue           String    @default("")
+  status          String    @default("Draft")
+  equipment       String    @default("[]")
+  subtotal        Float     @default(0)
+  cgst            Float     @default(0)
+  sgst            Float     @default(0)
+  total           Float     @default(0)
+  revision_number Int       @default(0)
+  signed_copy_url String    @default("")
+  created_at      String
+  updated_at      String?
+  sent_at         String?
+  approved_at     String?
+  invoices        Invoice[]
 
   @@map("quotations")
 }
@@ -102,6 +108,7 @@ model Invoice {
   balance_ref         String    @default("")
   balance_method      String    @default("")
   hdd_delivered       Int       @default(0)
+  hdd_size_gb         Int?
   created_at          String
   updated_at          String?
   due_date            String
@@ -151,6 +158,9 @@ model Equipment {
   created_at     String
   updated_at     String?
   bookings       EquipmentBooking[]
+  ownership_type String             @default("INHOUSE")
+  vendor_id      Int?
+  vendor         Vendor?            @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
 
   @@map("equipment")
 }
@@ -167,6 +177,7 @@ model Vendor {
   is_active          Int                @default(1)
   created_at         String
   equipment_bookings EquipmentBooking[]
+  equipments         Equipment[]
 
   @@map("vendors")
 }
@@ -207,6 +218,7 @@ model StaffAssignment {
   total_amount  Float
   is_duplicate  Int            @default(0)
   confirmed_dup Int            @default(0)
+  reporting_time String        @default("09:00 AM")
   created_at    String
   payments      StaffPayment[]
 
@@ -253,4 +265,14 @@ model EquipmentBooking {
   confirmed_at        String?
 
   @@map("equipment_bookings")
+}
+
+model User {
+  id         String @id @default(uuid())
+  username   String @unique
+  password   String
+  role       String @default("Admin")
+  created_at String
+
+  @@map("users")
 }

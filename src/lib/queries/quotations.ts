@@ -29,6 +29,8 @@ export async function getAllQuotations(): Promise<Quotation[]> {
     updatedAt: r.updated_at ?? undefined,
     sentAt: r.sent_at,
     approvedAt: r.approved_at,
+    revisionNumber: r.revision_number,
+    signedCopyUrl: r.signed_copy_url,
   }));
 }
 
@@ -57,6 +59,8 @@ export async function getQuotationById(id: string): Promise<Quotation | undefine
     updatedAt: row.updated_at ?? undefined,
     sentAt: row.sent_at,
     approvedAt: row.approved_at,
+    revisionNumber: row.revision_number,
+    signedCopyUrl: row.signed_copy_url,
   };
 }
 
@@ -81,6 +85,8 @@ export async function createQuotation(quotation: Quotation): Promise<Quotation> 
       created_at: quotation.createdAt,
       sent_at: quotation.sentAt,
       approved_at: quotation.approvedAt,
+      revision_number: quotation.revisionNumber ?? 0,
+      signed_copy_url: quotation.signedCopyUrl ?? "",
     },
   });
   return quotation;
@@ -115,6 +121,8 @@ export async function updateQuotation(
       updated_at: merged.updatedAt ?? null,
       sent_at: merged.sentAt,
       approved_at: merged.approvedAt,
+      revision_number: merged.revisionNumber ?? 0,
+      signed_copy_url: merged.signedCopyUrl ?? "",
     },
   });
 
