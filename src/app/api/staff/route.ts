@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") || undefined;
     const paymentType = searchParams.get("paymentType") || undefined;
     const department = (searchParams.get("department") as "VIDEO" | "LED" | "BOTH") || undefined;
+    const status = searchParams.get("status") || undefined;
 
     // Validate enum query params if provided
     if (type && !["INHOUSE", "EXTERNAL"].includes(type)) {
