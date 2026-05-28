@@ -5,7 +5,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import { useQuotations, useInvoices } from "@/lib/store";
+import { useQuotations, useInvoices, useInquiries } from "@/lib/store";
 import type { Quotation } from "@/lib/types";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 
@@ -38,9 +38,11 @@ interface QuoteChain {
 export default function Screen11QuotationList() {
   const { quotations, loading: quotationsLoading } = useQuotations();
   const { invoices } = useInvoices();
+  const { inquiries } = useInquiries();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [selectedDepts, setSelectedDepts] = useState<string[]>(['VIDEO', 'LED']);
   const [page, setPage] = useState(1);
   const [expandedChains, setExpandedChains] = useState<Set<string>>(new Set());
 
@@ -95,8 +97,17 @@ export default function Screen11QuotationList() {
         (chain) => chain.latest.status === statusFilter
       );
     }
+    if (selectedDepts.length > 0 && selectedDepts.length < 2) {
+      const activeDept = selectedDepts[0];
+      chains = chains.filter((chain) => {
+        const inq = inquiries.find((i) => i.id === chain.latest.inquiryId);
+        return inq?.department === activeDept || inq?.department === 'MERGED';
+      });
+    } else if (selectedDepts.length === 0) {
+      chains = [];
+    }
     return chains;
-  }, [allChains, search, statusFilter]);
+  }, [allChains, search, statusFilter, selectedDepts, inquiries]);
 
   const totalPages = Math.max(
     1,
@@ -168,6 +179,34 @@ export default function Screen11QuotationList() {
         </div>
 
         <div className="card !p-3">
+          {/* Department checkboxes */}
+          <div className="flex gap-4 items-center" style={{ marginBottom: '14px' }}>
+            <span className="text-[11px] text-tx3 font-medium">Departments:</span>
+            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-tx2">
+              <input
+                type="checkbox"
+                checked={selectedDepts.includes('VIDEO')}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setSelectedDepts(prev => checked ? [...prev, 'VIDEO'] : prev.filter(d => d !== 'VIDEO'));
+                  setPage(1);
+                }}
+              />
+              <span>Video</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-tx2">
+              <input
+                type="checkbox"
+                checked={selectedDepts.includes('LED')}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setSelectedDepts(prev => checked ? [...prev, 'LED'] : prev.filter(d => d !== 'LED'));
+                  setPage(1);
+                }}
+              />
+              <span>LED</span>
+            </label>
+          </div>
           <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
             <input
               type="text"
@@ -251,6 +290,12 @@ export default function Screen11QuotationList() {
                                 +{revCount - 1}
                               </span>
                             )}
+                             {(() => {
+                              const inq = inquiries.find((i) => i.id === lt.inquiryId);
+                              if (inq?.department === 'LED') return <span style={{ fontSize: '9px', background: 'var(--sem-bl-bg)', color: 'var(--sem-bl-tx)', borderRadius: '3px', padding: '1px 4px', marginLeft: '4px' }}>LED</span>;
+                              if (inq?.department === 'MERGED') return <span style={{ fontSize: '9px', background: 'var(--sem-am-bg)', color: 'var(--sem-am-tx)', borderRadius: '3px', padding: '1px 4px', marginLeft: '4px' }}>MERGED</span>;
+                              return null;
+                            })()}
                           </div>
                         </td>
                         <td>

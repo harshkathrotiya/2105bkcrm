@@ -5,7 +5,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import { useInvoices } from "@/lib/store";
+import { useInvoices, useInquiries, useQuotations } from "@/lib/store";
 
 const STATUS_COLORS: Record<string, "gr" | "am" | "bl" | "rd" | "gy"> = {
   Paid:           "gr",
@@ -17,9 +17,18 @@ const ITEMS_PER_PAGE = 8;
 
 export default function Screen12InvoiceList() {
   const { invoices } = useInvoices();
+  const { inquiries } = useInquiries();
+  const { quotations } = useQuotations();
+
+  const getInvDept = (inv: typeof invoices[0]) => {
+    const quot = quotations.find((q) => q.id === inv.quotationId);
+    const inq = quot ? inquiries.find((i) => i.id === quot.inquiryId) : undefined;
+    return inq?.department ?? 'VIDEO';
+  };
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [selectedDepts, setSelectedDepts] = useState<string[]>(['VIDEO', 'LED']);
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
@@ -38,8 +47,17 @@ export default function Screen12InvoiceList() {
     if (statusFilter !== "All") {
       list = list.filter((inv) => inv.status === statusFilter);
     }
+    if (selectedDepts.length > 0 && selectedDepts.length < 2) {
+      const activeDept = selectedDepts[0];
+      list = list.filter((inv) => {
+        const dept = getInvDept(inv);
+        return dept === activeDept || dept === 'MERGED';
+      });
+    } else if (selectedDepts.length === 0) {
+      list = [];
+    }
     return list;
-  }, [invoices, search, statusFilter]);
+  }, [invoices, search, statusFilter, selectedDepts, inquiries, quotations]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice(
@@ -89,6 +107,34 @@ export default function Screen12InvoiceList() {
         </div>
 
         <div className="card !p-3">
+          {/* Department checkboxes */}
+          <div className="flex gap-4 items-center" style={{ marginBottom: '14px' }}>
+            <span className="text-[11px] text-tx3 font-medium">Departments:</span>
+            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-tx2">
+              <input
+                type="checkbox"
+                checked={selectedDepts.includes('VIDEO')}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setSelectedDepts(prev => checked ? [...prev, 'VIDEO'] : prev.filter(d => d !== 'VIDEO'));
+                  setPage(1);
+                }}
+              />
+              <span>Video</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-tx2">
+              <input
+                type="checkbox"
+                checked={selectedDepts.includes('LED')}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setSelectedDepts(prev => checked ? [...prev, 'LED'] : prev.filter(d => d !== 'LED'));
+                  setPage(1);
+                }}
+              />
+              <span>LED</span>
+            </label>
+          </div>
           <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
             <input
               type="text"
@@ -120,7 +166,7 @@ export default function Screen12InvoiceList() {
                 <th style={{ width: 110, textAlign: "right" }}>Total</th>
                 <th style={{ width: 110, textAlign: "right" }}>Balance</th>
                 <th style={{ width: 90 }}>Status</th>
-                <th style={{ width: 60 }}>HDD</th>
+                <th style={{ width: 80 }}>HDD / Install</th>
                 <th style={{ width: 80 }}></th>
               </tr>
             </thead>
@@ -161,9 +207,15 @@ export default function Screen12InvoiceList() {
                         </Badge>
                       </td>
                       <td>
-                        <Badge variant={inv.hddDelivered ? "gr" : "gy"}>
-                          {inv.hddDelivered ? "Done" : "Pending"}
-                        </Badge>
+                        {getInvDept(inv) === 'LED' || getInvDept(inv) === 'MERGED' ? (
+                          <Badge variant={inv.deinstallDone ? 'gr' : 'gy'}>
+                            {inv.deinstallDone ? 'Deinstalled' : 'Pending'}
+                          </Badge>
+                        ) : (
+                          <Badge variant={inv.hddDelivered ? 'gr' : 'gy'}>
+                            {inv.hddDelivered ? 'Done' : 'Pending'}
+                          </Badge>
+                        )}
                       </td>
                       <td>
                         <Link

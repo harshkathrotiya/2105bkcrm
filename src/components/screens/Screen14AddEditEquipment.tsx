@@ -25,7 +25,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
 
   const [form, setForm] = useState({
     productName: "",
-    category: "CAMERA" as "CAMERA" | "VIDEO_MIXER" | "VIDEO_RECORDER" | "AUDIO_MIXER" | "WIRELESS_TX" | "UPS" | "ACCESSORY",
+    category: "CAMERA" as "CAMERA" | "VIDEO_MIXER" | "VIDEO_RECORDER" | "AUDIO_MIXER" | "WIRELESS_TX" | "UPS" | "ACCESSORY" | "LED_PANEL" | "LED_PROCESSOR" | "LED_CABLE" | "LED_ACCESSORY",
     quantity: 1,
     serialNumber: "",
     bodyName: "",

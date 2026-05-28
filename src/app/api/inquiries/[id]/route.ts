@@ -14,7 +14,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const inquiry = getInquiryById(id);
+    const inquiry = await getInquiryById(id);
     if (!inquiry) {
       return Response.json({ error: "Inquiry not found" }, { status: 404 });
     }
@@ -43,12 +43,18 @@ export async function PATCH(
     if (body.status !== undefined) v.oneOf("status", INQUIRY_STATUSES);
     if (v.hasErrors()) return v.response();
 
-    const updated = updateInquiry(id, {
+    const updated = await updateInquiry(id, {
       ...body,
       eventType: body.eventType?.trim(),
+      eventName: body.eventName?.trim(),
       venue: body.venue?.trim(),
       notes: body.notes?.trim(),
       updatedAt: new Date().toISOString().split("T")[0],
+      screenWidth: body.screenWidth !== undefined ? parseFloat(body.screenWidth) : undefined,
+      screenHeight: body.screenHeight !== undefined ? parseFloat(body.screenHeight) : undefined,
+      screenAreaSqft: body.screenAreaSqft !== undefined ? parseFloat(body.screenAreaSqft) : undefined,
+      totalCabinets: body.totalCabinets !== undefined ? parseInt(body.totalCabinets, 10) : undefined,
+      ratePerSqft: body.ratePerSqft !== undefined ? parseFloat(body.ratePerSqft) : undefined,
     });
     if (!updated) {
       return Response.json({ error: "Inquiry not found" }, { status: 404 });
@@ -66,7 +72,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const deleted = deleteInquiry(id);
+    const deleted = await deleteInquiry(id);
     if (!deleted) {
       return Response.json({ error: "Inquiry not found" }, { status: 404 });
     }

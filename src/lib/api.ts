@@ -214,6 +214,7 @@ export function fetchEquipment(params?: {
   search?: string;
   page?: number;
   limit?: number;
+  department?: string;
 }): Promise<EquipmentFetchResult> {
   const query = new URLSearchParams();
   if (params?.category) query.set("category", params.category);
@@ -221,6 +222,7 @@ export function fetchEquipment(params?: {
   if (params?.search) query.set("search", params.search);
   if (params?.page) query.set("page", params.page.toString());
   if (params?.limit) query.set("limit", params.limit.toString());
+  if (params?.department) query.set("department", params.department);
   return request(`/api/equipment?${query.toString()}`);
 }
 
@@ -259,10 +261,11 @@ export function importEquipmentCSV(csvText: string): Promise<{ success: boolean;
 
 // ── Kits ─────────────────────────────────────────────────────────────────────
 
-export function fetchKits(params?: { startDate?: string; endDate?: string }): Promise<Kit[]> {
+export function fetchKits(params?: { startDate?: string; endDate?: string; department?: string }): Promise<Kit[]> {
   const query = new URLSearchParams();
   if (params?.startDate) query.set("startDate", params.startDate);
   if (params?.endDate) query.set("endDate", params.endDate);
+  if (params?.department) query.set("department", params.department);
   return request(`/api/kits?${query.toString()}`);
 }
 
@@ -389,6 +392,7 @@ export interface StaffFetchParams {
   type?: string;
   paymentType?: string;
   status?: string;
+  department?: string;
 }
 
 export function fetchStaff(params?: StaffFetchParams): Promise<(Staff & { status: "Available" | "Deployed"; pendingPayment: number })[]> {
@@ -397,6 +401,7 @@ export function fetchStaff(params?: StaffFetchParams): Promise<(Staff & { status
   if (params?.type) query.set("type", params.type);
   if (params?.paymentType) query.set("paymentType", params.paymentType);
   if (params?.status) query.set("status", params.status);
+  if (params?.department) query.set("department", params.department);
   return request(`/api/staff?${query.toString()}`);
 }
 
@@ -523,5 +528,41 @@ export function checkStaffAvailability(startDate: string, endDate: string, role?
   const query = new URLSearchParams({ startDate, endDate });
   if (role) query.set("role", role);
   return request(`/api/staff/availability?${query.toString()}`);
+}
+
+// ── Dispatch Boxes ────────────────────────────────────────────────────────────
+
+export interface DispatchBox {
+  id: number;
+  inquiryId: string;
+  boxNumber: number;
+  contents: string;
+  cabinets: number;
+  vehicle: "Vehicle 1" | "Vehicle 2";
+  source: "BK_MEDIA" | "VENDOR";
+}
+
+export function fetchDispatchBoxes(inquiryId: string): Promise<DispatchBox[]> {
+  return request(`/api/inquiries/${inquiryId}/dispatch-boxes`);
+}
+
+export function createDispatchBox(inquiryId: string, data: Omit<DispatchBox, "id" | "inquiryId">): Promise<DispatchBox> {
+  return request(`/api/inquiries/${inquiryId}/dispatch-boxes`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateDispatchBox(inquiryId: string, boxId: number, data: Partial<Omit<DispatchBox, "id" | "inquiryId">>): Promise<DispatchBox> {
+  return request(`/api/inquiries/${inquiryId}/dispatch-boxes/${boxId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteDispatchBox(inquiryId: string, boxId: number): Promise<void> {
+  return request(`/api/inquiries/${inquiryId}/dispatch-boxes/${boxId}`, {
+    method: "DELETE",
+  });
 }
 

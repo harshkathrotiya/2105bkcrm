@@ -83,6 +83,7 @@ interface EquipmentContextValue {
     search?: string;
     page?: number;
     limit?: number;
+    department?: string;
   }) => Promise<void>;
   refreshAssetSummary: () => Promise<void>;
   dispatchEquipment: (action: {
@@ -104,6 +105,7 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
     search?: string;
     page?: number;
     limit?: number;
+    department?: string;
   }) => {
     dispatch({ type: "SET_LOADING", payload: true });
     try {

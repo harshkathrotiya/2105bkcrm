@@ -25,6 +25,7 @@ export default function Screen13EquipmentList() {
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [deptFilter, setDeptFilter] = useState<"" | "VIDEO" | "LED">("");
   const [showCsvModal, setShowCsvModal] = useState(false);
   const [csvText, setCsvText] = useState("");
   const [csvError, setCsvError] = useState("");
@@ -48,8 +49,9 @@ export default function Screen13EquipmentList() {
       search: search || undefined,
       page: currentPage,
       limit: 20,
+      department: deptFilter || undefined,
     });
-  }, [categoryFilter, statusFilter, search, currentPage, refreshEquipment]);
+  }, [categoryFilter, statusFilter, search, currentPage, deptFilter, refreshEquipment]);
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
@@ -334,6 +336,18 @@ export default function Screen13EquipmentList() {
           {/* Main equipment table */}
           <div>
             <div className="card !p-3" style={{ marginBottom: "0px" }}>
+              {/* Dept tabs */}
+              <div className="flex gap-1" style={{ marginBottom: "12px" }}>
+                {([["", "All"], ["VIDEO", "Video"], ["LED", "LED"]] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    className={`btn text-[10px] px-3 ${deptFilter === val ? "btn-primary" : ""}`}
+                    onClick={() => { setDeptFilter(val); setCurrentPage(1); }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
                 <input
                   type="text"

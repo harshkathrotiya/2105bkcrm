@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category") || undefined;
     const status = searchParams.get("status") || undefined;
     const search = searchParams.get("search") || undefined;
+    const department = (searchParams.get("department") as "VIDEO" | "LED") || undefined;
     const pageRaw = parseInt(searchParams.get("page") || "1", 10);
     const limitRaw = parseInt(searchParams.get("limit") || "20", 10);
 
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
       search,
       limit,
       offset,
+      department,
     });
 
     const categoryCounts = await getEquipmentCategoryCounts();
@@ -68,6 +70,7 @@ export async function POST(request: NextRequest) {
       notes: body.notes?.trim() || null,
       ownershipType: body.ownershipType || "INHOUSE",
       vendorId: body.vendorId ? parseInt(body.vendorId, 10) : null,
+      department: body.department ?? "VIDEO",
     });
 
     return Response.json(item, { status: 201 });

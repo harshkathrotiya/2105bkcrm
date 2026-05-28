@@ -5,7 +5,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import { useQuotations } from "@/lib/store";
+import { useQuotations, useInquiries } from "@/lib/store";
 import { generateRevisionNo } from "@/lib/utils";
 
 interface Props {
@@ -32,7 +32,11 @@ const equipmentDescriptions: Record<string, string> = {
 export default function Screen06QuotationPDF({ quotationId }: Props) {
   const router = useRouter();
   const { quotations, dispatchQuotations } = useQuotations();
+  const { inquiries } = useInquiries();
   const quotation = quotations.find((q) => q.id === quotationId);
+  const inquiry = quotation ? inquiries.find((i) => i.id === quotation.inquiryId) : null;
+  const isLed = inquiry?.department === "LED";
+  const isMerged = inquiry?.department === "MERGED";
 
   // All quotations for the same inquiry (current + revisions)
   const revisions = quotation
@@ -251,29 +255,116 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                 </div>
               </div>
 
-              {/* Items table - NO RATES */}
-              <table className="pdf-tbl">
-                <thead>
-                  <tr>
-                    <th style={{ width: 28 }}>No.</th>
-                    <th>Position</th>
-                    <th>Equipment description</th>
-                    <th style={{ width: 46, textAlign: "center" }}>Days</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quotation.equipment.map((row) => (
-                    <tr key={row.no}>
-                      <td>{row.no}</td>
-                      <td>{row.position}</td>
-                      <td>
-                        {equipmentDescriptions[row.equip] ?? row.equip}
-                      </td>
-                      <td style={{ textAlign: "center" }}>{row.days}</td>
+              {/* Items table */}
+              {isLed ? (
+                <table className="pdf-tbl">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 28 }}>No.</th>
+                      <th>Description</th>
+                      <th style={{ width: 110, textAlign: "center" }}>Area (sq.ft)</th>
+                      <th style={{ width: 46, textAlign: "center" }}>Days</th>
+                      <th style={{ width: 100, textAlign: "right" }}>Amount (₹)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {quotation.equipment.map((row, idx) => {
+                      const area = inquiry?.screenAreaSqft || (inquiry?.screenWidth && inquiry?.screenHeight ? inquiry.screenWidth * inquiry.screenHeight : 0) || 0;
+                      return (
+                        <tr key={row.no}>
+                          <td>{idx + 1}</td>
+                          <td>{row.position}</td>
+                          <td style={{ textAlign: "center" }}>{area ? `${area.toFixed(1)} sq.ft` : "—"}</td>
+                          <td style={{ textAlign: "center" }}>{row.days}</td>
+                          <td style={{ textAlign: "right", fontWeight: 700 }}>₹{fmt(row.amount)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : isMerged ? (
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "11.5px", textTransform: "uppercase", color: "var(--tx3)", marginBottom: "8px", borderBottom: "1.5px solid var(--b1)", paddingBottom: "4px" }}>
+                    Video Services
+                  </div>
+                  <table className="pdf-tbl" style={{ marginBottom: "20px" }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: 28 }}>No.</th>
+                        <th>Position</th>
+                        <th>Equipment description</th>
+                        <th style={{ width: 46, textAlign: "center" }}>Days</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quotation.equipment
+                        .filter(row => !row.equip.includes("LED"))
+                        .map((row, idx) => (
+                          <tr key={row.no}>
+                            <td>{idx + 1}</td>
+                            <td>{row.position}</td>
+                            <td>{equipmentDescriptions[row.equip] ?? row.equip}</td>
+                            <td style={{ textAlign: "center" }}>{row.days}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+
+                  <div style={{ fontWeight: 700, fontSize: "11.5px", textTransform: "uppercase", color: "var(--tx3)", marginBottom: "8px", borderBottom: "1.5px solid var(--b1)", paddingBottom: "4px" }}>
+                     LED Services
+                  </div>
+                  <table className="pdf-tbl">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 28 }}>No.</th>
+                        <th>Description</th>
+                        <th style={{ width: 110, textAlign: "center" }}>Area (sq.ft)</th>
+                        <th style={{ width: 46, textAlign: "center" }}>Days</th>
+                        <th style={{ width: 100, textAlign: "right" }}>Amount (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quotation.equipment
+                        .filter(row => row.equip.includes("LED"))
+                        .map((row, idx) => {
+                          const area = inquiry?.screenAreaSqft || (inquiry?.screenWidth && inquiry?.screenHeight ? inquiry.screenWidth * inquiry.screenHeight : 0) || 0;
+                          return (
+                            <tr key={row.no}>
+                              <td>{idx + 1}</td>
+                              <td>{row.position}</td>
+                              <td style={{ textAlign: "center" }}>{area ? `${area.toFixed(1)} sq.ft` : "—"}</td>
+                              <td style={{ textAlign: "center" }}>{row.days}</td>
+                              <td style={{ textAlign: "right", fontWeight: 700 }}>₹{fmt(row.amount)}</td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <table className="pdf-tbl">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 28 }}>No.</th>
+                      <th>Position</th>
+                      <th>Equipment description</th>
+                      <th style={{ width: 46, textAlign: "center" }}>Days</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quotation.equipment.map((row) => (
+                      <tr key={row.no}>
+                        <td>{row.no}</td>
+                        <td>{row.position}</td>
+                        <td>
+                          {row.equip.includes("LED") ? `${row.equip} Screen` : (equipmentDescriptions[row.equip] ?? row.equip)}
+                        </td>
+                        <td style={{ textAlign: "center" }}>{row.days}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
 
               <div className="pdf-totals">
                 <div className="pdf-totals-box">
@@ -297,6 +388,12 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                   </div>
                 </div>
               </div>
+
+              {(isLed || isMerged) && (
+                <div className="text-[10px] text-rd font-medium border border-rd/20 bg-rd/[0.03] rounded p-2 my-3 text-center">
+                  Terms: De-installation only after receipt of full payment.
+                </div>
+              )}
 
               <div className="pdf-footer">
                 <div className="pdf-sign">

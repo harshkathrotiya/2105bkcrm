@@ -172,7 +172,7 @@ export default function Screen31Login() {
             border: "1px solid var(--b1)",
           }}
         >
-          💡 Default Local Admin: <strong>admin</strong> / <strong>admin</strong>
+          Default Local Admin: <strong>admin</strong> / <strong>admin</strong>
         </div>
       </div>
     </div>

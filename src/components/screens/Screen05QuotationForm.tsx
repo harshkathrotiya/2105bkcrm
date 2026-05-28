@@ -169,7 +169,7 @@ export default function Screen05QuotationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { quotations, dispatchQuotations } = useQuotations();
-  const { inquiries } = useInquiries();
+  const { inquiries, dispatchInquiries } = useInquiries();
   const { clients } = useClients();
   const { kits } = useKits();
   const { equipment: allEquipment } = useEquipment();
@@ -179,14 +179,14 @@ export default function Screen05QuotationForm() {
   const liveEquipOptions = useMemo(() => {
     const kitOpts = kits.map((k: Kit) => ({
       value: k.name,
-      label: `📷 ${k.name}`,
+      label: `${k.name}`,
       group: "Kits",
     }));
     const eqOpts = allEquipment
       .filter((e: Equipment) => e.status === "AVAILABLE" || e.status === "IN_USE")
       .map((e: Equipment) => ({
         value: e.productName,
-        label: `🎥 ${e.productName}${e.serialNumber ? ` (${e.serialNumber})` : ""}`,
+        label: `${e.productName}${e.serialNumber ? ` (${e.serialNumber})` : ""}`,
         group: "Equipment Items",
       }));
     // Deduplicate by value
@@ -228,16 +228,221 @@ export default function Screen05QuotationForm() {
     [quotations, selectedInquiryId]
   );
 
+  // LED config states
+  const [screenWidth, setScreenWidth] = useState("");
+  const [screenHeight, setScreenHeight] = useState("");
+  const [ledType, setLedType] = useState("P4");
+  const [location, setLocation] = useState("INDOOR");
+  const [stageType, setStageType] = useState("");
+  const [ratePerSqft, setRatePerSqft] = useState(50);
+  const [ledRates, setLedRates] = useState<Record<string, number>>({
+    P4: 50, P3: 65, P2: 85, FLOOR: 90, P4_CURVED: 60,
+  });
+
+  const screenArea = screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : 0;
+  const totalCabinets = Math.ceil(screenArea / 4);
+
+  // Initialize LED states from inquiry or existing quotation
+  useEffect(() => {
+    if (selectedInquiry) {
+      setScreenWidth(selectedInquiry.screenWidth ? String(selectedInquiry.screenWidth) : "");
+      setScreenHeight(selectedInquiry.screenHeight ? String(selectedInquiry.screenHeight) : "");
+      const type = selectedInquiry.ledType || "P4";
+      setLedType(type);
+      setLocation(selectedInquiry.location || "INDOOR");
+      setStageType(selectedInquiry.stageType || "");
+      
+      const baseRates = { P4: 50, P3: 65, P2: 85, FLOOR: 90, P4_CURVED: 60 };
+      if (selectedInquiry.ratePerSqft) {
+        setLedRates({
+          ...baseRates,
+          [type]: selectedInquiry.ratePerSqft
+        });
+        setRatePerSqft(selectedInquiry.ratePerSqft);
+      } else {
+        setLedRates(baseRates);
+        setRatePerSqft(baseRates[type as keyof typeof baseRates] ?? 50);
+      }
+    }
+  }, [selectedInquiryId]); // Only trigger when inquiry changes
+
+  // Auto-update rate when LED type changes
+  useEffect(() => {
+    setRatePerSqft(ledRates[ledType] ?? 50);
+  }, [ledType, ledRates]);
+
+  // Synchronize LED states back to quotation rows
+  useEffect(() => {
+    const isLedOrMerged = selectedInquiry?.department === "LED" || selectedInquiry?.department === "MERGED";
+    if (!isLedOrMerged) return;
+
+    const area = screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : 0;
+    const rate = ratePerSqft * area;
+    const desc = `LED Screen ${screenWidth || 0}x${screenHeight || 0} ${ledType} (${location})${stageType ? ` at ${stageType}` : ""}`;
+
+    setRows((prev) => {
+      // Find row indexes
+      const ledRowIdx = prev.findIndex(r => r.equip.includes("LED") || r.equip.toLowerCase() === "led screen");
+      const installRowIdx = prev.findIndex(r => r.position.toLowerCase().includes("installation"));
+      const operatorRowIdx = prev.findIndex(r => r.position.toLowerCase().includes("operator"));
+
+      let nextRows = [...prev];
+
+      // 1. Sync or add LED Screen row
+      if (ledRowIdx !== -1) {
+        nextRows[ledRowIdx] = {
+          ...nextRows[ledRowIdx],
+          position: desc,
+          equip: `${ledType} LED`,
+          rate: rate,
+          days: eventDays,
+          amount: rate * eventDays,
+        };
+      } else {
+        const maxNo = nextRows.reduce((m, r) => Math.max(m, r.no), 0);
+        nextRows.push({
+          no: maxNo + 1,
+          position: desc,
+          equip: `${ledType} LED`,
+          rate: rate,
+          days: eventDays,
+          amount: rate * eventDays,
+        });
+      }
+
+      // 2. Sync or add Installation row
+      const updatedInstallRowIdx = nextRows.findIndex(r => r.position.toLowerCase().includes("installation"));
+      if (updatedInstallRowIdx !== -1) {
+        nextRows[updatedInstallRowIdx] = {
+          ...nextRows[updatedInstallRowIdx],
+          rate: 5000,
+          days: 1,
+          amount: 5000,
+        };
+      } else {
+        const maxNo = nextRows.reduce((m, r) => Math.max(m, r.no), 0);
+        nextRows.push({
+          no: maxNo + 1,
+          position: "Installation & de-installation charges",
+          equip: "Service",
+          rate: 5000,
+          days: 1,
+          amount: 5000,
+        });
+      }
+
+      // 3. Sync or add Operator row
+      const updatedOperatorRowIdx = nextRows.findIndex(r => r.position.toLowerCase().includes("operator"));
+      if (updatedOperatorRowIdx !== -1) {
+        nextRows[updatedOperatorRowIdx] = {
+          ...nextRows[updatedOperatorRowIdx],
+          rate: 2000,
+          days: eventDays,
+          amount: 2000 * eventDays,
+        };
+      } else {
+        const maxNo = nextRows.reduce((m, r) => Math.max(m, r.no), 0);
+        nextRows.push({
+          no: maxNo + 1,
+          position: "Content management operator",
+          equip: "Operator",
+          rate: 2000,
+          days: eventDays,
+          amount: 2000 * eventDays,
+        });
+      }
+
+      // Re-index row numbers
+      return nextRows.map((r, i) => ({ ...r, no: i + 1 }));
+    });
+  }, [screenWidth, screenHeight, ledType, location, stageType, ratePerSqft, selectedInquiry, eventDays]);
+
+  const getDefaultRows = (inq: any, days: number): QuotationRow[] => {
+    if (!inq) return [];
+    const dept = inq.department || "VIDEO";
+    if (dept === "LED") {
+      const area = inq.screenWidth && inq.screenHeight ? inq.screenWidth * inq.screenHeight : 0;
+      const rateSetting = inq.ratePerSqft || 50;
+      const rate = rateSetting * area;
+      const desc = `LED Screen ${inq.screenWidth || 0}x${inq.screenHeight || 0} ${inq.ledType || "P4"} (${inq.location || "INDOOR"})${inq.stageType ? ` at ${inq.stageType}` : ""}`;
+      return [
+        {
+          no: 1,
+          position: desc,
+          equip: `${inq.ledType || "P4"} LED`,
+          rate: rate,
+          days: days,
+          amount: rate * days,
+        },
+        {
+          no: 2,
+          position: "Installation & de-installation charges",
+          equip: "Service",
+          rate: 5000,
+          days: 1,
+          amount: 5000,
+        },
+        {
+          no: 3,
+          position: "Content management operator",
+          equip: "Operator",
+          rate: 2000,
+          days: days,
+          amount: 2000 * days,
+        }
+      ];
+    } else if (dept === "MERGED") {
+      const area = inq.screenWidth && inq.screenHeight ? inq.screenWidth * inq.screenHeight : 0;
+      const rateSetting = inq.ratePerSqft || 50;
+      const rate = rateSetting * area;
+      const desc = `LED Screen ${inq.screenWidth || 0}x${inq.screenHeight || 0} ${inq.ledType || "P4"} (${inq.location || "INDOOR"})${inq.stageType ? ` at ${inq.stageType}` : ""}`;
+      return [
+        { no: 1, position: "Center Tally",        equip: "FS6",            rate: 20000, days, amount: 20000 * days },
+        { no: 2, position: "Center Semi Wide",     equip: "FS6",            rate: 20000, days, amount: 20000 * days },
+        { no: 3, position: "Wireless 1",           equip: "FX3 + Wireless", rate: 10000, days, amount: 10000 * days },
+        { no: 4, position: "Photo 1",              equip: "DSLR",           rate:  8000, days, amount:  8000 * days },
+        { no: 5, position: "Video Crane 32 Feet",  equip: "Crane 32 Feet",  rate: 15000, days, amount: 15000 * days },
+        {
+          no: 6,
+          position: desc,
+          equip: `${inq.ledType || "P4"} LED`,
+          rate: rate,
+          days: days,
+          amount: rate * days,
+        },
+        {
+          no: 7,
+          position: "Installation & de-installation charges",
+          equip: "Service",
+          rate: 5000,
+          days: 1,
+          amount: 5000,
+        },
+        {
+          no: 8,
+          position: "Content management operator",
+          equip: "Operator",
+          rate: 2000,
+          days: days,
+          amount: 2000 * days,
+        }
+      ];
+    } else {
+      return [
+        { no: 1, position: "Center Tally",        equip: "FS6",            rate: 20000, days: days, amount: 20000 * days },
+        { no: 2, position: "Center Semi Wide",     equip: "FS6",            rate: 20000, days: days, amount: 20000 * days },
+        { no: 3, position: "Wireless 1",           equip: "FX3 + Wireless", rate: 10000, days: days, amount: 10000 * days },
+        { no: 4, position: "Photo 1",              equip: "DSLR",           rate:  8000, days: days, amount:  8000 * days },
+        { no: 5, position: "Video Crane 32 Feet",  equip: "Crane 32 Feet",  rate: 15000, days: days, amount: 15000 * days },
+      ];
+    }
+  };
+
   // Rows — auto-fill days from inquiry when inquiry changes
   const [rows, setRows] = useState<QuotationRow[]>(() => {
     if (existingQuotation) return existingQuotation.equipment;
-    return [
-      { no: 1, position: "Center Tally",        equip: "FS6",            rate: 20000, days: eventDays, amount: 20000 * eventDays },
-      { no: 2, position: "Center Semi Wide",     equip: "FS6",            rate: 20000, days: eventDays, amount: 20000 * eventDays },
-      { no: 3, position: "Wireless 1",           equip: "FX3 + Wireless", rate: 10000, days: eventDays, amount: 10000 * eventDays },
-      { no: 4, position: "Photo 1",              equip: "DSLR",           rate:  8000, days: eventDays, amount:  8000 * eventDays },
-      { no: 5, position: "Video Crane 32 Feet",  equip: "Crane 32 Feet",  rate: 15000, days: eventDays, amount: 15000 * eventDays },
-    ];
+    const inq = inquiries.find((i) => i.id === defaultInquiryId);
+    return getDefaultRows(inq, eventDays);
   });
 
   const handleInquiryChange = (id: string) => {
@@ -248,13 +453,7 @@ export default function Screen05QuotationForm() {
     if (q) {
       setRows(q.equipment);
     } else {
-      setRows([
-        { no: 1, position: "Center Tally",        equip: "FS6",            rate: 20000, days, amount: 20000 * days },
-        { no: 2, position: "Center Semi Wide",     equip: "FS6",            rate: 20000, days, amount: 20000 * days },
-        { no: 3, position: "Wireless 1",           equip: "FX3 + Wireless", rate: 10000, days, amount: 10000 * days },
-        { no: 4, position: "Photo 1",              equip: "DSLR",           rate:  8000, days, amount:  8000 * days },
-        { no: 5, position: "Video Crane 32 Feet",  equip: "Crane 32 Feet",  rate: 15000, days, amount: 15000 * days },
-      ]);
+      setRows(getDefaultRows(inq, days));
     }
   };
 
@@ -327,6 +526,26 @@ export default function Screen05QuotationForm() {
     };
 
     try {
+      const isLedOrMerged = selectedInquiry.department === "LED" || selectedInquiry.department === "MERGED";
+      if (isLedOrMerged) {
+        const area = screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : 0;
+        const cabinets = Math.ceil(area / 4);
+        await dispatchInquiries({
+          type: "UPDATE_INQUIRY",
+          payload: {
+            id: selectedInquiry.id,
+            screenWidth: screenWidth ? parseFloat(screenWidth) : null,
+            screenHeight: screenHeight ? parseFloat(screenHeight) : null,
+            screenAreaSqft: area > 0 ? area : null,
+            totalCabinets: area > 0 ? cabinets : null,
+            ledType: ledType,
+            ratePerSqft: ratePerSqft,
+            location: location,
+            stageType: stageType || null,
+          }
+        });
+      }
+
       if (existingQuotation) {
         // Update existing — keep same quoteNo
         await dispatchQuotations({
@@ -355,7 +574,7 @@ export default function Screen05QuotationForm() {
             id: newId,
             inquiryId: selectedInquiry.id,
             clientName: selectedClient.name,
-            eventName: selectedInquiry.eventType,
+            eventName: selectedInquiry.eventName || selectedInquiry.eventType,
             quoteNo,
             startDate,
             endDate,
@@ -447,6 +666,106 @@ export default function Screen05QuotationForm() {
             </Badge>
           </div>
         </div>
+
+        {/* LED Screen Configuration (Editable) */}
+        {selectedInquiry && (selectedInquiry.department === 'LED' || selectedInquiry.department === 'MERGED') && (
+          <div className="card" style={{ padding: "16px", marginBottom: "14px", border: "1px solid var(--sem-bl-bdr)" }}>
+            <div className="text-[12px] font-medium text-bl" style={{ marginBottom: "12px" }}>LED Screen Configuration</div>
+            <div className="fgrid">
+              <div className="field">
+                <div className="flbl">Screen Width (ft) *</div>
+                <input
+                  className="finp"
+                  type="number"
+                  min="1"
+                  value={screenWidth}
+                  onChange={(e) => setScreenWidth(e.target.value)}
+                  placeholder="e.g. 10"
+                />
+              </div>
+              <div className="field">
+                <div className="flbl">Screen Height (ft) *</div>
+                <input
+                  className="finp"
+                  type="number"
+                  min="1"
+                  value={screenHeight}
+                  onChange={(e) => setScreenHeight(e.target.value)}
+                  placeholder="e.g. 8"
+                />
+              </div>
+              <div className="field span2">
+                <div className="flbl">LED Type *</div>
+                <select
+                  className="fsel"
+                  value={ledType}
+                  onChange={(e) => setLedType(e.target.value)}
+                >
+                  {['P4', 'P3', 'P2', 'FLOOR', 'P4_CURVED'].map(t => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <div className="flbl">Location</div>
+                <select
+                  className="fsel"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                >
+                  <option value="INDOOR">Indoor</option>
+                  <option value="OUTDOOR">Outdoor</option>
+                </select>
+              </div>
+              <div className="field">
+                <div className="flbl">Stage Type</div>
+                <input
+                  className="finp"
+                  value={stageType}
+                  onChange={(e) => setStageType(e.target.value)}
+                  placeholder="e.g. Main stage"
+                />
+              </div>
+              <div className="field span2">
+                <div className="flbl">Rate per sq.ft (₹)</div>
+                <input
+                  className="finp"
+                  type="number"
+                  min="1"
+                  value={ratePerSqft}
+                  onChange={(e) => setRatePerSqft(Number(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+            <div style={{ marginTop: "16px", borderTop: "1px dashed var(--b1)", paddingTop: "12px" }}>
+              <div className="text-[11px] font-medium text-tx2" style={{ marginBottom: "8px" }}>⚙️ LED Type Rate Settings (Editable per Quotation)</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
+                {Object.entries(ledRates).map(([type, rate]) => (
+                  <div key={type} className="field">
+                    <div className="flbl" style={{ fontSize: "9px" }}>{type} Rate</div>
+                    <input
+                      type="number"
+                      className="finp text-[10px]"
+                      value={rate}
+                      onChange={(e) => {
+                        const newVal = Number(e.target.value) || 0;
+                        setLedRates(prev => ({ ...prev, [type]: newVal }));
+                        if (ledType === type) {
+                          setRatePerSqft(newVal);
+                        }
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {screenArea > 0 && (
+              <div className="flex gap-4 mt-3" style={{ background: 'var(--sem-bl-bg)', color: 'var(--sem-bl-tx)', borderRadius: '6px', padding: '8px 12px', fontSize: '11px' }}>
+                <span>Area: <strong>{screenArea.toFixed(1)} sq.ft</strong></span>
+                <span>Cabinets: <strong>{totalCabinets} pcs</strong></span>
+                <span className="ml-auto">Estimated amount: <strong>₹{(screenArea * ratePerSqft * eventDays).toLocaleString('en-IN')}</strong></span>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="two-col">
           {/* Left — equipment table */}

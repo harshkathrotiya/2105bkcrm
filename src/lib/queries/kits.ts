@@ -13,6 +13,7 @@ function mapKit(row: any): Kit {
     description: row.description,
     mainBodyId: row.main_body_id,
     createdAt: row.created_at,
+    department: row.department as "VIDEO" | "LED",
     items: row.equipment ? row.equipment.map((eq: any) => ({
       id: eq.id,
       productName: eq.product_name,
@@ -35,8 +36,13 @@ function mapKit(row: any): Kit {
   };
 }
 
-export async function getAllKits(): Promise<Kit[]> {
+export async function getAllKits(department?: "VIDEO" | "LED"): Promise<Kit[]> {
+  const where: any = {};
+  if (department) {
+    where.department = department;
+  }
   const rows = await db.kit.findMany({
+    where,
     orderBy: { id: "desc" },
     include: {
       equipment: {
@@ -82,8 +88,8 @@ function getKitAvailabilityFromBookings(
   return "PARTIAL";
 }
 
-export async function getAllKitsWithAvailability(startDate: string, endDate: string): Promise<Kit[]> {
-  const kits = await getAllKits();
+export async function getAllKitsWithAvailability(startDate: string, endDate: string, department?: "VIDEO" | "LED"): Promise<Kit[]> {
+  const kits = await getAllKits(department);
   const equipmentIds = kits.flatMap((kit) => kit.items?.map((item) => item.id) ?? []);
   const kitIds = kits.map((kit) => kit.id);
 
@@ -205,6 +211,7 @@ export async function createKit(kit: {
   mainBodyId?: number | null;
   mainBodyQty?: number | null;
   accessories?: { id: number; quantity: number }[];
+  department?: "VIDEO" | "LED";
 }): Promise<Kit> {
   const nowStr = new Date().toISOString();
   let resultKit: Kit | null = null;
@@ -216,6 +223,7 @@ export async function createKit(kit: {
         description: kit.description ?? null,
         main_body_id: null,
         created_at: nowStr,
+        department: kit.department || "VIDEO",
       }
     });
     const kitId = newKit.id;
@@ -260,7 +268,7 @@ export async function createKit(kit: {
   return resultKit;
 }
 
-export async function updateKit(id: number, patch: Partial<{ name: string; description: string | null; mainBodyId: number | null; mainBodyQty: number | null }>): Promise<Kit | undefined> {
+export async function updateKit(id: number, patch: Partial<{ name: string; description: string | null; mainBodyId: number | null; mainBodyQty: number | null; department: "VIDEO" | "LED" }>): Promise<Kit | undefined> {
   const existing = await getKitById(id);
   if (!existing) return undefined;
 
@@ -290,6 +298,7 @@ export async function updateKit(id: number, patch: Partial<{ name: string; descr
       name: merged.name,
       description: merged.description ?? null,
       main_body_id: finalMainBodyId ?? null,
+      department: merged.department || "VIDEO",
     }
   });
 

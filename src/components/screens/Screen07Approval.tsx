@@ -97,10 +97,13 @@ export default function Screen07Approval({ quotationId }: Props) {
     }
 
     if (!existingInvoice) {
+      const inquiry = inquiries.find((i) => i.id === quotation.inquiryId);
+      const isLedOrMerged = inquiry?.department === "LED" || inquiry?.department === "MERGED";
+
       const advance = Math.round(quotation.total * 0.5);
       const grossForInvoice = quotation.total;
-      const videographyAmount = Math.round(grossForInvoice * 0.82);
-      const photographyAmount = grossForInvoice - videographyAmount;
+      const videographyAmount = isLedOrMerged ? grossForInvoice : Math.round(grossForInvoice * 0.82);
+      const photographyAmount = isLedOrMerged ? 0 : grossForInvoice - videographyAmount;
 
       dispatchInvoices({
         type: "ADD_INVOICE",
@@ -127,6 +130,7 @@ export default function Screen07Approval({ quotationId }: Props) {
           balanceRef: "",
           balanceMethod: "",
           hddDelivered: false,
+          deinstallDone: isLedOrMerged ? false : undefined,
           createdAt: approvalDate,
           dueDate: new Date(
             new Date(approvalDate).getTime() + 7 * 24 * 60 * 60 * 1000

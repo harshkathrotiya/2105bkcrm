@@ -35,6 +35,7 @@ model Inquiry {
   client_id          String
   client             Client             @relation(fields: [client_id], references: [id], onDelete: Cascade)
   event_type         String
+  event_name         String             @default("")
   start_date         String
   end_date           String
   start_time         String             @default("")
@@ -42,16 +43,36 @@ model Inquiry {
   venue              String             @default("")
   notes              String             @default("")
   status             String             @default("New")
-  department         String             @default("VIDEO")
+  department         String             @default("VIDEO") // "VIDEO" | "LED" | "MERGED"
   power_requirements String             @default("")
   tables_space       String             @default("")
   other_requirements String             @default("")
+  
+  // LED Specific Fields (Nullable to support Video-only inquiries)
+  screen_width       Float?
+  screen_height      Float?
+  screen_area_sqft   Float?
+  total_cabinets     Int?
+  led_type           String?            // P4 | P3 | P2 | FLOOR | P4_CURVED
+  rate_per_sqft      Float?
+  location           String             @default("INDOOR") // INDOOR | OUTDOOR
+  stage_type         String?            // Main stage, Backdrop, etc.
+
+  // LED Dispatch fields
+  dispatch_date      String?
+  dispatch_time      String?            @default("06:00 AM")
+  vehicle1_number    String?
+  vehicle1_driver    String?
+  vehicle2_number    String?
+  vehicle2_driver    String?
+
   created_at         String
   updated_at         String?
   quotations         Quotation[]
   staff_assignments  StaffAssignment[]
   staff_payments     StaffPayment[]
   equipment_bookings EquipmentBooking[]
+  dispatch_boxes     LedDispatchBox[]
 
   @@map("inquiries")
 }
@@ -109,6 +130,7 @@ model Invoice {
   balance_method      String    @default("")
   hdd_delivered       Int       @default(0)
   hdd_size_gb         Int?
+  deinstall_done      Int       @default(0) // 1 = done, 0 = pending
   created_at          String
   updated_at          String?
   due_date            String
@@ -132,6 +154,7 @@ model Kit {
   name               String             @unique
   description        String?
   main_body_id       Int?
+  department         String             @default("VIDEO") // "VIDEO" | "LED"
   created_at         String
   equipment          Equipment[]
   equipment_bookings EquipmentBooking[]
@@ -146,6 +169,7 @@ model Equipment {
   quantity       Int                @default(1)
   serial_number  String?
   body_name      String?
+  department     String             @default("VIDEO") // "VIDEO" | "LED"
   kit_id         Int?
   kit            Kit?               @relation(fields: [kit_id], references: [id], onDelete: SetNull)
   resp_person    String?
@@ -189,6 +213,7 @@ model Staff {
   role           String
   staff_type     String
   payment_type   String
+  department     String             @default("VIDEO") // "VIDEO" | "LED" | "BOTH"
   rate_per_day   Float?
   monthly_salary Float?
   with_equipment Int               @default(0)
@@ -275,4 +300,17 @@ model User {
   created_at String
 
   @@map("users")
+}
+
+model LedDispatchBox {
+  id          Int      @id @default(autoincrement())
+  inquiry_id  String
+  inquiry     Inquiry  @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  box_number  Int
+  contents    String
+  cabinets    Int
+  vehicle     String   // "Vehicle 1" | "Vehicle 2"
+  source      String   // "BK_MEDIA" | "VENDOR"
+
+  @@map("led_dispatch_boxes")
 }

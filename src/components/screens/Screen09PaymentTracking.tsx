@@ -46,6 +46,11 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
     if (isAdvance && invoice.advanceReceived) return;
     if (!isAdvance && invoice.balanceReceived) return;
 
+    if (!isAdvance && invoice.deinstallDone === false) {
+      alert("Cannot record balance payment (mark Paid in Full) because LED Deinstallation is pending!");
+      return;
+    }
+
     const payload: any = {
       id: invoice.id,
     };
@@ -77,6 +82,17 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
       payload: {
         id: invoice.id,
         hddDelivered: !invoice.hddDelivered,
+      },
+    });
+  };
+
+  const handleToggleDeinstall = () => {
+    if (!invoice) return;
+    dispatchInvoices({
+      type: "UPDATE_INVOICE",
+      payload: {
+        id: invoice.id,
+        deinstallDone: !invoice.deinstallDone,
       },
     });
   };
@@ -133,11 +149,17 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
             <div className={`met-v ${grossAmount - totalReceived <= 0 ? "g" : "a"}`}>₹{fmt(Math.max(0, grossAmount - totalReceived))}</div>
           </div>
           <div className="met">
-            <div className="met-l">HDD delivery</div>
+            <div className="met-l">{invoice.deinstallDone !== undefined ? "Deinstallation" : "HDD delivery"}</div>
             <div className="met-v text-[12px]" style={{ marginTop: "4px" }}>
-              <Badge variant={invoice.hddDelivered ? "gr" : "bl"}>
-                {invoice.hddDelivered ? "Delivered" : "Pending"}
-              </Badge>
+              {invoice.deinstallDone !== undefined ? (
+                <Badge variant={invoice.deinstallDone ? "gr" : "bl"}>
+                  {invoice.deinstallDone ? "Deinstalled" : "Pending"}
+                </Badge>
+              ) : (
+                <Badge variant={invoice.hddDelivered ? "gr" : "bl"}>
+                  {invoice.hddDelivered ? "Delivered" : "Pending"}
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -283,37 +305,60 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
 
           {/* Right - HDD & Timeline */}
           <div>
-            <div className="card">
-              <div className="card-t">HDD delivery</div>
-              <div className="bg-s2 rounded-lg" style={{ padding: "12px 14px", marginBottom: "10px" }}>
-                <div className="row-item">
-                  <span className="text-[11px] text-tx3">Total data</span>
-                  <span className="font-mono font-medium">480 GB</span>
+            {invoice.deinstallDone !== undefined ? (
+              <div className="card">
+                <div className="card-t">Deinstallation Gate</div>
+                <div className="bg-s2 rounded-lg" style={{ padding: "12px 14px", marginBottom: "10px" }}>
+                  <div className="row-item">
+                    <span className="text-[11px] text-tx3">Site Deinstallation</span>
+                    <Badge variant={invoice.deinstallDone ? "gr" : "am"}>
+                      {invoice.deinstallDone ? "Completed" : "Pending"}
+                    </Badge>
+                  </div>
+                  <div className="text-[9px] text-tx3" style={{ marginTop: "6px" }}>
+                    Deinstallation must be completed before recording the final balance payment.
+                  </div>
                 </div>
-                <div className="row-item">
-                  <span className="text-[11px] text-tx3">HDD size</span>
-                  <Badge variant="am">1 TB</Badge>
+                <button
+                  className={`btn w-full justify-center ${invoice.deinstallDone ? "" : "btn-primary"}`}
+                  onClick={handleToggleDeinstall}
+                >
+                  {invoice.deinstallDone ? "✓ Mark Pending" : "✓ Mark Deinstalled"}
+                </button>
+              </div>
+            ) : (
+              <div className="card">
+                <div className="card-t">HDD delivery</div>
+                <div className="bg-s2 rounded-lg" style={{ padding: "12px 14px", marginBottom: "10px" }}>
+                  <div className="row-item">
+                    <span className="text-[11px] text-tx3">Total data</span>
+                    <span className="font-mono font-medium">480 GB</span>
+                  </div>
+                  <div className="row-item">
+                    <span className="text-[11px] text-tx3">HDD size</span>
+                    <Badge variant="am">1 TB</Badge>
+                  </div>
+                  <div className="row-item">
+                    <span className="text-[11px] text-tx3">Status</span>
+                    <Badge variant={invoice.balanceReceived ? "gr" : "bl"}>
+                      {invoice.balanceReceived ? "Payment received — ready" : "Awaiting payment"}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="row-item">
-                  <span className="text-[11px] text-tx3">Status</span>
-                  <Badge variant={invoice.balanceReceived ? "gr" : "bl"}>
-                    {invoice.balanceReceived ? "Payment received — ready" : "Awaiting payment"}
-                  </Badge>
+                <button
+                  className={`btn w-full justify-center ${
+                    invoice.balanceReceived ? "btn-success" : ""
+                  }`}
+                  onClick={handleMarkHDD}
+                  disabled={!invoice.balanceReceived && !invoice.hddDelivered}
+                >
+                  {invoice.hddDelivered ? "✓ HDD delivered" : "✓ Mark HDD delivered ↗"}
+                </button>
+                <div className="text-[10px] text-tx3 text-center" style={{ marginTop: "6px" }}>
+                  HDD deliver only after full payment
                 </div>
               </div>
-              <button
-                className={`btn w-full justify-center ${
-                  invoice.balanceReceived ? "btn-success" : ""
-                }`}
-                onClick={handleMarkHDD}
-                disabled={!invoice.balanceReceived && !invoice.hddDelivered}
-              >
-                {invoice.hddDelivered ? "✓ HDD delivered" : "✓ Mark HDD delivered ↗"}
-              </button>
-              <div className="text-[10px] text-tx3 text-center" style={{ marginTop: "6px" }}>
-                HDD deliver only after full payment
-              </div>
-            </div>
+            )}
 
             <div className="card">
               <div className="card-t">Timeline</div>
@@ -344,11 +389,13 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                         },
                       ]),
                   {
-                    title: invoice.hddDelivered
-                      ? "HDD delivered"
-                      : "HDD delivery pending",
-                    time: invoice.hddDelivered ? "Completed" : "Ready to deliver",
-                    color: invoice.hddDelivered ? "var(--sem-gr-tx)" : "var(--tx3)",
+                    title: invoice.deinstallDone !== undefined
+                      ? (invoice.deinstallDone ? "Deinstallation completed" : "Deinstallation pending")
+                      : (invoice.hddDelivered ? "HDD delivered" : "HDD delivery pending"),
+                    time: invoice.deinstallDone !== undefined
+                      ? (invoice.deinstallDone ? "Completed" : "Awaiting deinstall")
+                      : (invoice.hddDelivered ? "Completed" : "Ready to deliver"),
+                    color: (invoice.deinstallDone !== undefined ? invoice.deinstallDone : invoice.hddDelivered) ? "var(--sem-gr-tx)" : "var(--tx3)",
                   },
                 ]}
               />

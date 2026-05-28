@@ -66,6 +66,15 @@ export default function Screen17WarehouseCheck() {
   const [bulkConfirming, setBulkConfirming] = useState(false);
   const [vendorRates, setVendorRates] = useState<Record<string, string>>({});
 
+  // Logistics states
+  const [dispatchDate, setDispatchDate] = useState("");
+  const [dispatchTime, setDispatchTime] = useState("");
+  const [vehicle1Number, setVehicle1Number] = useState("");
+  const [vehicle1Driver, setVehicle1Driver] = useState("");
+  const [vehicle2Number, setVehicle2Number] = useState("");
+  const [vehicle2Driver, setVehicle2Driver] = useState("");
+  const [savingLogistics, setSavingLogistics] = useState(false);
+
   useEffect(() => {
     if (!inquiryId) return;
     let active = true;
@@ -82,6 +91,15 @@ export default function Screen17WarehouseCheck() {
         if (!active) return;
         setData(whData);
         setVendors(vendorList.filter((v) => v.isActive));
+        
+        if (whData.inquiry) {
+          setDispatchDate(whData.inquiry.dispatchDate || whData.inquiry.startDate || "");
+          setDispatchTime(whData.inquiry.dispatchTime || "06:00 AM");
+          setVehicle1Number(whData.inquiry.vehicle1Number || "");
+          setVehicle1Driver(whData.inquiry.vehicle1Driver || "");
+          setVehicle2Number(whData.inquiry.vehicle2Number || "");
+          setVehicle2Driver(whData.inquiry.vehicle2Driver || "");
+        }
       } catch (err: any) {
         console.error("Failed to load warehouse check data:", err);
         if (!active) return;
@@ -356,6 +374,64 @@ export default function Screen17WarehouseCheck() {
     return Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
   };
 
+  const ledAssetSummary = useMemo(() => {
+    if (!data) return [];
+    
+    // Count bookings of each category
+    const panelBooked = data.bookings.filter(b => {
+      const eq = data.equipment.find(e => e.id === b.equipmentId);
+      return eq?.category === "LED_PANEL";
+    }).length;
+
+    const procBooked = data.bookings.filter(b => {
+      const eq = data.equipment.find(e => e.id === b.equipmentId);
+      return eq?.category === "LED_PROCESSOR";
+    }).length;
+
+    const cableBooked = data.bookings.filter(b => {
+      const eq = data.equipment.find(e => e.id === b.equipmentId);
+      return eq?.category === "LED_CABLE";
+    }).length;
+
+    const accBooked = data.bookings.filter(b => {
+      const eq = data.equipment.find(e => e.id === b.equipmentId);
+      return eq?.category === "LED_ACCESSORY";
+    }).length;
+
+    return [
+      { name: "LED Panels", category: "LED_PANEL", needed: data.inquiry.totalCabinets || 0, assigned: panelBooked },
+      { name: "LED Processors", category: "LED_PROCESSOR", needed: data.inquiry.totalCabinets ? Math.ceil(data.inquiry.totalCabinets / 100) : 1, assigned: procBooked },
+      { name: "LED Cables (Power & Data)", category: "LED_CABLE", needed: data.inquiry.totalCabinets ? Math.ceil(data.inquiry.totalCabinets * 1.2) : 0, assigned: cableBooked },
+      { name: "LED Accessories / Rigging", category: "LED_ACCESSORY", needed: data.inquiry.totalCabinets ? Math.ceil(data.inquiry.totalCabinets / 10) : 0, assigned: accBooked }
+    ];
+  }, [data]);
+
+  const handleSaveLogistics = async () => {
+    if (!data || !inquiryId) return;
+    try {
+      setSavingLogistics(true);
+      await api.updateInquiry(inquiryId, {
+        dispatchDate: dispatchDate || undefined,
+        dispatchTime: dispatchTime || undefined,
+        vehicle1Number: vehicle1Number || undefined,
+        vehicle1Driver: vehicle1Driver || undefined,
+        vehicle2Number: vehicle2Number || undefined,
+        vehicle2Driver: vehicle2Driver || undefined,
+      });
+      setToastMessage("Logistics details saved successfully!");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 1500);
+      
+      // Refresh
+      const updatedWh = await api.fetchWarehouseCheck(inquiryId);
+      setData(updatedWh);
+    } catch (err: any) {
+      alert(err.message || "Failed to save logistics");
+    } finally {
+      setSavingLogistics(false);
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -486,6 +562,394 @@ export default function Screen17WarehouseCheck() {
           </div>
         }
       >
+        {/* LED logistics & requirements sections */}
+        {(data.inquiry.department === 'LED' || data.inquiry.department === 'MERGED') && (
+          <div className="grid grid-cols-2 gap-4" style={{ marginBottom: "25px" }}>
+            {/* LED Logistics Card */}
+            <div className="card">
+              <div className="card-t">LED Dispatch & Logistics</div>
+              <div className="fgrid text-[11px]" style={{ gap: "10px" }}>
+                <div className="field">
+                  <div className="flbl">Dispatch Date</div>
+                  <input
+                    type="date"
+                    className="finp"
+                    value={dispatchDate}
+                    onChange={(e) => setDispatchDate(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <div className="flbl">Dispatch Time</div>
+                  <input
+                    type="text"
+                    className="finp"
+                    placeholder="e.g. 06:00 AM"
+                    value={dispatchTime}
+                    onChange={(e) => setDispatchTime(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <div className="flbl">Vehicle 1 Number</div>
+                  <input
+                    type="text"
+                    className="finp"
+                    placeholder="e.g. GJ-06-XX-1234"
+                    value={vehicle1Number}
+                    onChange={(e) => setVehicle1Number(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <div className="flbl">Vehicle 1 Driver</div>
+                  <input
+                    type="text"
+                    className="finp"
+                    placeholder="Driver Name"
+                    value={vehicle1Driver}
+                    onChange={(e) => setVehicle1Driver(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <div className="flbl">Vehicle 2 Number</div>
+                  <input
+                    type="text"
+                    className="finp"
+                    placeholder="e.g. GJ-06-YY-5678"
+                    value={vehicle2Number}
+                    onChange={(e) => setVehicle2Number(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <div className="flbl">Vehicle 2 Driver</div>
+                  <input
+                    type="text"
+                    className="finp"
+                    placeholder="Driver Name"
+                    value={vehicle2Driver}
+                    onChange={(e) => setVehicle2Driver(e.target.value)}
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary w-full justify-center"
+                style={{ marginTop: "12px" }}
+                onClick={handleSaveLogistics}
+                disabled={savingLogistics}
+              >
+                {savingLogistics ? "Saving logistics..." : "Save Logistics Details"}
+              </button>
+            </div>
+
+            {/* LED Checklist Card */}
+            <div className="card">
+              <div className="card-t">📋 LED Required Checklist</div>
+              <table className="tbl text-[11px]">
+                <thead>
+                  <tr>
+                    <th>Asset Category</th>
+                    <th style={{ textAlign: "center", width: "70px" }}>Required</th>
+                    <th style={{ textAlign: "center", width: "70px" }}>Assigned</th>
+                    <th style={{ textAlign: "center", width: "80px" }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ledAssetSummary.map((item) => {
+                    const shortage = item.needed > item.assigned;
+                    return (
+                      <tr key={item.category}>
+                        <td style={{ fontWeight: 500 }}>{item.name}</td>
+                        <td style={{ textAlign: "center", fontWeight: "bold" }}>{item.needed}</td>
+                        <td style={{ textAlign: "center" }}>{item.assigned}</td>
+                        <td style={{ textAlign: "center" }}>
+                          <Badge variant={shortage ? "rd" : "gr"}>
+                            {shortage ? `Short (${item.needed - item.assigned})` : "OK"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div className="text-[10px] text-tx3" style={{ marginTop: "8px", fontStyle: "italic" }}>
+                * Panels calculated from area. Cables, Processors, Accessories calculated dynamically.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* LED Screen Warehouse Audit & Vendor Assignment (FRD Module 5) */}
+        {data && (data.inquiry.department === 'LED' || data.inquiry.department === 'MERGED') && (() => {
+          const ledType = data.inquiry.ledType || "P4";
+          
+          const matchingEquipment = data.equipment.filter(e => 
+            e.category === "LED_PANEL" && 
+            e.productName.toLowerCase().includes(ledType.toLowerCase())
+          );
+          
+          const inhouseEquipment = matchingEquipment.filter(e => e.ownershipType === "INHOUSE");
+          const totalOwnedCabinets = inhouseEquipment.reduce((sum, e) => sum + (e.quantity || 1), 0);
+          const totalOwnedSqft = totalOwnedCabinets * 4;
+          
+          const bookedCabinets = inhouseEquipment
+            .filter(e => e.isBookedForRange && !e.bookedForThisInquiry)
+            .reduce((sum, e) => sum + (e.quantity || 1), 0);
+          
+          const availableCabinets = Math.max(0, totalOwnedCabinets - bookedCabinets);
+          const availableSqft = availableCabinets * 4;
+          
+          const neededSqft = Number(data.inquiry.screenAreaSqft) || 0;
+          const neededCabinets = Number(data.inquiry.totalCabinets) || 0;
+          
+          const shortfallSqft = Math.max(0, neededSqft - availableSqft);
+          const shortfallCabinets = Math.max(0, neededCabinets - availableCabinets);
+          
+          const currentInhouseBooking = data.bookings.find(b => 
+            !b.vendorId && 
+            b.position === "LED_PANEL_INHOUSE"
+          );
+          
+          const currentVendorBooking = data.bookings.find(b => 
+            b.vendorId && 
+            b.position === "LED_PANEL_VENDOR"
+          );
+          
+          return (
+            <div className="card" style={{ padding: "16px", marginBottom: "25px", border: "1.5px solid var(--sem-bl-bdr)" }}>
+              <div className="card-t" style={{ color: "var(--bl)", fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span>LED Panel Warehouse Audit & Vendor Assignment</span>
+                <span className="text-[10px] bg-bl/10 text-bl px-2 py-0.5 rounded font-normal font-mono">
+                  {ledType} Screen · {neededSqft} sq.ft needed ({neededCabinets} cabinets)
+                </span>
+              </div>
+              
+              <div className="two-col" style={{ marginTop: "12px", gap: "20px" }}>
+                <div style={{ flex: 1.8 }}>
+                  <div style={{ marginBottom: "16px" }}>
+                    <div className="text-[11px] font-semibold text-gr flex justify-between" style={{ marginBottom: "6px" }}>
+                      <span>Section 1 — BK Media stock</span>
+                      <span>Total Owned: {totalOwnedSqft} sq.ft ({totalOwnedCabinets} cabinets)</span>
+                    </div>
+                    <table className="tbl text-[11.5px]">
+                      <thead>
+                        <tr>
+                          <th>LED Type</th>
+                          <th style={{ textAlign: "center" }}>Cabinets Available</th>
+                          <th style={{ textAlign: "center" }}>Sq.ft Available</th>
+                          <th style={{ textAlign: "center" }}>Status</th>
+                          <th style={{ textAlign: "right", width: "120px" }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr style={{ background: "var(--sem-gr-bg)/10" }}>
+                          <td className="font-medium text-tx">{ledType} Panel</td>
+                          <td style={{ textAlign: "center" }} className="font-mono">{availableCabinets}</td>
+                          <td style={{ textAlign: "center" }} className="font-mono">{availableSqft} sq.ft</td>
+                          <td style={{ textAlign: "center" }}>
+                            {currentInhouseBooking ? (
+                              <Badge variant="gr">Assigned</Badge>
+                            ) : availableSqft >= neededSqft ? (
+                              <Badge variant="gr">Available</Badge>
+                            ) : availableSqft > 0 ? (
+                              <Badge variant="am">Shortfall ({shortfallSqft} sq.ft)</Badge>
+                            ) : (
+                              <Badge variant="rd">Unavailable</Badge>
+                            )}
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            {currentInhouseBooking ? (
+                              <button
+                                type="button"
+                                className="btn btn-danger"
+                                style={{ padding: "3px 8px", fontSize: "10.5px" }}
+                                onClick={async () => {
+                                  if (confirm("Are you sure you want to release BK stock panels?")) {
+                                    await api.returnEquipmentBooking(currentInhouseBooking.id);
+                                    window.location.reload();
+                                  }
+                                }}
+                              >
+                                Release
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-success"
+                                style={{ padding: "3px 8px", fontSize: "10.5px" }}
+                                disabled={availableSqft === 0}
+                                onClick={async () => {
+                                  await api.createEquipmentBooking({
+                                    inquiryId: inquiryId!,
+                                    position: "LED_PANEL_INHOUSE",
+                                    bookedFrom: data.inquiry.startDate,
+                                    bookedTo: data.inquiry.endDate,
+                                    equipmentId: inhouseEquipment[0]?.id || null,
+                                  });
+                                  window.location.reload();
+                                }}
+                              >
+                                Confirm BK Stock
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {shortfallSqft > 0 && (
+                    <div>
+                      <div className="text-[11px] font-semibold text-am" style={{ marginBottom: "6px" }}>
+                        ⚠️ Section 2 — Vendor needed (Shortfall: {shortfallSqft} sq.ft / {shortfallCabinets} cabinets)
+                      </div>
+                      <table className="tbl text-[11.5px]">
+                        <thead>
+                          <tr>
+                            <th>Item</th>
+                            <th style={{ textAlign: "center" }}>Shortfall</th>
+                            <th>Select Vendor</th>
+                            <th style={{ width: "100px" }}>Cost/sq.ft (₹)</th>
+                            <th style={{ textAlign: "right" }}>Total Cost</th>
+                            <th style={{ textAlign: "right", width: "80px" }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="font-medium">{ledType} (Vendor Rental)</td>
+                            <td style={{ textAlign: "center" }} className="font-mono text-am font-semibold">{shortfallSqft} sq.ft</td>
+                            <td>
+                              {currentVendorBooking ? (
+                                <span className="font-semibold text-tx">
+                                  {vendors.find(v => v.id === currentVendorBooking.vendorId)?.name || "Vendor Assigned"}
+                                </span>
+                              ) : (
+                                <select id="led-vendor-select" className="fsel text-[11px]" style={{ padding: "3px 6px" }}>
+                                  <option value="">-- Select Vendor --</option>
+                                  {vendors.map(v => (
+                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </td>
+                            <td>
+                              {currentVendorBooking ? (
+                                <span className="font-mono">₹{(currentVendorBooking.vendorCostPerDay || 0) / shortfallSqft}</span>
+                              ) : (
+                                <input
+                                  id="led-vendor-rate"
+                                  type="number"
+                                  className="finp text-[11px] text-right"
+                                  style={{ padding: "3px 6px" }}
+                                  placeholder="Rate/sqft"
+                                  defaultValue="80"
+                                />
+                              )}
+                            </td>
+                            <td style={{ textAlign: "right" }} className="font-mono font-semibold text-rd">
+                              {currentVendorBooking ? (
+                                `₹${(currentVendorBooking.totalVendorCost || 0).toLocaleString("en-IN")}`
+                              ) : (
+                                "Calculated live"
+                              )}
+                            </td>
+                            <td style={{ textAlign: "right" }}>
+                              {currentVendorBooking ? (
+                                <button
+                                  type="button"
+                                  className="btn btn-danger"
+                                  style={{ padding: "3px 8px", fontSize: "10.5px" }}
+                                  onClick={async () => {
+                                    if (confirm("Are you sure you want to release vendor panels?")) {
+                                      await api.returnEquipmentBooking(currentVendorBooking.id);
+                                      window.location.reload();
+                                    }
+                                  }}
+                                >
+                                  Release
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn btn-warning"
+                                  style={{ padding: "3px 8px", fontSize: "10.5px" }}
+                                  onClick={async () => {
+                                    const vEl = document.getElementById("led-vendor-select") as HTMLSelectElement;
+                                    const rEl = document.getElementById("led-vendor-rate") as HTMLInputElement;
+                                    const vId = Number(vEl?.value);
+                                    const rate = Number(rEl?.value) || 0;
+                                    if (!vId) {
+                                      alert("Please select a vendor.");
+                                      return;
+                                    }
+                                    if (rate <= 0) {
+                                      alert("Please enter a valid rate per sq.ft.");
+                                      return;
+                                    }
+                                    await api.createEquipmentBooking({
+                                      inquiryId: inquiryId!,
+                                      vendorId: vId,
+                                      vendorCostPerDay: rate * shortfallSqft,
+                                      position: "LED_PANEL_VENDOR",
+                                      bookedFrom: data.inquiry.startDate,
+                                      bookedTo: data.inquiry.endDate,
+                                    });
+                                    window.location.reload();
+                                  }}
+                                >
+                                  Save Vendor
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ flex: 0.8, minWidth: "220px" }}>
+                  <div className="card" style={{ background: "var(--alt2)", padding: "12px", border: "1px solid var(--b1)", height: "100%" }}>
+                    <div className="text-[11px] font-bold text-bl uppercase tracking-wider" style={{ marginBottom: "10px" }}>📊 Live P&L Preview (Internal Only)</div>
+                    {(() => {
+                      const ledRow = data.quotation?.equipment?.find((r: any) => r.equip.includes("LED") || r.equip.toLowerCase() === "led screen");
+                      const revenue = ledRow ? ledRow.amount : 0;
+                      let vendorCost = 0;
+                      if (currentVendorBooking) {
+                        vendorCost = currentVendorBooking.totalVendorCost || 0;
+                      } else if (shortfallSqft > 0) {
+                        vendorCost = shortfallSqft * 80;
+                      }
+                      const grossMargin = revenue - vendorCost;
+                      const marginPercent = revenue > 0 ? (grossMargin / revenue) * 100 : 0;
+                      return (
+                        <div className="flex flex-col gap-3 text-[12px]">
+                          <div className="flex justify-between">
+                            <span className="text-tx3">Revenue:</span>
+                            <span className="font-mono font-semibold">₹{revenue.toLocaleString("en-IN")}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-b1 pb-2">
+                            <span className="text-tx3">Vendor Cost:</span>
+                            <span className="font-mono text-rd">₹{vendorCost.toLocaleString("en-IN")}</span>
+                          </div>
+                          <div className="flex justify-between pt-1">
+                            <span className="text-tx2 font-medium">Gross Margin:</span>
+                            <span className="font-mono font-bold text-gr">₹{grossMargin.toLocaleString("en-IN")}</span>
+                          </div>
+                          <div className="flex justify-between items-center bg-s1 px-2 py-1 rounded mt-1">
+                            <span className="text-[11px] text-tx3">Margin %:</span>
+                            <span className={`font-bold font-mono ${marginPercent >= 70 ? "text-gr" : marginPercent >= 40 ? "text-am" : "text-rd"}`}>
+                              {marginPercent.toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* GREEN LIST: BK STOCK AVAILABLE */}
         <div className="card" style={{ borderLeft: "5px solid var(--gr)", marginBottom: "25px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>

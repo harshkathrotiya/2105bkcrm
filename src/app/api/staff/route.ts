@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || undefined;
     const type = searchParams.get("type") || undefined;
     const paymentType = searchParams.get("paymentType") || undefined;
-    const status = searchParams.get("status") || undefined;
+    const department = (searchParams.get("department") as "VIDEO" | "LED" | "BOTH") || undefined;
 
     // Validate enum query params if provided
     if (type && !["INHOUSE", "EXTERNAL"].includes(type)) {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "status must be AVAILABLE or DEPLOYED" }, { status: 400 });
     }
 
-    const staff = await getAllStaff({ search, type, paymentType, status });
+    const staff = await getAllStaff({ search, type, paymentType, status, department });
     return Response.json(staff);
   } catch (err) {
     console.error("[GET /api/staff]", err);
@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
       aadharNumber: body.aadharNumber?.trim() || null,
       aadharFront: body.aadharFront || null,
       aadharBack: body.aadharBack || null,
+      department: body.department ?? "VIDEO",
     });
 
     return Response.json(staff, { status: 201 });

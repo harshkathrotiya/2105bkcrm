@@ -10,6 +10,7 @@ export async function getAllStaff(params?: {
   type?: string;
   paymentType?: string;
   status?: string;
+  department?: "VIDEO" | "LED" | "BOTH";
 }): Promise<(Staff & { status: "Available" | "Deployed"; pendingPayment: number })[]> {
   const todayStr = new Date().toISOString().split("T")[0];
 
@@ -26,6 +27,15 @@ export async function getAllStaff(params?: {
   }
   if (params?.paymentType) {
     where.payment_type = params.paymentType;
+  }
+  if (params?.department) {
+    if (params.department === "VIDEO") {
+      where.department = { in: ["VIDEO", "BOTH"] };
+    } else if (params.department === "LED") {
+      where.department = { in: ["LED", "BOTH"] };
+    } else {
+      where.department = params.department;
+    }
   }
 
   const staffRows = await db.staff.findMany({
@@ -71,6 +81,7 @@ export async function getAllStaff(params?: {
       isActive: s.is_active === 1,
       createdAt: s.created_at,
       updatedAt: s.updated_at,
+      department: s.department as "VIDEO" | "LED" | "BOTH",
       status: (isDeployed ? "Deployed" : "Available") as "Deployed" | "Available",
       pendingPayment,
     };
@@ -104,6 +115,7 @@ export async function getStaffById(id: number): Promise<Staff | undefined> {
     isActive: s.is_active === 1,
     createdAt: s.created_at,
     updatedAt: s.updated_at,
+    department: s.department as "VIDEO" | "LED" | "BOTH",
   };
 }
 
@@ -125,6 +137,7 @@ export async function createStaff(staff: Omit<Staff, "id" | "createdAt" | "isAct
       aadhar_back: staff.aadharBack ?? null,
       is_active: 1,
       created_at: nowStr,
+      department: staff.department ?? "VIDEO",
     }
   });
 
@@ -154,6 +167,7 @@ export async function updateStaff(id: number, patch: Partial<Omit<Staff, "id" | 
       aadhar_front: merged.aadharFront ?? null,
       aadhar_back: merged.aadharBack ?? null,
       updated_at: nowStr,
+      department: merged.department ?? "VIDEO",
     }
   });
 
@@ -200,6 +214,7 @@ export async function getAllStaffIncludingInactive(): Promise<Staff[]> {
     isActive: s.is_active === 1,
     createdAt: s.created_at,
     updatedAt: s.updated_at,
+    department: s.department as "VIDEO" | "LED" | "BOTH",
   }));
 }
 

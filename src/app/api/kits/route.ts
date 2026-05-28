@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    const department = (searchParams.get("department") as "VIDEO" | "LED") || undefined;
 
     // Validate date params if provided
     if (startDate || endDate) {
@@ -18,10 +19,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (startDate && endDate) {
-      return Response.json(await getAllKitsWithAvailability(startDate, endDate));
+      return Response.json(await getAllKitsWithAvailability(startDate, endDate, department));
     }
 
-    return Response.json(await getAllKits());
+    return Response.json(await getAllKits(department));
   } catch (err) {
     console.error("[GET /api/kits]", err);
     return Response.json({ error: "Failed to fetch kits" }, { status: 500 });
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
             quantity: parseInt(acc.quantity as string, 10),
           }))
         : undefined,
+      department: body.department ?? "VIDEO",
     });
 
     return Response.json(kit, { status: 201 });

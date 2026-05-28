@@ -66,12 +66,12 @@ Tamara next event ni details:
 ⏰ *Reporting time:* ${assignment.reportingTime || "09:00 AM"}
 📍 *Venue:* ${inquiry.venue}
 🎯 *Your position:* ${assignment.positionName || "Operator"}
-📷 *Equipment:* ${staff.withEquipment ? (staff.equipmentDesc || "Own Gear") : "Provided by BK Media"}
+*Equipment:* ${staff.withEquipment ? (staff.equipmentDesc || "Own Gear") : "Provided by BK Media"}
 👔 *Event:* ${inquiry.eventType} — ${inquiry.client.name}
 
 *Event scale:*
 👥 Total staff: ${eventScale.totalStaff}
-📷 Camera positions: ${eventScale.cameraCount}
+Camera positions: ${eventScale.cameraCount}
 🎛 Control room: ${eventScale.hasControlRoom ? "Yes" : "No"}
 🏗 Crane: ${eventScale.hasCrane ? "Yes" : "No"}
 

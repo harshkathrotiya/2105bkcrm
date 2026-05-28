@@ -23,6 +23,7 @@ export interface Inquiry {
   id: string;
   clientId: string;
   eventType: string;
+  eventName: string;
   startDate: string;
   endDate: string;
   startTime: string;
@@ -32,6 +33,21 @@ export interface Inquiry {
   status: "New" | "Quoted" | "Confirmed" | "Cancelled";
   createdAt: string;
   updatedAt?: string;
+  department?: "VIDEO" | "LED" | "MERGED";
+  screenWidth?: number;
+  screenHeight?: number;
+  screenAreaSqft?: number;
+  totalCabinets?: number;
+  ledType?: string;
+  ratePerSqft?: number;
+  location?: string;
+  stageType?: string;
+  dispatchDate?: string;
+  dispatchTime?: string;
+  vehicle1Number?: string;
+  vehicle1Driver?: string;
+  vehicle2Number?: string;
+  vehicle2Driver?: string;
 }
 
 export interface QuotationRow {
@@ -90,6 +106,7 @@ export interface Invoice {
   balanceRef: string;
   balanceMethod: string;
   hddDelivered: boolean;
+  deinstallDone?: boolean;
   createdAt: string;
   updatedAt?: string;
   dueDate: string;
@@ -111,7 +128,7 @@ export function generateId(): string {
 export interface Equipment {
   id: number;
   productName: string;
-  category: "CAMERA" | "VIDEO_MIXER" | "VIDEO_RECORDER" | "AUDIO_MIXER" | "WIRELESS_TX" | "UPS" | "ACCESSORY";
+  category: "CAMERA" | "VIDEO_MIXER" | "VIDEO_RECORDER" | "AUDIO_MIXER" | "WIRELESS_TX" | "UPS" | "ACCESSORY" | "LED_PANEL" | "LED_PROCESSOR" | "LED_CABLE" | "LED_ACCESSORY";
   quantity: number;
   serialNumber?: string | null;
   bodyName?: string | null;
@@ -129,6 +146,7 @@ export interface Equipment {
   ownershipType: "INHOUSE" | "VENDOR";
   vendorId?: number | null;
   vendorName?: string | null;
+  department?: "VIDEO" | "LED";
 }
 
 export interface Kit {
@@ -139,6 +157,7 @@ export interface Kit {
   createdAt: string;
   items?: Equipment[];
   availabilityStatus?: string | null;
+  department?: "VIDEO" | "LED";
 }
 
 export interface EquipmentBooking {
@@ -188,6 +207,7 @@ export interface Staff {
   isActive: boolean;
   createdAt: string;
   updatedAt?: string | null;
+  department?: "VIDEO" | "LED" | "BOTH";
 }
 
 export interface StaffAssignment {

@@ -11,6 +11,7 @@ export interface EquipmentFilters {
   search?: string;
   limit?: number;
   offset?: number;
+  department?: "VIDEO" | "LED";
 }
 
 function mapEquipment(row: any): Equipment {
@@ -35,6 +36,7 @@ function mapEquipment(row: any): Equipment {
     ownershipType: (row.ownership_type as "INHOUSE" | "VENDOR") || "INHOUSE",
     vendorId: row.vendor_id || null,
     vendorName: row.vendor?.name || null,
+    department: row.department as "VIDEO" | "LED",
   };
 }
 
@@ -49,6 +51,10 @@ export async function getEquipment(filters: EquipmentFilters = {}): Promise<{ it
 
   if (filters.category) {
     where.category = filters.category;
+  }
+
+  if (filters.department) {
+    where.department = filters.department;
   }
 
   if (filters.search) {
@@ -164,6 +170,7 @@ export async function createEquipment(item: Omit<Equipment, "id" | "createdAt">)
       created_at: nowStr,
       ownership_type: item.ownershipType || "INHOUSE",
       vendor_id: item.vendorId ?? null,
+      department: item.department || "VIDEO",
     },
     include: { kit: true, vendor: true }
   });
@@ -197,6 +204,7 @@ export async function updateEquipment(id: number, patch: Partial<Omit<Equipment,
       updated_at: nowStr,
       ownership_type: merged.ownershipType || "INHOUSE",
       vendor_id: merged.vendorId ?? null,
+      department: merged.department || "VIDEO",
     },
     include: { kit: true, vendor: true }
   });

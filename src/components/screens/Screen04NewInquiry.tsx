@@ -42,6 +42,7 @@ export default function Screen04NewInquiry() {
 
   const [clientId, setClientId] = useState(defaultClientId);
   const [eventType, setEventType] = useState(EVENT_TYPES[0]);
+  const [eventName, setEventName] = useState("");
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [startTime, setStartTime] = useState("09:00 AM");
@@ -49,6 +50,20 @@ export default function Screen04NewInquiry() {
   const [venue, setVenue] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Department & LED states
+  const [department, setDepartment] = useState<'VIDEO' | 'LED' | 'MERGED'>('VIDEO');
+  const [screenWidth, setScreenWidth] = useState('');
+  const [screenHeight, setScreenHeight] = useState('');
+  const [ledType, setLedType] = useState('P4');
+  const [location, setLocation] = useState('INDOOR');
+  const [stageType, setStageType] = useState('');
+  const [ratePerSqft, setRatePerSqft] = useState(500);
+
+  const LED_TYPE_RATES: Record<string, number> = {
+    P4: 500, P3: 700, P2: 1000, FLOOR: 800, P4_CURVED: 600,
+  };
+
 
   const editInquiryId = searchParams.get("id") ?? searchParams.get("inquiryId") ?? "";
   const editInquiry = useMemo(() => {
@@ -59,19 +74,34 @@ export default function Screen04NewInquiry() {
     if (editInquiry) {
       setClientId(editInquiry.clientId);
       setEventType(editInquiry.eventType);
+      setEventName(editInquiry.eventName || editInquiry.eventType);
       setStartDate(editInquiry.startDate);
       setEndDate(editInquiry.endDate);
       setStartTime(editInquiry.startTime || "09:00 AM");
       setEndTime(editInquiry.endTime || "09:00 PM");
       setVenue(editInquiry.venue || "");
       setNotes(editInquiry.notes || "");
+      if ((editInquiry as any).department) setDepartment((editInquiry as any).department);
+      if ((editInquiry as any).screenWidth) setScreenWidth(String((editInquiry as any).screenWidth));
+      if ((editInquiry as any).screenHeight) setScreenHeight(String((editInquiry as any).screenHeight));
+      if ((editInquiry as any).ledType) setLedType((editInquiry as any).ledType);
+      if ((editInquiry as any).location) setLocation((editInquiry as any).location);
+      if ((editInquiry as any).stageType) setStageType((editInquiry as any).stageType || '');
+      if ((editInquiry as any).ratePerSqft) setRatePerSqft((editInquiry as any).ratePerSqft);
     }
   }, [editInquiry]);
+
+  // Auto-update rate when LED type changes
+  useEffect(() => { setRatePerSqft(LED_TYPE_RATES[ledType] ?? 500); }, [ledType]);
 
   const selectedClient = clients.find((c) => c.id === clientId);
 
   const duration = useMemo(() => calcDays(startDate, endDate), [startDate, endDate]);
   const hours = useMemo(() => calcHours(startTime, endTime, duration), [startTime, endTime, duration]);
+
+  const screenArea = screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : 0;
+  const totalCabinets = Math.ceil(screenArea / 4);
+  const estimatedAmount = screenArea * ratePerSqft * duration;
 
   // Validation
   const dateError = endDate < startDate;
@@ -82,6 +112,7 @@ export default function Screen04NewInquiry() {
   const canSave = !!(
     clientId &&
     eventType &&
+    eventName.trim() &&
     startDate &&
     endDate &&
     venue.trim().length >= 3 &&
@@ -92,6 +123,7 @@ export default function Screen04NewInquiry() {
   const handleReset = () => {
     setClientId(defaultClientId);
     setEventType(EVENT_TYPES[0]);
+    setEventName("");
     setStartDate(today);
     setEndDate(today);
     setStartTime("09:00 AM");
@@ -143,12 +175,14 @@ export default function Screen04NewInquiry() {
           id: inquiryId,
           clientId,
           eventType,
+          eventName: eventName.trim(),
           startDate,
           endDate,
           startTime,
           endTime,
           venue,
           notes,
+          department,
         },
       });
     } else {
@@ -159,6 +193,7 @@ export default function Screen04NewInquiry() {
           id: inquiryId,
           clientId,
           eventType,
+          eventName: eventName.trim(),
           startDate,
           endDate,
           startTime,
@@ -167,6 +202,7 @@ export default function Screen04NewInquiry() {
           notes,
           status: "New",
           createdAt: today,
+          department,
         },
       });
     }
@@ -227,6 +263,40 @@ export default function Screen04NewInquiry() {
         <div className="two-col">
           {/* Left — form */}
           <div>
+            {/* Department selector */}
+            <div className="card" style={{ marginBottom: '14px', padding: '12px' }}>
+              <div className="flbl" style={{ marginBottom: '8px' }}>Departments *</div>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer text-[11px] font-medium">
+                  <input
+                    type="checkbox"
+                    checked={department === 'VIDEO' || department === 'MERGED'}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      const hasLed = department === 'LED' || department === 'MERGED';
+                      if (!isChecked && !hasLed) return;
+                      setDepartment(isChecked ? (hasLed ? 'MERGED' : 'VIDEO') : 'LED');
+                    }}
+                  />
+                  <span>Video Department</span>
+                </label>
+                
+                <label className="flex items-center gap-2 cursor-pointer text-[11px] font-medium">
+                  <input
+                    type="checkbox"
+                    checked={department === 'LED' || department === 'MERGED'}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      const hasVideo = department === 'VIDEO' || department === 'MERGED';
+                      if (!isChecked && !hasVideo) return;
+                      setDepartment(isChecked ? (hasVideo ? 'MERGED' : 'LED') : 'VIDEO');
+                    }}
+                  />
+                  <span>LED Department</span>
+                </label>
+              </div>
+            </div>
+
             <div className="card">
               <div className="card-t">Inquiry details</div>
               <div className="fgrid">
@@ -276,6 +346,18 @@ export default function Screen04NewInquiry() {
                   >
                     {EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}
                   </select>
+                </div>
+
+                {/* Event Name */}
+                <div className="field span2">
+                  <div className="flbl">Event name *</div>
+                  <input
+                    type="text"
+                    className="finp"
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    placeholder="e.g. Ambani Wedding, GIFT Summit"
+                  />
                 </div>
 
                 {/* Start date & time */}
@@ -387,6 +469,8 @@ export default function Screen04NewInquiry() {
                 </div>
               </div>
             </div>
+
+
           </div>
 
           {/* Right — summary */}

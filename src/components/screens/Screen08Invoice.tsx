@@ -163,42 +163,46 @@ export default function Screen08Invoice({ invoiceId }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>1</td>
-                    <td>
-                      <strong>Videography services</strong>
-                      <br />
-                      <span className="text-[9px] text-[#666]">
-                        {invoice.eventName} · {invoice.venue} ·{" "}
-                        {new Date(invoice.startDate).getDate()}–
-                        {new Date(invoice.endDate).toLocaleDateString("en-IN", {
-                          month: "short",
-                        })}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "center" }}>{eventDays}</td>
-                    <td style={{ textAlign: "right", fontWeight: 700 }}>
-                      {fmt(invoice.videographyAmount)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>
-                      <strong>Photography services</strong>
-                      <br />
-                      <span className="text-[9px] text-[#666]">
-                        {invoice.eventName} · {invoice.venue} ·{" "}
-                        {new Date(invoice.startDate).getDate()}–
-                        {new Date(invoice.endDate).toLocaleDateString("en-IN", {
-                          month: "short",
-                        })}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "center" }}>{eventDays}</td>
-                    <td style={{ textAlign: "right", fontWeight: 700 }}>
-                      {fmt(invoice.photographyAmount)}
-                    </td>
-                  </tr>
+                  {invoice.videographyAmount > 0 && (
+                    <tr>
+                      <td>1</td>
+                      <td>
+                        <strong>{invoice.photographyAmount === 0 ? "LED / Videography services" : "Videography services"}</strong>
+                        <br />
+                        <span className="text-[9px] text-[#666]">
+                          {invoice.eventName} · {invoice.venue} ·{" "}
+                          {new Date(invoice.startDate).getDate()}–
+                          {new Date(invoice.endDate).toLocaleDateString("en-IN", {
+                            month: "short",
+                          })}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: "center" }}>{eventDays}</td>
+                      <td style={{ textAlign: "right", fontWeight: 700 }}>
+                        {fmt(invoice.videographyAmount)}
+                      </td>
+                    </tr>
+                  )}
+                  {invoice.photographyAmount > 0 && (
+                    <tr>
+                      <td>{invoice.videographyAmount > 0 ? 2 : 1}</td>
+                      <td>
+                        <strong>Photography services</strong>
+                        <br />
+                        <span className="text-[9px] text-[#666]">
+                          {invoice.eventName} · {invoice.venue} ·{" "}
+                          {new Date(invoice.startDate).getDate()}–
+                          {new Date(invoice.endDate).toLocaleDateString("en-IN", {
+                            month: "short",
+                          })}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: "center" }}>{eventDays}</td>
+                      <td style={{ textAlign: "right", fontWeight: 700 }}>
+                        {fmt(invoice.photographyAmount)}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 
