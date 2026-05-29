@@ -210,7 +210,7 @@ export default function Screen04NewInquiry() {
     // Add calendar events for every day of the event (1-indexed month)
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const clientName = selectedClient?.name ?? "Event";
+    const eventDisplayName = `${eventName || eventType} — ${selectedClient?.name ?? "Event"}`;
     let idx = 0;
     const calType = editInquiry && editInquiry.status === "Confirmed" ? "confirmed" : "inquiry";
     const eventsToAdd = [];
@@ -221,7 +221,7 @@ export default function Screen04NewInquiry() {
         date: d.getDate(),
         month: d.getMonth() + 1, // 1-indexed
         year: d.getFullYear(),
-        label: isFirst ? clientName : `↔ ${clientName}`,
+        label: isFirst ? eventDisplayName : `↔ ${eventDisplayName}`,
         type: calType,
       });
       idx++;

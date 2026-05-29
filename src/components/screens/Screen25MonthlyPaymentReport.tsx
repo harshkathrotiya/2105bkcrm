@@ -680,11 +680,19 @@ export default function Screen25MonthlyPaymentReport() {
       {/* Global CSS for printable views */}
       <style jsx global>{`
         @media print {
-          .no-print, header, nav, footer, .sidebar-wrapper, .breadcrumb-wrapper {
+          .no-print, header, nav, footer, .sidebar-wrapper, .breadcrumb-wrapper, .site-hdr, .app-sidebar {
             display: none !important;
           }
           .print-only {
             display: block !important;
+          }
+          .app-layout, .app-body, .app-content {
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            display: block !important;
+            background: #fff !important;
+            color: #000 !important;
           }
         }
       `}</style>

@@ -28,6 +28,8 @@ export default function Screen07Approval({ quotationId }: Props) {
   const [signedCopyBase64, setSignedCopyBase64] = useState("");
   const [approved, setApproved] = useState(false);
   const [approving, setApproving] = useState(false);
+  const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
 
   const isApproved = approved || quotation?.status === "Approved";
 
@@ -37,6 +39,9 @@ export default function Screen07Approval({ quotationId }: Props) {
     setApproving(true);
 
     const existingInvoice = invoices.find((inv) => inv.quotationId === quotation.id);
+    const invoiceId = existingInvoice?.id || `inv-${Date.now()}`;
+    setCreatedInvoiceId(invoiceId);
+    
     const shouldConfirmBooking = quotation.status !== "Approved";
 
     if (shouldConfirmBooking) {
@@ -73,6 +78,9 @@ export default function Screen07Approval({ quotationId }: Props) {
         });
       }
 
+      const inquiryObj = inquiries.find((i) => i.id === quotation.inquiryId);
+      const eventDisplayName = `${quotation.eventName || inquiryObj?.eventType || "Event"} — ${quotation.clientName}`;
+      
       const startDt = new Date(quotation.startDate);
       const endDt = new Date(quotation.endDate);
       const calType = "confirmed" as const;
@@ -84,7 +92,7 @@ export default function Screen07Approval({ quotationId }: Props) {
           date: d.getDate(),
           month: d.getMonth() + 1,
           year: d.getFullYear(),
-          label: quotation.clientName,
+          label: eventDisplayName,
           type: calType,
         });
       }
@@ -105,10 +113,10 @@ export default function Screen07Approval({ quotationId }: Props) {
       const videographyAmount = isLedOrMerged ? grossForInvoice : Math.round(grossForInvoice * 0.82);
       const photographyAmount = isLedOrMerged ? 0 : grossForInvoice - videographyAmount;
 
-      dispatchInvoices({
+      await dispatchInvoices({
         type: "ADD_INVOICE",
         payload: {
-          id: `inv-${Date.now()}`,
+          id: invoiceId,
           quotationId: quotation.id,
           invoiceNo: generateInvoiceNo(invoices.map((inv) => inv.invoiceNo)),
           clientName: quotation.clientName,
@@ -144,6 +152,58 @@ export default function Screen07Approval({ quotationId }: Props) {
     setApproved(true);
   };
 
+  const handleCreateInvoice = async () => {
+    if (!quotation || creatingInvoice) return;
+    setCreatingInvoice(true);
+    try {
+      const invoiceId = `inv-${Date.now()}`;
+      setCreatedInvoiceId(invoiceId);
+
+      const inquiry = inquiries.find((i) => i.id === quotation.inquiryId);
+      const isLedOrMerged = inquiry?.department === "LED" || inquiry?.department === "MERGED";
+
+      const advance = Math.round(quotation.total * 0.5);
+      const grossForInvoice = quotation.total;
+      const videographyAmount = isLedOrMerged ? grossForInvoice : Math.round(grossForInvoice * 0.82);
+      const photographyAmount = isLedOrMerged ? 0 : grossForInvoice - videographyAmount;
+
+      await dispatchInvoices({
+        type: "ADD_INVOICE",
+        payload: {
+          id: invoiceId,
+          quotationId: quotation.id,
+          invoiceNo: generateInvoiceNo(invoices.map((inv) => inv.invoiceNo)),
+          clientName: quotation.clientName,
+          eventName: quotation.eventName,
+          startDate: quotation.startDate,
+          endDate: quotation.endDate,
+          venue: quotation.venue,
+          videographyAmount,
+          photographyAmount,
+          advance,
+          balance: quotation.total - advance,
+          status: "Unpaid",
+          advanceReceived: false,
+          advanceReceivedAt: null,
+          advanceRef: "",
+          advanceMethod: "",
+          balanceReceived: false,
+          balanceReceivedAt: null,
+          balanceRef: "",
+          balanceMethod: "",
+          hddDelivered: false,
+          deinstallDone: isLedOrMerged ? false : undefined,
+          createdAt: new Date().toISOString().split("T")[0],
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        },
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCreatingInvoice(false);
+    }
+  };
+
   // Find the invoice that was generated from this quotation
   const invoice = invoices.find((inv) => inv.quotationId === quotation?.id);
 
@@ -159,6 +219,7 @@ export default function Screen07Approval({ quotationId }: Props) {
   }
 
   if (isApproved) {
+    const hasInvoice = !!(createdInvoiceId || invoice?.id);
     return (
       <>
         <SectionHeader
@@ -175,7 +236,7 @@ export default function Screen07Approval({ quotationId }: Props) {
                 Quotation approved successfully!
               </div>
               <div className="text-[12px] text-tx3 mb-4">
-                Invoice has been generated
+                {hasInvoice ? "Invoice has been generated" : "Invoice is not yet generated"}
               </div>
               <div className="flex gap-3 justify-center">
                 <button
@@ -184,12 +245,29 @@ export default function Screen07Approval({ quotationId }: Props) {
                 >
                   ⧉ Warehouse Check
                 </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => invoice ? router.push(`/invoices/${invoice.id}`) : router.push("/invoices")}
-                >
-                  View invoice
-                </button>
+                {hasInvoice ? (
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                      const targetId = createdInvoiceId || invoice?.id;
+                      if (targetId) {
+                        router.push(`/invoices/${targetId}`);
+                      } else {
+                        router.push("/invoices");
+                      }
+                    }}
+                  >
+                    View invoice
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-primary btn-warning"
+                    onClick={handleCreateInvoice}
+                    disabled={creatingInvoice}
+                  >
+                    {creatingInvoice ? "Generating..." : "+ Create Invoice"}
+                  </button>
+                )}
                 <button className="btn" onClick={() => router.push(`/quotations/${quotation.id}/pdf`)}>
                   Back to quotation
                 </button>

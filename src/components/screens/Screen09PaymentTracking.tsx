@@ -5,6 +5,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import Timeline from "../ui/Timeline";
+import { useRouter } from "next/navigation";
 import { useInvoices } from "@/lib/store";
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function Screen09PaymentTracking({ invoiceId }: Props) {
+  const router = useRouter();
   const { invoices, dispatchInvoices } = useInvoices();
   const invoice = invoices.find((inv) => inv.id === invoiceId) ?? invoices[invoices.length - 1];
 
@@ -73,6 +75,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
       type: "UPDATE_INVOICE",
       payload,
     });
+    router.push("/invoices/" + invoice.id);
   };
 
   const handleMarkHDD = () => {
@@ -84,6 +87,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
         hddDelivered: !invoice.hddDelivered,
       },
     });
+    router.push("/invoices/" + invoice.id);
   };
 
   const handleToggleDeinstall = () => {
@@ -95,6 +99,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
         deinstallDone: !invoice.deinstallDone,
       },
     });
+    router.push("/invoices/" + invoice.id);
   };
 
   const fmt = (n: number) => n.toLocaleString("en-IN");

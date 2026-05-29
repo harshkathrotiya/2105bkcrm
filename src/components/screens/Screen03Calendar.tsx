@@ -6,7 +6,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import { useCalendar, useInquiries, useClients } from "@/lib/store";
+import { useCalendar, useInquiries, useClients, useQuotations, useInvoices } from "@/lib/store";
 import type { CalendarEvent } from "@/lib/store";
 
 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -43,6 +43,8 @@ export default function Screen03Calendar() {
   const { calendarEvents } = useCalendar();
   const { inquiries } = useInquiries();
   const { clients } = useClients();
+  const { quotations } = useQuotations();
+  const { invoices } = useInvoices();
   const today = new Date();
   
   const [viewDate, setViewDate] = useState(today);
@@ -102,6 +104,16 @@ export default function Screen03Calendar() {
 
     return "";
   }, [selectedEvent, inquiries, clients]);
+
+  const matchedQuote = useMemo(() => {
+    if (!targetInquiryId) return null;
+    return quotations.find((q) => q.inquiryId === targetInquiryId);
+  }, [targetInquiryId, quotations]);
+
+  const matchedInvoice = useMemo(() => {
+    if (!targetInquiryId || !matchedQuote) return null;
+    return invoices.find((inv) => inv.quotationId === matchedQuote.id);
+  }, [targetInquiryId, invoices, matchedQuote]);
 
   const navigate = (delta: number) => {
     const nextDate = new Date(viewDate);
@@ -598,20 +610,51 @@ export default function Screen03Calendar() {
                 </Badge>
               </div>
             </div>
-            <div className="flex" style={{ gap: "8px", marginTop: "24px" }}>
-              <button
-                className="btn flex-1 justify-center"
-                onClick={() => setSelectedEvent(null)}
-              >
-                Close
-              </button>
-              <Link
-                href={targetInquiryId ? `/inquiries/new?id=${targetInquiryId}` : `/inquiries`}
-                className="btn btn-primary flex-1 justify-center text-center"
-                onClick={() => setSelectedEvent(null)}
-              >
-                View inquiry →
-              </Link>
+            <div className="flex flex-col" style={{ gap: "8px", marginTop: "24px" }}>
+              <div className="flex" style={{ gap: "8px" }}>
+                <button
+                  className="btn flex-1 justify-center"
+                  onClick={() => setSelectedEvent(null)}
+                >
+                  Close
+                </button>
+                <Link
+                  href={targetInquiryId ? `/inquiries/new?id=${targetInquiryId}` : `/inquiries`}
+                  className="btn btn-primary flex-1 justify-center text-center"
+                  onClick={() => setSelectedEvent(null)}
+                >
+                  View inquiry →
+                </Link>
+              </div>
+              {targetInquiryId && (
+                <div className="flex flex-col" style={{ gap: "8px", borderTop: "1px solid var(--b1)", paddingTop: "12px", marginTop: "4px" }}>
+                  {matchedQuote && (
+                    <Link
+                      href={`/quotations/${matchedQuote.id}/pdf`}
+                      className="btn justify-center text-center text-[11px] py-1.5"
+                      onClick={() => setSelectedEvent(null)}
+                    >
+                      View Quotation PDF ▤
+                    </Link>
+                  )}
+                  {matchedInvoice && (
+                    <Link
+                      href={`/invoices/${matchedInvoice.id}`}
+                      className="btn justify-center text-center text-[11px] py-1.5"
+                      onClick={() => setSelectedEvent(null)}
+                    >
+                      View Invoice ⊡
+                    </Link>
+                  )}
+                  <Link
+                    href={`/warehouse/check?inquiryId=${targetInquiryId}`}
+                    className="btn justify-center text-center text-[11px] py-1.5"
+                    onClick={() => setSelectedEvent(null)}
+                  >
+                    Warehouse Check ⚙
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>

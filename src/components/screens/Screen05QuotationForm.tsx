@@ -600,7 +600,7 @@ export default function Screen05QuotationForm() {
         description="Create equipment quotations from inquiries with auto-filled rates and live GST calculations."
       />
       <ScreenFrame
-        breadcrumb={<>Inquiries › {selectedInquiry?.eventType ?? "—"} › Quotation</>}
+        breadcrumb={<>Inquiries › {(selectedInquiry?.eventName || selectedInquiry?.eventType) ?? "—"} › Quotation</>}
         actions={
           <button
             className={`btn btn-success ${!selectedInquiry || saving ? "opacity-50" : ""}`}
@@ -623,7 +623,7 @@ export default function Screen05QuotationForm() {
                 const c = clients.find((cl) => cl.id === inq.clientId);
                 return {
                   value: inq.id,
-                  label: `${c?.name ?? "Unknown"} — ${inq.eventType} (${inq.startDate})`
+                  label: `${inq.eventName || inq.eventType} — ${c?.name ?? "Unknown"} (${inq.startDate})`
                 };
               })}
               placeholder="Select an inquiry..."
@@ -639,7 +639,7 @@ export default function Screen05QuotationForm() {
           </div>
           <div>
             <div className="text-[10px] text-tx3" style={{ marginBottom: "2px" }}>Event</div>
-            <div className="text-[12px] font-medium">{selectedInquiry?.eventType ?? "—"}</div>
+            <div className="text-[12px] font-medium">{(selectedInquiry?.eventName || selectedInquiry?.eventType) ?? "—"}</div>
           </div>
           <div>
             <div className="text-[10px] text-tx3" style={{ marginBottom: "2px" }}>Quote no.</div>

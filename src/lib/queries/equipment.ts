@@ -133,6 +133,7 @@ export async function getEquipmentDetailsById(id: number) {
       vendorCostPerDay: b.vendor_cost_per_day,
       totalVendorCost: b.total_vendor_cost,
       eventType: b.inquiry?.event_type,
+      eventName: b.inquiry?.event_name,
       startDate: b.inquiry?.start_date,
       endDate: b.inquiry?.end_date,
       inquiryStatus: b.inquiry?.status,

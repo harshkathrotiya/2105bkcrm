@@ -408,7 +408,7 @@ export default function Screen23AssignPosition() {
     <>
       <SectionHeader
         title={<>Operator <strong>Assignments</strong></>}
-        description={`Allocate positions and staff operators for ${inquiry.eventType}. Handles duplicate validation and tracks total crew costs.`}
+        description={`Allocate positions and staff operators for ${inquiry.eventName || inquiry.eventType}. Handles duplicate validation and tracks total crew costs.`}
       />
 
       <ScreenFrame
@@ -449,8 +449,8 @@ export default function Screen23AssignPosition() {
             <div style={{ padding: "0 0 4px", fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase" }}>
               Event Info
             </div>
-            <strong style={{ color: "var(--tx)", display: "block" }}>{quotation.eventName}</strong>
-            <div style={{ color: "var(--tx3)", fontSize: "11px" }}>{inquiry.eventType}</div>
+            <strong style={{ color: "var(--tx)", display: "block" }}>{quotation.eventName || inquiry.eventType}</strong>
+            <div style={{ color: "var(--tx3)", fontSize: "11px" }}>Client: {quotation.clientName}</div>
             <div style={{ color: "var(--tx2)", fontSize: "11.5px", marginTop: "2px" }}>
               {new Date(inquiry.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} - {new Date(inquiry.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
             </div>

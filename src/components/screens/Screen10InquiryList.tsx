@@ -256,9 +256,9 @@ export default function Screen10InquiryList() {
                         )}
                       </td>
                       <td>
-                        <div className="font-medium text-tx">{client?.name ?? "Unknown"}</div>
+                        <div className="font-medium text-tx">{inq.eventName || inq.eventType}</div>
                         <div className="text-[10px] text-tx3">
-                          {inq.eventName ? `${inq.eventName} (${inq.eventType})` : inq.eventType}
+                          {client?.name ?? "Unknown"}
                           {quote ? ` · ${quote.quoteNo}` : ''}
                           {(inq.department === 'LED' || inq.department === 'MERGED') && (
                             <span style={{ marginLeft: '4px', background: 'var(--sem-bl-bg)', color: 'var(--sem-bl-tx)', borderRadius: '3px', padding: '1px 4px', fontSize: '9px' }}>

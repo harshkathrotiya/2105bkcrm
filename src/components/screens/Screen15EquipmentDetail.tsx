@@ -7,7 +7,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import Badge from "../ui/Badge";
 import * as api from "@/lib/api";
-import { useEquipment } from "@/lib/store";
+import { useEquipment, useQuotations, useInvoices } from "@/lib/store";
 
 interface Screen15EquipmentDetailProps {
   equipmentId: number;
@@ -15,6 +15,8 @@ interface Screen15EquipmentDetailProps {
 
 export default function Screen15EquipmentDetail({ equipmentId }: Screen15EquipmentDetailProps) {
   const { refreshEquipment } = useEquipment();
+  const { quotations } = useQuotations();
+  const { invoices } = useInvoices();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -331,7 +333,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                   </div>
                   <div>
                     <span style={{ color: "var(--tx2)", fontSize: "11px" }}>Event:</span>
-                    <div style={{ fontWeight: 600, color: "var(--tx)" }}>{activeBooking.eventType}</div>
+                    <div style={{ fontWeight: 600, color: "var(--tx)" }}>{activeBooking.eventName || activeBooking.eventType}</div>
                   </div>
                   <div>
                     <span style={{ color: "var(--tx2)", fontSize: "11px" }}>Client:</span>
@@ -411,15 +413,30 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                   </td>
                 </tr>
               ) : (
-                item.bookings.map((booking: any) => (
-                  <tr key={booking.id}>
-                    <td>
-                      <div style={{ fontWeight: 500, color: "var(--tx)" }}>{booking.eventType}</div>
-                      <Link href={`/warehouse/check?inquiryId=${booking.inquiryId}`} style={{ fontSize: "10.5px", color: "var(--tx3)" }}>
-                        Inquiry: {booking.inquiryId}
-                      </Link>
-                    </td>
-                    <td>{booking.clientName}</td>
+                item.bookings.map((booking: any) => {
+                  const quote = quotations.find((q) => q.inquiryId === booking.inquiryId);
+                  const invoice = invoices.find((inv) => quote && inv.quotationId === quote.id);
+                  return (
+                    <tr key={booking.id}>
+                      <td>
+                        <div style={{ fontWeight: 500, color: "var(--tx)" }}>{booking.eventName || booking.eventType}</div>
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "2px" }}>
+                          <Link href={`/warehouse/check?inquiryId=${booking.inquiryId}`} className="text-[10px] text-tx3 hover:underline">
+                            Warehouse ⚙
+                          </Link>
+                          {quote && (
+                            <Link href={`/quotations/${quote.id}/pdf`} className="text-[10px] text-tx3 hover:underline">
+                              · Quote ▤
+                            </Link>
+                          )}
+                          {invoice && (
+                            <Link href={`/invoices/${invoice.id}`} className="text-[10px] text-tx3 hover:underline">
+                              · Invoice ⊡
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+                      <td>{booking.clientName}</td>
                     <td>
                       <div style={{ fontSize: "11px" }}>{booking.bookedFrom} to {booking.bookedTo}</div>
                     </td>
@@ -439,7 +456,8 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                       )}
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

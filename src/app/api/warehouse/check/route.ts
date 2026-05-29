@@ -13,10 +13,29 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "inquiryId is required" }, { status: 400 });
     }
 
-    const inquiry = await getInquiryById(inquiryId);
-    if (!inquiry) {
+    const inquiryRow = await db.inquiry.findUnique({
+      where: { id: inquiryId },
+      include: { client: true }
+    });
+    if (!inquiryRow) {
       return Response.json({ error: "Inquiry not found" }, { status: 404 });
     }
+
+    const inquiry = {
+      id: inquiryRow.id,
+      clientId: inquiryRow.client_id,
+      eventType: inquiryRow.event_type,
+      eventName: inquiryRow.event_name || "",
+      clientName: inquiryRow.client?.name || "Unknown",
+      startDate: inquiryRow.start_date,
+      endDate: inquiryRow.end_date,
+      startTime: inquiryRow.start_time,
+      endTime: inquiryRow.end_time,
+      venue: inquiryRow.venue,
+      notes: inquiryRow.notes,
+      status: inquiryRow.status,
+      department: inquiryRow.department,
+    };
 
     // Get the quotation for this inquiry
     const quotation = await db.quotation.findFirst({

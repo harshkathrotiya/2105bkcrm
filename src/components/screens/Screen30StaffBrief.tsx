@@ -67,7 +67,7 @@ Tamara next event ni details:
 📍 *Venue:* ${inquiry.venue}
 🎯 *Your position:* ${assignment.positionName || "Operator"}
 *Equipment:* ${staff.withEquipment ? (staff.equipmentDesc || "Own Gear") : "Provided by BK Media"}
-👔 *Event:* ${inquiry.eventType} — ${inquiry.client.name}
+👔 *Event:* ${inquiry.eventName || inquiry.eventType} — ${inquiry.client.name}
 
 *Event scale:*
 👥 Total staff: ${eventScale.totalStaff}
@@ -210,7 +210,7 @@ Koi sawaal hoy to call karo: +91 98250 00000`;
                 </div>
                 <div className="row-item">
                   <span className="text-tx2">Event Name / Type</span>
-                  <span className="text-tx">{inquiry.eventType}</span>
+                  <span className="text-tx">{inquiry.eventName || inquiry.eventType}</span>
                 </div>
               </div>
             </div>

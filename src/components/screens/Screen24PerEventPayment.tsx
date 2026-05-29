@@ -249,7 +249,7 @@ export default function Screen24PerEventPayment() {
     <>
       <SectionHeader
         title={<>Per Event <strong>Staff Payments</strong></>}
-        description={`Record payouts for crew members assigned to ${inquiry.eventType}. Supports individual transaction tracking and bulk payout triggers.`}
+        description={`Record payouts for crew members assigned to ${inquiry.eventName || inquiry.eventType}. Supports individual transaction tracking and bulk payout triggers.`}
       />
 
       <ScreenFrame
@@ -284,8 +284,8 @@ export default function Screen24PerEventPayment() {
             <div style={{ padding: "0 0 4px", fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase" }}>
               Event Info
             </div>
-            <strong style={{ color: "var(--tx)", display: "block" }}>{quotation.eventName}</strong>
-            <div style={{ color: "var(--tx3)", fontSize: "11px" }}>{inquiry.eventType}</div>
+            <strong style={{ color: "var(--tx)", display: "block" }}>{quotation.eventName || inquiry.eventType}</strong>
+            <div style={{ color: "var(--tx3)", fontSize: "11px" }}>Client: {quotation.clientName}</div>
             
             <div style={{ height: "1px", background: "var(--b1)", margin: "10px 0" }} />
 

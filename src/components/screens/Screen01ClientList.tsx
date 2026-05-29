@@ -203,7 +203,7 @@ export default function Screen01ClientList() {
                               </span>
                             </div>
                             <div style={{ fontSize: "9px", color: "var(--tx3)", paddingLeft: "10px" }}>
-                              {inquiryCount} {inquiryCount === 1 ? "inquiry" : "inquiries"} · {latestInquiry.eventType}
+                              {inquiryCount} {inquiryCount === 1 ? "inquiry" : "inquiries"} · {latestInquiry.eventName || latestInquiry.eventType}
                             </div>
                           </div>
                         ) : (

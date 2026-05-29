@@ -9,6 +9,7 @@ import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
 import type { Vendor } from "@/lib/types";
+import { useInvoices } from "@/lib/store";
 
 function formatSerialNumber(sn: string | null | undefined): string {
   if (!sn) return "None";
@@ -54,6 +55,8 @@ export default function Screen17WarehouseCheck() {
   const inquiryId = searchParams.get("inquiryId");
 
   const [data, setData] = useState<api.WarehouseCheckResult | null>(null);
+  const { invoices } = useInvoices();
+  const invoice = data?.quotation ? invoices.find((inv) => inv.quotationId === data.quotation?.id) : null;
   const [vendors, setVendors] = useState<(Vendor & { timesUsed: number })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -484,10 +487,13 @@ export default function Screen17WarehouseCheck() {
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr 1fr", gap: "20px" }}>
           <div>
             <span style={{ fontSize: "10px", color: "var(--tx3)", textTransform: "uppercase" }}>Event / Client</span>
-            <div style={{ fontWeight: 600, color: "var(--tx)", fontSize: "14px", marginTop: "2px" }}>
-              {data.inquiry.eventType}
+            <div style={{ fontWeight: 600, color: "var(--tx)", fontSize: "15px", marginTop: "2px" }}>
+              {(data.inquiry as any).eventName || data.inquiry.eventType}
             </div>
-            <div style={{ fontSize: "11.5px", color: "var(--tx2)", marginTop: "2px" }}>
+            <div style={{ fontSize: "12px", color: "var(--tx2)", marginTop: "2px" }}>
+              Client: <strong>{(data.inquiry as any).clientName || "—"}</strong>
+            </div>
+            <div style={{ fontSize: "11px", color: "var(--tx3)", marginTop: "2px" }}>
               Inquiry: <strong>#{data.inquiry.id}</strong>
             </div>
           </div>
@@ -538,7 +544,20 @@ export default function Screen17WarehouseCheck() {
       <ScreenFrame
         breadcrumb={<>Warehouse check › Inquiry #{data.inquiry.id}</>}
         actions={
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <Link href="/inquiries" className="btn">
+              ← Inquiries
+            </Link>
+            {data?.quotation && (
+              <Link href={`/quotations/${data.quotation.id}/pdf`} className="btn">
+                📋 Quotation
+              </Link>
+            )}
+            {invoice && (
+              <Link href={`/invoices/${invoice.id}`} className="btn">
+                📄 Invoice
+              </Link>
+            )}
             <Link
               href={`/staff/assign?inquiryId=${inquiryId}`}
               className="btn btn-warning"

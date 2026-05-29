@@ -641,7 +641,7 @@ export default function Screen02EditClient({
                               background: inqStatusColor[inq.status] ?? "var(--tx3)",
                               flexShrink: 0,
                             }} />
-                            <span style={{ fontSize: "12px", fontWeight: 500 }}>{inq.eventType}</span>
+                            <span style={{ fontSize: "12px", fontWeight: 500 }}>{inq.eventName || inq.eventType}</span>
                           </div>
                           <div style={{ fontSize: "10px", color: "var(--tx3)", paddingLeft: "12px" }}>
                             {new Date(inq.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}

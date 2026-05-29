@@ -235,8 +235,8 @@ export default function Screen11QuotationList() {
               <tr>
                 <th style={{ width: 24 }}></th>
                 <th>Quote no.</th>
-                <th>Client</th>
                 <th>Event</th>
+                <th>Client</th>
                 <th style={{ width: 130 }}>Dates</th>
                 <th style={{ width: 110, textAlign: "right" }}>Total</th>
                 <th style={{ width: 90 }}>Status</th>
@@ -300,15 +300,15 @@ export default function Screen11QuotationList() {
                         </td>
                         <td>
                           <div className="font-medium text-tx">
-                            {lt.clientName}
+                            {lt.eventName || "Event"}
                           </div>
                           <div className="text-[10px] text-tx3">
                             {lt.days} days
                           </div>
                         </td>
-                        <td className="text-tx2">{lt.eventName}</td>
+                        <td className="text-tx2">{lt.clientName}</td>
                         <td className="text-[11px] text-tx2">
-                          {startFmt} \u2013 {endFmt}
+                          {startFmt} {" – "} {endFmt}
                         </td>
                         <td className="text-right font-mono font-medium text-gr">
                          {fmt(lt.total)}
@@ -455,7 +455,7 @@ export default function Screen11QuotationList() {
                                   </span>
                                 </td>
                                 <td className="text-tx3">
-                                  {revStartFmt} \u2013 {revEndFmt}
+                                   {revStartFmt} {" – "} {revEndFmt}
                                 </td>
                                 <td className="text-right font-mono text-tx2">
                                  {fmt(rev.total)}

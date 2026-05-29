@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -16,6 +17,7 @@ const STATUS_COLORS: Record<string, "gr" | "am" | "bl" | "rd" | "gy"> = {
 const ITEMS_PER_PAGE = 8;
 
 export default function Screen12InvoiceList() {
+  const router = useRouter();
   const { invoices } = useInvoices();
   const { inquiries } = useInquiries();
   const { quotations } = useQuotations();
@@ -161,8 +163,8 @@ export default function Screen12InvoiceList() {
             <thead>
               <tr>
                 <th>Invoice no.</th>
-                <th>Client</th>
                 <th>Event</th>
+                <th>Client</th>
                 <th style={{ width: 110, textAlign: "right" }}>Total</th>
                 <th style={{ width: 110, textAlign: "right" }}>Balance</th>
                 <th style={{ width: 90 }}>Status</th>
@@ -182,19 +184,23 @@ export default function Screen12InvoiceList() {
                   const total = inv.advance + inv.balance;
                   const remaining = inv.balanceReceived ? 0 : inv.balance;
                   return (
-                    <tr key={inv.id}>
+                    <tr
+                      key={inv.id}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/invoices/${inv.id}`)}
+                    >
                       <td>
                         <span className="font-mono text-[11px] text-bl">{inv.invoiceNo}</span>
                       </td>
                       <td>
-                        <div className="font-medium text-tx">{inv.clientName}</div>
+                        <div className="font-medium text-tx">{inv.eventName}</div>
                         <div className="text-[10px] text-tx3">
                           Due: {new Date(inv.dueDate).toLocaleDateString("en-IN", {
                             day: "numeric", month: "short", year: "numeric",
                           })}
                         </div>
                       </td>
-                      <td className="text-tx2">{inv.eventName}</td>
+                      <td className="text-tx2">{inv.clientName}</td>
                       <td className="text-right font-mono font-medium text-tx">
                         ₹{fmt(total)}
                       </td>
@@ -221,6 +227,7 @@ export default function Screen12InvoiceList() {
                         <Link
                           href={`/invoices/${inv.id}/payment`}
                           className="btn text-[10px] px-[8px] py-[4px]"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           Payment
                         </Link>

@@ -69,7 +69,7 @@ export default function Screen08Invoice({ invoiceId }: Props) {
           <>
             {statusBadge}
             <button className="btn">WhatsApp ↗</button>
-            <button className="btn btn-primary">Download PDF</button>
+            <button className="btn btn-primary" onClick={() => window.print()}>Download PDF</button>
           </>
         }
       >
@@ -93,7 +93,7 @@ export default function Screen08Invoice({ invoiceId }: Props) {
         <div className="two-col">
           {/* PDF Invoice */}
           <div>
-            <div className="pdf-frame">
+            <div className="pdf-frame" id="invoice-pdf-content">
               <div className="pdf-hdr">
                 <div>
                   <div className="pdf-co">BK Media</div>
@@ -349,6 +349,33 @@ export default function Screen08Invoice({ invoiceId }: Props) {
           </div>
         </div>
       </ScreenFrame>
+      {/* Print styles injected for PDF download */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #invoice-pdf-content,
+          #invoice-pdf-content * {
+            visibility: visible;
+          }
+          #invoice-pdf-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+          }
+          .pdf-frame {
+            box-shadow: none !important;
+            border: none !important;
+          }
+          @page {
+            margin: 15mm;
+            size: A4;
+          }
+        }
+      `}</style>
     </>
   );
 }

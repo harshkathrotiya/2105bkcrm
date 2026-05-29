@@ -90,8 +90,8 @@ export default function Screen27ExpenseReport({ inquiryId }: Props) {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
               <div>
                 <span className="text-[10px] text-tx3 uppercase tracking-wide block">Client / Event</span>
-                <strong className="text-[13px] text-tx block mt-1">{inquiry.client.name}</strong>
-                <span className="text-[11px] text-tx2">{inquiry.eventType}</span>
+                <strong className="text-[13px] text-tx block mt-1">{inquiry.eventName || inquiry.eventType}</strong>
+                <span className="text-[11px] text-tx2">Client: {inquiry.client.name}</span>
               </div>
               <div>
                 <span className="text-[10px] text-tx3 uppercase tracking-wide block">Venue</span>
