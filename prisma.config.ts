@@ -7,6 +7,6 @@ loadEnv({ path: path.resolve(__dirname, ".env") });
 export default defineConfig({
   schema: path.resolve(__dirname, "prisma/schema.prisma"),
   datasource: {
-    url: process.env.DIRECT_URL!,
+    url: process.env.MIGRATION_DATABASE_URL || process.env.DIRECT_URL!,
   },
 });
