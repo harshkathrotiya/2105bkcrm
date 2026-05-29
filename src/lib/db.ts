@@ -18,7 +18,7 @@ const pool =
   globalForPrisma.prismaPool ??
   new pg.Pool({
     connectionString: process.env.DIRECT_URL!,
-    max: 5,
+    max: 2,
     ssl: process.env.DIRECT_URL?.includes("sslmode=require")
       ? { rejectUnauthorized: false }
       : undefined,
