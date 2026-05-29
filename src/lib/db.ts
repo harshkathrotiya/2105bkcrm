@@ -17,9 +17,9 @@ const globalForPrisma = globalThis as unknown as {
 const pool =
   globalForPrisma.prismaPool ??
   new pg.Pool({
-    connectionString: process.env.DIRECT_URL!,
-    max: 2,
-    ssl: process.env.DIRECT_URL?.includes("sslmode=require")
+    connectionString: process.env.DATABASE_URL || process.env.DIRECT_URL!,
+    max: !!process.env.VERCEL ? 1 : 2, // Use 1 connection per serverless function instance on Vercel to optimize pooler utilization
+    ssl: (process.env.DATABASE_URL || process.env.DIRECT_URL)?.includes("sslmode=require")
       ? { rejectUnauthorized: false }
       : undefined,
   });
