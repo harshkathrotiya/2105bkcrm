@@ -7,7 +7,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
-import { useStaff } from "@/lib/store";
+import { useStaff, useInquiries } from "@/lib/store";
 import * as api from "@/lib/api";
 import type { Staff } from "@/lib/types";
 
@@ -42,10 +42,110 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   const [loadingDetails, setLoadingDetails] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
+  const { inquiries } = useInquiries();
+
+  // Assignment form states
+  const [selectedInquiryId, setSelectedInquiryId] = useState("");
+  const [selectedPosition, setSelectedPosition] = useState("Helper");
+  const [daysAssigned, setDaysAssigned] = useState(1);
+  const [ratePerDay, setRatePerDay] = useState(0);
+  const [reportingTime, setReportingTime] = useState("09:00 AM");
+  const [isAssigning, setIsAssigning] = useState(false);
+
   // Find target staff member
-  const staffMember = useMemo(() => {
-    return staff.find((s) => s.id === staffId) || fetchedStaff;
-  }, [staff, staffId, fetchedStaff]);
+  const staffMember = staff.find((s) => s.id === staffId) || fetchedStaff;
+
+  useEffect(() => {
+    if (staffMember) {
+      setRatePerDay(staffMember.ratePerDay || 0);
+    }
+  }, [staffMember]);
+
+  const handleInquiryChange = (inquiryId: string) => {
+    setSelectedInquiryId(inquiryId);
+    const inq = inquiries.find((i) => i.id === inquiryId);
+    if (inq) {
+      const s = new Date(inq.startDate);
+      const e = new Date(inq.endDate);
+      const days = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / 86400000) + 1);
+      setDaysAssigned(days);
+    }
+  };
+
+  const handleAssign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedInquiryId) {
+      alert("Please select an event.");
+      return;
+    }
+    setIsAssigning(true);
+    try {
+      // 1. Check duplicates
+      const dupCheck = await api.checkDuplicateAssignment(selectedInquiryId, staffId);
+      if (dupCheck.isDuplicate) {
+        const proceed = confirm(
+          `Conflict detected! This staff member is already assigned to an event on these dates (as ${dupCheck.existingPosition || "Staff"}). Do you want to assign them anyway?`
+        );
+        if (!proceed) {
+          setIsAssigning(false);
+          return;
+        }
+      }
+
+      // 2. Create staff assignment
+      const newAssignment = await api.createStaffAssignment({
+        inquiryId: selectedInquiryId,
+        staffId,
+        positionName: selectedPosition,
+        daysAssigned,
+        ratePerDay,
+        reportingTime,
+      });
+
+      // 3. If duplicate is confirmed locally, update in DB
+      if (dupCheck.isDuplicate) {
+        await api.confirmDuplicateAssignment(newAssignment.id);
+      }
+
+      // 4. Reload page data
+      const [histData, summData] = await Promise.all([
+        api.fetchStaffHistory(staffId),
+        api.fetchStaffSummary(staffId),
+      ]);
+      setHistory(histData);
+      setSummary(summData);
+      await refreshStaff();
+      
+      // Reset form
+      setSelectedInquiryId("");
+      alert("Staff member successfully assigned!");
+    } catch (err: any) {
+      alert(err.message || "Failed to create assignment");
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  const handleUnassign = async (assignmentId: number) => {
+    if (!confirm("Are you sure you want to remove this staff assignment?")) return;
+    setActionLoading(true);
+    try {
+      await api.deleteStaffAssignment(assignmentId);
+      const [histData, summData] = await Promise.all([
+        api.fetchStaffHistory(staffId),
+        api.fetchStaffSummary(staffId),
+      ]);
+      setHistory(histData);
+      setSummary(summData);
+      await refreshStaff();
+      alert("Assignment removed.");
+    } catch (err: any) {
+      alert(err.message || "Failed to remove assignment");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
 
   const staffStatus = useMemo(() => {
     if (!staffMember) return "Unknown";
@@ -427,7 +527,16 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                         Role: {activeDeployment.positionName} • {formatDateRange(activeDeployment.startDate, activeDeployment.endDate)}
                       </div>
                     </div>
-                    <Badge variant="bl">Deployed</Badge>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <Badge variant="bl">Deployed</Badge>
+                      <button
+                        onClick={() => handleUnassign(activeDeployment.id)}
+                        className="btn"
+                        style={{ padding: "4px 8px", fontSize: "10px", borderColor: "var(--rd)", color: "var(--rd)", minHeight: "auto", height: "auto" }}
+                      >
+                        Unassign
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div
@@ -450,6 +559,94 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                     <Badge variant="gr">Free</Badge>
                   </div>
                 )}
+              </div>
+
+              {/* Assign to Event Card */}
+              <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
+                <div className="ct">Assign to Event</div>
+                <form onSubmit={handleAssign} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div className="field">
+                    <div className="flbl">Upcoming Event</div>
+                    <select
+                      className="fsel"
+                      value={selectedInquiryId}
+                      onChange={(e) => handleInquiryChange(e.target.value)}
+                      required
+                    >
+                      <option value="">-- Select Event --</option>
+                      {inquiries
+                        .filter((inq) => {
+                          const today = new Date().toISOString().split("T")[0];
+                          return inq.startDate >= today && inq.status !== "Cancelled";
+                        })
+                        .map((inq) => (
+                          <option key={inq.id} value={inq.id}>
+                            {inq.eventName} ({inq.startDate})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    <div className="field">
+                      <div className="flbl">Position/Role</div>
+                      <select
+                        className="fsel"
+                        value={selectedPosition}
+                        onChange={(e) => setSelectedPosition(e.target.value)}
+                      >
+                        <option value="Lead Technician">Lead Technician</option>
+                        <option value="Operator">Operator</option>
+                        <option value="Assistant">Assistant</option>
+                        <option value="Video Shooter">Video Shooter</option>
+                        <option value="Photographer">Photographer</option>
+                        <option value="Helper">Helper</option>
+                      </select>
+                    </div>
+                    <div className="field">
+                      <div className="flbl">Reporting Time</div>
+                      <input
+                        type="text"
+                        className="finp"
+                        placeholder="e.g. 09:00 AM"
+                        value={reportingTime}
+                        onChange={(e) => setReportingTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    <div className="field">
+                      <div className="flbl">Days Assigned</div>
+                      <input
+                        type="number"
+                        min="1"
+                        className="finp"
+                        value={daysAssigned}
+                        onChange={(e) => setDaysAssigned(parseInt(e.target.value) || 1)}
+                      />
+                    </div>
+                    <div className="field">
+                      <div className="flbl">Rate Per Day (₹)</div>
+                      <input
+                        type="number"
+                        min="0"
+                        className="finp"
+                        value={ratePerDay}
+                        onChange={(e) => setRatePerDay(parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary w-full justify-center"
+                    disabled={isAssigning}
+                    style={{ marginTop: "4px" }}
+                  >
+                    {isAssigning ? "Assigning..." : "✓ Deploy Staff"}
+                  </button>
+                </form>
               </div>
 
               {/* Event History Table */}
