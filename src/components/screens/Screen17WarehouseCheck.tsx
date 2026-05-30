@@ -9,7 +9,7 @@ import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
 import type { Vendor } from "@/lib/types";
-import { useInvoices } from "@/lib/store";
+import { useInvoices, useInquiries } from "@/lib/store";
 
 function formatSerialNumber(sn: string | null | undefined): string {
   if (!sn) return "None";
@@ -56,6 +56,7 @@ export default function Screen17WarehouseCheck() {
 
   const [data, setData] = useState<api.WarehouseCheckResult | null>(null);
   const { invoices } = useInvoices();
+  const { inquiries } = useInquiries();
   const invoice = data?.quotation ? invoices.find((inv) => inv.quotationId === data.quotation?.id) : null;
   const [vendors, setVendors] = useState<(Vendor & { timesUsed: number })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +80,10 @@ export default function Screen17WarehouseCheck() {
   const [savingLogistics, setSavingLogistics] = useState(false);
 
   useEffect(() => {
-    if (!inquiryId) return;
+    if (!inquiryId) {
+      setLoading(false);
+      return;
+    }
     let active = true;
 
     const loadData = async () => {
@@ -442,6 +446,49 @@ export default function Screen17WarehouseCheck() {
         <ScreenFrame breadcrumb="Warehouse › Check">
           <div style={{ padding: "30px" }}>
             <LoadingSkeleton rows={8} message="Performing inventory audit and calendar overlap calculations..." />
+          </div>
+        </ScreenFrame>
+      </>
+    );
+  }
+
+  if (!inquiryId) {
+    return (
+      <>
+        <SectionHeader title="Warehouse Availability Check" />
+        <ScreenFrame breadcrumb="Warehouse › Check">
+          <div className="card" style={{ padding: "20px" }}>
+            <div className="card-t" style={{ marginBottom: "16px", fontSize: "14px", fontWeight: 600 }}>Select an Inquiry to Audit</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {inquiries.length === 0 ? (
+                <div className="text-center py-6 text-tx3" style={{ fontStyle: "italic" }}>No inquiries available.</div>
+              ) : (
+                inquiries.map((inq) => (
+                  <div
+                    key={inq.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "12px 16px",
+                      background: "var(--s2)",
+                      border: "1px solid var(--b1)",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <div>
+                      <strong style={{ fontSize: "13px", color: "var(--tx)" }}>{inq.eventName || "Unnamed Event"}</strong>
+                      <div style={{ fontSize: "10px", color: "var(--tx3)", marginTop: "2px" }}>
+                        Dates: {inq.startDate} to {inq.endDate} · Department: {inq.department || "VIDEO"}
+                      </div>
+                    </div>
+                    <Link href={`/warehouse/check?inquiryId=${inq.id}`} className="btn btn-primary text-[11px] py-1.5 px-3">
+                      Run Audit ↗
+                    </Link>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </ScreenFrame>
       </>
