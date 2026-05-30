@@ -38,6 +38,7 @@ export default function Screen02AddClient() {
   const router = useRouter();
   const { dispatchClients } = useClients();
   const [form, setForm] = useState<FormData>(initialState);
+  const [saving, setSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
   const update = (field: keyof FormData, value: string) =>
@@ -88,7 +89,8 @@ export default function Screen02AddClient() {
   };
 
   const handleSave = () => {
-    if (!allRequired) return;
+    if (!allRequired || saving) return;
+    setSaving(true);
     dispatchClients({
       type: "ADD_CLIENT",
       payload: {
@@ -125,15 +127,15 @@ export default function Screen02AddClient() {
         breadcrumb={<>Clients › New client</>}
         actions={
           <>
-            <button className="btn" onClick={handleReset}>
+            <button className="btn" onClick={handleReset} disabled={saving}>
               Reset
             </button>
             <button
-              className={`btn btn-success ${!allRequired ? "opacity-50" : ""}`}
+              className={`btn btn-success ${!allRequired || saving ? "opacity-50" : ""}`}
               onClick={handleSave}
-              disabled={!allRequired}
+              disabled={!allRequired || saving}
             >
-              Save client ↗
+              {saving ? "Saving..." : "Save client ↗"}
             </button>
           </>
         }

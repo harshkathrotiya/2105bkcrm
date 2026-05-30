@@ -51,6 +51,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
 
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // Pre-fill form in edit mode once staff member data is loaded
   useEffect(() => {
@@ -149,8 +150,9 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
   }, [form.name]);
 
   const handleSave = async () => {
-    if (!allRequiredValid) return;
+    if (!allRequiredValid || saving) return;
 
+    setSaving(true);
     try {
       const payload = {
         name: form.name.trim(),
@@ -188,6 +190,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
       }, 1500);
     } catch (err: any) {
       alert(err.message || "Failed to save staff profile");
+      setSaving(false);
     }
   };
 
@@ -202,13 +205,13 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
         breadcrumb={isEditMode ? `Staff › Edit › ${form.name || "Profile"}` : "Staff › Add"}
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
-            <Link href="/staff" className="btn">Cancel</Link>
+            <Link href="/staff" className={`btn ${saving ? "opacity-50 pointer-events-none" : ""}`}>Cancel</Link>
             <button
               onClick={handleSave}
-              className={`btn btn-success ${!allRequiredValid ? "opacity-50" : ""}`}
-              disabled={!allRequiredValid}
+              className={`btn btn-success ${!allRequiredValid || saving ? "opacity-50" : ""}`}
+              disabled={!allRequiredValid || saving}
             >
-              {isEditMode ? "Save Changes ↗" : "Save Staff ↗"}
+              {saving ? "Saving..." : (isEditMode ? "Save Changes ↗" : "Save Staff ↗")}
             </button>
           </div>
         }

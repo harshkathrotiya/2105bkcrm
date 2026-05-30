@@ -19,6 +19,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
   
   const isEdit = typeof equipmentId !== "undefined";
   const [loading, setLoading] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -120,8 +121,9 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!allRequired) return;
+    if (!allRequired || saving) return;
 
+    setSaving(true);
     setError("");
     try {
       const payload = {
@@ -160,11 +162,14 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
       }, 1500);
     } catch (err: any) {
       setError(err.message || "Failed to save equipment");
+      setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to retire/delete this equipment item?")) return;
+    if (saving || !confirm("Are you sure you want to retire/delete this equipment item?")) return;
+    setSaving(true);
+    setError("");
     try {
       await dispatchEquipment({
         type: "DELETE_EQUIPMENT",
@@ -178,6 +183,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
       }, 1500);
     } catch (err: any) {
       setError(err.message || "Failed to delete equipment");
+      setSaving(false);
     }
   };
 
@@ -215,19 +221,19 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
         }
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
-            <Link href="/equipment" className="btn">Cancel</Link>
+            <Link href="/equipment" className={`btn ${saving ? "opacity-50 pointer-events-none" : ""}`}>Cancel</Link>
             {isEdit && (
-              <button type="button" className="btn btn-danger" onClick={handleDelete}>
-                Retire/Delete
+              <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={saving}>
+                {saving ? "Deleting..." : "Retire/Delete"}
               </button>
             )}
             <button
               type="button"
-              className={`btn btn-primary ${!allRequired ? "opacity-50" : ""}`}
+              className={`btn btn-primary ${!allRequired || saving ? "opacity-50" : ""}`}
               onClick={() => handleSave()}
-              disabled={!allRequired}
+              disabled={!allRequired || saving}
             >
-              {isEdit ? "Save Changes" : "Create Item"}
+              {saving ? "Saving..." : (isEdit ? "Save Changes" : "Create Item")}
             </button>
           </div>
         }

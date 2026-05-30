@@ -64,6 +64,7 @@ export default function Screen18VendorList() {
 
   // Toast State
   const [toast, setToast] = useState<{ show: boolean; msg: string }>({ show: false, msg: "" });
+  const [saving, setSaving] = useState(false);
 
   const triggerToast = (msg: string) => {
     setToast({ show: true, msg });
@@ -168,6 +169,7 @@ export default function Screen18VendorList() {
   // Submit new vendor
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     setFormError("");
 
     if (!formData.name.trim()) {
@@ -196,6 +198,7 @@ export default function Screen18VendorList() {
     }
 
     try {
+      setSaving(true);
       const payload = {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
@@ -229,6 +232,8 @@ export default function Screen18VendorList() {
       }
     } catch (err: any) {
       setFormError(err.message || "Failed to create vendor.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -253,6 +258,7 @@ export default function Screen18VendorList() {
   // Submit edit vendor
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     setFormError("");
 
     if (!editFormData) return;
@@ -283,6 +289,7 @@ export default function Screen18VendorList() {
     }
 
     try {
+      setSaving(true);
       const payload = {
         id: editFormData.id,
         name: editFormData.name.trim(),
@@ -312,6 +319,8 @@ export default function Screen18VendorList() {
       }
     } catch (err: any) {
       setFormError(err.message || "Failed to update vendor.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -838,8 +847,10 @@ export default function Screen18VendorList() {
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "12px" }}>
-                <button type="button" className="btn" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Save Vendor</button>
+                <button type="button" className="btn" onClick={() => setShowAddModal(false)} disabled={saving}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? "Saving..." : "Save Vendor"}
+                </button>
               </div>
             </form>
           </div>
@@ -948,8 +959,10 @@ export default function Screen18VendorList() {
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "12px" }}>
-                <button type="button" className="btn" onClick={() => setShowEditModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Update Vendor</button>
+                <button type="button" className="btn" onClick={() => setShowEditModal(false)} disabled={saving}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? "Updating..." : "Update Vendor"}
+                </button>
               </div>
             </form>
           </div>

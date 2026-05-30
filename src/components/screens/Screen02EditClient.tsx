@@ -33,6 +33,7 @@ export default function Screen02EditClient({
   const { inquiries } = useInquiries();
   const { quotations } = useQuotations();
   const { invoices } = useInvoices();
+  const [saving, setSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
@@ -157,7 +158,8 @@ export default function Screen02EditClient({
     ), [clientActivity]);
 
   const handleSave = () => {
-    if (!allRequired || !client) return;
+    if (!allRequired || !client || saving) return;
+    setSaving(true);
     dispatchClients({
       type: "UPDATE_CLIENT",
       payload: {
@@ -188,8 +190,9 @@ export default function Screen02EditClient({
   };
 
   const handleDelete = () => {
-    if (!client || !confirm("Are you sure you want to delete this client?"))
+    if (!client || saving || !confirm("Are you sure you want to delete this client?"))
       return;
+    setSaving(true);
     dispatchClients({ type: "DELETE_CLIENT", payload: clientId });
     setToastMessage("Client deleted!");
     setShowToast(true);
@@ -256,19 +259,19 @@ export default function Screen02EditClient({
           <>
             <Link
               href={`/inquiries/new?clientId=${clientId}`}
-              className="btn"
+              className={`btn ${saving ? "opacity-50 pointer-events-none" : ""}`}
             >
               + New Inquiry
             </Link>
-            <button className="btn text-rd" onClick={handleDelete}>
-              Delete
+            <button className="btn text-rd" onClick={handleDelete} disabled={saving}>
+              {saving ? "Deleting..." : "Delete"}
             </button>
             <button
-              className={`btn btn-success ${!allRequired ? "opacity-50" : ""}`}
+              className={`btn btn-success ${!allRequired || saving ? "opacity-50" : ""}`}
               onClick={handleSave}
-              disabled={!allRequired}
+              disabled={!allRequired || saving}
             >
-              Update client ↗
+              {saving ? "Updating..." : "Update client ↗"}
             </button>
           </>
         }
