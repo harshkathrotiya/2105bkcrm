@@ -3,7 +3,7 @@
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import { useInvoices } from "@/lib/store";
+import { useInvoices, useInquiries, useQuotations, useClients } from "@/lib/store";
 import { calcDays } from "@/lib/utils";
 
 interface Props {
@@ -12,7 +12,15 @@ interface Props {
 
 export default function Screen08Invoice({ invoiceId }: Props) {
   const { invoices, dispatchInvoices } = useInvoices();
+  const { inquiries } = useInquiries();
+  const { quotations } = useQuotations();
+  const { clients } = useClients();
   const invoice = invoices.find((inv) => inv.id === invoiceId) ?? invoices[invoices.length - 1];
+
+  const quotation = invoice ? quotations.find((q) => q.id === invoice.quotationId) : null;
+  const inquiry = invoice ? inquiries.find((i) => i.id === quotation?.inquiryId) : null;
+  const client = inquiry ? clients.find((c) => c.id === inquiry.clientId) : null;
+  const isLed = inquiry?.department === "LED" || inquiry?.department === "MERGED";
 
   const handleMarkReceived = () => {
     if (!invoice || invoice.balanceReceived) return;
@@ -87,7 +95,11 @@ export default function Screen08Invoice({ invoiceId }: Props) {
           }}
         >
           <span style={{ marginRight: "6px" }}>⚠</span>
-          <span>Video invoice: ફક્ત 2 line items — Videography services + Photography services. Item rates show નહીં.</span>
+          {isLed ? (
+            <span>LED invoice: ફક્ત 1 line item — LED screen services. Item rates & days show નહીં.</span>
+          ) : (
+            <span>Video invoice: ફક્ત 2 line items — Videography services + Photography services. Item rates show નહીં.</span>
+          )}
         </div>
 
         <div className="two-col">
@@ -126,6 +138,7 @@ export default function Screen08Invoice({ invoiceId }: Props) {
 
               <div className="text-[11px] mb-2 text-[#333]">
                 <strong>{invoice.clientName}</strong> — Ref: {invoice.quotationId}
+                {client?.gst && <span style={{ marginLeft: "10px" }}>(GST: {client.gst})</span>}
               </div>
 
               <div className="pdf-strip grid-cols-3">
@@ -156,52 +169,76 @@ export default function Screen08Invoice({ invoiceId }: Props) {
                   <tr>
                     <th style={{ width: 28 }}>No.</th>
                     <th>Service description</th>
-                    <th style={{ width: 46, textAlign: "center" }}>Days</th>
+                    {!isLed && <th style={{ width: 46, textAlign: "center" }}>Days</th>}
                     <th style={{ width: 90, textAlign: "right" }}>
                       Amount (₹)
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {invoice.videographyAmount > 0 && (
+                  {isLed ? (
                     <tr>
                       <td>1</td>
                       <td>
-                        <strong>{invoice.photographyAmount === 0 ? "LED / Videography services" : "Videography services"}</strong>
+                        <strong>LED screen services</strong>
                         <br />
                         <span className="text-[9px] text-[#666]">
                           {invoice.eventName} · {invoice.venue} ·{" "}
                           {new Date(invoice.startDate).getDate()}–
                           {new Date(invoice.endDate).toLocaleDateString("en-IN", {
+                            day: "numeric",
                             month: "short",
+                            year: "numeric",
                           })}
                         </span>
                       </td>
-                      <td style={{ textAlign: "center" }}>{eventDays}</td>
                       <td style={{ textAlign: "right", fontWeight: 700 }}>
-                        {fmt(invoice.videographyAmount)}
+                        {fmt(invoice.videographyAmount + invoice.photographyAmount)}
                       </td>
                     </tr>
-                  )}
-                  {invoice.photographyAmount > 0 && (
-                    <tr>
-                      <td>{invoice.videographyAmount > 0 ? 2 : 1}</td>
-                      <td>
-                        <strong>Photography services</strong>
-                        <br />
-                        <span className="text-[9px] text-[#666]">
-                          {invoice.eventName} · {invoice.venue} ·{" "}
-                          {new Date(invoice.startDate).getDate()}–
-                          {new Date(invoice.endDate).toLocaleDateString("en-IN", {
-                            month: "short",
-                          })}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: "center" }}>{eventDays}</td>
-                      <td style={{ textAlign: "right", fontWeight: 700 }}>
-                        {fmt(invoice.photographyAmount)}
-                      </td>
-                    </tr>
+                  ) : (
+                    <>
+                      {invoice.videographyAmount > 0 && (
+                        <tr>
+                          <td>1</td>
+                          <td>
+                            <strong>{invoice.photographyAmount === 0 ? "LED / Videography services" : "Videography services"}</strong>
+                            <br />
+                            <span className="text-[9px] text-[#666]">
+                              {invoice.eventName} · {invoice.venue} ·{" "}
+                              {new Date(invoice.startDate).getDate()}–
+                              {new Date(invoice.endDate).toLocaleDateString("en-IN", {
+                                month: "short",
+                              })}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: "center" }}>{eventDays}</td>
+                          <td style={{ textAlign: "right", fontWeight: 700 }}>
+                            {fmt(invoice.videographyAmount)}
+                          </td>
+                        </tr>
+                      )}
+                      {invoice.photographyAmount > 0 && (
+                        <tr>
+                          <td>{invoice.videographyAmount > 0 ? 2 : 1}</td>
+                          <td>
+                            <strong>Photography services</strong>
+                            <br />
+                            <span className="text-[9px] text-[#666]">
+                              {invoice.eventName} · {invoice.venue} ·{" "}
+                              {new Date(invoice.startDate).getDate()}–
+                              {new Date(invoice.endDate).toLocaleDateString("en-IN", {
+                                month: "short",
+                              })}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: "center" }}>{eventDays}</td>
+                          <td style={{ textAlign: "right", fontWeight: 700 }}>
+                            {fmt(invoice.photographyAmount)}
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   )}
                 </tbody>
               </table>
@@ -245,7 +282,11 @@ export default function Screen08Invoice({ invoiceId }: Props) {
               </div>
 
               <div className="bg-[#F8F8F0] rounded-[4px] p-[8px_10px] text-[9px] mt-2 text-[#666]">
-                Terms: Hard disk delivery only after receipt of full payment.
+                {isLed ? (
+                  <span>Terms: De-installation only after receipt of full payment.</span>
+                ) : (
+                  <span>Terms: Hard disk delivery only after receipt of full payment.</span>
+                )}
               </div>
 
               <div className="pdf-footer">

@@ -42,7 +42,7 @@ export default function Screen11QuotationList() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [selectedDepts, setSelectedDepts] = useState<string[]>(['VIDEO', 'LED']);
+  const [deptFilter, setDeptFilter] = useState<'All'|'VIDEO'|'LED'|'MERGED'>('All');
   const [page, setPage] = useState(1);
   const [expandedChains, setExpandedChains] = useState<Set<string>>(new Set());
 
@@ -97,17 +97,14 @@ export default function Screen11QuotationList() {
         (chain) => chain.latest.status === statusFilter
       );
     }
-    if (selectedDepts.length > 0 && selectedDepts.length < 2) {
-      const activeDept = selectedDepts[0];
+    if (deptFilter !== 'All') {
       chains = chains.filter((chain) => {
         const inq = inquiries.find((i) => i.id === chain.latest.inquiryId);
-        return inq?.department === activeDept || inq?.department === 'MERGED';
+        return inq?.department === deptFilter;
       });
-    } else if (selectedDepts.length === 0) {
-      chains = [];
     }
     return chains;
-  }, [allChains, search, statusFilter, selectedDepts, inquiries]);
+  }, [allChains, search, statusFilter, deptFilter, inquiries]);
 
   const totalPages = Math.max(
     1,
@@ -179,33 +176,16 @@ export default function Screen11QuotationList() {
         </div>
 
         <div className="card !p-3">
-          {/* Department checkboxes */}
-          <div className="flex gap-4 items-center" style={{ marginBottom: '14px' }}>
-            <span className="text-[11px] text-tx3 font-medium">Departments:</span>
-            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-tx2">
-              <input
-                type="checkbox"
-                checked={selectedDepts.includes('VIDEO')}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setSelectedDepts(prev => checked ? [...prev, 'VIDEO'] : prev.filter(d => d !== 'VIDEO'));
-                  setPage(1);
-                }}
-              />
-              <span>Video</span>
-            </label>
-            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-tx2">
-              <input
-                type="checkbox"
-                checked={selectedDepts.includes('LED')}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setSelectedDepts(prev => checked ? [...prev, 'LED'] : prev.filter(d => d !== 'LED'));
-                  setPage(1);
-                }}
-              />
-              <span>LED</span>
-            </label>
+          <div className="flex gap-1" style={{ marginBottom: '14px' }}>
+            {(['All','VIDEO','LED','MERGED'] as const).map((d) => (
+              <button
+                key={d}
+                className={`btn text-[10px] px-3 ${deptFilter === d ? 'btn-primary' : ''}`}
+                onClick={() => { setDeptFilter(d); setPage(1); }}
+              >
+                {d === 'All' ? 'All' : d === 'VIDEO' ? 'Video' : d === 'LED' ? 'LED' : 'Merged'}
+              </button>
+            ))}
           </div>
           <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
             <input
@@ -235,8 +215,8 @@ export default function Screen11QuotationList() {
               <tr>
                 <th style={{ width: 24 }}></th>
                 <th>Quote no.</th>
-                <th>Event</th>
                 <th>Client</th>
+                <th>Event</th>
                 <th style={{ width: 130 }}>Dates</th>
                 <th style={{ width: 110, textAlign: "right" }}>Total</th>
                 <th style={{ width: 90 }}>Status</th>
@@ -290,7 +270,7 @@ export default function Screen11QuotationList() {
                                 +{revCount - 1}
                               </span>
                             )}
-                             {(() => {
+                            {(() => {
                               const inq = inquiries.find((i) => i.id === lt.inquiryId);
                               if (inq?.department === 'LED') return <span style={{ fontSize: '9px', background: 'var(--sem-bl-bg)', color: 'var(--sem-bl-tx)', borderRadius: '3px', padding: '1px 4px', marginLeft: '4px' }}>LED</span>;
                               if (inq?.department === 'MERGED') return <span style={{ fontSize: '9px', background: 'var(--sem-am-bg)', color: 'var(--sem-am-tx)', borderRadius: '3px', padding: '1px 4px', marginLeft: '4px' }}>MERGED</span>;
@@ -300,15 +280,15 @@ export default function Screen11QuotationList() {
                         </td>
                         <td>
                           <div className="font-medium text-tx">
-                            {lt.eventName || "Event"}
+                            {lt.clientName}
                           </div>
                           <div className="text-[10px] text-tx3">
                             {lt.days} days
                           </div>
                         </td>
-                        <td className="text-tx2">{lt.clientName}</td>
+                        <td className="text-tx2">{lt.eventName}</td>
                         <td className="text-[11px] text-tx2">
-                          {startFmt} {" – "} {endFmt}
+                          {startFmt} \u2013 {endFmt}
                         </td>
                         <td className="text-right font-mono font-medium text-gr">
                          {fmt(lt.total)}
@@ -455,7 +435,7 @@ export default function Screen11QuotationList() {
                                   </span>
                                 </td>
                                 <td className="text-tx3">
-                                   {revStartFmt} {" – "} {revEndFmt}
+                                  {revStartFmt} \u2013 {revEndFmt}
                                 </td>
                                 <td className="text-right font-mono text-tx2">
                                  {fmt(rev.total)}

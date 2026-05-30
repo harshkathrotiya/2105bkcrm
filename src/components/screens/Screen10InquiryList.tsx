@@ -32,7 +32,7 @@ export default function Screen10InquiryList() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [monthFilter, setMonthFilter] = useState("All");
-  const [selectedDepts, setSelectedDepts] = useState<string[]>(['VIDEO', 'LED']);
+  const [deptFilter, setDeptFilter] = useState<'All'|'VIDEO'|'LED'|'MERGED'>('All');
   const [page, setPage] = useState(1);
 
   // Build month options from existing inquiries
@@ -50,11 +50,8 @@ export default function Screen10InquiryList() {
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
-    if (selectedDepts.length > 0 && selectedDepts.length < 2) {
-      const activeDept = selectedDepts[0];
-      list = list.filter((i) => i.department === activeDept || i.department === 'MERGED');
-    } else if (selectedDepts.length === 0) {
-      list = []; // If nothing selected, show empty
+    if (deptFilter !== 'All') {
+      list = list.filter((i) => i.department === deptFilter);
     }
 
     if (search) {
@@ -85,7 +82,7 @@ export default function Screen10InquiryList() {
     }
 
     return list;
-  }, [inquiries, clients, quotations, search, statusFilter, monthFilter, selectedDepts]);
+  }, [inquiries, clients, quotations, search, statusFilter, monthFilter, deptFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice(
@@ -136,33 +133,17 @@ export default function Screen10InquiryList() {
         </div>
 
         <div className="card !p-3">
-          {/* Department checkboxes */}
-          <div className="flex gap-4 items-center" style={{ marginBottom: '14px' }}>
-            <span className="text-[11px] text-tx3 font-medium">Departments:</span>
-            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-tx2">
-              <input
-                type="checkbox"
-                checked={selectedDepts.includes('VIDEO')}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setSelectedDepts(prev => checked ? [...prev, 'VIDEO'] : prev.filter(d => d !== 'VIDEO'));
-                  setPage(1);
-                }}
-              />
-              <span>Video</span>
-            </label>
-            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-tx2">
-              <input
-                type="checkbox"
-                checked={selectedDepts.includes('LED')}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setSelectedDepts(prev => checked ? [...prev, 'LED'] : prev.filter(d => d !== 'LED'));
-                  setPage(1);
-                }}
-              />
-              <span>LED</span>
-            </label>
+          {/* Dept tabs */}
+          <div className="flex gap-1" style={{ marginBottom: '14px' }}>
+            {(['All', 'VIDEO', 'LED', 'MERGED'] as const).map((d) => (
+              <button
+                key={d}
+                className={`btn text-[10px] px-3 ${deptFilter === d ? 'btn-primary' : ''}`}
+                onClick={() => { setDeptFilter(d); setPage(1); }}
+              >
+                {d === 'All' ? 'All' : d === 'VIDEO' ? 'Video' : d === 'LED' ? 'LED' : 'Merged'}
+              </button>
+            ))}
           </div>
 
           {/* Search & filters */}
@@ -256,9 +237,9 @@ export default function Screen10InquiryList() {
                         )}
                       </td>
                       <td>
-                        <div className="font-medium text-tx">{inq.eventName || inq.eventType}</div>
+                        <div className="font-medium text-tx">{client?.name ?? "Unknown"}</div>
                         <div className="text-[10px] text-tx3">
-                          {client?.name ?? "Unknown"}
+                          {inq.eventName ? `${inq.eventName} (${inq.eventType})` : inq.eventType}
                           {quote ? ` · ${quote.quoteNo}` : ''}
                           {(inq.department === 'LED' || inq.department === 'MERGED') && (
                             <span style={{ marginLeft: '4px', background: 'var(--sem-bl-bg)', color: 'var(--sem-bl-tx)', borderRadius: '3px', padding: '1px 4px', fontSize: '9px' }}>

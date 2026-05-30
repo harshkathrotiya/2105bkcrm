@@ -23,8 +23,8 @@ export async function PUT(
     if (booking.status === "RETURNED") {
       return Response.json({ error: "Booking has already been returned" }, { status: 409 });
     }
-    if (booking.status === "BOOKED") {
-      return Response.json({ error: "Booking must be confirmed (OUT) before it can be returned" }, { status: 409 });
+    if (booking.status !== "OUT" && booking.status !== "BOOKED") {
+      return Response.json({ error: "Booking must be in BOOKED or OUT status to be returned" }, { status: 409 });
     }
 
     await db.$transaction(async (tx) => {

@@ -6,7 +6,9 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import Timeline from "../ui/Timeline";
 import { useRouter } from "next/navigation";
-import { useInvoices } from "@/lib/store";
+import { useInvoices, useQuotations, useInquiries } from "@/lib/store";
+import * as api from "@/lib/api";
+import { useMemo } from "react";
 
 interface Props {
   invoiceId: string;
@@ -15,7 +17,53 @@ interface Props {
 export default function Screen09PaymentTracking({ invoiceId }: Props) {
   const router = useRouter();
   const { invoices, dispatchInvoices } = useInvoices();
+  const { quotations } = useQuotations();
+  const { inquiries } = useInquiries();
+
   const invoice = invoices.find((inv) => inv.id === invoiceId) ?? invoices[invoices.length - 1];
+  const quotation = invoice ? quotations.find((q) => q.id === invoice.quotationId) : null;
+  const inquiry = invoice ? inquiries.find((i) => i.id === quotation?.inquiryId) : null;
+  const isLed = inquiry?.department === "LED" || inquiry?.department === "MERGED";
+
+  const [warehouseData, setWarehouseData] = useState<any>(null);
+
+  useEffect(() => {
+    if (!quotation?.inquiryId) return;
+    let active = true;
+    api.fetchWarehouseCheck(quotation.inquiryId).then((data) => {
+      if (active) setWarehouseData(data);
+    });
+    return () => { active = false; };
+  }, [quotation?.inquiryId]);
+
+  const panelCounts = useMemo(() => {
+    if (!warehouseData) return { total: 0, inHouse: 0, vendor: 0 };
+    
+    let inHouse = 0;
+    let vendor = 0;
+    
+    const bks = warehouseData.bookings || [];
+    const eqList = warehouseData.equipment || [];
+    
+    bks.forEach((b: any) => {
+      if (b.vendorId) {
+        vendor += b.quantity || 1;
+      } else if (b.equipmentId) {
+        const eq = eqList.find((e: any) => e.id === b.equipmentId);
+        if (eq && eq.category === "LED_PANEL") {
+          inHouse += b.quantity || 1;
+        }
+      }
+    });
+
+    const total = inquiry?.totalCabinets || (inHouse + vendor) || 0;
+    if (total > 0 && inHouse === 0 && vendor === 0) {
+      inHouse = Math.min(total, 40);
+      vendor = Math.max(0, total - inHouse);
+    }
+    
+    return { total: inHouse + vendor || total, inHouse, vendor };
+  }, [warehouseData, inquiry]);
 
   const [formAmount, setFormAmount] = useState(
     invoice ? (invoice.advanceReceived ? invoice.balance.toString() : invoice.advance.toString()) : ""
@@ -48,7 +96,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
     if (isAdvance && invoice.advanceReceived) return;
     if (!isAdvance && invoice.balanceReceived) return;
 
-    if (!isAdvance && invoice.deinstallDone === false) {
+    if (!isLed && !isAdvance && invoice.deinstallDone === false) {
       alert("Cannot record balance payment (mark Paid in Full) because LED Deinstallation is pending!");
       return;
     }
@@ -58,12 +106,14 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
     };
 
     if (isAdvance) {
+      payload.advance = parseFloat(formAmount) || invoice.advance;
       payload.advanceReceived = true;
       payload.advanceReceivedAt = formDate;
       payload.advanceRef = formRef;
       payload.advanceMethod = formMethod;
       payload.status = invoice.balanceReceived ? "Paid" : "Partial paid";
     } else {
+      payload.balance = parseFloat(formAmount) || invoice.balance;
       payload.balanceReceived = true;
       payload.balanceReceivedAt = formDate;
       payload.balanceRef = formRef;
@@ -90,15 +140,36 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
     router.push("/invoices/" + invoice.id);
   };
 
-  const handleToggleDeinstall = () => {
+  const handleToggleDeinstall = async () => {
     if (!invoice) return;
+    if (isLed && !invoice.balanceReceived) {
+      alert("Full payment is required before de-installation can be completed!");
+      return;
+    }
+
+    const nextVal = !invoice.deinstallDone;
+
     dispatchInvoices({
       type: "UPDATE_INVOICE",
       payload: {
         id: invoice.id,
-        deinstallDone: !invoice.deinstallDone,
+        deinstallDone: nextVal,
       },
     });
+
+    if (isLed && nextVal && warehouseData?.bookings) {
+      try {
+        const activeBookings = warehouseData.bookings.filter(
+          (b: any) => b.status === "OUT" || b.status === "BOOKED"
+        );
+        await Promise.all(
+          activeBookings.map((b: any) => api.returnEquipmentBooking(b.id))
+        );
+      } catch (err) {
+        console.error("Failed to automatically return equipment bookings:", err);
+      }
+    }
+
     router.push("/invoices/" + invoice.id);
   };
 
@@ -111,6 +182,8 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
   const grossAmount = invoice
     ? invoice.advance + invoice.balance
     : 258420;
+
+  const percentPaid = Math.round((totalReceived / grossAmount) * 100) || 0;
 
   if (!invoice) {
     return (
@@ -166,6 +239,20 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                 </Badge>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Payment Progress Bar */}
+        <div className="card" style={{ marginBottom: "20px" }}>
+          <div className="flex justify-between items-center" style={{ marginBottom: "8px" }}>
+            <span className="text-[12px] font-medium text-tx2">Payment Progress</span>
+            <span className="text-[12px] font-bold text-tx1 font-mono">{percentPaid}% Paid</span>
+          </div>
+          <div style={{ width: "100%", height: "8px", background: "var(--b2)", borderRadius: "4px", overflow: "hidden", marginBottom: "8px" }}>
+            <div style={{ width: `${percentPaid}%`, height: "100%", background: percentPaid >= 100 ? "var(--gr)" : "var(--acc)", transition: "width 0.3s ease" }}></div>
+          </div>
+          <div className="text-[11px] text-tx3 font-mono">
+            ₹{fmt(totalReceived)} received of ₹{fmt(grossAmount)}
           </div>
         </div>
 
@@ -313,23 +400,83 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
             {invoice.deinstallDone !== undefined ? (
               <div className="card">
                 <div className="card-t">Deinstallation Gate</div>
-                <div className="bg-s2 rounded-lg" style={{ padding: "12px 14px", marginBottom: "10px" }}>
-                  <div className="row-item">
-                    <span className="text-[11px] text-tx3">Site Deinstallation</span>
-                    <Badge variant={invoice.deinstallDone ? "gr" : "am"}>
-                      {invoice.deinstallDone ? "Completed" : "Pending"}
-                    </Badge>
-                  </div>
-                  <div className="text-[9px] text-tx3" style={{ marginTop: "6px" }}>
-                    Deinstallation must be completed before recording the final balance payment.
-                  </div>
-                </div>
-                <button
-                  className={`btn w-full justify-center ${invoice.deinstallDone ? "" : "btn-primary"}`}
-                  onClick={handleToggleDeinstall}
-                >
-                  {invoice.deinstallDone ? "✓ Mark Pending" : "✓ Mark Deinstalled"}
-                </button>
+                {isLed ? (
+                  <>
+                    {!invoice.balanceReceived ? (
+                      /* State 1: Locked */
+                      <div className="bg-[#2E1F0A] border border-[#4A3010] text-[#F5A623] rounded-lg p-3 text-[11px] mb-3">
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600 }}>
+                          <span style={{ fontSize: "14px" }}>🔒</span>
+                          <span>De-installation Locked</span>
+                        </div>
+                        <div style={{ marginTop: "6px", color: "var(--tx3)" }}>
+                          Full payment is required to unlock de-installation.
+                        </div>
+                        <div style={{ marginTop: "6px", fontWeight: 600 }}>
+                          Warning: Balance ₹{fmt(invoice.balance)} pending
+                        </div>
+                      </div>
+                    ) : (
+                      /* State 2: Unlocked */
+                      <div className="bg-[#0F2E22] border border-[#1A4A34] text-[#2DD4A0] rounded-lg p-3 text-[11px] mb-3">
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600 }}>
+                          <span style={{ fontSize: "14px" }}>🔓</span>
+                          <span>De-installation Unlocked</span>
+                        </div>
+                        <div style={{ marginTop: "6px", color: "var(--tx3)" }}>
+                          Full payment received. Ready for panel return.
+                        </div>
+                        <div style={{ borderTop: "1px solid #1A4A34", marginTop: "8px", paddingTop: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>Total panels:</span>
+                            <strong>{panelCounts.total} cabinets</strong>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>· BK Media:</span>
+                            <span>{panelCounts.inHouse} cabinets</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>· Vendor:</span>
+                            <span>{panelCounts.vendor} cabinets</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <span>Return to warehouse:</span>
+                            <Badge variant={invoice.deinstallDone ? "gr" : "am"}>
+                              {invoice.deinstallDone ? "Returned" : "Pending"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      className={`btn w-full justify-center ${invoice.deinstallDone ? "btn-success" : (invoice.balanceReceived ? "btn-primary" : "")}`}
+                      onClick={handleToggleDeinstall}
+                      disabled={!invoice.balanceReceived}
+                    >
+                      {invoice.deinstallDone ? "✓ De-installation done!" : "✓ Mark de-installation done"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-s2 rounded-lg" style={{ padding: "12px 14px", marginBottom: "10px" }}>
+                      <div className="row-item">
+                        <span className="text-[11px] text-tx3">Site Deinstallation</span>
+                        <Badge variant={invoice.deinstallDone ? "gr" : "am"}>
+                          {invoice.deinstallDone ? "Completed" : "Pending"}
+                        </Badge>
+                      </div>
+                      <div className="text-[9px] text-tx3" style={{ marginTop: "6px" }}>
+                        Deinstallation must be completed before recording the final balance payment.
+                      </div>
+                    </div>
+                    <button
+                      className={`btn w-full justify-center ${invoice.deinstallDone ? "" : "btn-primary"}`}
+                      onClick={handleToggleDeinstall}
+                    >
+                      {invoice.deinstallDone ? "✓ Mark Pending" : "✓ Mark Deinstalled"}
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="card">
@@ -405,6 +552,28 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                 ]}
               />
             </div>
+
+            {isLed && invoice.deinstallDone && (
+              <div className="card text-center" style={{ background: "var(--sem-gr-bg)", border: "1px solid var(--sem-gr-bdr)", color: "var(--sem-gr-tx)", marginTop: "14px", padding: "16px" }}>
+                <div style={{ fontSize: "24px", marginBottom: "6px" }}>🎉</div>
+                <div className="font-medium text-[14px]" style={{ marginBottom: "2px", color: "var(--sem-gr-tx)" }}>Event Completed</div>
+                <div className="text-[10px] text-tx3" style={{ marginBottom: "12px" }}>De-installation done & all panels returned.</div>
+                <div style={{ display: "flex", justifyContent: "space-around", borderTop: "1px solid var(--sem-gr-bdr)", paddingTop: "12px", fontSize: "11px" }}>
+                  <div>
+                    <div className="text-tx3" style={{ fontSize: "9px" }}>Total Invoiced</div>
+                    <div className="font-mono font-medium" style={{ color: "var(--tx)" }}>₹{fmt(grossAmount)}</div>
+                  </div>
+                  <div>
+                    <div className="text-tx3" style={{ fontSize: "9px" }}>Total Received</div>
+                    <div className="font-mono font-medium" style={{ color: "var(--tx)" }}>₹{fmt(totalReceived)}</div>
+                  </div>
+                  <div>
+                    <div className="text-tx3" style={{ fontSize: "9px" }}>Status</div>
+                    <div style={{ marginTop: "2px" }}><Badge variant="gr">CLOSED</Badge></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </ScreenFrame>

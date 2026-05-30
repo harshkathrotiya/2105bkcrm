@@ -110,7 +110,7 @@ export default function Screen07Approval({ quotationId }: Props) {
 
       const advance = Math.round(quotation.total * 0.5);
       const grossForInvoice = quotation.total;
-      const videographyAmount = isLedOrMerged ? grossForInvoice : Math.round(grossForInvoice * 0.82);
+      const videographyAmount = isLedOrMerged ? quotation.subtotal : Math.round(grossForInvoice * 0.82);
       const photographyAmount = isLedOrMerged ? 0 : grossForInvoice - videographyAmount;
 
       await dispatchInvoices({
@@ -164,7 +164,7 @@ export default function Screen07Approval({ quotationId }: Props) {
 
       const advance = Math.round(quotation.total * 0.5);
       const grossForInvoice = quotation.total;
-      const videographyAmount = isLedOrMerged ? grossForInvoice : Math.round(grossForInvoice * 0.82);
+      const videographyAmount = isLedOrMerged ? quotation.subtotal : Math.round(grossForInvoice * 0.82);
       const photographyAmount = isLedOrMerged ? 0 : grossForInvoice - videographyAmount;
 
       await dispatchInvoices({
