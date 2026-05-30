@@ -286,11 +286,11 @@ export default function Screen07Approval({ quotationId }: Props) {
         description="Review and approve quotations — generates invoices and tracks payment automatically."
       />
       <ScreenFrame
-        breadcrumb={
-          <>
-            <span className="text-tx2">{quotation.quoteNo}</span> › Approval
-          </>
-        }
+        breadcrumbs={[
+          { label: "Quotations", href: "/quotations" },
+          { label: quotation.quoteNo },
+          { label: "Approval" },
+        ]}
         actions={
           <>
             <Badge variant="am">Sent to client</Badge>

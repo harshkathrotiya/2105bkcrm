@@ -268,7 +268,7 @@ export default function Screen16KitList() {
       </div>
 
       <ScreenFrame
-        breadcrumb="Kit Stock Directory"
+        breadcrumbs={[{ label: "Kits" }]}
         actions={
           <button type="button" className="btn btn-primary" onClick={() => {
             setNewKitName("");

@@ -2,17 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Users,
+  ClipboardList,
+  FileText,
+  Receipt,
+  CalendarDays,
+  Wrench,
+  Layers,
+  Handshake,
+  UserCheck,
+} from "lucide-react";
 
 const navItems = [
-  { label: "Clients",    path: "/clients",    icon: "◎" },
-  { label: "Inquiries",  path: "/inquiries",  icon: "✎" },
-  { label: "Quotations", path: "/quotations", icon: "▤" },
-  { label: "Invoices",   path: "/invoices",   icon: "⊡" },
-  { label: "Calendar",   path: "/calendar",   icon: "☰" },
-  { label: "Equipment",  path: "/equipment",  icon: "⚙" },
-  { label: "Kits",       path: "/kits",       icon: "⧉" },
-  { label: "Vendors",    path: "/vendors",    icon: "☍" },
-  { label: "Staff",      path: "/staff",      icon: "👤" },
+  { label: "Clients",    path: "/clients",    icon: Users },
+  { label: "Inquiries",  path: "/inquiries",  icon: ClipboardList },
+  { label: "Quotations", path: "/quotations", icon: FileText },
+  { label: "Invoices",   path: "/invoices",   icon: Receipt },
+  { label: "Calendar",   path: "/calendar",   icon: CalendarDays },
+  { label: "Equipment",  path: "/equipment",  icon: Wrench },
+  { label: "Kits",       path: "/kits",       icon: Layers },
+  { label: "Vendors",    path: "/vendors",    icon: Handshake },
+  { label: "Staff",      path: "/staff",      icon: UserCheck },
 ];
 
 export default function AppSidebar() {
@@ -34,7 +45,9 @@ export default function AppSidebar() {
             className={`app-nav-item ${isActive(item.path) ? "active" : ""}`}
             title={item.label}
           >
-            <span className="app-nav-icon">{item.icon}</span>
+            <span className="app-nav-icon">
+              <item.icon size={15} strokeWidth={1.8} />
+            </span>
             <span className="app-nav-label">{item.label}</span>
           </Link>
         ))}

@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
-import { useClients, useInquiries, useCalendar } from "@/lib/store";
+import SearchableSelect from "../ui/SearchableSelect";
+import { useClients, useInquiries, useCalendar, useQuotations, useInvoices } from "@/lib/store";
 import { calcDays, calcHours, timeToMinutes } from "@/lib/utils";
 import { generateId } from "@/lib/types";
 
@@ -31,6 +32,8 @@ export default function Screen04NewInquiry() {
   const { clients } = useClients();
   const { inquiries, dispatchInquiries } = useInquiries();
   const { calendarEvents, dispatchCalendar } = useCalendar();
+  const { quotations } = useQuotations();
+  const { invoices } = useInvoices();
 
   const preselectedClientId = searchParams.get("clientId") ?? "";
   const defaultClientId =
@@ -95,6 +98,16 @@ export default function Screen04NewInquiry() {
   useEffect(() => { setRatePerSqft(LED_TYPE_RATES[ledType] ?? 500); }, [ledType]);
 
   const selectedClient = clients.find((c) => c.id === clientId);
+
+  // Pipeline: find quotation & invoice linked to this inquiry
+  const linkedQuotation = useMemo(
+    () => editInquiryId ? quotations.find((q) => q.inquiryId === editInquiryId && q.status !== "Revised") : null,
+    [quotations, editInquiryId]
+  );
+  const linkedInvoice = useMemo(
+    () => linkedQuotation ? invoices.find((inv) => inv.quotationId === linkedQuotation.id) : null,
+    [invoices, linkedQuotation]
+  );
 
   const duration = useMemo(() => calcDays(startDate, endDate), [startDate, endDate]);
   const hours = useMemo(() => calcHours(startTime, endTime, duration), [startTime, endTime, duration]);
@@ -244,7 +257,10 @@ export default function Screen04NewInquiry() {
         description={editInquiry ? "Update inquiry details below." : "Create a new event inquiry — select a client, set dates, and add event details."}
       />
       <ScreenFrame
-        breadcrumb={editInquiry ? <>Inquiries › Edit inquiry</> : <>Inquiries › New inquiry</>}
+        breadcrumbs={editInquiry
+          ? [{ label: "Inquiries", href: "/inquiries" }, { label: "Edit inquiry" }]
+          : [{ label: "Inquiries", href: "/inquiries" }, { label: "New inquiry" }]
+        }
         actions={
           <>
             {!editInquiry && (
@@ -265,35 +281,18 @@ export default function Screen04NewInquiry() {
           <div>
             {/* Department selector */}
             <div className="card" style={{ marginBottom: '14px', padding: '12px' }}>
-              <div className="flbl" style={{ marginBottom: '8px' }}>Departments *</div>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer text-[11px] font-medium">
-                  <input
-                    type="checkbox"
-                    checked={department === 'VIDEO' || department === 'MERGED'}
-                    onChange={(e) => {
-                      const isChecked = e.target.checked;
-                      const hasLed = department === 'LED' || department === 'MERGED';
-                      if (!isChecked && !hasLed) return;
-                      setDepartment(isChecked ? (hasLed ? 'MERGED' : 'VIDEO') : 'LED');
-                    }}
-                  />
-                  <span>Video Department</span>
-                </label>
-                
-                <label className="flex items-center gap-2 cursor-pointer text-[11px] font-medium">
-                  <input
-                    type="checkbox"
-                    checked={department === 'LED' || department === 'MERGED'}
-                    onChange={(e) => {
-                      const isChecked = e.target.checked;
-                      const hasVideo = department === 'VIDEO' || department === 'MERGED';
-                      if (!isChecked && !hasVideo) return;
-                      setDepartment(isChecked ? (hasVideo ? 'MERGED' : 'LED') : 'VIDEO');
-                    }}
-                  />
-                  <span>LED Department</span>
-                </label>
+              <div className="flbl" style={{ marginBottom: '8px' }}>Department *</div>
+              <div className="flex gap-2">
+                {(['VIDEO', 'LED', 'MERGED'] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    className={`btn flex-1 justify-center text-[11px] ${department === d ? 'btn-primary' : ''}`}
+                    onClick={() => setDepartment(d)}
+                  >
+                    {d === 'VIDEO' ? 'Video' : d === 'LED' ? 'LED' : 'Both (Video + LED)'}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -309,17 +308,15 @@ export default function Screen04NewInquiry() {
                       + New client
                     </Link>
                   </div>
-                  <select
-                    className="fsel"
+                  <SearchableSelect
                     value={clientId}
-                    onChange={(e) => setClientId(e.target.value)}
-                  >
-                    {clients.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} — {c.contact}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setClientId}
+                    placeholder="Search client by name or contact..."
+                    options={clients.map((c) => ({
+                      value: c.id,
+                      label: `${c.name} — ${c.contact}`,
+                    }))}
+                  />
                   {selectedClient && (
                     <div className="bg-s2 rounded-md text-[11px] flex items-center" style={{ padding: "7px 10px", marginTop: "5px", gap: "10px" }}>
                       <div
@@ -445,7 +442,7 @@ export default function Screen04NewInquiry() {
 
                 {/* Venue */}
                 <div className="field span2">
-                  <div className="flbl">Venue * (min 3 chars)</div>
+                  <div className="flbl">Venue *</div>
                   <input
                     className={`finp ${venueError ? "border-rd" : ""}`}
                     value={venue}
@@ -538,6 +535,37 @@ export default function Screen04NewInquiry() {
                 </div>
               </div>
             </div>
+
+            {/* Pipeline next-step CTAs */}
+            {editInquiry && (
+              <div className="card" style={{ marginTop: "0" }}>
+                <div className="card-t">Next steps</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <Link
+                    href={`/quotations/new?inquiryId=${editInquiry.id}`}
+                    className={`btn w-full justify-center ${linkedQuotation ? "" : "btn-primary"}`}
+                  >
+                    {linkedQuotation ? "View quotation →" : "+ Create quotation"}
+                  </Link>
+                  {linkedQuotation && !linkedInvoice && (
+                    <Link
+                      href={`/quotations/${linkedQuotation.id}/approval`}
+                      className="btn btn-warning w-full justify-center"
+                    >
+                      Approval & invoice →
+                    </Link>
+                  )}
+                  {linkedInvoice && (
+                    <Link
+                      href={`/invoices/${linkedInvoice.id}`}
+                      className="btn btn-primary w-full justify-center"
+                    >
+                      View invoice →
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </ScreenFrame>

@@ -8,6 +8,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useClients, useInquiries, useQuotations, useInvoices } from "@/lib/store";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import Pagination from "../ui/Pagination";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -63,7 +64,7 @@ export default function Screen01ClientList() {
         description="Manage your clients — search, filter by status, and view event activity."
       />
       <ScreenFrame
-        breadcrumb="Clients"
+        breadcrumbs={[{ label: "Clients" }]}
         actions={
           <Link href="/clients/new" className="btn btn-primary">
             + New client
@@ -132,8 +133,24 @@ export default function Screen01ClientList() {
             <tbody>
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-6 text-tx3">
-                    No clients found
+                  <td colSpan={7} style={{ textAlign: "center", padding: "40px 16px" }}>
+                    <div style={{ color: "var(--tx3)", fontSize: "12px", marginBottom: "12px" }}>
+                      {search || statusFilter !== "All"
+                        ? "No clients match your filters."
+                        : "No clients yet."}
+                    </div>
+                    {(search || statusFilter !== "All") ? (
+                      <button
+                        className="btn"
+                        onClick={() => { setSearch(""); setStatusFilter("All"); }}
+                      >
+                        Clear filters
+                      </button>
+                    ) : (
+                      <Link href="/clients/new" className="btn btn-primary">
+                        + Add first client
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -241,43 +258,13 @@ export default function Screen01ClientList() {
             </tbody>
           </table>
 
-          {/* Pagination */}
-          <div className="flex justify-between items-center text-[11px] text-tx3" style={{ paddingTop: "24px" }}>
-            <span>
-              {filtered.length === 0
-                ? "0 results"
-                : ((page - 1) * ITEMS_PER_PAGE + 1) + "\u2013" + Math.min(
-                    page * ITEMS_PER_PAGE,
-                    filtered.length
-                  ) + " of " + filtered.length}
-            </span>
-            <div className="flex gap-1">
-              <button
-                className="btn"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                {"\u2039"} Prev
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i}
-                  className={"btn " + (page === i + 1 ? "btn-primary" : "")}
-                  style={{ padding: "5px 10px" }}
-                  onClick={() => setPage(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                className="btn"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                Next {"\u203A"}
-              </button>
-            </div>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setPage}
+          />
         </div>
         </>
         )}

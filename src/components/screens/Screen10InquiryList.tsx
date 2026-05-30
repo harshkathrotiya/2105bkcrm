@@ -7,6 +7,8 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useInquiries, useClients, useQuotations, useInvoices } from "@/lib/store";
+import Pagination from "../ui/Pagination";
+import LoadingSkeleton from "../ui/LoadingSkeleton";
 
 const STATUS_COLORS: Record<string, "gr" | "am" | "bl" | "rd" | "gy"> = {
   New:       "bl",
@@ -24,10 +26,11 @@ const ITEMS_PER_PAGE = 20;
 
 export default function Screen10InquiryList() {
   const router = useRouter();
-  const { inquiries } = useInquiries();
-  const { clients } = useClients();
+  const { inquiries, loading: inquiriesLoading } = useInquiries();
+  const { clients, loading: clientsLoading } = useClients();
   const { quotations } = useQuotations();
   const { invoices } = useInvoices();
+  const loading = inquiriesLoading || clientsLoading;
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -105,13 +108,30 @@ export default function Screen10InquiryList() {
         description="All event inquiries — track status from new through confirmed."
       />
       <ScreenFrame
-        breadcrumb="Inquiries"
+        breadcrumbs={[{ label: "Inquiries" }]}
         actions={
           <Link href="/inquiries/new" className="btn btn-primary">
             + New inquiry
           </Link>
         }
       >
+        {loading ? (
+          <LoadingSkeleton rows={6} message="Loading inquiries…" />
+        ) : (
+        <>
+        {/* Pipeline flow indicator */}
+        <div className="flow" style={{ marginBottom: "20px" }}>
+          <span className="flow-step flow-done">1 · Inquiry</span>
+          <span className="flow-arr">→</span>
+          <span className="flow-step flow-next">2 · Quotation</span>
+          <span className="flow-arr">→</span>
+          <span className="flow-step flow-next">3 · Approval</span>
+          <span className="flow-arr">→</span>
+          <span className="flow-step flow-next">4 · Invoice</span>
+          <span className="flow-arr">→</span>
+          <span className="flow-step flow-next">5 · Payment</span>
+        </div>
+
         {/* Metrics */}
         <div className="metrics">
           <div className="met">
@@ -202,8 +222,24 @@ export default function Screen10InquiryList() {
             <tbody>
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-6 text-tx3">
-                    No inquiries found
+                  <td colSpan={8} style={{ textAlign: "center", padding: "40px 16px" }}>
+                    <div style={{ color: "var(--tx3)", fontSize: "12px", marginBottom: "12px" }}>
+                      {search || statusFilter !== "All" || monthFilter !== "All" || deptFilter !== "All"
+                        ? "No inquiries match your filters."
+                        : "No inquiries yet."}
+                    </div>
+                    {(search || statusFilter !== "All" || monthFilter !== "All" || deptFilter !== "All") ? (
+                      <button
+                        className="btn"
+                        onClick={() => { setSearch(""); setStatusFilter("All"); setMonthFilter("All"); setDeptFilter("All"); }}
+                      >
+                        Clear filters
+                      </button>
+                    ) : (
+                      <Link href="/inquiries/new" className="btn btn-primary">
+                        + New inquiry
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ) : (
@@ -276,14 +312,35 @@ export default function Screen10InquiryList() {
                         ) : null}
                       </td>
                       <td>
-                        <Link
-                          href={`/quotations/new?inquiryId=${inq.id}`}
-                          className={`btn text-[10px] px-[8px] py-[4px] ${hasQuotation ? "" : "btn-primary"}`}
-                          title={hasQuotation ? "View/edit quotation" : "Create quotation"}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {hasQuotation ? "Quotation" : "+ Quote"}
-                        </Link>
+                        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                          {!hasQuotation && (
+                            <Link
+                              href={`/quotations/new?inquiryId=${inq.id}`}
+                              className="btn btn-primary text-[10px] px-[8px] py-[4px]"
+                              title="Create quotation"
+                            >
+                              + Quote
+                            </Link>
+                          )}
+                          {hasQuotation && !invoice && (
+                            <Link
+                              href={`/quotations/new?inquiryId=${inq.id}`}
+                              className="btn text-[10px] px-[8px] py-[4px]"
+                              title="View/edit quotation"
+                            >
+                              Quotation
+                            </Link>
+                          )}
+                          {invoice && (
+                            <Link
+                              href={`/invoices/${invoice.id}`}
+                              className="btn btn-primary text-[10px] px-[8px] py-[4px]"
+                              title="View invoice"
+                            >
+                              Invoice →
+                            </Link>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -292,29 +349,16 @@ export default function Screen10InquiryList() {
             </tbody>
           </table>
 
-          {/* Pagination */}
-          <div className="flex justify-between items-center text-[11px] text-tx3" style={{ paddingTop: "24px" }}>
-            <span>
-              {filtered.length === 0
-                ? "0 results"
-                : `${(page - 1) * ITEMS_PER_PAGE + 1}–${Math.min(page * ITEMS_PER_PAGE, filtered.length)} of ${filtered.length}`}
-            </span>
-            <div className="flex gap-1">
-              <button className="btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹ Prev</button>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i}
-                  className={`btn ${page === i + 1 ? "btn-primary" : ""}`}
-                  style={{ padding: "5px 10px" }}
-                  onClick={() => setPage(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next ›</button>
-            </div>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setPage}
+          />
         </div>
+        </>
+        )}
       </ScreenFrame>
     </>
   );

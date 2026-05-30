@@ -124,7 +124,7 @@ export default function Screen02AddClient() {
         description="Add a new client — fill in the required details and preview before saving."
       />
       <ScreenFrame
-        breadcrumb={<>Clients › New client</>}
+        breadcrumbs={[{ label: "Clients", href: "/clients" }, { label: "New client" }]}
         actions={
           <>
             <button className="btn" onClick={handleReset} disabled={saving}>

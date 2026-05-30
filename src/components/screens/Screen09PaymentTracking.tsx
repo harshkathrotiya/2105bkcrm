@@ -201,11 +201,11 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
         description="Track payments, record receipts, and manage HDD delivery after full payment."
       />
       <ScreenFrame
-        breadcrumb={
-          <>
-            <span className="text-tx2">Invoices</span> › {invoice.invoiceNo} › Payment
-          </>
-        }
+        breadcrumbs={[
+          { label: "Invoices", href: "/invoices" },
+          { label: invoice.invoiceNo, href: `/invoices/${invoice.id}` },
+          { label: "Payment" },
+        ]}
         actions={
           <Badge variant={invoice.status === "Paid" ? "gr" : invoice.status === "Partial paid" ? "am" : "rd"}>
             {invoice.status}

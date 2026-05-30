@@ -8,6 +8,7 @@ import Badge from "../ui/Badge";
 import { useQuotations, useInvoices, useInquiries } from "@/lib/store";
 import type { Quotation } from "@/lib/types";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import Pagination from "../ui/Pagination";
 
 const STATUS_COLORS: Record<string, "gr" | "am" | "bl" | "rd" | "gy"> = {
   Draft:    "gy",
@@ -144,7 +145,7 @@ export default function Screen11QuotationList() {
         description="All quotations — grouped by revision chain. Expand to see revisions."
       />
       <ScreenFrame
-        breadcrumb="Quotations"
+        breadcrumbs={[{ label: "Quotations" }]}
         actions={
           <Link href="/quotations/new" className="btn btn-primary">
             + New quotation
@@ -498,45 +499,13 @@ export default function Screen11QuotationList() {
             </tbody>
           </table>
 
-          {/* Pagination */}
-          <div className="flex justify-between items-center text-[11px] text-tx3" style={{ paddingTop: "24px" }}>
-            <span>
-              {filteredChains.length === 0
-                ? "0 results"
-                : `${(page - 1) * ITEMS_PER_PAGE + 1}\u2013${Math.min(
-                    page * ITEMS_PER_PAGE,
-                    filteredChains.length
-                  )} of ${filteredChains.length} chain${
-                    filteredChains.length !== 1 ? "s" : ""
-                  }`}
-            </span>
-            <div className="flex gap-1">
-              <button
-                className="btn"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                {"\u2039"} Prev
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i}
-                  className={"btn " + (page === i + 1 ? "btn-primary" : "")}
-                  style={{ padding: "5px 10px" }}
-                  onClick={() => setPage(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                className="btn"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next {"\u203A"}
-              </button>
-            </div>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={filteredChains.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setPage}
+          />
         </div>
         </>
         )}

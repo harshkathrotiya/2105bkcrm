@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -22,6 +23,10 @@ export default function Screen08Invoice({ invoiceId }: Props) {
   const client = inquiry ? clients.find((c) => c.id === inquiry.clientId) : null;
   const isLed = inquiry?.department === "LED" || inquiry?.department === "MERGED";
 
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [refInput, setRefInput] = useState("");
+  const [methodInput, setMethodInput] = useState("Bank transfer");
+
   const handleMarkReceived = () => {
     if (!invoice || invoice.balanceReceived) return;
     dispatchInvoices({
@@ -30,11 +35,12 @@ export default function Screen08Invoice({ invoiceId }: Props) {
         id: invoice.id,
         balanceReceived: true,
         balanceReceivedAt: new Date().toISOString().split("T")[0],
-        balanceRef: "NEFT" + Date.now().toString().slice(-6),
-        balanceMethod: "Bank transfer",
+        balanceRef: refInput.trim() || ("NEFT" + Date.now().toString().slice(-6)),
+        balanceMethod: methodInput || "Bank transfer",
         status: invoice.advanceReceived ? "Paid" : "Partial paid",
       },
     });
+    setShowConfirm(false);
   };
 
   if (!invoice) {
@@ -68,11 +74,10 @@ export default function Screen08Invoice({ invoiceId }: Props) {
         description="Two-line-item invoice for videography and photography services with payment tracking."
       />
       <ScreenFrame
-        breadcrumb={
-          <>
-            <span className="text-tx2">{invoice.invoiceNo}</span> › Invoice
-          </>
-        }
+        breadcrumbs={[
+          { label: "Invoices", href: "/invoices" },
+          { label: invoice.invoiceNo },
+        ]}
         actions={
           <>
             {statusBadge}
@@ -96,9 +101,9 @@ export default function Screen08Invoice({ invoiceId }: Props) {
         >
           <span style={{ marginRight: "6px" }}>⚠</span>
           {isLed ? (
-            <span>LED invoice: ફક્ત 1 line item — LED screen services. Item rates & days show નહીં.</span>
+            <span>LED invoice — 1 line item: LED screen services. Individual item rates and days are not shown on the invoice.</span>
           ) : (
-            <span>Video invoice: ફક્ત 2 line items — Videography services + Photography services. Item rates show નહીં.</span>
+            <span>Video invoice — up to 2 line items: Videography services + Photography services. Individual item rates are not shown on the invoice.</span>
           )}
         </div>
 
@@ -379,7 +384,7 @@ export default function Screen08Invoice({ invoiceId }: Props) {
                 className={`btn w-full justify-center ${
                   invoice.balanceReceived ? "" : "btn-success"
                 }`}
-                onClick={handleMarkReceived}
+                onClick={() => !invoice.balanceReceived && setShowConfirm(true)}
                 disabled={invoice.balanceReceived}
               >
                 {invoice.balanceReceived
@@ -390,6 +395,58 @@ export default function Screen08Invoice({ invoiceId }: Props) {
           </div>
         </div>
       </ScreenFrame>
+
+      {/* Confirm balance received dialog */}
+      {showConfirm && (
+        <div
+          style={{
+            position: "fixed", inset: 0, background: "var(--modal-overlay)",
+            zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+          onClick={() => setShowConfirm(false)}
+        >
+          <div
+            className="card"
+            style={{ width: 360, margin: 0, padding: "20px 24px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="card-t" style={{ marginBottom: "12px" }}>Confirm payment received</div>
+            <p style={{ fontSize: "12px", color: "var(--tx2)", marginBottom: "16px" }}>
+              Mark ₹{fmt(invoice.balance)} balance as received for <strong>{invoice.invoiceNo}</strong>.
+              This action cannot be undone.
+            </p>
+            <div className="field" style={{ marginBottom: "10px" }}>
+              <div className="flbl">Payment method</div>
+              <select
+                className="fsel"
+                value={methodInput}
+                onChange={(e) => setMethodInput(e.target.value)}
+              >
+                <option>Bank transfer</option>
+                <option>Cash</option>
+                <option>UPI</option>
+                <option>Cheque</option>
+              </select>
+            </div>
+            <div className="field" style={{ marginBottom: "18px" }}>
+              <div className="flbl">Reference / UTR (optional)</div>
+              <input
+                className="finp"
+                placeholder="e.g. NEFT123456 or UTR number"
+                value={refInput}
+                onChange={(e) => setRefInput(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+              <button className="btn" onClick={() => setShowConfirm(false)}>Cancel</button>
+              <button className="btn btn-success" onClick={handleMarkReceived}>
+                ✓ Confirm received
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Print styles injected for PDF download */}
       <style jsx global>{`
         @media print {

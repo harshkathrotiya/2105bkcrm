@@ -158,7 +158,7 @@ export default function Screen20StaffList() {
       </div>
 
       <ScreenFrame
-        breadcrumb="Staff › List"
+        breadcrumbs={[{ label: "Staff" }]}
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <button className="btn" onClick={handleExportCSV}>Export CSV</button>

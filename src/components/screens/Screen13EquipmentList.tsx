@@ -271,7 +271,7 @@ export default function Screen13EquipmentList() {
       )}
 
       <ScreenFrame
-        breadcrumb="Equipment Master"
+        breadcrumbs={[{ label: "Equipment" }]}
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <button

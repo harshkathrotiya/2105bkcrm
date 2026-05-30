@@ -1,0 +1,298 @@
+.
+├── data
+│   ├── bkcrm.db
+│   ├── bkcrm.db-shm
+│   └── bkcrm.db-wal
+├── docs
+│   ├── BK_Media_Kit1_Functional_Requirements (2).md
+│   ├── BK_Media_Kit1_Video_UI (1).html
+│   ├── BK_Media_Phase2_Functional_Requirements (1).md
+│   ├── BK_Media_Phase2_UI.html
+│   ├── BK_Media_Staff_Functional_Requirements (1).md
+│   ├── BK_Media_Staff_UI (3).html
+│   ├── BK_Media_Staff_UI (4).html
+│   └── DEVELOPER_HANDOVER.md
+├── prisma
+│   ├── clear.ts
+│   ├── schema.prisma
+│   └── seed.ts
+├── public
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── src
+│   ├── app
+│   │   ├── api
+│   │   │   ├── auth
+│   │   │   │   ├── login
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── logout
+│   │   │   │       └── route.ts
+│   │   │   ├── calendar
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── bulk
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── bulk-delete
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── clients
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── equipment
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── asset-summary
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── import-csv
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── equipment-bookings
+│   │   │   │   ├── [id]
+│   │   │   │   │   ├── confirm
+│   │   │   │   │   └── return
+│   │   │   │   ├── bulk-confirm
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── inquiries
+│   │   │   │   ├── [id]
+│   │   │   │   │   ├── dispatch-boxes
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── invoices
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── kits
+│   │   │   │   ├── [id]
+│   │   │   │   │   ├── add-item
+│   │   │   │   │   ├── remove-item
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── quotations
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── reports
+│   │   │   │   ├── client-requirements
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── expense
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── pl
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── staff-brief
+│   │   │   │       └── route.ts
+│   │   │   ├── staff
+│   │   │   │   ├── [id]
+│   │   │   │   │   ├── history
+│   │   │   │   │   ├── reactivate
+│   │   │   │   │   ├── summary
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── availability
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── inactive
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── staff-assignments
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── check-duplicate
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── confirm-duplicate
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── staff-payments
+│   │   │   │   ├── bulk
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── monthly-report
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── vendors
+│   │   │   │   ├── [id]
+│   │   │   │   │   ├── history
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   └── warehouse
+│   │   │       └── check
+│   │   │           └── route.ts
+│   │   ├── calendar
+│   │   │   └── page.tsx
+│   │   ├── clients
+│   │   │   ├── [id]
+│   │   │   │   └── page.tsx
+│   │   │   ├── new
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── equipment
+│   │   │   ├── [id]
+│   │   │   │   ├── edit
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── new
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── inquiries
+│   │   │   ├── [id]
+│   │   │   │   ├── brief
+│   │   │   │   │   └── [staffId]
+│   │   │   │   ├── expense
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── pl
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── requirements
+│   │   │   │       └── page.tsx
+│   │   │   ├── new
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── invoices
+│   │   │   ├── [id]
+│   │   │   │   ├── new
+│   │   │   │   │   └── page.tsx
+│   │   │   │   ├── payment
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── kits
+│   │   │   ├── [id]
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── login
+│   │   │   └── page.tsx
+│   │   ├── quotations
+│   │   │   ├── [id]
+│   │   │   │   ├── approval
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── pdf
+│   │   │   │       └── page.tsx
+│   │   │   ├── new
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── reports
+│   │   │   └── assets
+│   │   │       └── pdf
+│   │   │           └── page.tsx
+│   │   ├── staff
+│   │   │   ├── [id]
+│   │   │   │   ├── edit
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── assign
+│   │   │   │   └── page.tsx
+│   │   │   ├── availability
+│   │   │   │   └── page.tsx
+│   │   │   ├── inactive
+│   │   │   │   └── page.tsx
+│   │   │   ├── new
+│   │   │   │   └── page.tsx
+│   │   │   ├── payments
+│   │   │   │   └── page.tsx
+│   │   │   ├── reports
+│   │   │   │   └── page.tsx
+│   │   │   └── page.tsx
+│   │   ├── vendors
+│   │   │   └── page.tsx
+│   │   ├── warehouse
+│   │   │   └── check
+│   │   │       └── page.tsx
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components
+│   │   ├── layout
+│   │   │   ├── AppLayout.tsx
+│   │   │   ├── AppSidebar.tsx
+│   │   │   └── SiteHeader.tsx
+│   │   ├── screens
+│   │   │   ├── Screen01ClientList.tsx
+│   │   │   ├── Screen02AddClient.tsx
+│   │   │   ├── Screen02EditClient.tsx
+│   │   │   ├── Screen03Calendar.tsx
+│   │   │   ├── Screen04NewInquiry.tsx
+│   │   │   ├── Screen05QuotationForm.tsx
+│   │   │   ├── Screen06QuotationPDF.tsx
+│   │   │   ├── Screen07Approval.tsx
+│   │   │   ├── Screen08Invoice.tsx
+│   │   │   ├── Screen09PaymentTracking.tsx
+│   │   │   ├── Screen10InquiryList.tsx
+│   │   │   ├── Screen11QuotationList.tsx
+│   │   │   ├── Screen12InvoiceList.tsx
+│   │   │   ├── Screen13EquipmentList.tsx
+│   │   │   ├── Screen14AddEditEquipment.tsx
+│   │   │   ├── Screen15EquipmentDetail.tsx
+│   │   │   ├── Screen16KitList.tsx
+│   │   │   ├── Screen17KitDetail.tsx
+│   │   │   ├── Screen17WarehouseCheck.tsx
+│   │   │   ├── Screen18VendorList.tsx
+│   │   │   ├── Screen19AssetReportPDF.tsx
+│   │   │   ├── Screen20StaffList.tsx
+│   │   │   ├── Screen21AddEditStaff.tsx
+│   │   │   ├── Screen22StaffProfile.tsx
+│   │   │   ├── Screen23AssignPosition.tsx
+│   │   │   ├── Screen24PerEventPayment.tsx
+│   │   │   ├── Screen25MonthlyPaymentReport.tsx
+│   │   │   ├── Screen26AvailabilityCheck.tsx
+│   │   │   ├── Screen27ExpenseReport.tsx
+│   │   │   ├── Screen28PLReport.tsx
+│   │   │   ├── Screen29ClientRequirements.tsx
+│   │   │   ├── Screen30StaffBrief.tsx
+│   │   │   └── Screen31Login.tsx
+│   │   └── ui
+│   │       ├── Badge.tsx
+│   │       ├── LoadingSkeleton.tsx
+│   │       ├── ScreenFrame.tsx
+│   │       ├── SearchableSelect.tsx
+│   │       ├── SectionHeader.tsx
+│   │       └── Timeline.tsx
+│   ├── lib
+│   │   ├── queries
+│   │   │   ├── calendar.ts
+│   │   │   ├── clients.ts
+│   │   │   ├── equipment.ts
+│   │   │   ├── inquiries.ts
+│   │   │   ├── invoices.ts
+│   │   │   ├── kits.ts
+│   │   │   ├── quotations.ts
+│   │   │   ├── reports.ts
+│   │   │   ├── staff.ts
+│   │   │   └── vendors.ts
+│   │   ├── api.ts
+│   │   ├── auth.ts
+│   │   ├── calendar-context.tsx
+│   │   ├── clients-context.tsx
+│   │   ├── db.ts
+│   │   ├── equipment-context.tsx
+│   │   ├── inquiries-context.tsx
+│   │   ├── invoices-context.tsx
+│   │   ├── kits-context.tsx
+│   │   ├── quotations-context.tsx
+│   │   ├── staff-context.tsx
+│   │   ├── storage.ts
+│   │   ├── store.tsx
+│   │   ├── theme-context.tsx
+│   │   ├── types.ts
+│   │   ├── utils.ts
+│   │   ├── validate.ts
+│   │   ├── vendors-context.tsx
+│   │   └── whatsapp.ts
+│   └── middleware.ts
+├── AGENTS.md
+├── BK_Media_Staff_Functional_Requirements.md
+├── BK_Media_Staff_UI.html
+├── CLAUDE.md
+├── README.md
+├── eslint.config.mjs
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── prisma.config.ts
+├── structure.txt
+├── tsconfig.json
+└── tsconfig.tsbuildinfo
+
+110 directories, 186 files
