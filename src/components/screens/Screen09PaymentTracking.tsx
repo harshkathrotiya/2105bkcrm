@@ -97,8 +97,8 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
     if (isAdvance && invoice.advanceReceived) return;
     if (!isAdvance && invoice.balanceReceived) return;
 
-    if (!isLed && !isAdvance && invoice.deinstallDone === false) {
-      alert("Cannot record balance payment (mark Paid in Full) because LED Deinstallation is pending!");
+    if (isLed && !isAdvance && invoice.deinstallDone === false) {
+      alert("Cannot record LED balance payment — de-installation is still pending.");
       return;
     }
 

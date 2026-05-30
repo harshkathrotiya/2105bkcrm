@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-import { StoreProvider } from "@/lib/store";
 import { ThemeProvider } from "@/lib/theme-context";
+import { CurrentUserProvider } from "@/lib/current-user-provider";
 import AppLayout from "@/components/layout/AppLayout";
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -53,9 +53,9 @@ export default function RootLayout({
       </head>
       <body className="font-sans bg-bg text-tx min-h-screen">
         <ThemeProvider>
-          <StoreProvider>
+          <CurrentUserProvider>
             <AppLayout>{children}</AppLayout>
-          </StoreProvider>
+          </CurrentUserProvider>
         </ThemeProvider>
       </body>
     </html>

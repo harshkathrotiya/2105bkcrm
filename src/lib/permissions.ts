@@ -36,6 +36,61 @@ export type Permission =
   | "warehouse.view"
   | "settings.users"; // manage user accounts
 
+export const MODULE_PERMISSIONS: Record<string, { key: Permission; label: string }[]> = {
+  "Clients Module": [
+    { key: "clients.view", label: "View clients list & details" },
+    { key: "clients.create", label: "Add new client profile" },
+    { key: "clients.edit", label: "Edit existing client details" },
+    { key: "clients.delete", label: "Delete client accounts" },
+  ],
+  "Inquiries Module": [
+    { key: "inquiries.view", label: "View inquiry list & timeline" },
+    { key: "inquiries.create", label: "Add new event inquiry" },
+    { key: "inquiries.edit", label: "Modify event details" },
+  ],
+  "Quotations Module": [
+    { key: "quotations.view", label: "View quotation list & history" },
+    { key: "quotations.create", label: "Generate event quotation" },
+    { key: "quotations.edit", label: "Edit pricing rows & totals" },
+  ],
+  "Invoices & Payments": [
+    { key: "invoices.view", label: "View tax invoices list" },
+    { key: "invoices.edit", label: "Record advance/balance & update payments" },
+  ],
+  "Calendar Module": [
+    { key: "calendar.view", label: "View operational monthly calendar" },
+  ],
+  "Equipment Inventory": [
+    { key: "equipment.view", label: "View equipment catalog & stock" },
+    { key: "equipment.create", label: "Add new catalog items" },
+    { key: "equipment.edit", label: "Update product details & ownership" },
+    { key: "equipment.delete", label: "Remove catalog items from database" },
+  ],
+  "Kits Module": [
+    { key: "kits.view", label: "View kits and components lists" },
+    { key: "kits.edit", label: "Manage items inside specific kits" },
+  ],
+  "Vendors & Rentals": [
+    { key: "vendors.view", label: "View vendor directories" },
+    { key: "vendors.edit", label: "Manage sub-hire vendor details" },
+  ],
+  "Staff & Deployments": [
+    { key: "staff.view", label: "View staff list, availability, & profiles" },
+    { key: "staff.create", label: "Add new staff records" },
+    { key: "staff.edit", label: "Modify staff profile information" },
+    { key: "staff.payments", label: "Manage staff payouts & event payment history" },
+  ],
+  "Warehouse & Logistics": [
+    { key: "warehouse.view", label: "Perform warehouse checks & confirm dispatches" },
+  ],
+  "Analytics & Reports": [
+    { key: "reports.view", label: "View P&L details, salary reports, & expense sheets" },
+  ],
+  "System Administration": [
+    { key: "settings.users", label: "Manage user credentials, roles & permissions matrix" },
+  ],
+};
+
 // What each role can do by default
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   Admin: [
@@ -92,7 +147,7 @@ export const ROUTE_PERMISSION: { prefix: string; permission: Permission }[] = [
   { prefix: "/staff",          permission: "staff.view" },
   { prefix: "/warehouse",      permission: "warehouse.view" },
   { prefix: "/reports",        permission: "reports.view" },
-  { prefix: "/settings/users", permission: "settings.users" },
+  { prefix: "/settings",       permission: "settings.users" },
 ];
 
 // Nav items shown in the sidebar — filtered by permission

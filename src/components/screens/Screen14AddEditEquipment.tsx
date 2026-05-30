@@ -271,6 +271,10 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                     <option value="WIRELESS_TX">Wireless TX</option>
                     <option value="UPS">UPS System</option>
                     <option value="ACCESSORY">Accessory</option>
+                    <option value="LED_PANEL">LED Panel</option>
+                    <option value="LED_PROCESSOR">LED Processor</option>
+                    <option value="LED_CABLE">LED Cable</option>
+                    <option value="LED_ACCESSORY">LED Accessory / Rigging</option>
                   </select>
                 </div>
 

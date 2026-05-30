@@ -30,6 +30,7 @@ export default function Screen07Approval({ quotationId }: Props) {
   const [approving, setApproving] = useState(false);
   const [createdInvoiceId, setCreatedInvoiceId] = useState<string | null>(null);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
+  const [videoPercent, setVideoPercent] = useState(82);
 
   const isApproved = approved || quotation?.status === "Approved";
 
@@ -109,9 +110,9 @@ export default function Screen07Approval({ quotationId }: Props) {
       const isLedOrMerged = inquiry?.department === "LED" || inquiry?.department === "MERGED";
 
       const advance = Math.round(quotation.total * 0.5);
-      const grossForInvoice = quotation.total;
-      const videographyAmount = isLedOrMerged ? quotation.subtotal : Math.round(grossForInvoice * 0.82);
-      const photographyAmount = isLedOrMerged ? 0 : grossForInvoice - videographyAmount;
+      const subtotalForInvoice = quotation.subtotal;
+      const videographyAmount = isLedOrMerged ? quotation.subtotal : Math.round(subtotalForInvoice * videoPercent / 100);
+      const photographyAmount = isLedOrMerged ? 0 : subtotalForInvoice - videographyAmount;
 
       await dispatchInvoices({
         type: "ADD_INVOICE",
@@ -163,9 +164,9 @@ export default function Screen07Approval({ quotationId }: Props) {
       const isLedOrMerged = inquiry?.department === "LED" || inquiry?.department === "MERGED";
 
       const advance = Math.round(quotation.total * 0.5);
-      const grossForInvoice = quotation.total;
-      const videographyAmount = isLedOrMerged ? quotation.subtotal : Math.round(grossForInvoice * 0.82);
-      const photographyAmount = isLedOrMerged ? 0 : grossForInvoice - videographyAmount;
+      const subtotalForInvoice = quotation.subtotal;
+      const videographyAmount = isLedOrMerged ? quotation.subtotal : Math.round(subtotalForInvoice * videoPercent / 100);
+      const photographyAmount = isLedOrMerged ? 0 : subtotalForInvoice - videographyAmount;
 
       await dispatchInvoices({
         type: "ADD_INVOICE",
@@ -375,6 +376,36 @@ export default function Screen07Approval({ quotationId }: Props) {
                     onChange={(e) => setApprovalDate(e.target.value)}
                   />
                 </div>
+                {(() => {
+                  const inq = inquiries.find((i) => i.id === quotation.inquiryId);
+                  const isLedOrMerged = inq?.department === "LED" || inq?.department === "MERGED";
+                  if (isLedOrMerged) return null;
+                  const photoPercent = 100 - videoPercent;
+                  return (
+                    <div className="field span2">
+                      <div className="flbl">Video / Photo split</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <input
+                          type="number"
+                          className="finp"
+                          style={{ width: "80px" }}
+                          min={0}
+                          max={100}
+                          value={videoPercent}
+                          onChange={(e) => setVideoPercent(Math.max(0, Math.min(100, Number(e.target.value))))}
+                        />
+                        <span className="text-[11px] text-tx3">
+                          % Video · {photoPercent}% Photo
+                          {quotation.subtotal > 0 && (
+                            <span style={{ marginLeft: "8px", color: "var(--tx2)" }}>
+                              (₹{Math.round(quotation.subtotal * videoPercent / 100).toLocaleString("en-IN")} + ₹{Math.round(quotation.subtotal * photoPercent / 100).toLocaleString("en-IN")})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="field span2">
                   <div className="flbl">
                     Signed copy upload (optional)

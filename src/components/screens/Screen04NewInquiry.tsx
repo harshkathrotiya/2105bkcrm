@@ -181,6 +181,17 @@ export default function Screen04NewInquiry() {
         });
       }
 
+      const ledPayload = (department !== 'VIDEO') ? {
+        screenWidth: screenWidth ? parseFloat(screenWidth) : undefined,
+        screenHeight: screenHeight ? parseFloat(screenHeight) : undefined,
+        screenAreaSqft: screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : undefined,
+        totalCabinets: screenWidth && screenHeight ? Math.ceil(parseFloat(screenWidth) * parseFloat(screenHeight) / 4) : undefined,
+        ledType,
+        ratePerSqft: LED_TYPE_RATES[ledType] ?? ratePerSqft,
+        location,
+        stageType: stageType || undefined,
+      } : {};
+
       // 2. Update existing inquiry
       await dispatchInquiries({
         type: "UPDATE_INQUIRY",
@@ -196,9 +207,21 @@ export default function Screen04NewInquiry() {
           venue,
           notes,
           department,
+          ...ledPayload,
         },
       });
     } else {
+      const ledPayload = (department !== 'VIDEO') ? {
+        screenWidth: screenWidth ? parseFloat(screenWidth) : undefined,
+        screenHeight: screenHeight ? parseFloat(screenHeight) : undefined,
+        screenAreaSqft: screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : undefined,
+        totalCabinets: screenWidth && screenHeight ? Math.ceil(parseFloat(screenWidth) * parseFloat(screenHeight) / 4) : undefined,
+        ledType,
+        ratePerSqft: LED_TYPE_RATES[ledType] ?? ratePerSqft,
+        location,
+        stageType: stageType || undefined,
+      } : {};
+
       // Create new inquiry
       await dispatchInquiries({
         type: "ADD_INQUIRY",
@@ -216,6 +239,7 @@ export default function Screen04NewInquiry() {
           status: "New",
           createdAt: today,
           department,
+          ...ledPayload,
         },
       });
     }
@@ -467,6 +491,84 @@ export default function Screen04NewInquiry() {
               </div>
             </div>
 
+            {/* LED screen details — shown only when LED or MERGED */}
+            {(department === 'LED' || department === 'MERGED') && (
+              <div className="card" style={{ marginTop: "0" }}>
+                <div className="card-t" style={{ color: "var(--sem-bl-tx)" }}>LED screen details</div>
+                <div className="fgrid">
+                  <div className="field">
+                    <div className="flbl">Screen width (ft) *</div>
+                    <input
+                      type="number"
+                      className="finp"
+                      value={screenWidth}
+                      onChange={(e) => setScreenWidth(e.target.value)}
+                      placeholder="e.g. 20"
+                      min="1"
+                    />
+                  </div>
+                  <div className="field">
+                    <div className="flbl">Screen height (ft) *</div>
+                    <input
+                      type="number"
+                      className="finp"
+                      value={screenHeight}
+                      onChange={(e) => setScreenHeight(e.target.value)}
+                      placeholder="e.g. 12"
+                      min="1"
+                    />
+                  </div>
+                  {screenWidth && screenHeight && parseFloat(screenWidth) > 0 && parseFloat(screenHeight) > 0 && (
+                    <div className="field span2">
+                      <div
+                        className="rounded-md text-[11px]"
+                        style={{ background: "var(--sem-gr-bg)", color: "var(--sem-gr-tx)", padding: "8px 12px" }}
+                      >
+                        Area: <strong>{(parseFloat(screenWidth) * parseFloat(screenHeight)).toFixed(1)} sq.ft</strong>
+                        &nbsp;·&nbsp;
+                        Cabinets: <strong>{Math.ceil(parseFloat(screenWidth) * parseFloat(screenHeight) / 4)}</strong>
+                        &nbsp;·&nbsp;
+                        Est. amount: <strong>₹{(parseFloat(screenWidth) * parseFloat(screenHeight) * ratePerSqft * duration).toLocaleString("en-IN")}</strong>
+                      </div>
+                    </div>
+                  )}
+                  <div className="field span2">
+                    <div className="flbl">LED type *</div>
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "4px" }}>
+                      {([["P4", "₹50"], ["P3", "₹65"], ["P2", "₹85"], ["FLOOR", "₹90"], ["P4_CURVED", "₹60"]] as const).map(([type, rate]) => (
+                        <button
+                          key={type}
+                          type="button"
+                          className={`btn text-[11px] ${ledType === type ? "btn-primary" : ""}`}
+                          onClick={() => setLedType(type)}
+                        >
+                          {type} — {rate}/sq.ft
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="field">
+                    <div className="flbl">Indoor / Outdoor</div>
+                    <select className="fsel" value={location} onChange={(e) => setLocation(e.target.value)}>
+                      <option value="INDOOR">Indoor</option>
+                      <option value="OUTDOOR">Outdoor</option>
+                    </select>
+                  </div>
+                  <div className="field">
+                    <div className="flbl">Stage type</div>
+                    <select className="fsel" value={stageType} onChange={(e) => setStageType(e.target.value)}>
+                      <option value="">— Select —</option>
+                      <option value="Main stage">Main stage</option>
+                      <option value="Backdrop">Backdrop</option>
+                      <option value="Side screens">Side screens</option>
+                      <option value="Ceiling">Ceiling / Roof</option>
+                      <option value="Floor">Floor</option>
+                      <option value="Custom">Custom</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
 

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useCurrentUser } from "@/lib/use-current-user";
-import { ROLES, ROLE_PERMISSIONS, type Role, type Permission } from "@/lib/permissions";
 
 interface UserRow {
   id: string;
@@ -22,37 +22,6 @@ const ROLE_BADGE: Record<string, "rd" | "bl" | "gr" | "gy"> = {
   Operator: "gr",
 };
 
-const PERMISSION_LABELS: Record<Permission, string> = {
-  "clients.view": "View clients",
-  "clients.create": "Add clients",
-  "clients.edit": "Edit clients",
-  "clients.delete": "Delete clients",
-  "inquiries.view": "View inquiries",
-  "inquiries.create": "Add inquiries",
-  "inquiries.edit": "Edit inquiries",
-  "quotations.view": "View quotations",
-  "quotations.create": "Create quotations",
-  "quotations.edit": "Edit quotations",
-  "invoices.view": "View invoices",
-  "invoices.edit": "Edit invoices",
-  "calendar.view": "View calendar",
-  "equipment.view": "View equipment",
-  "equipment.create": "Add equipment",
-  "equipment.edit": "Edit equipment",
-  "equipment.delete": "Delete equipment",
-  "kits.view": "View kits",
-  "kits.edit": "Edit kits",
-  "vendors.view": "View vendors",
-  "vendors.edit": "Edit vendors",
-  "staff.view": "View staff",
-  "staff.create": "Add staff",
-  "staff.edit": "Edit staff",
-  "staff.payments": "Manage staff payments",
-  "reports.view": "View reports",
-  "warehouse.view": "Warehouse check",
-  "settings.users": "Manage users & roles",
-};
-
 export default function Screen32UsersSettings() {
   const { user: currentUser } = useCurrentUser();
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -60,11 +29,7 @@ export default function Screen32UsersSettings() {
   const [error, setError] = useState("");
 
   // Dynamic roles states
-  const [dbRoles, setDbRoles] = useState<Record<string, string[]>>({});
   const [rolesList, setRolesList] = useState<string[]>(["Admin", "Manager", "Operator"]);
-  const [newRoleName, setNewRoleName] = useState("");
-  const [showAddRole, setShowAddRole] = useState(false);
-  const [addRoleError, setAddRoleError] = useState("");
 
   // Create form
   const [showCreate, setShowCreate] = useState(false);
@@ -84,9 +49,6 @@ export default function Screen32UsersSettings() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  // Role permissions viewer
-  const [viewRole, setViewRole] = useState<string>("Admin");
-
   const load = () => {
     setLoading(true);
     fetch("/api/users")
@@ -100,7 +62,6 @@ export default function Screen32UsersSettings() {
       const res = await fetch("/api/roles");
       const data = await res.json();
       if (res.ok && data.roles) {
-        setDbRoles(data.roles);
         setRolesList(Object.keys(data.roles));
       }
     } catch (err) {
@@ -112,69 +73,6 @@ export default function Screen32UsersSettings() {
     load();
     loadRoles();
   }, []);
-
-  const handleTogglePermission = async (role: string, permission: string) => {
-    if (role.toLowerCase() === "admin") {
-      alert("Admin permissions are fixed and cannot be changed.");
-      return;
-    }
-
-    const currentPerms = dbRoles[role] || [];
-    const nextPerms = currentPerms.includes(permission)
-      ? currentPerms.filter((p) => p !== permission)
-      : [...currentPerms, permission];
-
-    setDbRoles((prev) => ({
-      ...prev,
-      [role]: nextPerms,
-    }));
-
-    try {
-      const res = await fetch("/api/roles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, permissions: nextPerms }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Failed to save permissions");
-      }
-    } catch (err: any) {
-      alert(err.message || "Failed to update permissions");
-      loadRoles();
-    }
-  };
-
-  const handleCreateRole = async () => {
-    setAddRoleError("");
-    const trimmed = newRoleName.trim();
-    if (!trimmed) {
-      setAddRoleError("Role name is required.");
-      return;
-    }
-    if (rolesList.includes(trimmed)) {
-      setAddRoleError("Role already exists.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/roles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: trimmed, permissions: [] }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Failed to create role");
-      }
-      setShowAddRole(false);
-      setNewRoleName("");
-      await loadRoles();
-      setViewRole(trimmed);
-    } catch (err: any) {
-      setAddRoleError(err.message || "Failed to create role");
-    }
-  };
 
   const handleCreate = async () => {
     setCreateError("");
@@ -235,133 +133,77 @@ export default function Screen32UsersSettings() {
     <>
       <SectionHeader
         title={<>Users & <strong>Roles</strong></>}
-        description="Manage who can access the CRM and what they can do. Only Admins can reach this page."
+        description="Manage user credentials, status, and system roles. Only Administrators have access."
       />
       <ScreenFrame
-        breadcrumbs={[{ label: "Settings" }, { label: "Users & Roles" }]}
+        breadcrumbs={[{ label: "Settings" }, { label: "User Accounts" }]}
         actions={
           <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
             + New user
           </button>
         }
       >
-        <div className="two-col" style={{ gap: "20px" }}>
-          {/* Left — user list */}
-          <div>
-            <div className="card !p-3">
-              <div className="card-t">All users</div>
+        {/* Navigation Tabs */}
+        <div style={{ display: "flex", gap: "4px", borderBottom: "1px solid var(--b1)", marginBottom: "20px" }}>
+          <Link href="/settings/users" style={{ borderBottom: "2px solid var(--acc)", padding: "10px 16px", borderRadius: "6px 6px 0 0", color: "var(--tx)", fontWeight: 600, display: "block" }}>
+            User Accounts
+          </Link>
+          <Link href="/settings/permissions" style={{ borderBottom: "none", padding: "10px 16px", borderRadius: "6px 6px 0 0", color: "var(--tx3)", display: "block" }}>
+            Permissions Matrix
+          </Link>
+        </div>
 
-              {loading ? (
-                <div className="text-[12px] text-tx3" style={{ padding: "20px" }}>Loading…</div>
-              ) : error ? (
-                <div className="text-[12px] text-rd" style={{ padding: "20px" }}>{error}</div>
-              ) : (
-                <table className="tbl">
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th style={{ width: 90 }}>Role</th>
-                      <th style={{ width: 70 }}>Status</th>
-                      <th style={{ width: 60 }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id} className="cursor-pointer" onClick={() => openEdit(u)}>
-                        <td>
-                          <div className="font-medium text-tx text-[12px]">{u.name || u.username}</div>
-                          <div className="text-[10px] text-tx3">@{u.username}</div>
-                        </td>
-                        <td>
-                          <Badge variant={ROLE_BADGE[u.role] ?? "gy"}>{u.role}</Badge>
-                        </td>
-                        <td>
-                          <Badge variant={u.is_active ? "gr" : "gy"}>
-                            {u.is_active ? "Active" : "Inactive"}
-                          </Badge>
-                        </td>
-                        <td>
-                          {u.id !== currentUser?.id && (
-                            <button
-                              className="btn btn-danger text-[10px] px-[8px] py-[4px]"
-                              onClick={(e) => { e.stopPropagation(); handleDelete(u); }}
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
+        {/* User list */}
+        <div className="card !p-3">
+          <div className="card-t" style={{ marginBottom: "14px" }}>All users</div>
 
-          {/* Right — role permissions viewer */}
-          <div>
-            <div className="card">
-              <div className="flex justify-between items-center" style={{ marginBottom: "14px" }}>
-                <span className="card-t" style={{ margin: 0 }}>Role permissions</span>
-                <button
-                  className="btn btn-sm text-[10px] py-1 px-2"
-                  onClick={() => setShowAddRole(true)}
-                >
-                  + Add Role
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1" style={{ marginBottom: "14px" }}>
-                {rolesList.map((r) => (
-                  <button
-                    key={r}
-                    className={`btn text-[11px] justify-center ${viewRole === r ? "btn-primary" : ""}`}
-                    style={{ padding: "4px 8px", minHeight: "auto", flex: "1 0 auto" }}
-                    onClick={() => setViewRole(r)}
-                  >
-                    {r}
-                  </button>
+          {loading ? (
+            <div className="text-[12px] text-tx3" style={{ padding: "20px" }}>Loading…</div>
+          ) : error ? (
+            <div className="text-[12px] text-rd" style={{ padding: "20px" }}>{error}</div>
+          ) : (
+            <table className="tbl" style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--b1)" }}>
+                  <th style={{ textAlign: "left", padding: "10px 14px" }}>User</th>
+                  <th style={{ textAlign: "left", padding: "10px 14px", width: 140 }}>Role</th>
+                  <th style={{ textAlign: "left", padding: "10px 14px", width: 120 }}>Status</th>
+                  <th style={{ textAlign: "right", padding: "10px 14px", width: 100 }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id} className="cursor-pointer hover-bg-s2" onClick={() => openEdit(u)} style={{ borderBottom: "1px solid var(--tbl-line)" }}>
+                    <td style={{ padding: "12px 14px" }}>
+                      <div className="font-medium text-tx text-[13px]">{u.name || u.username}</div>
+                      <div className="text-[11px] text-tx3">@{u.username}</div>
+                    </td>
+                    <td style={{ padding: "12px 14px" }}>
+                      <Badge variant={ROLE_BADGE[u.role] ?? "gy"}>{u.role}</Badge>
+                    </td>
+                    <td style={{ padding: "12px 14px" }}>
+                      <Badge variant={u.is_active ? "gr" : "gy"}>
+                        {u.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </td>
+                    <td style={{ padding: "12px 14px", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                        <button className="btn btn-sm" onClick={() => openEdit(u)}>Edit</button>
+                        {u.id !== currentUser?.id && (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(u)}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                {(Object.keys(PERMISSION_LABELS) as Permission[]).map((perm) => {
-                  const isAdmin = viewRole.toLowerCase() === "admin";
-                  const granted = isAdmin || (dbRoles[viewRole] || []).includes(perm);
-                  return (
-                    <label
-                      key={perm}
-                      className="row-item"
-                      style={{ padding: "6px 0", cursor: isAdmin ? "not-allowed" : "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                    >
-                      <span className="text-[11px] text-tx2">{PERMISSION_LABELS[perm]}</span>
-                      <input
-                        type="checkbox"
-                        checked={granted}
-                        disabled={isAdmin}
-                        onChange={() => handleTogglePermission(viewRole, perm)}
-                        style={{ cursor: isAdmin ? "not-allowed" : "pointer" }}
-                      />
-                    </label>
-                  );
-                })}
-              </div>
-              <div
-                className="rounded-md text-[10px]"
-                style={{
-                  marginTop: "14px",
-                  padding: "8px 12px",
-                  background: "var(--sem-notif-bg)",
-                  border: "1px solid var(--sem-notif-bdr)",
-                  color: "var(--tx3)",
-                }}
-              >
-                {viewRole.toLowerCase() === "admin" ? (
-                  <span>Admin role permissions are locked and always have full access.</span>
-                ) : (
-                  <span>Check or uncheck permissions above to customize the access rules for this role.</span>
-                )}
-              </div>
-            </div>
-          </div>
+              </tbody>
+            </table>
+          )}
         </div>
       </ScreenFrame>
 
@@ -417,37 +259,6 @@ export default function Screen32UsersSettings() {
               <button className="btn" onClick={() => setShowCreate(false)}>Cancel</button>
               <button className="btn btn-primary" onClick={handleCreate} disabled={creating}>
                 {creating ? "Creating…" : "Create user"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create role modal */}
-      {showAddRole && (
-        <div
-          style={{ position: "fixed", inset: 0, background: "var(--modal-overlay)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}
-          onClick={() => setShowAddRole(false)}
-        >
-          <div className="card" style={{ width: 320, margin: 0, padding: "22px 24px" }} onClick={(e) => e.stopPropagation()}>
-            <div className="card-t" style={{ marginBottom: "14px" }}>Create new role</div>
-
-            <div className="field" style={{ marginBottom: "16px" }}>
-              <div className="flbl">Role Name *</div>
-              <input
-                className="finp"
-                value={newRoleName}
-                onChange={(e) => setNewRoleName(e.target.value)}
-                placeholder="e.g. Supervisor"
-              />
-            </div>
-
-            {addRoleError && <div className="text-[11px] text-rd" style={{ marginBottom: "12px" }}>{addRoleError}</div>}
-
-            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-              <button className="btn" onClick={() => setShowAddRole(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleCreateRole}>
-                Create role
               </button>
             </div>
           </div>
@@ -536,3 +347,4 @@ export default function Screen32UsersSettings() {
     </>
   );
 }
+

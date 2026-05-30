@@ -7,6 +7,7 @@ import type { NextRequest } from "next/server";
 import { getAllClients, createClient } from "@/lib/queries/clients";
 import { generateId } from "@/lib/types";
 import { Validator } from "@/lib/validate";
+import { db } from "@/lib/db";
 
 export async function GET() {
   try {
@@ -35,6 +36,11 @@ export async function POST(request: NextRequest) {
     v.maxLength("district", 100);
     v.maxLength("state", 100);
     if (v.hasErrors()) return v.response();
+
+    const existing = await db.client.findFirst({ where: { mobile: body.mobile.trim() } });
+    if (existing) {
+      return Response.json({ error: "A client with this mobile number already exists." }, { status: 409 });
+    }
 
     const client = await createClient({
       id: body.id ?? `client-${generateId()}`,

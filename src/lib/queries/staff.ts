@@ -566,35 +566,37 @@ export async function getStaffAvailability(startDate: string, endDate: string, r
     where.role = roleFilter;
   }
   
-  const staffRows = await db.staff.findMany({ where });
+  // Single query: fetch all staff with their conflicting assignments in one round-trip
+  const staffRows = await db.staff.findMany({
+    where,
+    include: {
+      assignments: {
+        where: {
+          inquiry: {
+            status: "Confirmed",
+            start_date: { lte: endDate },
+            end_date: { gte: startDate },
+          },
+        },
+        include: { inquiry: true },
+      },
+    },
+  });
+
+  const reqStart = new Date(startDate);
+  const reqEnd = new Date(endDate);
 
   const result = [];
   for (const row of staffRows) {
-    const conflicts = await db.staffAssignment.findMany({
-      where: {
-        staff_id: row.id,
-        inquiry: {
-          status: 'Confirmed',
-          start_date: { lte: endDate },
-          end_date: { gte: startDate }
-        }
-      },
-      include: { inquiry: true }
-    });
+    const conflicts = row.assignments;
 
     let status: "FREE" | "PARTIAL" | "BUSY" = "FREE";
     if (conflicts.length > 0) {
-      const reqStart = new Date(startDate);
-      const reqEnd = new Date(endDate);
-      let isFullyCovered = false;
-      for (const c of conflicts) {
+      const isFullyCovered = conflicts.some((c) => {
         const confStart = new Date(c.inquiry.start_date);
         const confEnd = new Date(c.inquiry.end_date);
-        if (confStart <= reqStart && confEnd >= reqEnd) {
-          isFullyCovered = true;
-          break;
-        }
-      }
+        return confStart <= reqStart && confEnd >= reqEnd;
+      });
       status = isFullyCovered ? "BUSY" : "PARTIAL";
     }
 
