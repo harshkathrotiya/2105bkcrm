@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyJWT } from "@/lib/auth";
+import { ROUTE_PERMISSION, hasPermission } from "@/lib/permissions";
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get("bk-media-session")?.value;
   const { pathname } = request.nextUrl;
 
-  // Let auth API calls through
+  // Auth API — always allow
   if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
   }
@@ -14,15 +15,13 @@ export async function middleware(request: NextRequest) {
   const payload = token ? await verifyJWT(token) : null;
   const isAuthenticated = !!payload;
 
-  // If visiting /login and already authenticated, redirect to /clients
+  // Redirect authenticated users away from login
   if (pathname === "/login") {
-    if (isAuthenticated) {
-      return NextResponse.redirect(new URL("/clients", request.url));
-    }
+    if (isAuthenticated) return NextResponse.redirect(new URL("/clients", request.url));
     return NextResponse.next();
   }
 
-  // Protect all API routes under /api/ (except /api/auth)
+  // Unauthenticated API calls → 401
   if (pathname.startsWith("/api/")) {
     if (!isAuthenticated) {
       return new NextResponse(
@@ -33,23 +32,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protect all page paths
+  // All other page routes — require auth
   const protectedRoutes = [
-    "/clients",
-    "/inquiries",
-    "/quotations",
-    "/invoices",
-    "/calendar",
-    "/equipment",
-    "/kits",
-    "/vendors",
-    "/staff",
-    "/warehouse",
-    "/reports"
+    "/clients", "/inquiries", "/quotations", "/invoices",
+    "/calendar", "/equipment", "/kits", "/vendors",
+    "/staff", "/warehouse", "/reports", "/settings",
   ];
 
-  const isProtected = protectedRoutes.some((route) => 
-    pathname === route || pathname.startsWith(route + "/")
+  const isProtected = protectedRoutes.some(
+    (r) => pathname === r || pathname.startsWith(r + "/")
   );
 
   if (isProtected && !isAuthenticated) {
@@ -58,12 +49,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Permission check — find matching route rule
+  if (isAuthenticated && payload) {
+    const role = (payload as any).role as string;
+    const permissions = (payload as any).permissions as string[] | undefined;
+    const matched = ROUTE_PERMISSION.find(
+      ({ prefix }) => pathname === prefix || pathname.startsWith(prefix + "/")
+    );
+    if (matched) {
+      const hasRight = role === "Admin" || (permissions && permissions.includes(matched.permission));
+      if (!hasRight) {
+        // Redirect to home with a 403-style bounce
+        return NextResponse.redirect(new URL("/?forbidden=1", request.url));
+      }
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  // Run on all pages and api routes
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/auth).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth).*)"],
 };

@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { signJWT } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { ROLE_PERMISSIONS } from "@/lib/permissions";
 
 // In-memory brute-force protection (resets on server restart; good enough for single-instance)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -19,7 +20,8 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: `Too many failed attempts. Try again in ${minutes} minute${minutes !== 1 ? "s" : ""}.` }, { status: 429 });
     }
 
-    const { username, password } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const { username, password } = body;
 
     if (!username || !password) {
       return Response.json({ error: "Username and password are required" }, { status: 400 });
@@ -33,8 +35,10 @@ export async function POST(request: NextRequest) {
         data: {
           id: "admin-user",
           username: "admin",
+          name: "Administrator",
           password: hash,
           role: "Admin",
+          is_active: 1,
           created_at: new Date().toISOString().split("T")[0],
         },
       });
@@ -59,11 +63,21 @@ export async function POST(request: NextRequest) {
     // Clear attempts on successful login
     loginAttempts.delete(ip);
 
+    // Fetch user permissions for their role
+    const rp = await db.rolePermission.findMany({
+      where: { role: user.role }
+    });
+    let permissions = rp.map((item) => item.permission);
+    if (user.role === "Admin" && permissions.length === 0) {
+      permissions = Object.keys(ROLE_PERMISSIONS.Admin || []) as any[];
+    }
+
     // Sign session JWT
     const token = await signJWT({
       userId: user.id,
       username: user.username,
       role: user.role,
+      permissions,
     });
 
     // Set cookie headers

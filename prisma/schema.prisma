@@ -74,6 +74,9 @@ model Inquiry {
   equipment_bookings EquipmentBooking[]
   dispatch_boxes     LedDispatchBox[]
 
+  @@index([client_id])
+  @@index([status, start_date])
+  @@index([department])
   @@map("inquiries")
 }
 
@@ -247,6 +250,8 @@ model StaffAssignment {
   created_at    String
   payments      StaffPayment[]
 
+  @@index([inquiry_id])
+  @@index([staff_id])
   @@map("staff_assignments")
 }
 
@@ -267,6 +272,9 @@ model StaffPayment {
   paid_by_id     String?
   notes          String?
 
+  @@index([staff_id])
+  @@index([inquiry_id])
+  @@index([month])
   @@map("staff_payments")
 }
 
@@ -289,15 +297,22 @@ model EquipmentBooking {
   confirmed_by_id     String?
   confirmed_at        String?
 
+  @@index([inquiry_id])
+  @@index([booked_from, booked_to])
+  @@index([equipment_id])
+  @@index([kit_id])
   @@map("equipment_bookings")
 }
 
 model User {
-  id         String @id @default(uuid())
-  username   String @unique
+  id         String  @id @default(uuid())
+  username   String  @unique
+  name       String  @default("")
   password   String
-  role       String @default("Admin")
+  role       String  @default("Admin")
+  is_active  Int     @default(1)
   created_at String
+  updated_at String?
 
   @@map("users")
 }
@@ -313,4 +328,13 @@ model LedDispatchBox {
   source      String   // "BK_MEDIA" | "VENDOR"
 
   @@map("led_dispatch_boxes")
+}
+
+model RolePermission {
+  id         Int    @id @default(autoincrement())
+  role       String
+  permission String
+
+  @@unique([role, permission])
+  @@map("role_permissions")
 }
