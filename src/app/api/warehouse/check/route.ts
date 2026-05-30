@@ -56,9 +56,10 @@ export async function GET(request: NextRequest) {
       where: { inquiry_id: inquiryId }
     });
 
-    // Fetch all overlapping active bookings for the inquiry dates in a single query
+    // Fetch all overlapping active bookings for the inquiry dates, excluding this inquiry itself
     const overlappingBookings = await db.equipmentBooking.findMany({
       where: {
+        inquiry_id: { not: inquiryId },
         status: { not: "RETURNED" },
         booked_from: { lte: inquiry.endDate },
         booked_to: { gte: inquiry.startDate },

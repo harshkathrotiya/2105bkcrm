@@ -1,4 +1,9 @@
 const encoder = new TextEncoder();
+
+if (!process.env.NEXTAUTH_SECRET && process.env.NODE_ENV === "production") {
+  throw new Error("NEXTAUTH_SECRET environment variable must be set in production");
+}
+
 const secret = process.env.NEXTAUTH_SECRET || "bk-media-crm-default-jwt-secret-key-123456";
 const subtle = globalThis.crypto.subtle;
 

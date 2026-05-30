@@ -61,10 +61,10 @@ export default function Screen04NewInquiry() {
   const [ledType, setLedType] = useState('P4');
   const [location, setLocation] = useState('INDOOR');
   const [stageType, setStageType] = useState('');
-  const [ratePerSqft, setRatePerSqft] = useState(500);
+  const [ratePerSqft, setRatePerSqft] = useState(50);
 
   const LED_TYPE_RATES: Record<string, number> = {
-    P4: 500, P3: 700, P2: 1000, FLOOR: 800, P4_CURVED: 600,
+    P4: 50, P3: 65, P2: 85, FLOOR: 90, P4_CURVED: 60,
   };
 
 

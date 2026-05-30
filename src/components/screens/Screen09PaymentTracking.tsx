@@ -26,6 +26,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
   const isLed = inquiry?.department === "LED" || inquiry?.department === "MERGED";
 
   const [warehouseData, setWarehouseData] = useState<any>(null);
+  const [totalGb, setTotalGb] = useState<number | "">("");
 
   useEffect(() => {
     if (!quotation?.inquiryId) return;
@@ -483,12 +484,21 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                 <div className="card-t">HDD delivery</div>
                 <div className="bg-s2 rounded-lg" style={{ padding: "12px 14px", marginBottom: "10px" }}>
                   <div className="row-item">
-                    <span className="text-[11px] text-tx3">Total data</span>
-                    <span className="font-mono font-medium">480 GB</span>
+                    <span className="text-[11px] text-tx3">Total data (GB)</span>
+                    <input
+                      type="number"
+                      className="finp text-right font-mono"
+                      style={{ width: "100px", height: "28px", padding: "0 8px" }}
+                      placeholder="e.g. 480"
+                      value={totalGb}
+                      onChange={(e) => setTotalGb(e.target.value === "" ? "" : Number(e.target.value))}
+                    />
                   </div>
                   <div className="row-item">
                     <span className="text-[11px] text-tx3">HDD size</span>
-                    <Badge variant="am">1 TB</Badge>
+                    <Badge variant="am">
+                      {!totalGb ? "—" : Number(totalGb) > 500 ? "2 TB" : Number(totalGb) > 200 ? "1 TB" : "500 GB"}
+                    </Badge>
                   </div>
                   <div className="row-item">
                     <span className="text-[11px] text-tx3">Status</span>

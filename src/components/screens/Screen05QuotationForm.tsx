@@ -584,6 +584,13 @@ export default function Screen05QuotationForm() {
             createdAt: now.toISOString().split("T")[0],
           },
         });
+        // Advance inquiry status to Quoted if it was still New
+        if (selectedInquiry.status === "New") {
+          await dispatchInquiries({
+            type: "UPDATE_INQUIRY",
+            payload: { id: selectedInquiry.id, status: "Quoted" },
+          });
+        }
         router.push(`/quotations/${newId}/pdf`);
       }
     } finally {

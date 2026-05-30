@@ -263,6 +263,7 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                       <th style={{ width: 28 }}>No.</th>
                       <th>Description</th>
                       <th style={{ width: 110, textAlign: "center" }}>Area (sq.ft)</th>
+                      <th style={{ width: 70, textAlign: "right" }}>Rate/sq.ft</th>
                       <th style={{ width: 46, textAlign: "center" }}>Days</th>
                       <th style={{ width: 100, textAlign: "right" }}>Amount (₹)</th>
                     </tr>
@@ -275,6 +276,7 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                           <td>{idx + 1}</td>
                           <td>{row.position}</td>
                           <td style={{ textAlign: "center" }}>{area ? `${area.toFixed(1)} sq.ft` : "—"}</td>
+                          <td style={{ textAlign: "right" }}>₹{row.rate}</td>
                           <td style={{ textAlign: "center" }}>{row.days}</td>
                           <td style={{ textAlign: "right", fontWeight: 700 }}>₹{fmt(row.amount)}</td>
                         </tr>

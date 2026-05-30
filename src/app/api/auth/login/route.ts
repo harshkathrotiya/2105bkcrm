@@ -1,14 +1,24 @@
 import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { signJWT } from "@/lib/auth";
-import crypto from "node:crypto";
+import bcrypt from "bcryptjs";
 
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
-}
+// In-memory brute-force protection (resets on server restart; good enough for single-instance)
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const now = Date.now();
+
+    const entry = loginAttempts.get(ip);
+    if (entry && entry.count >= MAX_ATTEMPTS && now < entry.resetAt) {
+      const minutes = Math.ceil((entry.resetAt - now) / 60000);
+      return Response.json({ error: `Too many failed attempts. Try again in ${minutes} minute${minutes !== 1 ? "s" : ""}.` }, { status: 429 });
+    }
+
     const { username, password } = await request.json();
 
     if (!username || !password) {
@@ -18,11 +28,12 @@ export async function POST(request: NextRequest) {
     // Auto-seed admin user if no users exist
     const userCount = await db.user.count();
     if (userCount === 0) {
+      const hash = await bcrypt.hash("admin", 12);
       await db.user.create({
         data: {
           id: "admin-user",
           username: "admin",
-          password: hashPassword("admin"),
+          password: hash,
           role: "Admin",
           created_at: new Date().toISOString().split("T")[0],
         },
@@ -33,9 +44,20 @@ export async function POST(request: NextRequest) {
       where: { username: username.trim().toLowerCase() },
     });
 
-    if (!user || user.password !== hashPassword(password)) {
+    const passwordOk = user ? await bcrypt.compare(password, user.password) : false;
+
+    if (!user || !passwordOk) {
+      // Record failed attempt
+      const prev = loginAttempts.get(ip);
+      loginAttempts.set(ip, {
+        count: (prev?.count ?? 0) + 1,
+        resetAt: now + LOCKOUT_MS,
+      });
       return Response.json({ error: "Invalid username or password" }, { status: 401 });
     }
+
+    // Clear attempts on successful login
+    loginAttempts.delete(ip);
 
     // Sign session JWT
     const token = await signJWT({
