@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  LayoutDashboard,
   Users,
   ClipboardList,
   FileText,
@@ -12,14 +13,17 @@ import {
   Layers,
   Handshake,
   UserCheck,
+  Building2,
 } from "lucide-react";
 
 const navItems = [
+  { label: "Dashboard",  path: "/",           icon: LayoutDashboard, exact: true },
   { label: "Clients",    path: "/clients",    icon: Users },
   { label: "Inquiries",  path: "/inquiries",  icon: ClipboardList },
   { label: "Quotations", path: "/quotations", icon: FileText },
   { label: "Invoices",   path: "/invoices",   icon: Receipt },
   { label: "Calendar",   path: "/calendar",   icon: CalendarDays },
+  { label: "Warehouse",  path: "/warehouse/check", icon: Building2 },
   { label: "Equipment",  path: "/equipment",  icon: Wrench },
   { label: "Kits",       path: "/kits",       icon: Layers },
   { label: "Vendors",    path: "/vendors",    icon: Handshake },
@@ -30,9 +34,10 @@ export default function AppSidebar() {
   const pathname = usePathname();
 
   // A nav item is active when the current path starts with its path segment
-  const isActive = (path: string) => {
-    if (pathname === path) return true;
-    return pathname.startsWith(path + "/");
+  const isActive = (item: typeof navItems[number]) => {
+    if (item.exact) return pathname === item.path;
+    if (pathname === item.path) return true;
+    return pathname.startsWith(item.path + "/");
   };
 
   return (
@@ -42,7 +47,7 @@ export default function AppSidebar() {
           <Link
             key={item.path}
             href={item.path}
-            className={`app-nav-item ${isActive(item.path) ? "active" : ""}`}
+            className={`app-nav-item ${isActive(item) ? "active" : ""}`}
             title={item.label}
           >
             <span className="app-nav-icon">

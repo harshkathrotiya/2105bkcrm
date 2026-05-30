@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import Screen00Dashboard from "@/components/screens/Screen00Dashboard";
 
 export default function Home() {
-  redirect("/clients");
+  return <Screen00Dashboard />;
 }
