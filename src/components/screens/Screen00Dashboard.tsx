@@ -148,7 +148,7 @@ export default function Screen00Dashboard() {
   const kpis = [
     { label: "Active Events (This Month)", value: String(activeEventsCount), sub: "Confirmed events deployed", color: "var(--bl)", href: "/inquiries" },
     { label: "Pending Quotations", value: String(pendingQuotesCount), sub: "Awaiting client approval", color: "var(--acc)", href: "/quotations" },
-    { label: "Payments Outstanding", value: `₹${fmt(pendingPaymentsTotal)}`, sub: "From pending & partial invoices", color: "var(--rd)", valColor: "var(--sem-rd-tx)", href: "/invoices" },
+    { label: "Payments Outstanding", value: `₹${fmt(pendingPaymentsTotal)}`, sub: "From pending & partial invoices", color: "var(--rd)", valColor: "var(--sem-rd-tx)", href: "/invoices?status=Unpaid" },
     { label: "Collected (YTD)", value: `₹${fmt(ytdCollected)}`, sub: "Advance + balance received this year", color: "var(--gr)", valColor: "var(--sem-gr-tx)", href: "/invoices" },
     { label: "Total Asset Value", value: `₹${fmt(assetSummary?.totalValue || 0)}`, sub: `Valuation of ${assetSummary?.totalCount || 0} items`, color: "var(--gr)", href: "/equipment" },
   ];
