@@ -40,8 +40,12 @@ export async function PATCH(
     if (body.purchasePrice !== undefined && body.purchasePrice !== null) v.nonNegativeNumber("purchasePrice", "purchase price");
     if (body.status !== undefined) v.oneOf("status", EQUIPMENT_STATUSES);
     if (body.notes !== undefined && body.notes) v.maxLength("notes", 1000);
-    if (body.ownershipType !== undefined) v.oneOf("ownershipType", ["INHOUSE", "VENDOR"]);
+    if (body.ownershipType !== undefined) v.oneOf("ownershipType", ["INHOUSE", "VENDOR", "STAFF"]);
     if (body.vendorId !== undefined && body.vendorId !== null && body.vendorId !== "") v.positiveInteger("vendorId", "vendor ID");
+    if (body.ownerStaffId !== undefined && body.ownerStaffId !== null && body.ownerStaffId !== "") v.positiveInteger("ownerStaffId", "owner staff ID");
+    if (body.defaultRate !== undefined && body.defaultRate !== null && body.defaultRate !== "") v.nonNegativeNumber("defaultRate", "default rate");
+    if (body.ownershipType === "VENDOR" && body.vendorId !== undefined && !body.vendorId) v.add("vendorId", "Vendor is required when owner is a vendor");
+    if (body.ownershipType === "STAFF" && body.ownerStaffId !== undefined && !body.ownerStaffId) v.add("ownerStaffId", "Staff is required when owner is a staff member");
     if (v.hasErrors()) return v.response();
 
     const patch: any = { ...body };
@@ -49,8 +53,16 @@ export async function PATCH(
     if (body.quantity !== undefined) patch.quantity = parseInt(body.quantity, 10);
     if (body.purchasePrice !== undefined) patch.purchasePrice = body.purchasePrice ? parseFloat(body.purchasePrice) : null;
     if (body.kitId !== undefined) patch.kitId = body.kitId ? parseInt(body.kitId, 10) : null;
-    if (body.ownershipType !== undefined) patch.ownershipType = body.ownershipType;
-    if (body.vendorId !== undefined) patch.vendorId = body.vendorId ? parseInt(body.vendorId, 10) : null;
+    if (body.defaultRate !== undefined) patch.defaultRate = body.defaultRate !== null && body.defaultRate !== "" ? parseFloat(body.defaultRate) : null;
+    // When ownership changes, keep only the relevant owner FK set and clear the other
+    if (body.ownershipType !== undefined) {
+      patch.ownershipType = body.ownershipType;
+      patch.vendorId = body.ownershipType === "VENDOR" && body.vendorId ? parseInt(body.vendorId, 10) : null;
+      patch.ownerStaffId = body.ownershipType === "STAFF" && body.ownerStaffId ? parseInt(body.ownerStaffId, 10) : null;
+    } else {
+      if (body.vendorId !== undefined) patch.vendorId = body.vendorId ? parseInt(body.vendorId, 10) : null;
+      if (body.ownerStaffId !== undefined) patch.ownerStaffId = body.ownerStaffId ? parseInt(body.ownerStaffId, 10) : null;
+    }
 
     const updated = await updateEquipment(parseInt(id, 10), patch);
     if (!updated) {

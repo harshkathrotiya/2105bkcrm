@@ -221,6 +221,12 @@ export class Validator {
 
   // ── Result ────────────────────────────────────────────────────────────────
 
+  /** Manually add a validation error (for custom / cross-field checks) */
+  add(_field: string, message: string): this {
+    this.errors.push(message);
+    return this;
+  }
+
   hasErrors(): boolean {
     return this.errors.length > 0;
   }

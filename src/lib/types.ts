@@ -143,9 +143,12 @@ export interface Equipment {
   notes?: string | null;
   createdAt: string;
   updatedAt?: string | null;
-  ownershipType: "INHOUSE" | "VENDOR";
+  ownershipType: "INHOUSE" | "VENDOR" | "STAFF";
   vendorId?: number | null;
   vendorName?: string | null;
+  ownerStaffId?: number | null;
+  ownerStaffName?: string | null;
+  defaultRate?: number | null;
   department?: "VIDEO" | "LED";
 }
 
@@ -201,6 +204,7 @@ export interface Staff {
   monthlySalary?: number | null;
   withEquipment: boolean;
   equipmentDesc?: string | null;
+  equipmentRatePerDay?: number | null;
   aadharNumber?: string | null;
   aadharFront?: string | null;
   aadharBack?: string | null;
@@ -218,11 +222,23 @@ export interface StaffAssignment {
   positionName?: string | null;
   daysAssigned: number;
   ratePerDay: number;
+  withEquipment?: boolean;
+  equipmentRatePerDay?: number;
   totalAmount: number;
   isDuplicate: boolean;
   confirmedDup: boolean;
   reportingTime?: string;
   createdAt: string;
+}
+
+export interface ClientEquipmentRate {
+  id: number;
+  clientId: string;
+  equipmentId: number;
+  equipmentName?: string;
+  rate: number;
+  createdAt: string;
+  updatedAt?: string | null;
 }
 
 export interface StaffPayment {

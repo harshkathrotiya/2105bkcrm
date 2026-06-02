@@ -7,6 +7,8 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useStaff } from "@/lib/store";
+import * as api from "@/lib/api";
+import { STAFF_ROLES } from "@/lib/validate";
 import type { Staff } from "@/lib/types";
 
 interface FormData {
@@ -19,6 +21,7 @@ interface FormData {
   monthlySalary: string;
   withEquipment: boolean;
   equipmentDesc: string;
+  equipmentRatePerDay: string;
   aadharNumber: string;
   aadharFront: string | null;
   aadharBack: string | null;
@@ -44,6 +47,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
     monthlySalary: "",
     withEquipment: false,
     equipmentDesc: "",
+    equipmentRatePerDay: "",
     aadharNumber: "",
     aadharFront: null,
     aadharBack: null,
@@ -52,6 +56,33 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Dynamic, user-managed role list
+  const [roles, setRoles] = useState<string[]>([]);
+  const [addingRole, setAddingRole] = useState(false);
+  const [newRole, setNewRole] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    api.fetchOptions("STAFF_ROLE")
+      .then((opts) => { if (active) setRoles(opts.map((o) => o.value)); })
+      .catch(() => { if (active) setRoles([...STAFF_ROLES]); });
+    return () => { active = false; };
+  }, []);
+
+  const handleAddRole = async () => {
+    const value = newRole.trim();
+    if (!value) return;
+    try {
+      await api.addOption("STAFF_ROLE", value);
+      setRoles((prev) => (prev.includes(value) ? prev : [...prev, value]));
+      update("role", value as Staff["role"]);
+      setNewRole("");
+      setAddingRole(false);
+    } catch (err: any) {
+      alert(err.message || "Failed to add role");
+    }
+  };
 
   // Pre-fill form in edit mode once staff member data is loaded
   useEffect(() => {
@@ -66,6 +97,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
         monthlySalary: staffMember.monthlySalary ? staffMember.monthlySalary.toString() : "",
         withEquipment: staffMember.withEquipment,
         equipmentDesc: staffMember.equipmentDesc || "",
+        equipmentRatePerDay: staffMember.equipmentRatePerDay ? staffMember.equipmentRatePerDay.toString() : "",
         aadharNumber: staffMember.aadharNumber || "",
         aadharFront: staffMember.aadharFront || null,
         aadharBack: staffMember.aadharBack || null,
@@ -164,6 +196,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
         monthlySalary: form.paymentType === "MONTHLY" ? parseFloat(form.monthlySalary) : null,
         withEquipment: form.withEquipment,
         equipmentDesc: form.withEquipment ? form.equipmentDesc.trim() : null,
+        equipmentRatePerDay: form.withEquipment && form.equipmentRatePerDay ? parseFloat(form.equipmentRatePerDay) : null,
         aadharNumber: form.aadharNumber || null,
         aadharFront: form.aadharFront,
         aadharBack: form.aadharBack,
@@ -245,22 +278,50 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
                   />
                 </div>
                 <div className="field">
-                  <div className="flbl">Role / Specialization *</div>
-                  <select
-                    className="fsel"
-                    value={form.role}
-                    onChange={(e) => update("role", e.target.value as any)}
-                  >
-                    <option value="Videographer">Videographer</option>
-                    <option value="Photographer">Photographer</option>
-                    <option value="Crane operator">Crane operator</option>
-                    <option value="Drone operator">Drone operator</option>
-                    <option value="LED operator">LED operator</option>
-                    <option value="Audio operator">Audio operator</option>
-                    <option value="Editor">Editor</option>
-                    <option value="Photo editor">Photo editor</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <div className="flbl" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>Role / Specialization *</span>
+                    {!addingRole && (
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ fontSize: 10, padding: "2px 6px" }}
+                        onClick={() => setAddingRole(true)}
+                      >
+                        + Add role
+                      </button>
+                    )}
+                  </div>
+                  {addingRole ? (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        className="finp"
+                        autoFocus
+                        placeholder="New role name"
+                        value={newRole}
+                        onChange={(e) => setNewRole(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); handleAddRole(); }
+                          if (e.key === "Escape") { setAddingRole(false); setNewRole(""); }
+                        }}
+                      />
+                      <button type="button" className="btn btn-primary" style={{ fontSize: 11 }} onClick={handleAddRole}>Add</button>
+                      <button type="button" className="btn" style={{ fontSize: 11 }} onClick={() => { setAddingRole(false); setNewRole(""); }}>Cancel</button>
+                    </div>
+                  ) : (
+                    <select
+                      className="fsel"
+                      value={form.role}
+                      onChange={(e) => update("role", e.target.value as any)}
+                    >
+                      {/* Keep current value selectable even if it's a custom role not in the list */}
+                      {form.role && !roles.includes(form.role) && (
+                        <option value={form.role}>{form.role}</option>
+                      )}
+                      {roles.map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div className="field span2">
                   <div className="flbl">Staff Type *</div>
@@ -352,6 +413,24 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
                   />
                   <div style={{ fontSize: "10.5px", color: "var(--tx3)", marginTop: "4px" }}>
                     This description will display in the Quotation and Warehouse checklists.
+                  </div>
+                </div>
+              )}
+
+              {form.withEquipment && (
+                <div className="field">
+                  <div className="flbl">Equipment rate / day (₹)</div>
+                  <input
+                    type="number"
+                    min={0}
+                    className="finp"
+                    placeholder="e.g. 2000"
+                    value={form.equipmentRatePerDay}
+                    onChange={(e) => update("equipmentRatePerDay", e.target.value)}
+                  />
+                  <div style={{ fontSize: "10.5px", color: "var(--tx3)", marginTop: "4px" }}>
+                    Extra per-day amount added to this staff&apos;s pay when their equipment is sent on a job.
+                    Total = (day rate + equipment rate) × days.
                   </div>
                 </div>
               )}

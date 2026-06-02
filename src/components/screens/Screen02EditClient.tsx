@@ -6,6 +6,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import ClientRatesCard from "./ClientRatesCard";
 import { useClients, useInquiries, useQuotations, useInvoices } from "@/lib/store";
 
 interface FormData {
@@ -460,6 +461,9 @@ export default function Screen02EditClient({
                 </div>
               </div>
             </div>
+
+            {/* Per-client equipment rate overrides */}
+            <ClientRatesCard clientId={clientId} />
           </div>
 
           {/* Right - Preview & Validation */}

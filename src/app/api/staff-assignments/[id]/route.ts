@@ -21,6 +21,7 @@ export async function PUT(
     if (body.ratePerDay !== undefined) v.nonNegativeNumber("ratePerDay", "rate per day");
     if (body.positionNo !== undefined && body.positionNo !== null) v.positiveInteger("positionNo", "position number");
     if (body.positionName !== undefined && body.positionName) v.maxLength("positionName", 100, "position name");
+    if (body.equipmentRatePerDay !== undefined && body.equipmentRatePerDay !== null && body.equipmentRatePerDay !== "") v.nonNegativeNumber("equipmentRatePerDay", "equipment rate per day");
     if (v.hasErrors()) return v.response();
 
     const existing = await db.staffAssignment.findUnique({
@@ -41,14 +42,25 @@ export async function PUT(
       body.positionNo !== undefined
         ? body.positionNo !== null ? parseInt(body.positionNo, 10) : null
         : existing.position_no;
+    const withEquipment =
+      body.withEquipment !== undefined
+        ? (body.withEquipment === true || body.withEquipment === "true" || body.withEquipment === 1)
+        : existing.with_equipment === 1;
+    const equipmentRatePerDay = withEquipment
+      ? (body.equipmentRatePerDay !== undefined && body.equipmentRatePerDay !== null && body.equipmentRatePerDay !== ""
+          ? parseFloat(body.equipmentRatePerDay)
+          : existing.equipment_rate_per_day)
+      : 0;
 
-    const totalAmount = ratePerDay * daysAssigned;
+    const totalAmount = (ratePerDay + equipmentRatePerDay) * daysAssigned;
 
     const updated = await db.staffAssignment.update({
       where: { id: assignmentId },
       data: {
         days_assigned: daysAssigned,
         rate_per_day: ratePerDay,
+        with_equipment: withEquipment ? 1 : 0,
+        equipment_rate_per_day: equipmentRatePerDay,
         total_amount: totalAmount,
         position_name: positionName,
         position_no: positionNo,
@@ -63,6 +75,8 @@ export async function PUT(
       positionName: updated.position_name,
       daysAssigned: updated.days_assigned,
       ratePerDay: updated.rate_per_day,
+      withEquipment: updated.with_equipment === 1,
+      equipmentRatePerDay: updated.equipment_rate_per_day,
       totalAmount: updated.total_amount,
       isDuplicate: updated.is_duplicate === 1,
       confirmedDup: updated.confirmed_dup === 1,

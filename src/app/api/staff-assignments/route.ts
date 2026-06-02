@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     v.required("ratePerDay", "rate per day").nonNegativeNumber("ratePerDay", "rate per day");
     if (body.positionNo !== undefined && body.positionNo !== null) v.positiveInteger("positionNo", "position number");
     if (body.positionName !== undefined && body.positionName) v.maxLength("positionName", 100, "position name");
+    if (body.equipmentRatePerDay !== undefined && body.equipmentRatePerDay !== null && body.equipmentRatePerDay !== "") v.nonNegativeNumber("equipmentRatePerDay", "equipment rate per day");
     if (v.hasErrors()) return v.response();
 
     const assignment = await assignStaff({
@@ -39,6 +40,8 @@ export async function POST(request: NextRequest) {
       positionName: body.positionName || null,
       daysAssigned: parseInt(body.daysAssigned, 10),
       ratePerDay: parseFloat(body.ratePerDay),
+      withEquipment: body.withEquipment === true || body.withEquipment === "true" || body.withEquipment === 1,
+      equipmentRatePerDay: body.equipmentRatePerDay !== undefined && body.equipmentRatePerDay !== null && body.equipmentRatePerDay !== "" ? parseFloat(body.equipmentRatePerDay) : 0,
       reportingTime: body.reportingTime || "09:00 AM",
     });
 

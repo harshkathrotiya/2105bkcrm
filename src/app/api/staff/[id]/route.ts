@@ -37,6 +37,7 @@ export async function PATCH(
     if (body.monthlySalary !== undefined && body.monthlySalary !== null) v.positiveNumber("monthlySalary", "monthly salary");
     if (body.aadharNumber !== undefined && body.aadharNumber) v.aadhar("aadharNumber", "Aadhar number");
     if (body.equipmentDesc !== undefined && body.equipmentDesc) v.maxLength("equipmentDesc", 200, "equipment description");
+    if (body.equipmentRatePerDay !== undefined && body.equipmentRatePerDay !== null && body.equipmentRatePerDay !== "") v.nonNegativeNumber("equipmentRatePerDay", "equipment rate per day");
     if (v.hasErrors()) return v.response();
 
     const patch: any = { ...body };
@@ -46,6 +47,7 @@ export async function PATCH(
     if (body.monthlySalary !== undefined) patch.monthlySalary = body.monthlySalary ? parseFloat(body.monthlySalary) : null;
     if (body.withEquipment !== undefined) patch.withEquipment = !!body.withEquipment;
     if (body.equipmentDesc !== undefined) patch.equipmentDesc = body.equipmentDesc?.trim() || null;
+    if (body.equipmentRatePerDay !== undefined) patch.equipmentRatePerDay = body.equipmentRatePerDay !== null && body.equipmentRatePerDay !== "" ? parseFloat(body.equipmentRatePerDay) : null;
     if (body.aadharNumber !== undefined) patch.aadharNumber = body.aadharNumber?.trim() || null;
 
     const updated = await updateStaff(parseInt(id, 10), patch);
