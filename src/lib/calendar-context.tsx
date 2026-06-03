@@ -94,11 +94,13 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
             break;
         }
         await load();
-      } catch (err) {
+      } catch (err: any) {
         console.error("dispatchCalendar error:", err);
+        toast.error(err?.message || "Action failed");
+        throw err; // let the calling screen abort its success flow
       }
     },
-    [load]
+    [load, toast]
   );
 
   const getCalendarEvents = useCallback(

@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { getKitById, updateKit, deleteKit } from "@/lib/queries/kits";
 import { Validator } from "@/lib/validate";
 
@@ -24,6 +25,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "kits.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const body = await request.json();
 
@@ -52,10 +56,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "kits.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const deleted = await deleteKit(parseInt(id, 10));
     if (!deleted) {

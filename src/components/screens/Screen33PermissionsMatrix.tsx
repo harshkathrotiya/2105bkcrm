@@ -5,12 +5,17 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
 import { useToast } from "../ui/Toast";
-import { type Permission, MODULE_PERMISSIONS } from "@/lib/permissions";
+import { useConfirm } from "../ui/ConfirmDialog";
+import { MODULE_PERMISSIONS } from "@/lib/permissions";
 
+const DEFAULT_ROLES = ["Admin", "Manager", "Operator"];
 
 export default function Screen33PermissionsMatrix() {
   const toast = useToast();
+  const confirm = useConfirm();
   const [dbRoles, setDbRoles] = useState<Record<string, string[]>>({});
   const [rolesList, setRolesList] = useState<string[]>(["Admin", "Manager", "Operator"]);
   const [loading, setLoading] = useState(true);
@@ -95,8 +100,35 @@ export default function Screen33PermissionsMatrix() {
       setShowAddRole(false);
       setNewRoleName("");
       await loadRoles();
+      toast.success(`Role "${trimmed}" created.`);
     } catch (err: any) {
       setAddRoleError(err.message || "Failed to create role");
+    }
+  };
+
+  const handleDeleteRole = async (role: string) => {
+    const ok = await confirm({
+      title: "Delete role",
+      message: `Delete the "${role}" role? Its permission settings will be removed. Users assigned to it must be reassigned first.`,
+      confirmLabel: "Delete role",
+      danger: true,
+    });
+    if (!ok) return;
+
+    try {
+      const res = await fetch("/api/roles", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to delete role");
+      }
+      await loadRoles();
+      toast.success(`Role "${role}" deleted.`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete role");
     }
   };
 
@@ -139,14 +171,30 @@ export default function Screen33PermissionsMatrix() {
             <thead>
               <tr style={{ borderBottom: "1px solid var(--b1)" }}>
                 <th style={{ textAlign: "left", padding: "10px 14px", minWidth: "220px" }}>Module & Specific Permission</th>
-                {rolesList.map((role) => (
-                  <th key={role} style={{ textAlign: "center", padding: "10px 14px", minWidth: "110px" }}>
-                    <div className="font-semibold text-tx">{role}</div>
-                    {role.toLowerCase() === "admin" && (
-                      <span style={{ fontSize: "8.5px", color: "var(--sem-rd-tx)", fontWeight: 500 }}>(Locked)</span>
-                    )}
-                  </th>
-                ))}
+                {rolesList.map((role) => {
+                  const isDefault = DEFAULT_ROLES.some((r) => r.toLowerCase() === role.toLowerCase());
+                  return (
+                    <th key={role} style={{ textAlign: "center", padding: "10px 14px", minWidth: "110px" }}>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="font-semibold text-tx">{role}</span>
+                        {!isDefault && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteRole(role)}
+                            aria-label={`Delete ${role} role`}
+                            title={`Delete ${role} role`}
+                            className="text-tx3 hover:text-rd text-[13px] leading-none"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                      {role.toLowerCase() === "admin" && (
+                        <span style={{ fontSize: "8.5px", color: "var(--sem-rd-tx)", fontWeight: 500 }}>(Locked)</span>
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -190,35 +238,36 @@ export default function Screen33PermissionsMatrix() {
       </ScreenFrame>
 
       {/* Create role modal */}
-      {showAddRole && (
-        <div
-          style={{ position: "fixed", inset: 0, background: "var(--modal-overlay)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}
-          onClick={() => setShowAddRole(false)}
-        >
-          <div className="card" style={{ width: 320, margin: 0, padding: "22px 24px" }} onClick={(e) => e.stopPropagation()}>
-            <div className="card-t" style={{ marginBottom: "14px" }}>Create new role</div>
-
-            <div className="field" style={{ marginBottom: "16px" }}>
-              <div className="flbl">Role Name *</div>
-              <input
-                className="finp"
-                value={newRoleName}
-                onChange={(e) => setNewRoleName(e.target.value)}
-                placeholder="e.g. Supervisor"
-              />
-            </div>
-
-            {addRoleError && <div className="text-[11px] text-rd" style={{ marginBottom: "12px" }}>{addRoleError}</div>}
-
-            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-              <button className="btn" onClick={() => setShowAddRole(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleCreateRole}>
-                Create role
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={showAddRole}
+        onClose={() => { setShowAddRole(false); setAddRoleError(""); }}
+        title="Create new role"
+        width={360}
+        footer={
+          <>
+            <Button onClick={() => { setShowAddRole(false); setAddRoleError(""); }}>Cancel</Button>
+            <Button variant="primary" onClick={handleCreateRole}>Create role</Button>
+          </>
+        }
+      >
+        <div className="field">
+          <label className="flbl" htmlFor="new-role-name">Role Name *</label>
+          <input
+            id="new-role-name"
+            className="finp"
+            value={newRoleName}
+            onChange={(e) => setNewRoleName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleCreateRole(); }}
+            placeholder="e.g. Supervisor"
+            autoFocus
+            aria-invalid={addRoleError ? true : undefined}
+            aria-describedby={addRoleError ? "new-role-error" : undefined}
+          />
+          {addRoleError && (
+            <span id="new-role-error" role="alert" className="text-[11px] text-rd">{addRoleError}</span>
+          )}
         </div>
-      )}
+      </Modal>
     </>
   );
 }

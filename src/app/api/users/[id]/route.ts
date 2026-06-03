@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { verifyJWT } from "@/lib/auth";
-import { ROLES } from "@/lib/permissions";
 import bcrypt from "bcryptjs";
 
 async function requireAdmin(request: NextRequest) {

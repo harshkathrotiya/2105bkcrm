@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { getEquipmentDetailsById, updateEquipment, deleteEquipment } from "@/lib/queries/equipment";
 import { Validator, EQUIPMENT_STATUSES } from "@/lib/validate";
 
@@ -24,6 +25,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "equipment.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const body = await request.json();
 
@@ -76,10 +80,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "equipment.delete");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const deleted = await deleteEquipment(parseInt(id, 10));
     if (!deleted) {

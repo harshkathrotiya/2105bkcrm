@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { addEquipmentToKit } from "@/lib/queries/kits";
 import { Validator } from "@/lib/validate";
 
@@ -7,6 +8,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "kits.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id: kitIdStr } = await params;
     const kitId = parseInt(kitIdStr, 10);
 

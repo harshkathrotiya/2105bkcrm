@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { getEquipment, createEquipment, getEquipmentCategoryCounts } from "@/lib/queries/equipment";
 import { Validator, EQUIPMENT_STATUSES } from "@/lib/validate";
 
@@ -35,6 +36,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "equipment.create");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
 
     const v = new Validator(body);

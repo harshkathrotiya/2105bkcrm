@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyJWT } from "@/lib/auth";
-import { ROUTE_PERMISSION, hasPermission } from "@/lib/permissions";
+import { ROUTE_PERMISSION, NAV_ITEMS } from "@/lib/permissions";
+
+/** First nav route the user is allowed to see, used as a safe landing page. */
+function firstAllowedPath(role: string, permissions: string[] | undefined): string {
+  if (role === "Admin") return "/";
+  const perms = permissions ?? [];
+  const item = NAV_ITEMS.find((n) => perms.includes(n.permission));
+  return item?.path ?? "/login";
+}
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get("bk-media-session")?.value;
@@ -59,8 +67,13 @@ export async function middleware(request: NextRequest) {
     if (matched) {
       const hasRight = role === "Admin" || (permissions && permissions.includes(matched.permission));
       if (!hasRight) {
-        // Redirect to home with a 403-style bounce
-        return NextResponse.redirect(new URL("/?forbidden=1", request.url));
+        // Bounce to the user's first allowed page (NOT the dashboard, which now
+        // requires its own permission — bouncing there could loop forever).
+        const landing = firstAllowedPath(role, permissions);
+        if (pathname === landing) return NextResponse.next(); // already there; avoid loop
+        const url = new URL(landing, request.url);
+        url.searchParams.set("forbidden", "1");
+        return NextResponse.redirect(url);
       }
     }
   }

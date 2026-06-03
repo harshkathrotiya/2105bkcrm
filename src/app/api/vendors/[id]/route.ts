@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { getVendorById, updateVendor } from "@/lib/queries/vendors";
 import { Validator } from "@/lib/validate";
 
@@ -24,6 +25,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "vendors.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const body = await request.json();
 

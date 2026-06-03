@@ -5,6 +5,7 @@
  */
 
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { getInvoiceById, updateInvoice, deleteInvoice } from "@/lib/queries/invoices";
 import { Validator, INVOICE_STATUSES } from "@/lib/validate";
 
@@ -30,6 +31,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "invoices.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const body = await request.json();
 
@@ -84,10 +88,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "invoices.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const deleted = await deleteInvoice(id);
     if (!deleted) {

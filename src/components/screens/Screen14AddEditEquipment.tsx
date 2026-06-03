@@ -8,6 +8,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useEquipment } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
@@ -19,10 +20,13 @@ interface Screen14AddEditEquipmentProps {
 export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEditEquipmentProps) {
   const router = useRouter();
   const { dispatchEquipment } = useEquipment();
+  const { can } = useCurrentUser();
   const toast = useToast();
   const confirm = useConfirm();
-  
+
   const isEdit = typeof equipmentId !== "undefined";
+  const canSave = isEdit ? can("equipment.edit") : can("equipment.create");
+  const canDelete = can("equipment.delete");
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -344,23 +348,26 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href="/equipment" className={`btn ${saving ? "opacity-50 pointer-events-none" : ""}`}>Cancel</Link>
-            {isEdit && (
+            {isEdit && canDelete && (
               <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={saving}>
                 {saving ? "Deleting..." : "Retire/Delete"}
               </button>
             )}
-            <button
-              type="button"
-              className={`btn btn-primary ${!allRequired || saving ? "opacity-50" : ""}`}
-              onClick={() => handleSave()}
-              disabled={!allRequired || saving}
-            >
-              {saving ? "Saving..." : (isEdit ? "Save Changes" : "Create Item")}
-            </button>
+            {canSave && (
+              <button
+                type="button"
+                className={`btn btn-primary ${!allRequired || saving ? "opacity-50" : ""}`}
+                onClick={() => handleSave()}
+                disabled={!allRequired || saving}
+              >
+                {saving ? "Saving..." : (isEdit ? "Save Changes" : "Create Item")}
+              </button>
+            )}
           </div>
         }
       >
-        <form onSubmit={handleSave} className="two-col" style={{ gridTemplateColumns: "1fr 280px" }}>
+        <form onSubmit={handleSave}>
+        <fieldset disabled={!canSave} className="two-col" style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto", gridTemplateColumns: "1fr 280px", display: "grid" }}>
           {/* Main Form Fields */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div className="card">
@@ -437,19 +444,13 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
 
                       {showCatDropdown && (
                         <div
-                          className="card"
+                          className="absolute z-[999] left-0 w-full bg-s1 border border-b1 rounded-md shadow-lg flex flex-col"
                           style={{
-                            position: "absolute",
                             top: "100%",
-                            left: 0,
-                            right: 0,
-                            zIndex: 999,
                             marginTop: 4,
                             padding: "6px",
                             maxHeight: 250,
                             overflowY: "auto",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                            border: "1px solid var(--b1)",
                           }}
                         >
                           {/* Keep current value selectable even if it's a custom category not yet in the list */}
@@ -777,6 +778,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
               </div>
             </div>
           </div>
+        </fieldset>
         </form>
       </ScreenFrame>
 

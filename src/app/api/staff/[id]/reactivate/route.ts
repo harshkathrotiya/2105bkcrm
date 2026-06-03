@@ -1,12 +1,16 @@
 import type { NextRequest } from "next/server";
 import { reactivateStaff } from "@/lib/queries/staff";
 import { db } from "@/lib/db";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function POST(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "staff.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const staffId = parseInt(id, 10);
 

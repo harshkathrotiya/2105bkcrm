@@ -1,8 +1,12 @@
 import type { NextRequest } from "next/server";
 import { deleteCalendarEventsBulk } from "@/lib/queries/calendar";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "calendar.view");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
     const { ids } = body;
 

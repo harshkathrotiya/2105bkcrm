@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { verifyJWT } from "@/lib/auth";
-import { ROLES } from "@/lib/permissions";
+import { roleExists } from "@/lib/role-permissions";
 import bcrypt from "bcryptjs";
 
 async function requireAdmin(request: NextRequest) {
@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
   if (!username?.trim() || !password?.trim() || !role) {
     return Response.json({ error: "username, password and role are required" }, { status: 400 });
   }
-  if (!ROLES.includes(role)) {
-    return Response.json({ error: `role must be one of: ${ROLES.join(", ")}` }, { status: 400 });
+  if (!(await roleExists(role))) {
+    return Response.json({ error: `Unknown role "${role}". Create it under Settings › Permissions first.` }, { status: 400 });
   }
   if (password.length < 6) {
     return Response.json({ error: "Password must be at least 6 characters" }, { status: 400 });

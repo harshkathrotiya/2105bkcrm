@@ -172,13 +172,14 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
         // Refresh items and summary
         await refreshEquipment();
         await refreshAssetSummary();
-      } catch (err) {
+      } catch (err: any) {
         console.error("dispatchEquipment error:", err);
-        throw err;
+        toast.error(err?.message || "Action failed");
+        throw err; // let the calling screen abort its success flow
       }
       return result;
     },
-    [refreshEquipment, refreshAssetSummary]
+    [refreshEquipment, refreshAssetSummary, toast]
   );
 
   const value = useMemo(

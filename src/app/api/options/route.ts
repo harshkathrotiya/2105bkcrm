@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getOptions, addOption, removeOption, updateOption, type OptionType } from "@/lib/queries/options";
 import { Validator } from "@/lib/validate";
+import { requirePermission } from "@/lib/role-permissions";
 
 const VALID_TYPES: OptionType[] = ["STAFF_ROLE", "QUOTATION_POSITION", "EQUIPMENT_CATEGORY"];
 
@@ -31,6 +32,16 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "type must be STAFF_ROLE, QUOTATION_POSITION or EQUIPMENT_CATEGORY" }, { status: 400 });
     }
 
+    // Adding a dropdown option requires edit access to the owning module,
+    // so inline "add custom value" flows keep working for Managers.
+    const permByType: Record<string, "staff.edit" | "quotations.edit" | "equipment.edit"> = {
+      STAFF_ROLE: "staff.edit",
+      QUOTATION_POSITION: "quotations.edit",
+      EQUIPMENT_CATEGORY: "equipment.edit",
+    };
+    const auth = await requirePermission(request, permByType[body.type as string] ?? "settings.users");
+    if (!auth.ok) return auth.response!;
+
     const v = new Validator(body);
     v.required("value").minLength("value", 1).maxLength("value", 100);
     if (body.rate !== undefined && body.rate !== null && body.rate !== "") v.nonNegativeNumber("rate");
@@ -50,6 +61,9 @@ export async function POST(request: NextRequest) {
 // PUT /api/options — update an existing option { type, oldValue, newValue }
 export async function PUT(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "settings.users");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
     if (!isValidType(body.type)) {
       return Response.json({ error: "type must be STAFF_ROLE, QUOTATION_POSITION or EQUIPMENT_CATEGORY" }, { status: 400 });
@@ -72,6 +86,9 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/options?type=STAFF_ROLE&value=... — soft-remove a custom option
 export async function DELETE(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "settings.users");
+    if (!auth.ok) return auth.response!;
+
     const type = request.nextUrl.searchParams.get("type");
     const value = request.nextUrl.searchParams.get("value");
     if (!isValidType(type)) {

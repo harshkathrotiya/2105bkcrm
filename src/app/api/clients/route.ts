@@ -8,6 +8,7 @@ import { getAllClients, createClient } from "@/lib/queries/clients";
 import { generateId } from "@/lib/types";
 import { Validator } from "@/lib/validate";
 import { db } from "@/lib/db";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function GET() {
   try {
@@ -21,6 +22,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "clients.create");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
 
     const v = new Validator(body);

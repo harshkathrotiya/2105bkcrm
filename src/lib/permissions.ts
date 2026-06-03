@@ -7,6 +7,7 @@ export type Role = typeof ROLES[number];
 
 // Every named permission in the system
 export type Permission =
+  | "dashboard.view"
   | "clients.view"
   | "clients.create"
   | "clients.edit"
@@ -37,6 +38,9 @@ export type Permission =
   | "settings.users"; // manage user accounts
 
 export const MODULE_PERMISSIONS: Record<string, { key: Permission; label: string }[]> = {
+  "Dashboard": [
+    { key: "dashboard.view", label: "View the operational dashboard & KPIs" },
+  ],
   "Clients Module": [
     { key: "clients.view", label: "View clients list & details" },
     { key: "clients.create", label: "Add new client profile" },
@@ -94,6 +98,7 @@ export const MODULE_PERMISSIONS: Record<string, { key: Permission; label: string
 // What each role can do by default
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   Admin: [
+    "dashboard.view",
     "clients.view", "clients.create", "clients.edit", "clients.delete",
     "inquiries.view", "inquiries.create", "inquiries.edit",
     "quotations.view", "quotations.create", "quotations.edit",
@@ -108,6 +113,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "settings.users",
   ],
   Manager: [
+    "dashboard.view",
     "clients.view", "clients.create", "clients.edit",
     "inquiries.view", "inquiries.create", "inquiries.edit",
     "quotations.view", "quotations.create", "quotations.edit",
@@ -121,6 +127,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "warehouse.view",
   ],
   Operator: [
+    "dashboard.view",
     "clients.view",
     "inquiries.view",
     "quotations.view",
@@ -136,6 +143,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 
 // Map app route prefix → required permission
 export const ROUTE_PERMISSION: { prefix: string; permission: Permission }[] = [
+  { prefix: "/",               permission: "dashboard.view" },
   { prefix: "/clients",        permission: "clients.view" },
   { prefix: "/inquiries",      permission: "inquiries.view" },
   { prefix: "/quotations",     permission: "quotations.view" },
@@ -151,7 +159,8 @@ export const ROUTE_PERMISSION: { prefix: string; permission: Permission }[] = [
 ];
 
 // Nav items shown in the sidebar — filtered by permission
-export const NAV_ITEMS: { label: string; path: string; permission: Permission; iconName: string }[] = [
+export const NAV_ITEMS: { label: string; path: string; permission: Permission; iconName: string; alwaysVisible?: boolean }[] = [
+  { label: "Dashboard",  path: "/",                permission: "dashboard.view", iconName: "LayoutDashboard" },
   { label: "Clients",    path: "/clients",         permission: "clients.view",   iconName: "Users" },
   { label: "Inquiries",  path: "/inquiries",       permission: "inquiries.view", iconName: "ClipboardList" },
   { label: "Quotations", path: "/quotations",      permission: "quotations.view",iconName: "FileText" },

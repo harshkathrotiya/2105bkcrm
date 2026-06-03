@@ -1,12 +1,16 @@
 import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { Validator } from "@/lib/validate";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "staff.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const assignmentId = parseInt(id, 10);
 

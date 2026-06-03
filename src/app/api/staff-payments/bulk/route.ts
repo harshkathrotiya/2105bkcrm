@@ -2,9 +2,13 @@ import type { NextRequest } from "next/server";
 import { recordStaffPayment } from "@/lib/queries/staff";
 import { db } from "@/lib/db";
 import { PAYMENT_METHODS, STAFF_PAYMENT_TYPES } from "@/lib/validate";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "staff.payments");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
     const { payments } = body;
 

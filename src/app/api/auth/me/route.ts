@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { verifyJWT } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { permissionsForRole } from "@/lib/permissions";
+import { getRolePermissions } from "@/lib/role-permissions";
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       username: user.username,
       name: user.name,
       role: user.role,
-      permissions: permissionsForRole(user.role),
+      permissions: await getRolePermissions(user.role),
     });
   } catch (err) {
     console.error("[GET /api/auth/me]", err);

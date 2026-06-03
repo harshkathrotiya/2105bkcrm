@@ -90,11 +90,13 @@ export function InvoicesProvider({ children }: { children: ReactNode }) {
         }
         // Reload from server after mutation
         await load();
-      } catch (err) {
+      } catch (err: any) {
         console.error("dispatchInvoices error:", err);
+        toast.error(err?.message || "Action failed");
+        throw err; // let the calling screen abort its success flow
       }
     },
-    [load]
+    [load, toast]
   );
 
   const getInvoice = useCallback(

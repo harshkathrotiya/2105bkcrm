@@ -91,13 +91,14 @@ export function VendorsProvider({ children }: { children: ReactNode }) {
         }
         // Refresh vendors list
         await refreshVendors();
-      } catch (err) {
+      } catch (err: any) {
         console.error("dispatchVendors error:", err);
-        throw err;
+        toast.error(err?.message || "Action failed");
+        throw err; // let the calling screen abort its success flow
       }
       return result;
     },
-    [refreshVendors]
+    [refreshVendors, toast]
   );
 
   const value = useMemo(

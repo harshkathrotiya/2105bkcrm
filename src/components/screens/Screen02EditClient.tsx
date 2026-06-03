@@ -11,6 +11,7 @@ import ClientRatesCard from "./ClientRatesCard";
 import { useClients, useInquiries, useQuotations, useInvoices } from "@/lib/store";
 import { AVATAR_PALETTE } from "@/lib/constants";
 import { useConfirm } from "../ui/ConfirmDialog";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 interface FormData {
   name: string;
@@ -34,6 +35,10 @@ export default function Screen02EditClient({
 }) {
   const router = useRouter();
   const confirm = useConfirm();
+  const { can } = useCurrentUser();
+  const canEdit = can("clients.edit");
+  const canDelete = can("clients.delete");
+  const canCreateInquiry = can("inquiries.create");
   const { clients, dispatchClients } = useClients();
   const { inquiries } = useInquiries();
   const { quotations } = useQuotations();
@@ -260,28 +265,36 @@ export default function Screen02EditClient({
         breadcrumb={<>Clients › Edit client</>}
         actions={
           <>
-            <Link
-              href={`/inquiries/new?clientId=${clientId}`}
-              className={`btn ${saving ? "opacity-50 pointer-events-none" : ""}`}
-            >
-              + New Inquiry
-            </Link>
-            <button className="btn text-rd" onClick={handleDelete} disabled={saving}>
-              {saving ? "Deleting..." : "Delete"}
-            </button>
-            <button
-              className={`btn btn-success ${!allRequired || saving ? "opacity-50" : ""}`}
-              onClick={handleSave}
-              disabled={!allRequired || saving}
-            >
-              {saving ? "Updating..." : "Update client ↗"}
-            </button>
+            {canCreateInquiry && (
+              <Link
+                href={`/inquiries/new?clientId=${clientId}`}
+                className={`btn ${saving ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                + New Inquiry
+              </Link>
+            )}
+            {canDelete && (
+              <button className="btn text-rd" onClick={handleDelete} disabled={saving}>
+                {saving ? "Deleting..." : "Delete"}
+              </button>
+            )}
+            {canEdit ? (
+              <button
+                className={`btn btn-success ${!allRequired || saving ? "opacity-50" : ""}`}
+                onClick={handleSave}
+                disabled={!allRequired || saving}
+              >
+                {saving ? "Updating..." : "Update client ↗"}
+              </button>
+            ) : (
+              <span className="text-[11px] text-tx3">View only — you don&apos;t have edit access.</span>
+            )}
           </>
         }
       >
         <div className="two-col">
-          {/* Left - Forms */}
-          <div>
+          {/* Left - Forms (disabled entirely when the user lacks edit access) */}
+          <fieldset disabled={!canEdit} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto" }}>
             {/* Basic Information */}
             <div className="card">
               <div className="card-t">Basic information</div>
@@ -467,7 +480,7 @@ export default function Screen02EditClient({
 
             {/* Per-client equipment rate overrides */}
             <ClientRatesCard clientId={clientId} />
-          </div>
+          </fieldset>
 
           {/* Right - Preview & Validation */}
           <div>

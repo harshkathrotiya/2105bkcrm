@@ -9,6 +9,7 @@ import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import SearchableSelect from "../ui/SearchableSelect";
 import { useKits, useEquipment } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import type { Equipment, Kit } from "@/lib/types";
 
@@ -23,6 +24,8 @@ function formatSerialNumber(sn: string | null | undefined): string {
 
 export default function Screen16KitList() {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  const canEdit = can("kits.edit");
   const { kits, loading: kitsLoading, refreshKits, dispatchKits } = useKits();
   const { refreshEquipment } = useEquipment();
 
@@ -270,15 +273,17 @@ export default function Screen16KitList() {
       <ScreenFrame
         breadcrumbs={[{ label: "Kits" }]}
         actions={
-          <button type="button" className="btn btn-primary" onClick={() => {
-            setNewKitName("");
-            setNewKitDesc("");
-            setModalEquipment([{ id: "", qty: 1 }]);
-            setCreateError("");
-            setShowCreateModal(true);
-          }}>
-            + Create New Kit
-          </button>
+          canEdit ? (
+            <button type="button" className="btn btn-primary" onClick={() => {
+              setNewKitName("");
+              setNewKitDesc("");
+              setModalEquipment([{ id: "", qty: 1 }]);
+              setCreateError("");
+              setShowCreateModal(true);
+            }}>
+              + Create New Kit
+            </button>
+          ) : null
         }
       >
         <div className="card !p-3">

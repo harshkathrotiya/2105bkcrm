@@ -84,33 +84,39 @@ export default function Screen02AddClient() {
     setForm(initialState);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!allRequired || saving) return;
     setSaving(true);
-    dispatchClients({
-      type: "ADD_CLIENT",
-      payload: {
-        id: `client-${Date.now()}`,
-        initials,
-        bg: avatarColor.bg,
-        fg: avatarColor.fg,
-        name: form.name,
-        contact: form.contact,
-        mobile: form.mobile,
-        email: form.email,
-        gst: form.gst,
-        pan: form.pan,
-        addressLine: form.addressLine,
-        city: form.city,
-        district: form.district,
-        state: form.state,
-        pin: form.pin,
-        status: "Active",
-        createdAt: new Date().toISOString().split("T")[0],
-      },
-    });
-    setShowToast(true);
-    setTimeout(() => { setShowToast(false); router.push("/clients"); }, 2000);
+    try {
+      await dispatchClients({
+        type: "ADD_CLIENT",
+        payload: {
+          id: `client-${Date.now()}`,
+          initials,
+          bg: avatarColor.bg,
+          fg: avatarColor.fg,
+          name: form.name,
+          contact: form.contact,
+          mobile: form.mobile,
+          email: form.email,
+          gst: form.gst,
+          pan: form.pan,
+          addressLine: form.addressLine,
+          city: form.city,
+          district: form.district,
+          state: form.state,
+          pin: form.pin,
+          status: "Active",
+          createdAt: new Date().toISOString().split("T")[0],
+        },
+      });
+      // only runs if the dispatch did NOT throw (e.g. 403 / validation)
+      setShowToast(true);
+      setTimeout(() => { setShowToast(false); router.push("/clients"); }, 2000);
+    } catch {
+      // error already surfaced via toast in the context
+      setSaving(false);
+    }
   };
 
   return (

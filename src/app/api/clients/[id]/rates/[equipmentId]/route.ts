@@ -1,12 +1,16 @@
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { deleteClientRate } from "@/lib/queries/pricing";
 
 // DELETE /api/clients/[id]/rates/[equipmentId] — remove an override (revert to default rate)
 export async function DELETE(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string; equipmentId: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "clients.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id, equipmentId } = await params;
     const eqId = parseInt(equipmentId, 10);
     if (isNaN(eqId) || eqId <= 0) {

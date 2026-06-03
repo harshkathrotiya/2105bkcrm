@@ -6,6 +6,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useQuotations, useInvoices, useInquiries } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import type { Quotation } from "@/lib/types";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import Pagination from "../ui/Pagination";
@@ -37,6 +38,8 @@ interface QuoteChain {
 }
 
 export default function Screen11QuotationList() {
+  const { can } = useCurrentUser();
+  const canCreate = can("quotations.create");
   const { quotations, loading: quotationsLoading } = useQuotations();
   const { invoices } = useInvoices();
   const { inquiries } = useInquiries();
@@ -147,9 +150,11 @@ export default function Screen11QuotationList() {
       <ScreenFrame
         breadcrumbs={[{ label: "Quotations" }]}
         actions={
-          <Link href="/quotations/new" className="btn btn-primary">
-            + New quotation
-          </Link>
+          canCreate ? (
+            <Link href="/quotations/new" className="btn btn-primary">
+              + New quotation
+            </Link>
+          ) : null
         }
       >
         {quotationsLoading ? (

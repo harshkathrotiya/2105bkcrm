@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { getAllVendors, createVendor } from "@/lib/queries/vendors";
 import { Validator } from "@/lib/validate";
 
@@ -14,6 +15,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "vendors.edit");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
 
     const v = new Validator(body);

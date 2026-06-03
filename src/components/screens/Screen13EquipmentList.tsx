@@ -9,10 +9,13 @@ import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import Pagination from "../ui/Pagination";
 import { useEquipment } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import { useToast } from "../ui/Toast";
 
 export default function Screen13EquipmentList() {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  const canCreate = can("equipment.create");
   const toast = useToast();
   const {
     equipment,
@@ -285,15 +288,19 @@ export default function Screen13EquipmentList() {
             >
               {exporting ? "Exporting…" : "↑ Export CSV"}
             </button>
-            <button className="btn" onClick={() => setShowCsvModal(true)}>
-              ↓ Import CSV
-            </button>
+            {canCreate && (
+              <button className="btn" onClick={() => setShowCsvModal(true)}>
+                ↓ Import CSV
+              </button>
+            )}
             <Link href="/reports/assets/pdf" className="btn">
               ▤ Asset Report (PDF)
             </Link>
-            <Link href="/equipment/new" className="btn btn-primary">
-              + Add Equipment
-            </Link>
+            {canCreate && (
+              <Link href="/equipment/new" className="btn btn-primary">
+                + Add Equipment
+              </Link>
+            )}
           </div>
         }
       >

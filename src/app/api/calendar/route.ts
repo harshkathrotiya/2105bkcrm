@@ -12,6 +12,7 @@ import {
 } from "@/lib/queries/calendar";
 import { generateId } from "@/lib/types";
 import { Validator, CALENDAR_TYPES } from "@/lib/validate";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,6 +46,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "calendar.view");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
 
     const v = new Validator(body);

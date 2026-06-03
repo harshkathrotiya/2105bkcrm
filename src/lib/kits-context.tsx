@@ -100,13 +100,14 @@ export function KitsProvider({ children }: { children: ReactNode }) {
         }
         // Refresh kits list
         await refreshKits();
-      } catch (err) {
+      } catch (err: any) {
         console.error("dispatchKits error:", err);
-        throw err;
+        toast.error(err?.message || "Action failed");
+        throw err; // let the calling screen abort its success flow
       }
       return result;
     },
-    [refreshKits]
+    [refreshKits, toast]
   );
 
   const value = useMemo(

@@ -1,8 +1,12 @@
 import type { NextRequest } from "next/server";
 import { confirmDuplicate } from "@/lib/queries/staff";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "staff.edit");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
     const { assignmentId } = body;
 

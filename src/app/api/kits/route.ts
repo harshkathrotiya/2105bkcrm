@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { getAllKits, createKit, getAllKitsWithAvailability } from "@/lib/queries/kits";
 import { Validator } from "@/lib/validate";
 
@@ -31,6 +32,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "kits.edit");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
 
     const v = new Validator(body);

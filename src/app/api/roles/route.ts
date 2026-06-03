@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { ROLE_PERMISSIONS } from "@/lib/permissions";
+import { ROLE_MARKER, DEFAULT_ROLES, isDefaultRole } from "@/lib/role-permissions";
 
 export async function GET() {
   try {
-    let count = await db.rolePermission.count();
+    const count = await db.rolePermission.count();
     if (count === 0) {
       // Seed default permissions from static config
       const toInsert: { role: string; permission: string }[] = [];
@@ -18,19 +19,30 @@ export async function GET() {
       }
     }
 
+    // Idempotent backfill: ensure built-in roles have `dashboard.view`
+    // (added after the original seed). Only writes when actually missing.
+    const dashRows = await db.rolePermission.findMany({
+      where: { permission: "dashboard.view", role: { in: DEFAULT_ROLES } },
+      select: { role: true },
+    });
+    const haveDash = new Set(dashRows.map((r) => r.role));
+    const missingDash = DEFAULT_ROLES.filter((r) => !haveDash.has(r));
+    if (missingDash.length > 0) {
+      await db.rolePermission.createMany({
+        data: missingDash.map((role) => ({ role, permission: "dashboard.view" })),
+      });
+    }
+
     const all = await db.rolePermission.findMany();
-    // Group by role
     const grouped: Record<string, string[]> = {};
-    
-    // Always ensure default roles exist in the object keys
-    grouped["Admin"] = [];
-    grouped["Manager"] = [];
-    grouped["Operator"] = [];
+
+    // Always ensure default roles exist as keys.
+    for (const r of DEFAULT_ROLES) grouped[r] = [];
 
     all.forEach((item) => {
-      if (!grouped[item.role]) {
-        grouped[item.role] = [];
-      }
+      if (!grouped[item.role]) grouped[item.role] = [];
+      // Hide the existence-marker from the real permission list.
+      if (item.permission === ROLE_MARKER) return;
       grouped[item.role].push(item.permission);
     });
 
@@ -64,17 +76,63 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Admin role permissions are locked and cannot be modified." }, { status: 403 });
     }
 
-    await db.$transaction(async (tx) => {
-      await tx.rolePermission.deleteMany({ where: { role: trimmedRole } });
-      if (permissions.length > 0) {
-        const data = permissions.map((p: string) => ({ role: trimmedRole, permission: p }));
-        await tx.rolePermission.createMany({ data });
-      }
-    });
+    // Always write a marker row so the role exists even with no permissions.
+    const data = [
+      { role: trimmedRole, permission: ROLE_MARKER },
+      ...permissions
+        .filter((p: unknown): p is string => typeof p === "string" && p !== ROLE_MARKER)
+        .map((p: string) => ({ role: trimmedRole, permission: p })),
+    ];
+
+    // Use the array form of $transaction (a single batched statement) rather
+    // than an interactive transaction. The interactive form holds a pooled
+    // connection across the whole async callback and times out (P2028) when
+    // the small connection pool (max: 2) is busy.
+    await db.$transaction([
+      db.rolePermission.deleteMany({ where: { role: trimmedRole } }),
+      db.rolePermission.createMany({ data }),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error("[POST /api/roles] error:", err);
     return NextResponse.json({ error: err.message || "Failed to save role permissions" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { role } = await req.json();
+    if (!role || typeof role !== "string") {
+      return NextResponse.json({ error: "Role name is required" }, { status: 400 });
+    }
+    const trimmedRole = role.trim();
+
+    // Cannot delete the built-in roles.
+    if (isDefaultRole(trimmedRole)) {
+      return NextResponse.json(
+        { error: `The built-in "${trimmedRole}" role cannot be deleted.` },
+        { status: 403 },
+      );
+    }
+
+    // Cannot delete a role that is still assigned to one or more users.
+    const inUse = await db.user.count({ where: { role: trimmedRole } });
+    if (inUse > 0) {
+      return NextResponse.json(
+        {
+          error: `Cannot delete "${trimmedRole}" — it is assigned to ${inUse} user${
+            inUse === 1 ? "" : "s"
+          }. Reassign them first.`,
+        },
+        { status: 409 },
+      );
+    }
+
+    await db.rolePermission.deleteMany({ where: { role: trimmedRole } });
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    console.error("[DELETE /api/roles] error:", err);
+    return NextResponse.json({ error: err.message || "Failed to delete role" }, { status: 500 });
   }
 }

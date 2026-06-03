@@ -9,6 +9,7 @@ import Badge from "../ui/Badge";
 import Timeline from "../ui/Timeline";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useVendors } from "@/lib/vendors-context";
+import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
@@ -16,6 +17,8 @@ import type { Vendor } from "@/lib/types";
 
 export default function Screen18VendorList() {
   const { vendors, loading, dispatchVendors } = useVendors();
+  const { can } = useCurrentUser();
+  const canEdit = can("vendors.edit");
   const appToast = useToast();
   const confirm = useConfirm();
 
@@ -491,16 +494,18 @@ export default function Screen18VendorList() {
               </select>
             </div>
 
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => {
-                setFormError("");
-                setShowAddModal(true);
-              }}
-            >
-              + Add Rental Vendor
-            </button>
+            {canEdit && (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setFormError("");
+                  setShowAddModal(true);
+                }}
+              >
+                + Add Rental Vendor
+              </button>
+            )}
           </div>
 
           {/* Vendors Table */}
@@ -557,25 +562,33 @@ export default function Screen18VendorList() {
                       {vendor.timesUsed}
                     </td>
                     <td style={{ textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
-                      <label className="switch" style={{ display: "inline-block", position: "relative" }}>
-                        <input
-                          type="checkbox"
-                          checked={vendor.isActive}
-                          onChange={(e) => handleToggleStatus(vendor, e as any)}
-                          style={{ cursor: "pointer" }}
-                        />
-                        <span className="slider round"></span>
-                      </label>
+                      {canEdit ? (
+                        <label className="switch" style={{ display: "inline-block", position: "relative" }}>
+                          <input
+                            type="checkbox"
+                            checked={vendor.isActive}
+                            onChange={(e) => handleToggleStatus(vendor, e as any)}
+                            style={{ cursor: "pointer" }}
+                          />
+                          <span className="slider round"></span>
+                        </label>
+                      ) : (
+                        <Badge variant={vendor.isActive ? "gr" : "gy"}>
+                          {vendor.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      )}
                     </td>
                     <td style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className="btn"
-                        style={{ padding: "4px 8px", fontSize: "11px" }}
-                        onClick={(e) => handleOpenEdit(vendor, e)}
-                      >
-                        Edit
-                      </button>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          className="btn"
+                          style={{ padding: "4px 8px", fontSize: "11px" }}
+                          onClick={(e) => handleOpenEdit(vendor, e)}
+                        >
+                          Edit
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -693,46 +706,50 @@ export default function Screen18VendorList() {
                           S/N: {eq.serialNumber || "—"} | Qty: {eq.quantity}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        className="btn btn-danger"
-                        style={{ padding: "2px 6px", fontSize: "10px" }}
-                        onClick={() => handleUnlinkEquipment(eq.id)}
-                        title="Unlink this equipment from vendor"
-                      >
-                        Unlink
-                      </button>
+                      {canEdit && (
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          style={{ padding: "2px 6px", fontSize: "10px" }}
+                          onClick={() => handleUnlinkEquipment(eq.id)}
+                          title="Unlink this equipment from vendor"
+                        >
+                          Unlink
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px" }}>
-                <select
-                  className="fsel"
-                  style={{ flex: 1, padding: "5px 8px", fontSize: "11.5px" }}
-                  value={selectedEquipId}
-                  onChange={(e) => setSelectedEquipId(e.target.value)}
-                >
-                  <option value="">-- Link Equipment --</option>
-                  {allEquipment
-                    .filter((eq) => eq.ownershipType !== "VENDOR" || eq.vendorId !== selectedVendorId)
-                    .map((eq) => (
-                      <option key={eq.id} value={eq.id}>
-                        {eq.productName} ({eq.category})
-                      </option>
-                    ))}
-                </select>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  style={{ padding: "5px 12px", fontSize: "11.5px" }}
-                  onClick={handleLinkEquipment}
-                  disabled={!selectedEquipId || linking}
-                >
-                  {linking ? "Linking..." : "Link"}
-                </button>
-              </div>
+              {canEdit && (
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px" }}>
+                  <select
+                    className="fsel"
+                    style={{ flex: 1, padding: "5px 8px", fontSize: "11.5px" }}
+                    value={selectedEquipId}
+                    onChange={(e) => setSelectedEquipId(e.target.value)}
+                  >
+                    <option value="">-- Link Equipment --</option>
+                    {allEquipment
+                      .filter((eq) => eq.ownershipType !== "VENDOR" || eq.vendorId !== selectedVendorId)
+                      .map((eq) => (
+                        <option key={eq.id} value={eq.id}>
+                          {eq.productName} ({eq.category})
+                        </option>
+                      ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ padding: "5px 12px", fontSize: "11.5px" }}
+                    onClick={handleLinkEquipment}
+                    disabled={!selectedEquipId || linking}
+                  >
+                    {linking ? "Linking..." : "Link"}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Booking History Timeline */}

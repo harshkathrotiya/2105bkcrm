@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getStaffById, updateStaff, deleteStaff } from "@/lib/queries/staff";
 import { Validator, STAFF_ROLES, STAFF_TYPES, PAYMENT_TYPES } from "@/lib/validate";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function GET(
   _req: NextRequest,
@@ -24,6 +25,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "staff.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const body = await request.json();
 
@@ -62,10 +66,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "staff.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const deleted = await deleteStaff(parseInt(id, 10));
     if (!deleted) {

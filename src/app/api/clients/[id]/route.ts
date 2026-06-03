@@ -7,6 +7,7 @@
 import type { NextRequest } from "next/server";
 import { getClientById, updateClient, deleteClient } from "@/lib/queries/clients";
 import { Validator } from "@/lib/validate";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function GET(
   _req: NextRequest,
@@ -30,6 +31,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "clients.edit");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const body = await request.json();
 
@@ -70,10 +74,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "clients.delete");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const deleted = await deleteClient(id);
     if (!deleted) {

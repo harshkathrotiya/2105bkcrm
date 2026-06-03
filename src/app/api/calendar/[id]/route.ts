@@ -4,12 +4,16 @@
 
 import type { NextRequest } from "next/server";
 import { deleteCalendarEvent } from "@/lib/queries/calendar";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function DELETE(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "calendar.view");
+    if (!auth.ok) return auth.response!;
+
     const { id } = await params;
     const deleted = await deleteCalendarEvent(id);
     if (!deleted) {

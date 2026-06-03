@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getStaffAssignments, assignStaff, deleteAssignment } from "@/lib/queries/staff";
 import { Validator } from "@/lib/validate";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,6 +22,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "staff.edit");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
 
     const v = new Validator(body);
@@ -54,6 +58,9 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "staff.edit");
+    if (!auth.ok) return auth.response!;
+
     const searchParams = request.nextUrl.searchParams;
     const idStr = searchParams.get("id");
 

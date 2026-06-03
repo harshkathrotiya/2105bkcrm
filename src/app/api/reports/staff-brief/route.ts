@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getStaffBrief } from "@/lib/queries/reports";
 import { sendWhatsAppBrief } from "@/lib/whatsapp";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,6 +32,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "reports.view");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
     const { inquiryId, staffId, messageText } = body;
 

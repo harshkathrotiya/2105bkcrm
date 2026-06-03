@@ -85,11 +85,13 @@ export function QuotationsProvider({ children }: { children: ReactNode }) {
             break;
         }
         await load();
-      } catch (err) {
+      } catch (err: any) {
         console.error("dispatchQuotations error:", err);
+        toast.error(err?.message || "Action failed");
+        throw err; // let the calling screen abort its success flow
       }
     },
-    [load]
+    [load, toast]
   );
 
   const value = useMemo(

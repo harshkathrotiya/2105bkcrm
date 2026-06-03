@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getAllStaff, createStaff } from "@/lib/queries/staff";
 import { Validator, STAFF_ROLES, STAFF_TYPES, PAYMENT_TYPES } from "@/lib/validate";
+import { requirePermission } from "@/lib/role-permissions";
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,6 +33,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "staff.create");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
 
     const v = new Validator(body);

@@ -240,19 +240,18 @@ export default function Screen32UsersSettings() {
               </div>
               <div className="field span2">
                 <div className="flbl">Role *</div>
-                <div className="flex flex-wrap gap-2">
+                <select
+                  className="fsel"
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                  required
+                >
                   {rolesList.map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      className={`btn justify-center text-[11px] ${newRole === r ? "btn-primary" : ""}`}
-                      style={{ padding: "4px 8px", flex: "1 0 auto" }}
-                      onClick={() => setNewRole(r)}
-                    >
+                    <option key={r} value={r}>
                       {r}
-                    </button>
+                    </option>
                   ))}
-                </div>
+                </select>
                 <div className="text-[10px] text-tx3" style={{ marginTop: "6px" }}>
                   {newRole === "Admin" && "Full access including user management."}
                   {newRole === "Manager" && "Can create and edit all records. Cannot manage users or delete equipment."}
@@ -291,28 +290,34 @@ export default function Screen32UsersSettings() {
                 <input className="finp" value={editName} onChange={(e) => setEditName(e.target.value)} />
               </div>
               <div className="field span2">
-                <div className="flbl">Role</div>
-                <div className="flex flex-wrap gap-2">
-                  {rolesList.map((r) => {
-                    const isSelfAdmin = editUser.id === currentUser?.id && editUser.role === "Admin";
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        disabled={isSelfAdmin}
-                        className={`btn justify-center text-[11px] ${editRole === r ? "btn-primary" : ""}`}
-                        style={{ padding: "4px 8px", flex: "1 0 auto", opacity: isSelfAdmin && editRole !== r ? 0.5 : 1 }}
-                        onClick={() => setEditRole(r)}
-                      >
+                <div className="flbl">Role *</div>
+                {editUser.id === currentUser?.id && editUser.role === "Admin" ? (
+                  <>
+                    <select
+                      className="fsel"
+                      value={editRole}
+                      disabled
+                      required
+                    >
+                      <option value="Admin">Admin</option>
+                    </select>
+                    <div className="text-[10px] text-acc" style={{ marginTop: "4px" }}>
+                      Logged-in administrators cannot demote their own role.
+                    </div>
+                  </>
+                ) : (
+                  <select
+                    className="fsel"
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    required
+                  >
+                    {rolesList.map((r) => (
+                      <option key={r} value={r}>
                         {r}
-                      </button>
-                    );
-                  })}
-                </div>
-                {editUser.id === currentUser?.id && editUser.role === "Admin" && (
-                  <div className="text-[10px] text-acc" style={{ marginTop: "4px" }}>
-                    Logged-in administrators cannot demote their own role.
-                  </div>
+                      </option>
+                    ))}
+                  </select>
                 )}
               </div>
               <div className="field span2">

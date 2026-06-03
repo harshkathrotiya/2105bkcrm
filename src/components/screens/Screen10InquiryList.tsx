@@ -7,6 +7,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useInquiries, useClients, useQuotations, useInvoices } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import Pagination from "../ui/Pagination";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 
@@ -26,6 +27,11 @@ const ITEMS_PER_PAGE = 20;
 
 export default function Screen10InquiryList() {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  const canCreateInquiry = can("inquiries.create");
+  const canCreateQuote = can("quotations.create");
+  const canAssignCrew = can("staff.edit");
+  const canViewWarehouse = can("warehouse.view");
   const { inquiries, loading: inquiriesLoading } = useInquiries();
   const { clients, loading: clientsLoading } = useClients();
   const { quotations } = useQuotations();
@@ -110,9 +116,11 @@ export default function Screen10InquiryList() {
       <ScreenFrame
         breadcrumbs={[{ label: "Inquiries" }]}
         actions={
-          <Link href="/inquiries/new" className="btn btn-primary">
-            + New inquiry
-          </Link>
+          canCreateInquiry ? (
+            <Link href="/inquiries/new" className="btn btn-primary">
+              + New inquiry
+            </Link>
+          ) : null
         }
       >
         {loading ? (
@@ -236,11 +244,11 @@ export default function Screen10InquiryList() {
                       >
                         Clear filters
                       </button>
-                    ) : (
+                    ) : canCreateInquiry ? (
                       <Link href="/inquiries/new" className="btn btn-primary">
                         + New inquiry
                       </Link>
-                    )}
+                    ) : null}
                   </td>
                 </tr>
               ) : (
@@ -314,7 +322,7 @@ export default function Screen10InquiryList() {
                       </td>
                       <td>
                         <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-                          {!hasQuotation && (
+                          {!hasQuotation && canCreateQuote && (
                             <Link
                               href={`/quotations/new?inquiryId=${inq.id}`}
                               className="btn btn-primary text-[10px] px-[8px] py-[4px]"
@@ -341,22 +349,26 @@ export default function Screen10InquiryList() {
                               Invoice →
                             </Link>
                           )}
-                          {inq.status === "Confirmed" && (
+                          {inq.status === "Confirmed" && (canAssignCrew || canViewWarehouse) && (
                             <div className="flex gap-1">
-                              <Link
-                                href={`/staff/assign?inquiryId=${inq.id}`}
-                                className="btn text-[10px] px-[6px] py-[4px]"
-                                title="Assign crew"
-                              >
-                                Crew
-                              </Link>
-                              <Link
-                                href={`/warehouse/check?inquiryId=${inq.id}`}
-                                className="btn text-[10px] px-[6px] py-[4px]"
-                                title="Warehouse check"
-                              >
-                                Warehouse
-                              </Link>
+                              {canAssignCrew && (
+                                <Link
+                                  href={`/staff/assign?inquiryId=${inq.id}`}
+                                  className="btn text-[10px] px-[6px] py-[4px]"
+                                  title="Assign crew"
+                                >
+                                  Crew
+                                </Link>
+                              )}
+                              {canViewWarehouse && (
+                                <Link
+                                  href={`/warehouse/check?inquiryId=${inq.id}`}
+                                  className="btn text-[10px] px-[6px] py-[4px]"
+                                  title="Warehouse check"
+                                >
+                                  Warehouse
+                                </Link>
+                              )}
                             </div>
                           )}
                         </div>

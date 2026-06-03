@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { db } from "@/lib/db";
 
 // Simple CSV parser that handles quotes and commas
@@ -46,6 +47,9 @@ function parseCSV(text: string): string[][] {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "equipment.create");
+    if (!auth.ok) return auth.response!;
+
     const { csvText } = await request.json();
     if (!csvText || typeof csvText !== "string") {
       return Response.json({ error: "csvText is required as string" }, { status: 400 });

@@ -1,9 +1,13 @@
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { db } from "@/lib/db";
 import { Validator } from "@/lib/validate";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "warehouse.view");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
 
     const v = new Validator(body);

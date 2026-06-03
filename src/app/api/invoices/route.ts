@@ -4,6 +4,7 @@
  */
 
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { getAllInvoices, createInvoice } from "@/lib/queries/invoices";
 import { generateId } from "@/lib/types";
 import { Validator } from "@/lib/validate";
@@ -20,6 +21,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "invoices.edit");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
 
     const v = new Validator(body);

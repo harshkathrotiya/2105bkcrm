@@ -4,6 +4,7 @@
  */
 
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { db } from "@/lib/db";
 import { Validator } from "@/lib/validate";
 
@@ -12,6 +13,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; boxId: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "inquiries.edit");
+    if (!auth.ok) return auth.response!;
+
     const { boxId } = await params;
     const body = await request.json();
 
@@ -51,10 +55,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string; boxId: string }> }
 ) {
   try {
+    const auth = await requirePermission(request, "inquiries.edit");
+    if (!auth.ok) return auth.response!;
+
     const { boxId } = await params;
     await db.ledDispatchBox.delete({
       where: { id: parseInt(boxId, 10) },

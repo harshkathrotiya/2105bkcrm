@@ -9,11 +9,14 @@ import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import Pagination from "../ui/Pagination";
 import { useStaff } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import { getAvatarStyle } from "@/lib/constants";
 import type { Staff } from "@/lib/types";
 
 export default function Screen20StaffList() {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  const canCreate = can("staff.create");
   const { staff, loading } = useStaff();
 
   // Search & Filter States
@@ -152,7 +155,7 @@ export default function Screen20StaffList() {
           <div style={{ display: "flex", gap: "8px" }}>
             <button className="btn" onClick={handleExportCSV}>Export CSV</button>
             <button className="btn" onClick={handleExportPDF}>Export PDF</button>
-            <Link href="/staff/new" className="btn btn-primary">+ Add Staff</Link>
+            {canCreate && <Link href="/staff/new" className="btn btn-primary">+ Add Staff</Link>}
           </div>
         }
       >

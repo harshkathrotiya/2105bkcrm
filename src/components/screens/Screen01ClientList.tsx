@@ -7,6 +7,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useClients, useInquiries, useQuotations, useInvoices } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import Pagination from "../ui/Pagination";
 
@@ -14,6 +15,9 @@ const ITEMS_PER_PAGE = 20;
 
 export default function Screen01ClientList() {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  const canCreate = can("clients.create");
+  const canCreateInquiry = can("inquiries.create");
   const { clients, loading: clientsLoading } = useClients();
   const { inquiries, loading: inquiriesLoading } = useInquiries();
   const { quotations, loading: quotationsLoading } = useQuotations();
@@ -66,9 +70,11 @@ export default function Screen01ClientList() {
       <ScreenFrame
         breadcrumbs={[{ label: "Clients" }]}
         actions={
-          <Link href="/clients/new" className="btn btn-primary">
-            + New client
-          </Link>
+          canCreate ? (
+            <Link href="/clients/new" className="btn btn-primary">
+              + New client
+            </Link>
+          ) : null
         }
       >
         {loading ? (
@@ -147,11 +153,11 @@ export default function Screen01ClientList() {
                       >
                         Clear filters
                       </button>
-                    ) : (
+                    ) : canCreate ? (
                       <Link href="/clients/new" className="btn btn-primary">
                         + Add first client
                       </Link>
-                    )}
+                    ) : null}
                   </td>
                 </tr>
               ) : (
@@ -243,14 +249,16 @@ export default function Screen01ClientList() {
                         </Badge>
                       </td>
                       <td>
-                        <Link
-                          href={"/inquiries/new?clientId=" + c.id}
-                          className="btn text-[10px] px-[8px] py-[4px]"
-                          title="New inquiry for this client"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          + Inquiry
-                        </Link>
+                        {canCreateInquiry && (
+                          <Link
+                            href={"/inquiries/new?clientId=" + c.id}
+                            className="btn text-[10px] px-[8px] py-[4px]"
+                            title="New inquiry for this client"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            + Inquiry
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   );

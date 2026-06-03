@@ -100,13 +100,14 @@ export function StaffProvider({ children }: { children: ReactNode }) {
         }
         // Refresh staff list
         await refreshStaff();
-      } catch (err) {
+      } catch (err: any) {
         console.error("dispatchStaff error:", err);
-        throw err;
+        toast.error(err?.message || "Action failed");
+        throw err; // let the calling screen abort its success flow
       }
       return result;
     },
-    [refreshStaff]
+    [refreshStaff, toast]
   );
 
   const value = useMemo(

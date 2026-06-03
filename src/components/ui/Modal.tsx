@@ -23,6 +23,11 @@ export default function Modal({ open, onClose, title, width = 420, children, foo
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const titleId = useId();
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
     previouslyFocused.current = document.activeElement as HTMLElement;
@@ -31,7 +36,7 @@ export default function Modal({ open, onClose, title, width = 420, children, foo
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === "Tab" && panelRef.current) {
@@ -56,7 +61,7 @@ export default function Modal({ open, onClose, title, width = 420, children, foo
       document.removeEventListener("keydown", onKeyDown);
       previouslyFocused.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

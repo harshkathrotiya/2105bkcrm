@@ -48,7 +48,7 @@ export default function AppSidebar() {
 
   const visibleItems = loading
     ? [] // show nothing while loading — avoids flicker of forbidden items
-    : NAV_ITEMS.filter((item) => can(item.permission));
+    : NAV_ITEMS.filter((item) => item.alwaysVisible || can(item.permission));
 
   return (
     <aside className="app-sidebar">

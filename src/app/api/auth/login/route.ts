@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { signJWT } from "@/lib/auth";
 import bcrypt from "bcryptjs";
-import { ROLE_PERMISSIONS } from "@/lib/permissions";
+import { getRolePermissions } from "@/lib/role-permissions";
 
 // In-memory brute-force protection (resets on server restart; good enough for single-instance)
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -63,14 +63,9 @@ export async function POST(request: NextRequest) {
     // Clear attempts on successful login
     loginAttempts.delete(ip);
 
-    // Fetch user permissions for their role
-    const rp = await db.rolePermission.findMany({
-      where: { role: user.role }
-    });
-    let permissions = rp.map((item) => item.permission);
-    if (user.role === "Admin" && permissions.length === 0) {
-      permissions = Object.keys(ROLE_PERMISSIONS.Admin || []) as any[];
-    }
+    // Fetch user permissions for their role (single source of truth shared
+    // with /api/auth/me, so the sidebar and route middleware never disagree).
+    const permissions = await getRolePermissions(user.role);
 
     // Sign session JWT
     const token = await signJWT({

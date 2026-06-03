@@ -4,6 +4,7 @@
  */
 
 import type { NextRequest } from "next/server";
+import { requirePermission } from "@/lib/role-permissions";
 import { getAllQuotations, createQuotation } from "@/lib/queries/quotations";
 import { generateId } from "@/lib/types";
 import type { QuotationRow } from "@/lib/types";
@@ -21,6 +22,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requirePermission(request, "quotations.create");
+    if (!auth.ok) return auth.response!;
+
     const body = await request.json();
 
     const v = new Validator(body);
