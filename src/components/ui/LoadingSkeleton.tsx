@@ -36,9 +36,15 @@ export default function LoadingSkeleton({
     } as SkeletonRow));
 
   return (
-    <div className="card !p-4 relative overflow-hidden min-h-[140px] transition-all duration-300">
+    <div
+      className="card !p-4 relative overflow-hidden min-h-[140px] transition-all duration-300"
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+      aria-label={message}
+    >
       {/* 1. Loading Spinner Overlay (Glassmorphism & Theme-Aware) */}
-      <div 
+      <div
         className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10 transition-all duration-300"
         style={{
           background: "color-mix(in srgb, var(--s1) 75%, transparent)",
@@ -51,7 +57,7 @@ export default function LoadingSkeleton({
       </div>
 
       {/* 2. Skeleton Background Content (Slightly dimmed for contrast) */}
-      <div className="opacity-30 select-none pointer-events-none space-y-3">
+      <div className="opacity-30 select-none pointer-events-none space-y-3" aria-hidden="true">
         {type === "list" ? (
           // List layout (e.g. Sidebar kits list)
           <div className="space-y-2">

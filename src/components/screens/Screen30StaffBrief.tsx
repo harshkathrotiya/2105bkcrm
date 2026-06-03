@@ -7,6 +7,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import { useToast } from "../ui/Toast";
 
 interface Props {
   inquiryId: string;
@@ -15,6 +16,7 @@ interface Props {
 
 export default function Screen30StaffBrief({ inquiryId, staffId }: Props) {
   const router = useRouter();
+  const toastApi = useToast();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [broadcasting, setBroadcasting] = useState(false);
@@ -102,7 +104,7 @@ Koi sawaal hoy to call karo: +91 98250 00000`;
       setToast({ show: true, msg: "WhatsApp Event Brief broadcasted successfully (simulated)!" });
       setTimeout(() => setToast({ show: false, msg: "" }), 3000);
     } catch (err: any) {
-      alert(err.message || "Failed to trigger simulated broadcast");
+      toastApi.error(err.message || "Failed to trigger simulated broadcast");
     } finally {
       setBroadcasting(false);
     }

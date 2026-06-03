@@ -7,6 +7,8 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 import { useStaff, useInquiries } from "@/lib/store";
 import * as api from "@/lib/api";
 import type { Staff } from "@/lib/types";
@@ -34,6 +36,8 @@ interface StaffSummary {
 
 export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const { staff, loading: staffLoading, refreshStaff } = useStaff();
 
   const [history, setHistory] = useState<StaffHistoryItem[]>([]);
@@ -75,7 +79,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedInquiryId) {
-      alert("Please select an event.");
+      toast.error("Please select an event.");
       return;
     }
     setIsAssigning(true);
@@ -83,9 +87,10 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
       // 1. Check duplicates
       const dupCheck = await api.checkDuplicateAssignment(selectedInquiryId, staffId);
       if (dupCheck.isDuplicate) {
-        const proceed = confirm(
-          `Conflict detected! This staff member is already assigned to an event on these dates (as ${dupCheck.existingPosition || "Staff"}). Do you want to assign them anyway?`
-        );
+        const proceed = await confirm({
+          message: `Conflict detected! This staff member is already assigned to an event on these dates (as ${dupCheck.existingPosition || "Staff"}). Do you want to assign them anyway?`,
+          confirmLabel: "Assign anyway",
+        });
         if (!proceed) {
           setIsAssigning(false);
           return;
@@ -118,16 +123,17 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
       
       // Reset form
       setSelectedInquiryId("");
-      alert("Staff member successfully assigned!");
+      toast.success("Staff member successfully assigned!");
     } catch (err: any) {
-      alert(err.message || "Failed to create assignment");
+      toast.error(err.message || "Failed to create assignment");
     } finally {
       setIsAssigning(false);
     }
   };
 
   const handleUnassign = async (assignmentId: number) => {
-    if (!confirm("Are you sure you want to remove this staff assignment?")) return;
+    const ok = await confirm({ message: "Are you sure you want to remove this staff assignment?", confirmLabel: "Remove", danger: true });
+    if (!ok) return;
     setActionLoading(true);
     try {
       await api.deleteStaffAssignment(assignmentId);
@@ -138,9 +144,9 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
       setHistory(histData);
       setSummary(summData);
       await refreshStaff();
-      alert("Assignment removed.");
+      toast.success("Assignment removed.");
     } catch (err: any) {
-      alert(err.message || "Failed to remove assignment");
+      toast.error(err.message || "Failed to remove assignment");
     } finally {
       setActionLoading(false);
     }
@@ -218,14 +224,15 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   // Handle deactivate (soft delete)
   const handleDeactivate = async () => {
     if (!staffMember) return;
-    if (!confirm(`Deactivate ${staffMember.name}? They will be hidden from all lists but their history will be preserved.`)) return;
+    const ok = await confirm({ message: `Deactivate ${staffMember.name}? They will be hidden from all lists but their history will be preserved.`, confirmLabel: "Deactivate", danger: true });
+    if (!ok) return;
     setActionLoading(true);
     try {
       await api.deleteStaff(staffMember.id);
       await refreshStaff();
       router.push("/staff");
     } catch (err: any) {
-      alert(err.message || "Failed to deactivate staff");
+      toast.error(err.message || "Failed to deactivate staff");
     } finally {
       setActionLoading(false);
     }
@@ -234,7 +241,8 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   // Handle reactivate
   const handleReactivate = async () => {
     if (!staffMember) return;
-    if (!confirm(`Reactivate ${staffMember.name}? They will appear in the staff list again.`)) return;
+    const ok = await confirm({ message: `Reactivate ${staffMember.name}? They will appear in the staff list again.`, confirmLabel: "Reactivate" });
+    if (!ok) return;
     setActionLoading(true);
     try {
       await api.reactivateStaff(staffMember.id);
@@ -244,7 +252,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
         setFetchedStaff(memberData);
       }
     } catch (err: any) {
-      alert(err.message || "Failed to reactivate staff");
+      toast.error(err.message || "Failed to reactivate staff");
     } finally {
       setActionLoading(false);
     }

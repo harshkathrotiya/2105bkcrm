@@ -6,10 +6,12 @@ import {
   useReducer,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { Quotation } from "./types";
 import * as api from "./api";
+import { useToast } from "@/components/ui/Toast";
 
 // ── State ────────────────────────────────────────────────────────────────────
 interface QuotationsState {
@@ -50,6 +52,7 @@ const QuotationsContext = createContext<QuotationsContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function QuotationsProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const toast = useToast();
 
   const load = useCallback(async () => {
     dispatch({ type: "SET_LOADING", payload: true });
@@ -58,8 +61,9 @@ export function QuotationsProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_QUOTATIONS", payload: data });
     } catch {
       dispatch({ type: "SET_QUOTATIONS", payload: [] });
+      toast.error("Couldn't load quotations. Please refresh to try again.");
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -88,10 +92,13 @@ export function QuotationsProvider({ children }: { children: ReactNode }) {
     [load]
   );
 
+  const value = useMemo(
+    () => ({ quotations: state.quotations, loading: state.loading, dispatchQuotations }),
+    [state.quotations, state.loading, dispatchQuotations]
+  );
+
   return (
-    <QuotationsContext.Provider
-      value={{ quotations: state.quotations, loading: state.loading, dispatchQuotations }}
-    >
+    <QuotationsContext.Provider value={value}>
       {children}
     </QuotationsContext.Provider>
   );

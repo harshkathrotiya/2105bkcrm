@@ -10,6 +10,7 @@ import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useStaff } from "@/lib/store";
 import * as api from "@/lib/api";
 import type { Inquiry, Quotation, Staff, StaffAssignment } from "@/lib/types";
+import { useToast } from "../ui/Toast";
 
 interface PositionRow {
   no: number;
@@ -22,6 +23,7 @@ interface PositionRow {
 
 export default function Screen23AssignPosition() {
   const router = useRouter();
+  const toast = useToast();
   const searchParams = useSearchParams();
   const inquiryId = searchParams.get("inquiryId") || "";
 
@@ -382,7 +384,7 @@ export default function Screen23AssignPosition() {
       await refreshStaff();
       router.push(`/warehouse/check?inquiryId=${inquiryId}`);
     } catch (err: any) {
-      alert(err.message || "Failed to save assignments");
+      toast.error(err.message || "Failed to save assignments");
     } finally {
       setSaving(false);
     }

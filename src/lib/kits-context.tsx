@@ -6,10 +6,12 @@ import {
   useReducer,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { Kit } from "./types";
 import * as api from "./api";
+import { useToast } from "@/components/ui/Toast";
 
 // ── State ────────────────────────────────────────────────────────────────────
 interface KitsState {
@@ -51,6 +53,7 @@ const KitsContext = createContext<KitsContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function KitsProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const toast = useToast();
 
   // Fetch all kits
   const refreshKits = useCallback(async (params?: { startDate?: string; endDate?: string }) => {
@@ -61,8 +64,9 @@ export function KitsProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("fetchKits error:", err);
       dispatch({ type: "SET_KITS", payload: [] });
+      toast.error("Couldn't load kits. Please refresh to try again.");
     }
-  }, []);
+  }, [toast]);
 
   // Load initial data
   useEffect(() => {
@@ -105,15 +109,18 @@ export function KitsProvider({ children }: { children: ReactNode }) {
     [refreshKits]
   );
 
+  const value = useMemo(
+    () => ({
+      kits: state.kits,
+      loading: state.loading,
+      refreshKits,
+      dispatchKits,
+    }),
+    [state.kits, state.loading, refreshKits, dispatchKits]
+  );
+
   return (
-    <KitsContext.Provider
-      value={{
-        kits: state.kits,
-        loading: state.loading,
-        refreshKits,
-        dispatchKits,
-      }}
-    >
+    <KitsContext.Provider value={value}>
       {children}
     </KitsContext.Provider>
   );

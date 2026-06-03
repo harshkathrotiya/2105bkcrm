@@ -6,10 +6,12 @@ import {
   useReducer,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { CalendarEvent } from "./types";
 import * as api from "./api";
+import { useToast } from "@/components/ui/Toast";
 
 // ── State ────────────────────────────────────────────────────────────────────
 interface CalendarState {
@@ -51,6 +53,7 @@ const CalendarContext = createContext<CalendarContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function CalendarProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const toast = useToast();
 
   const load = useCallback(async () => {
     dispatch({ type: "SET_LOADING", payload: true });
@@ -59,8 +62,9 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_CALENDAR_EVENTS", payload: data });
     } catch {
       dispatch({ type: "SET_CALENDAR_EVENTS", payload: [] });
+      toast.error("Couldn't load calendar events. Please refresh to try again.");
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -105,15 +109,18 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
     [state.calendarEvents]
   );
 
+  const value = useMemo(
+    () => ({
+      calendarEvents: state.calendarEvents,
+      loading: state.loading,
+      dispatchCalendar,
+      getCalendarEvents,
+    }),
+    [state.calendarEvents, state.loading, dispatchCalendar, getCalendarEvents]
+  );
+
   return (
-    <CalendarContext.Provider
-      value={{
-        calendarEvents: state.calendarEvents,
-        loading: state.loading,
-        dispatchCalendar,
-        getCalendarEvents,
-      }}
-    >
+    <CalendarContext.Provider value={value}>
       {children}
     </CalendarContext.Provider>
   );

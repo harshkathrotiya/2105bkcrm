@@ -67,7 +67,7 @@ export default function Screen10InquiryList() {
           i.eventType.toLowerCase().includes(q) ||
           (i.eventName && i.eventName.toLowerCase().includes(q)) ||
           i.venue.toLowerCase().includes(q) ||
-          (quote?.quoteNo.toLowerCase().includes(q) ?? false)
+          (quote?.quoteNo?.toLowerCase().includes(q) ?? false)
         );
       });
     }
@@ -206,6 +206,7 @@ export default function Screen10InquiryList() {
             </select>
           </div>
 
+          <div className="tbl-scroll">
           <table className="tbl">
             <thead>
               <tr>
@@ -366,6 +367,7 @@ export default function Screen10InquiryList() {
               )}
             </tbody>
           </table>
+          </div>
 
           <Pagination
             page={page}

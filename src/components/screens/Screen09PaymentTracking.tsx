@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useInvoices, useQuotations, useInquiries } from "@/lib/store";
 import * as api from "@/lib/api";
 import { useMemo } from "react";
+import { useToast } from "../ui/Toast";
 
 interface Props {
   invoiceId: string;
@@ -16,6 +17,7 @@ interface Props {
 
 export default function Screen09PaymentTracking({ invoiceId }: Props) {
   const router = useRouter();
+  const toast = useToast();
   const { invoices, dispatchInvoices } = useInvoices();
   const { quotations } = useQuotations();
   const { inquiries } = useInquiries();
@@ -98,7 +100,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
     if (!isAdvance && invoice.balanceReceived) return;
 
     if (isLed && !isAdvance && invoice.deinstallDone === false) {
-      alert("Cannot record LED balance payment — de-installation is still pending.");
+      toast.error("Cannot record LED balance payment — de-installation is still pending.");
       return;
     }
 
@@ -144,7 +146,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
   const handleToggleDeinstall = async () => {
     if (!invoice) return;
     if (isLed && !invoice.balanceReceived) {
-      alert("Full payment is required before de-installation can be completed!");
+      toast.error("Full payment is required before de-installation can be completed!");
       return;
     }
 

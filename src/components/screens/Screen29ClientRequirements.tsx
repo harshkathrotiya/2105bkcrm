@@ -7,6 +7,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import { useToast } from "../ui/Toast";
 
 interface Props {
   inquiryId: string;
@@ -14,6 +15,7 @@ interface Props {
 
 export default function Screen29ClientRequirements({ inquiryId }: Props) {
   const router = useRouter();
+  const toastApi = useToast();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -74,7 +76,7 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
       setToast(true);
       setTimeout(() => setToast(false), 2000);
     } catch (err: any) {
-      alert(err.message || "Failed to save client requirements");
+      toastApi.error(err.message || "Failed to save client requirements");
     } finally {
       setSaving(false);
     }

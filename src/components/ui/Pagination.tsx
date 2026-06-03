@@ -41,7 +41,11 @@ export default function Pagination({
   }
 
   return (
-    <div className="flex justify-between items-center text-[11px] text-tx3" style={{ paddingTop: "24px" }}>
+    <nav
+      className="flex justify-between items-center text-[11px] text-tx3"
+      style={{ paddingTop: "24px" }}
+      aria-label="Pagination"
+    >
       <span>{start}–{end} of {totalItems}</span>
       <div className="flex gap-1">
         <button
@@ -59,6 +63,8 @@ export default function Pagination({
               key={p}
               className={`btn ${page === p ? "btn-primary" : ""}`}
               style={{ padding: "5px 10px" }}
+              aria-current={page === p ? "page" : undefined}
+              aria-label={`Page ${p}`}
               onClick={() => onPageChange(p)}
             >
               {p}
@@ -73,6 +79,6 @@ export default function Pagination({
           Next ›
         </button>
       </div>
-    </div>
+    </nav>
   );
 }

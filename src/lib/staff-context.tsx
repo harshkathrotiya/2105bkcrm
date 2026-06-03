@@ -6,10 +6,12 @@ import {
   useReducer,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { Staff, StaffAssignment, StaffPayment } from "./types";
 import * as api from "./api";
+import { useToast } from "@/components/ui/Toast";
 
 // ── State ────────────────────────────────────────────────────────────────────
 interface StaffState {
@@ -51,6 +53,7 @@ const StaffContext = createContext<StaffContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function StaffProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const toast = useToast();
 
   // Fetch all staff members
   const refreshStaff = useCallback(async (params?: api.StaffFetchParams) => {
@@ -61,8 +64,9 @@ export function StaffProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("fetchStaff error:", err);
       dispatch({ type: "SET_STAFF", payload: [] });
+      toast.error("Couldn't load staff. Please refresh to try again.");
     }
-  }, []);
+  }, [toast]);
 
   // Load initial data
   useEffect(() => {
@@ -105,15 +109,18 @@ export function StaffProvider({ children }: { children: ReactNode }) {
     [refreshStaff]
   );
 
+  const value = useMemo(
+    () => ({
+      staff: state.staff,
+      loading: state.loading,
+      refreshStaff,
+      dispatchStaff,
+    }),
+    [state.staff, state.loading, refreshStaff, dispatchStaff]
+  );
+
   return (
-    <StaffContext.Provider
-      value={{
-        staff: state.staff,
-        loading: state.loading,
-        refreshStaff,
-        dispatchStaff,
-      }}
-    >
+    <StaffContext.Provider value={value}>
       {children}
     </StaffContext.Provider>
   );

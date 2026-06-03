@@ -6,10 +6,12 @@ import {
   useReducer,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { Invoice } from "./types";
 import * as api from "./api";
+import { useToast } from "@/components/ui/Toast";
 
 // ── State ────────────────────────────────────────────────────────────────────
 interface InvoicesState {
@@ -51,6 +53,7 @@ const InvoicesContext = createContext<InvoicesContextType | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function InvoicesProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const toast = useToast();
 
   // Load on mount
   const load = useCallback(async () => {
@@ -60,8 +63,9 @@ export function InvoicesProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_INVOICES", payload: data });
     } catch {
       dispatch({ type: "SET_INVOICES", payload: [] });
+      toast.error("Couldn't load invoices. Please refresh to try again.");
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     load();
@@ -98,15 +102,18 @@ export function InvoicesProvider({ children }: { children: ReactNode }) {
     [state.invoices]
   );
 
+  const value = useMemo(
+    () => ({
+      invoices: state.invoices,
+      loading: state.loading,
+      dispatchInvoices,
+      getInvoice,
+    }),
+    [state.invoices, state.loading, dispatchInvoices, getInvoice]
+  );
+
   return (
-    <InvoicesContext.Provider
-      value={{
-        invoices: state.invoices,
-        loading: state.loading,
-        dispatchInvoices,
-        getInvoice,
-      }}
-    >
+    <InvoicesContext.Provider value={value}>
       {children}
     </InvoicesContext.Provider>
   );

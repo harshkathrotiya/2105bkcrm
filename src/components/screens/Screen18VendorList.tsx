@@ -10,10 +10,14 @@ import Timeline from "../ui/Timeline";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useVendors } from "@/lib/vendors-context";
 import * as api from "@/lib/api";
+import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 import type { Vendor } from "@/lib/types";
 
 export default function Screen18VendorList() {
   const { vendors, loading, dispatchVendors } = useVendors();
+  const appToast = useToast();
+  const confirm = useConfirm();
 
   // Selected vendor for detail sidebar
   const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
@@ -155,7 +159,7 @@ export default function Screen18VendorList() {
       });
       triggerToast(`Vendor '${vendor.name}' status updated!`);
     } catch (err: any) {
-      alert(err.message || "Failed to update status");
+      appToast.error(err.message || "Failed to update status");
     }
   };
 
@@ -370,7 +374,7 @@ export default function Screen18VendorList() {
       // Reload overall equipment options
       await loadEquipment();
     } catch (err: any) {
-      alert(err.message || "Failed to link equipment");
+      appToast.error(err.message || "Failed to link equipment");
     } finally {
       setLinking(false);
     }
@@ -378,9 +382,12 @@ export default function Screen18VendorList() {
 
   const handleUnlinkEquipment = async (equipId: number) => {
     if (!selectedVendorId) return;
-    if (!confirm("Are you sure you want to unlink this equipment? It will revert to In-house ownership.")) {
-      return;
-    }
+    const ok = await confirm({
+      message: "Are you sure you want to unlink this equipment? It will revert to In-house ownership.",
+      confirmLabel: "Unlink",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api.updateEquipment(equipId, {
         ownershipType: "INHOUSE",
@@ -393,7 +400,7 @@ export default function Screen18VendorList() {
       // Reload overall equipment options
       await loadEquipment();
     } catch (err: any) {
-      alert(err.message || "Failed to unlink equipment");
+      appToast.error(err.message || "Failed to unlink equipment");
     }
   };
 
@@ -497,6 +504,7 @@ export default function Screen18VendorList() {
           </div>
 
           {/* Vendors Table */}
+          <div className="tbl-scroll">
           <table className="tbl">
             <thead>
               <tr>
@@ -574,6 +582,7 @@ export default function Screen18VendorList() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Right Side: Detail Sidebar */}

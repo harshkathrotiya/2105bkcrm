@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { TextField } from "../ui/Field";
+import Button from "../ui/Button";
 
 export default function Screen31Login() {
   const router = useRouter();
@@ -94,6 +96,7 @@ export default function Screen31Login() {
 
         {error && (
           <div
+            role="alert"
             style={{
               background: "var(--sem-rd-bg)",
               border: "1px solid var(--sem-rd-bdr)",
@@ -107,45 +110,38 @@ export default function Screen31Login() {
               gap: "8px",
             }}
           >
-            <span style={{ fontSize: "14px" }}>⚠</span>
+            <span style={{ fontSize: "14px" }} aria-hidden="true">⚠</span>
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div className="field">
-            <label className="flbl" htmlFor="username">Username</label>
-            <input
-              id="username"
-              type="text"
-              className="finp"
-              placeholder="e.g. admin"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={loading}
-              autoComplete="username"
-              required
-            />
-          </div>
+          <TextField
+            label="Username"
+            type="text"
+            placeholder="e.g. admin"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={loading}
+            autoComplete="username"
+            required
+          />
 
-          <div className="field">
-            <label className="flbl" htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              className="finp"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              autoComplete="current-password"
-              required
-            />
-          </div>
+          <TextField
+            label="Password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+            autoComplete="current-password"
+            required
+          />
 
-          <button
+          <Button
             type="submit"
-            className="btn btn-primary"
+            variant="primary"
+            loading={loading}
             style={{
               width: "100%",
               height: "38px",
@@ -154,10 +150,9 @@ export default function Screen31Login() {
               fontSize: "13px",
               fontWeight: 500,
             }}
-            disabled={loading}
           >
             {loading ? "Signing in..." : "Sign In ↗"}
-          </button>
+          </Button>
         </form>
 
         <div

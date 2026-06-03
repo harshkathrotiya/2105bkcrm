@@ -170,6 +170,7 @@ export default function Screen12InvoiceList() {
             </select>
           </div>
 
+          <div className="tbl-scroll">
           <table className="tbl">
             <thead>
               <tr>
@@ -265,6 +266,7 @@ export default function Screen12InvoiceList() {
               )}
             </tbody>
           </table>
+          </div>
 
           <Pagination
             page={page}

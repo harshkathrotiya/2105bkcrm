@@ -8,6 +8,8 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import SearchableSelect from "../ui/SearchableSelect";
+import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 import { useKits, useEquipment } from "@/lib/store";
 import * as api from "@/lib/api";
 import type { Equipment, Kit } from "@/lib/types";
@@ -27,6 +29,8 @@ function formatSerialNumber(sn: string | null | undefined): string {
 
 export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const { kits, loading: kitsLoading, refreshKits, dispatchKits } = useKits();
   const { refreshEquipment } = useEquipment();
 
@@ -125,16 +129,15 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
 
   // Handlers
   const handleDeleteKit = async () => {
-    if (!confirm("Are you sure you want to delete this kit? Accessories will be unlinked but kept in inventory.")) {
-      return;
-    }
+    const ok = await confirm({ message: "Are you sure you want to delete this kit? Accessories will be unlinked but kept in inventory.", confirmLabel: "Delete", danger: true });
+    if (!ok) return;
     try {
       await dispatchKits({ type: "DELETE_KIT", payload: kitId });
       loadDropdownEquipment();
       refreshEquipment();
       router.push("/kits");
     } catch (err: any) {
-      alert(err.message || "Failed to delete kit");
+      toast.error(err.message || "Failed to delete kit");
     }
   };
 
@@ -155,14 +158,15 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
       loadDropdownEquipment();
       refreshEquipment();
     } catch (err: any) {
-      alert(err.message || "Failed to add accessory");
+      toast.error(err.message || "Failed to add accessory");
     } finally {
       setAddingAccessory(false);
     }
   };
 
   const handleRemoveAccessory = async (equipmentId: number) => {
-    if (!confirm("Are you sure you want to remove this accessory from the kit?")) return;
+    const ok = await confirm({ message: "Are you sure you want to remove this accessory from the kit?", confirmLabel: "Remove", danger: true });
+    if (!ok) return;
     try {
       await dispatchKits({
         type: "REMOVE_ITEM",
@@ -174,7 +178,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
       loadDropdownEquipment();
       refreshEquipment();
     } catch (err: any) {
-      alert(err.message || "Failed to remove accessory");
+      toast.error(err.message || "Failed to remove accessory");
     }
   };
 
@@ -195,7 +199,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
       loadDropdownEquipment();
       refreshEquipment();
     } catch (err: any) {
-      alert(err.message || "Failed to set main body");
+      toast.error(err.message || "Failed to set main body");
     } finally {
       setSettingMainBody(false);
     }
@@ -203,7 +207,8 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
 
   const handleRemoveMainBody = async () => {
     if (!activeKit?.mainBodyId) return;
-    if (!confirm("Are you sure you want to remove the main body from this kit?")) return;
+    const ok = await confirm({ message: "Are you sure you want to remove the main body from this kit?", confirmLabel: "Remove", danger: true });
+    if (!ok) return;
     try {
       setSettingMainBody(true);
       await dispatchKits({
@@ -216,7 +221,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
       loadDropdownEquipment();
       refreshEquipment();
     } catch (err: any) {
-      alert(err.message || "Failed to remove main body");
+      toast.error(err.message || "Failed to remove main body");
     } finally {
       setSettingMainBody(false);
     }

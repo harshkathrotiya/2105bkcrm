@@ -6,10 +6,12 @@ import {
   useReducer,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { Client } from "./types";
 import * as api from "./api";
+import { useToast } from "@/components/ui/Toast";
 
 // ── State ────────────────────────────────────────────────────────────────────
 interface ClientsState {
@@ -50,6 +52,7 @@ const ClientsContext = createContext<ClientsContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function ClientsProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const toast = useToast();
 
   // Load on mount
   const load = useCallback(async () => {
@@ -59,8 +62,9 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_CLIENTS", payload: data });
     } catch {
       dispatch({ type: "SET_CLIENTS", payload: [] });
+      toast.error("Couldn't load clients. Please refresh to try again.");
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -90,10 +94,13 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
     [load]
   );
 
+  const value = useMemo(
+    () => ({ clients: state.clients, loading: state.loading, dispatchClients }),
+    [state.clients, state.loading, dispatchClients]
+  );
+
   return (
-    <ClientsContext.Provider
-      value={{ clients: state.clients, loading: state.loading, dispatchClients }}
-    >
+    <ClientsContext.Provider value={value}>
       {children}
     </ClientsContext.Provider>
   );

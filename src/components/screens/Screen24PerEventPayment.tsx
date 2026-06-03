@@ -8,6 +8,8 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
+import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 import type { Inquiry, Quotation, StaffAssignment } from "@/lib/types";
 
 interface GroupedStaffPayment {
@@ -33,6 +35,8 @@ export default function Screen24PerEventPayment() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inquiryId = searchParams.get("inquiryId") || "";
+  const toast = useToast();
+  const confirm = useConfirm();
 
   // Local State
   const [inquiry, setInquiry] = useState<Inquiry | null>(null);
@@ -173,7 +177,7 @@ export default function Screen24PerEventPayment() {
 
       await loadData();
     } catch (err: any) {
-      alert(err.message || "Failed to record payment");
+      toast.error(err.message || "Failed to record payment");
     } finally {
       setSubmitting(null);
     }
@@ -184,9 +188,11 @@ export default function Screen24PerEventPayment() {
     const pendingGroups = groupedStaff.filter((g) => g.status === "Pending");
     if (pendingGroups.length === 0) return;
 
-    if (!confirm(`Mark all ${pendingGroups.length} pending staff members as paid via ${defaultMethod}?`)) {
-      return;
-    }
+    const ok = await confirm({
+      message: `Mark all ${pendingGroups.length} pending staff members as paid via ${defaultMethod}?`,
+      confirmLabel: "Mark Paid",
+    });
+    if (!ok) return;
 
     setBulkSubmitting(true);
     try {
@@ -213,7 +219,7 @@ export default function Screen24PerEventPayment() {
 
       await loadData();
     } catch (err: any) {
-      alert(err.message || "Failed to record bulk payments");
+      toast.error(err.message || "Failed to record bulk payments");
     } finally {
       setBulkSubmitting(false);
     }

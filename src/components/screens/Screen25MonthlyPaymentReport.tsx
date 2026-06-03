@@ -7,8 +7,12 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
+import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 
 export default function Screen25MonthlyPaymentReport() {
+  const toast = useToast();
+  const confirm = useConfirm();
   // Monthly selection
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const d = new Date();
@@ -116,7 +120,7 @@ export default function Screen25MonthlyPaymentReport() {
         );
 
         if (pendingInMonth.length === 0) {
-          alert("No pending event assignments found for this staff member in this month.");
+          toast.error("No pending event assignments found for this staff member in this month.");
           setPayModal(null);
           return;
         }
@@ -137,7 +141,7 @@ export default function Screen25MonthlyPaymentReport() {
       setRefreshTrigger((prev) => prev + 1);
       setPayModal(null);
     } catch (err: any) {
-      alert(err.message || "Failed to submit payout");
+      toast.error(err.message || "Failed to submit payout");
     } finally {
       setProcessingPayment(false);
     }
@@ -149,9 +153,11 @@ export default function Screen25MonthlyPaymentReport() {
     const totalPending = report.totals.pending;
     if (totalPending === 0) return;
 
-    if (!confirm(`Mark all pending staff payouts for ${selectedMonth} as paid?`)) {
-      return;
-    }
+    const ok = await confirm({
+      message: `Mark all pending staff payouts for ${selectedMonth} as paid?`,
+      confirmLabel: "Mark Paid",
+    });
+    if (!ok) return;
 
     setProcessingPayment(true);
     try {
@@ -196,7 +202,7 @@ export default function Screen25MonthlyPaymentReport() {
 
       setRefreshTrigger((prev) => prev + 1);
     } catch (err: any) {
-      alert(err.message || "Failed to process bulk payments");
+      toast.error(err.message || "Failed to process bulk payments");
     } finally {
       setProcessingPayment(false);
     }

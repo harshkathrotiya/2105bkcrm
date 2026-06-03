@@ -8,6 +8,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useStaff } from "@/lib/store";
 import * as api from "@/lib/api";
+import { useToast } from "../ui/Toast";
 import { STAFF_ROLES } from "@/lib/validate";
 import type { Staff } from "@/lib/types";
 
@@ -30,6 +31,7 @@ interface FormData {
 export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) {
   const router = useRouter();
   const { staff, dispatchStaff } = useStaff();
+  const toast = useToast();
 
   const isEditMode = staffId !== undefined;
   const staffMember = useMemo(() => {
@@ -80,7 +82,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
       setNewRole("");
       setAddingRole(false);
     } catch (err: any) {
-      alert(err.message || "Failed to add role");
+      toast.error(err.message || "Failed to add role");
     }
   };
 
@@ -222,7 +224,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
         router.push("/staff");
       }, 1500);
     } catch (err: any) {
-      alert(err.message || "Failed to save staff profile");
+      toast.error(err.message || "Failed to save staff profile");
       setSaving(false);
     }
   };

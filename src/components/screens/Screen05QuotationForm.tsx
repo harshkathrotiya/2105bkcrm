@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
+import SearchableSelect from "../ui/SearchableSelect";
 import { useQuotations, useInquiries, useClients, useKits, useEquipment } from "@/lib/store";
 import type { QuotationRow } from "@/lib/store";
 import type { Equipment, Kit } from "@/lib/types";
 import { generateId } from "@/lib/types";
 import { generateQuoteNo, calcDays } from "@/lib/utils";
 import * as api from "@/lib/api";
+import { useToast } from "../ui/Toast";
 
 
 // ── Default position list per FRD appendix (fallback if API list not loaded) ──
@@ -43,130 +45,9 @@ function makeRow(no: number, days: number): QuotationRow {
   return { no, position: "", equip: "", rate: 0, days, amount: 0 };
 }
 
-function SearchableSelect({
-  value,
-  onChange,
-  options,
-  placeholder,
-  className = "",
-  placement = "bottom",
-}: {
-  value: string;
-  onChange: (val: string) => void;
-  options: { value: string; label: string; group?: string }[];
-  placeholder?: string;
-  className?: string;
-  placement?: "top" | "bottom";
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
-  const selectedLabel = options.find(o => o.value === value)?.label || value;
-
-  // Build grouped list when options carry a group property
-  const hasGroups = options.some(o => o.group);
-  const groupedFiltered = hasGroups
-    ? Array.from(new Set(filtered.map(o => o.group || "")))
-        .map(group => ({ group, items: filtered.filter(o => (o.group || "") === group) }))
-        .filter(g => g.items.length > 0)
-    : null;
-
-  return (
-    <div className={`relative ${className}`} ref={containerRef}>
-      <div
-        className="fsel cursor-pointer flex justify-between items-center bg-s1"
-        onClick={() => { setOpen(!open); setSearch(""); }}
-      >
-        <span className={`flex-1 min-w-0 text-left whitespace-nowrap overflow-hidden text-ellipsis ${value ? "" : "text-tx3"}`}>
-          {value ? selectedLabel : placeholder}
-        </span>
-        <span className="text-[10px] text-tx3 opacity-50 ml-2 shrink-0">▼</span>
-      </div>
-      
-      {open && (
-        <div 
-          className="absolute z-[999] left-0 w-full bg-s1 border border-b1 rounded-md shadow-lg flex flex-col min-w-[200px]" 
-          style={{ 
-            ...(placement === "top" ? { bottom: "100%", marginBottom: "4px" } : { top: "100%", marginTop: "4px" }),
-            overflow: "hidden", 
-            maxHeight: "260px" 
-          }}
-        >
-          <div className="border-b border-b1 shrink-0 bg-s1" style={{ padding: "8px" }}>
-            <input
-              type="text"
-              autoFocus
-              placeholder="Search..."
-              className="w-full text-[11px] outline-none border border-b1 rounded bg-s1"
-              style={{ padding: "6px 8px" }}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-          <div style={{ overflowY: "auto" }}>
-            {filtered.length === 0 ? (
-              <div className="text-center text-tx3 text-[10px]" style={{ padding: "12px" }}>No results</div>
-            ) : groupedFiltered ? (
-              groupedFiltered.map(({ group, items }) => (
-                <div key={group}>
-                  <div style={{
-                    padding: "5px 12px 3px",
-                    fontSize: "9px",
-                    fontWeight: 700,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase" as const,
-                    color: "var(--tx3)",
-                    background: "var(--alt2)",
-                    borderBottom: "1px solid var(--b1)",
-                  }}>
-                    {group}
-                  </div>
-                  {items.map((opt) => (
-                    <div
-                      key={opt.value}
-                      className={`text-[11px] cursor-pointer transition-colors ${opt.value === value ? "bg-bl/[0.05] text-bl font-medium" : "text-tx hover:bg-s2"}`}
-                      style={{ padding: "7px 14px" }}
-                      onClick={() => { onChange(opt.value); setOpen(false); }}
-                    >
-                      {opt.label}
-                    </div>
-                  ))}
-                </div>
-              ))
-            ) : (
-              filtered.map((opt) => (
-                <div
-                  key={opt.value}
-                  className={`text-[11px] cursor-pointer transition-colors ${opt.value === value ? "bg-bl/[0.05] text-bl font-medium" : "text-tx hover:bg-s2"}`}
-                  style={{ padding: "8px 12px" }}
-                  onClick={() => { onChange(opt.value); setOpen(false); }}
-                >
-                  {opt.label}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function Screen05QuotationForm() {
   const router = useRouter();
+  const toast = useToast();
   const searchParams = useSearchParams();
   const { quotations, dispatchQuotations } = useQuotations();
   const { inquiries, dispatchInquiries } = useInquiries();
@@ -203,7 +84,7 @@ export default function Screen05QuotationForm() {
       setNewPosition("");
       setAddingPosition(false);
     } catch (err: any) {
-      alert(err.message || "Failed to add position");
+      toast.error(err.message || "Failed to add position");
     }
   };
 
@@ -578,17 +459,17 @@ export default function Screen05QuotationForm() {
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (!row.position?.trim()) {
-        alert(`Row #${row.no}: Please select a Position.`);
+        toast.error(`Row #${row.no}: Please select a Position.`);
         setSaving(false);
         return;
       }
       if (!row.equip?.trim()) {
-        alert(`Row #${row.no}: Please select a Kit or Equipment.`);
+        toast.error(`Row #${row.no}: Please select a Kit or Equipment.`);
         setSaving(false);
         return;
       }
       if (typeof row.rate !== "number" || row.rate < 0) {
-        alert(`Row #${row.no}: Rate must be a non-negative number.`);
+        toast.error(`Row #${row.no}: Rate must be a non-negative number.`);
         setSaving(false);
         return;
       }
@@ -628,7 +509,10 @@ export default function Screen05QuotationForm() {
           type: "UPDATE_QUOTATION",
           payload: { id: existingQuotation.id, ...quoteData },
         });
-        router.push(`/quotations/${existingQuotation.id}/pdf`);
+        toast.success("Quotation updated. Open the PDF from the inquiry's Quotation tab.");
+        // Return to the inquiry hub rather than the PDF — avoids the
+        // PDF → breadcrumb-back detour; the PDF is one click away in the hub.
+        router.push(`/inquiries/${selectedInquiry.id}`);
       } else {
         // Enforce: one active quotation per inquiry — mark any remaining
         // non-Revised quotations for this inquiry as Revised before creating
@@ -667,7 +551,10 @@ export default function Screen05QuotationForm() {
             payload: { id: selectedInquiry.id, status: "Quoted" },
           });
         }
-        router.push(`/quotations/${newId}/pdf`);
+        toast.success("Quotation created. Open the PDF from the inquiry's Quotation tab.");
+        // Return to the inquiry hub rather than the PDF — keeps the user in the
+        // pipeline flow; the new quotation's PDF is one click away in the hub.
+        router.push(`/inquiries/${selectedInquiry.id}`);
       }
     } finally {
       setSaving(false);

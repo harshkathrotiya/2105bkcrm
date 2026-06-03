@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import * as api from "@/lib/api";
 import type { Equipment } from "@/lib/types";
+import { useToast } from "../ui/Toast";
 
 /**
  * ClientRatesCard — manage per-client equipment rate overrides.
@@ -11,6 +12,7 @@ import type { Equipment } from "@/lib/types";
  * a client-specific rate. Clearing an override reverts the client to the default.
  */
 export default function ClientRatesCard({ clientId }: { clientId: string }) {
+  const toast = useToast();
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [overrides, setOverrides] = useState<Record<number, number>>({});
   const [drafts, setDrafts] = useState<Record<number, string>>({});
@@ -67,7 +69,7 @@ export default function ClientRatesCard({ clientId }: { clientId: string }) {
       setOverrides((prev) => ({ ...prev, [eq.id]: rate }));
       setDrafts((prev) => { const n = { ...prev }; delete n[eq.id]; return n; });
     } catch (err: any) {
-      alert(err.message || "Failed to save rate");
+      toast.error(err.message || "Failed to save rate");
     } finally {
       setSavingId(null);
     }
@@ -80,7 +82,7 @@ export default function ClientRatesCard({ clientId }: { clientId: string }) {
       setOverrides((prev) => { const n = { ...prev }; delete n[eq.id]; return n; });
       setDrafts((prev) => { const n = { ...prev }; delete n[eq.id]; return n; });
     } catch (err: any) {
-      alert(err.message || "Failed to clear rate");
+      toast.error(err.message || "Failed to clear rate");
     } finally {
       setSavingId(null);
     }

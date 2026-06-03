@@ -211,6 +211,7 @@ export default function Screen11QuotationList() {
             </select>
           </div>
 
+          <div className="tbl-scroll">
           <table className="tbl">
             <thead>
               <tr>
@@ -516,6 +517,7 @@ export default function Screen11QuotationList() {
               )}
             </tbody>
           </table>
+          </div>
 
           <Pagination
             page={page}

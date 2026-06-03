@@ -6,10 +6,12 @@ import {
   useReducer,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { Vendor } from "./types";
 import * as api from "./api";
+import { useToast } from "@/components/ui/Toast";
 
 // ── State ────────────────────────────────────────────────────────────────────
 interface VendorsState {
@@ -51,6 +53,7 @@ const VendorsContext = createContext<VendorsContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function VendorsProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const toast = useToast();
 
   // Fetch all vendors
   const refreshVendors = useCallback(async () => {
@@ -61,8 +64,9 @@ export function VendorsProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("fetchVendors error:", err);
       dispatch({ type: "SET_VENDORS", payload: [] });
+      toast.error("Couldn't load vendors. Please refresh to try again.");
     }
-  }, []);
+  }, [toast]);
 
   // Load initial data
   useEffect(() => {
@@ -96,15 +100,18 @@ export function VendorsProvider({ children }: { children: ReactNode }) {
     [refreshVendors]
   );
 
+  const value = useMemo(
+    () => ({
+      vendors: state.vendors,
+      loading: state.loading,
+      refreshVendors,
+      dispatchVendors,
+    }),
+    [state.vendors, state.loading, refreshVendors, dispatchVendors]
+  );
+
   return (
-    <VendorsContext.Provider
-      value={{
-        vendors: state.vendors,
-        loading: state.loading,
-        refreshVendors,
-        dispatchVendors,
-      }}
-    >
+    <VendorsContext.Provider value={value}>
       {children}
     </VendorsContext.Provider>
   );

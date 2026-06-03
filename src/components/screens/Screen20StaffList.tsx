@@ -7,7 +7,9 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import Pagination from "../ui/Pagination";
 import { useStaff } from "@/lib/store";
+import { getAvatarStyle } from "@/lib/constants";
 import type { Staff } from "@/lib/types";
 
 export default function Screen20StaffList() {
@@ -115,19 +117,6 @@ export default function Screen20StaffList() {
       .slice(0, 2);
   };
 
-  const getAvatarStyle = (index: number) => {
-    const colors = [
-      { bg: "#EEEDFE", fg: "#3C3489" },
-      { bg: "#E1F5EE", fg: "#085041" },
-      { bg: "#FAECE7", fg: "#712B13" },
-      { bg: "#E6F1FB", fg: "#0C447C" },
-      { bg: "#FAEEDA", fg: "#633806" },
-      { bg: "#F1EFE8", fg: "#444441" },
-      { bg: "#FCEBEB", fg: "#791F1F" },
-      { bg: "#FBEAF0", fg: "#72243E" },
-    ];
-    return colors[index % colors.length];
-  };
 
   return (
     <>
@@ -285,6 +274,7 @@ export default function Screen20StaffList() {
               ) : (
                 <>
                   {/* Table */}
+                  <div className="tbl-scroll">
                   <table className="tbl">
                     <thead>
                       <tr>
@@ -366,46 +356,15 @@ export default function Screen20StaffList() {
                       )}
                     </tbody>
                   </table>
-
-                  {/* Pagination */}
-                  <div className="flex justify-between items-center text-[11px] text-tx3" style={{ paddingTop: "20px" }}>
-                    <span>
-                      {filteredStaff.length === 0
-                        ? "0 results"
-                        : ((currentPage - 1) * itemsPerPage + 1) + "\u2013" + Math.min(
-                            currentPage * itemsPerPage,
-                            filteredStaff.length
-                          ) + " of " + filteredStaff.length}
-                    </span>
-                    {totalPages > 1 && (
-                      <div className="flex gap-1">
-                        <button
-                          className="btn"
-                          disabled={currentPage <= 1}
-                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        >
-                          {"\u2039"} Prev
-                        </button>
-                        {Array.from({ length: totalPages }, (_, i) => (
-                          <button
-                            key={i}
-                            className={"btn " + (currentPage === i + 1 ? "btn-primary" : "")}
-                            style={{ padding: "5px 10px" }}
-                            onClick={() => setCurrentPage(i + 1)}
-                          >
-                            {i + 1}
-                          </button>
-                        ))}
-                        <button
-                          className="btn"
-                          disabled={currentPage >= totalPages}
-                          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        >
-                          Next {"\u203A"}
-                        </button>
-                      </div>
-                    )}
                   </div>
+
+                  <Pagination
+                    page={currentPage}
+                    totalPages={totalPages}
+                    totalItems={filteredStaff.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                  />
                 </>
               )}
             </div>

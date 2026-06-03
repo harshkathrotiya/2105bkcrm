@@ -16,6 +16,7 @@ import {
 } from "@/lib/store";
 import * as api from "@/lib/api";
 import { approveQuotation } from "@/lib/approve-quotation";
+import { useToast } from "../ui/Toast";
 import {
   FileText, Receipt, Users, Building2, Wallet, CalendarDays, Pencil,
   ArrowRight, CheckCircle2, AlertCircle,
@@ -27,6 +28,7 @@ type Tab = "overview" | "quotation" | "invoice" | "crew" | "equipment" | "paymen
 
 export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string }) {
   const router = useRouter();
+  const toast = useToast();
   const { inquiries, loading: inqLoading } = useInquiries();
   const { quotations, dispatchQuotations, loading: quoLoading } = useQuotations();
   const { invoices, dispatchInvoices, loading: invLoading } = useInvoices();
@@ -100,7 +102,7 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
       setTab("invoice");
       if (res.invoiceCreated) router.refresh();
     } catch (err: any) {
-      alert(err.message || "Failed to approve");
+      toast.error(err.message || "Failed to approve");
     } finally {
       setApproving(false);
     }

@@ -6,10 +6,12 @@ import {
   useReducer,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { Equipment } from "./types";
 import * as api from "./api";
+import { useToast } from "@/components/ui/Toast";
 
 // ── State ────────────────────────────────────────────────────────────────────
 interface EquipmentState {
@@ -97,6 +99,7 @@ const EquipmentContext = createContext<EquipmentContextValue | null>(null);
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function EquipmentProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const toast = useToast();
 
   // Fetch equipment list
   const refreshEquipment = useCallback(async (filters?: {
@@ -123,8 +126,9 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
           categoryCounts: initialState.categoryCounts,
         },
       });
+      toast.error("Couldn't load equipment. Please refresh to try again.");
     }
-  }, []);
+  }, [toast]);
 
   // Fetch asset summary
   const refreshAssetSummary = useCallback(async () => {
@@ -133,8 +137,9 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_SUMMARY", payload: summary });
     } catch (err) {
       console.error("fetchAssetSummary error:", err);
+      toast.error("Couldn't load the asset summary. Please refresh to try again.");
     }
-  }, []);
+  }, [toast]);
 
   // Load initial data
   useEffect(() => {
@@ -176,21 +181,35 @@ export function EquipmentProvider({ children }: { children: ReactNode }) {
     [refreshEquipment, refreshAssetSummary]
   );
 
+  const value = useMemo(
+    () => ({
+      equipment: state.items,
+      total: state.total,
+      page: state.page,
+      limit: state.limit,
+      categoryCounts: state.categoryCounts,
+      loading: state.loading,
+      assetSummary: state.assetSummary,
+      refreshEquipment,
+      refreshAssetSummary,
+      dispatchEquipment,
+    }),
+    [
+      state.items,
+      state.total,
+      state.page,
+      state.limit,
+      state.categoryCounts,
+      state.loading,
+      state.assetSummary,
+      refreshEquipment,
+      refreshAssetSummary,
+      dispatchEquipment,
+    ]
+  );
+
   return (
-    <EquipmentContext.Provider
-      value={{
-        equipment: state.items,
-        total: state.total,
-        page: state.page,
-        limit: state.limit,
-        categoryCounts: state.categoryCounts,
-        loading: state.loading,
-        assetSummary: state.assetSummary,
-        refreshEquipment,
-        refreshAssetSummary,
-        dispatchEquipment,
-      }}
-    >
+    <EquipmentContext.Provider value={value}>
       {children}
     </EquipmentContext.Provider>
   );

@@ -61,8 +61,10 @@ export default function AppSidebar() {
               href={item.path}
               className={`app-nav-item ${isActive(item.path) ? "active" : ""}`}
               title={item.label}
+              aria-label={item.label}
+              aria-current={isActive(item.path) ? "page" : undefined}
             >
-              <span className="app-nav-icon">
+              <span className="app-nav-icon" aria-hidden="true">
                 <Icon size={15} strokeWidth={1.8} />
               </span>
               <span className="app-nav-label">{item.label}</span>

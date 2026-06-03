@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
+import { TextField, TextAreaField, SelectField } from "../ui/Field";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import ClientRatesCard from "./ClientRatesCard";
 import { useClients, useInquiries, useQuotations, useInvoices } from "@/lib/store";
+import { AVATAR_PALETTE } from "@/lib/constants";
+import { useConfirm } from "../ui/ConfirmDialog";
 
 interface FormData {
   name: string;
@@ -30,6 +33,7 @@ export default function Screen02EditClient({
   clientId: string;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const { clients, dispatchClients } = useClients();
   const { inquiries } = useInquiries();
   const { quotations } = useQuotations();
@@ -100,13 +104,7 @@ export default function Screen02EditClient({
     : "—";
 
   const avatarColor = useMemo(() => {
-    const colors = [
-      { bg: "#EEEDFE", fg: "#3C3489" },
-      { bg: "#E1F5EE", fg: "#085041" },
-      { bg: "#FAECE7", fg: "#712B13" },
-      { bg: "#E6F1FB", fg: "#0C447C" },
-      { bg: "#FAEEDA", fg: "#633806" },
-    ];
+    const colors = AVATAR_PALETTE.slice(0, 5);
     return colors[form.name.length % colors.length];
   }, [form.name]);
 
@@ -190,9 +188,13 @@ export default function Screen02EditClient({
     }, 2000);
   };
 
-  const handleDelete = () => {
-    if (!client || saving || !confirm("Are you sure you want to delete this client?"))
-      return;
+  const handleDelete = async () => {
+    if (!client || saving) return;
+    const ok = await confirm({
+      message: "Are you sure you want to delete this client?",
+      danger: true,
+    });
+    if (!ok) return;
     setSaving(true);
     dispatchClients({ type: "DELETE_CLIENT", payload: clientId });
     setToastMessage("Client deleted!");
@@ -284,60 +286,56 @@ export default function Screen02EditClient({
             <div className="card">
               <div className="card-t">Basic information</div>
               <div className="fgrid">
-                <div className="field span2">
-                  <div className="flbl">Client name *</div>
-                  <input
-                    className="finp"
-                    value={form.name}
-                    onChange={(e) => update("name", e.target.value)}
-                    placeholder="e.g. Adani Group"
-                  />
-                </div>
-                <div className="field">
-                  <div className="flbl">Mobile number * (10 digits)</div>
-                  <input
-                    className="finp"
-                    value={form.mobile}
-                    onChange={(e) =>
-                      update(
-                        "mobile",
-                        e.target.value.replace(/\D/g, "").slice(0, 10)
-                      )
-                    }
-                    placeholder="9825011111"
-                  />
-                </div>
-                <div className="field">
-                  <div className="flbl">Contact person *</div>
-                  <input
-                    className="finp"
-                    value={form.contact}
-                    onChange={(e) => update("contact", e.target.value)}
-                    placeholder="e.g. Vikram Shah"
-                  />
-                </div>
-                <div className="field span2">
-                  <div className="flbl">Email (optional)</div>
-                  <input
-                    className="finp"
-                    value={form.email}
-                    onChange={(e) => update("email", e.target.value)}
-                    placeholder="email@example.com"
-                  />
-                </div>
-                <div className="field">
-                  <div className="flbl">Status</div>
-                  <select
-                    className="fsel"
-                    value={form.status}
-                    onChange={(e) =>
-                      update("status", e.target.value as "Active" | "Inactive")
-                    }
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
+                <TextField
+                  className="span2"
+                  label="Client name"
+                  required
+                  value={form.name}
+                  onChange={(e) => update("name", e.target.value)}
+                  placeholder="e.g. Adani Group"
+                  error={!validations.name && form.name.length > 0 ? "At least 2 characters" : undefined}
+                />
+                <TextField
+                  label="Mobile number"
+                  required
+                  hint="10 digits"
+                  value={form.mobile}
+                  onChange={(e) =>
+                    update(
+                      "mobile",
+                      e.target.value.replace(/\D/g, "").slice(0, 10)
+                    )
+                  }
+                  placeholder="9825011111"
+                  error={!validations.mobile && form.mobile.length > 0 ? "Enter a 10-digit number" : undefined}
+                />
+                <TextField
+                  label="Contact person"
+                  required
+                  value={form.contact}
+                  onChange={(e) => update("contact", e.target.value)}
+                  placeholder="e.g. Vikram Shah"
+                  error={!validations.contact && form.contact.length > 0 ? "At least 2 characters" : undefined}
+                />
+                <TextField
+                  className="span2"
+                  label="Email"
+                  hint="optional"
+                  value={form.email}
+                  onChange={(e) => update("email", e.target.value)}
+                  placeholder="email@example.com"
+                  error={!validations.email && form.email.length > 0 ? "Enter a valid email" : undefined}
+                />
+                <SelectField
+                  label="Status"
+                  value={form.status}
+                  onChange={(e) =>
+                    update("status", e.target.value as "Active" | "Inactive")
+                  }
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </SelectField>
               </div>
             </div>
 
@@ -346,8 +344,9 @@ export default function Screen02EditClient({
               <div className="card-t">Tax information</div>
               <div className="fgrid">
                 <div className="field">
-                  <div className="flbl">GST number (15 char)</div>
+                  <label className="flbl" htmlFor="client-gst">GST number (15 char)</label>
                   <input
+                    id="client-gst"
                     className="finp font-mono text-[11px]"
                     value={form.gst}
                     onChange={(e) =>
@@ -355,11 +354,18 @@ export default function Screen02EditClient({
                     }
                     maxLength={15}
                     placeholder="24XXXXX1234X1ZX"
+                    aria-invalid={!validations.gst && form.gst.length > 0 ? true : undefined}
+                    aria-describedby={!validations.gst && form.gst.length > 0 ? "client-gst-err" : undefined}
+                    style={!validations.gst && form.gst.length > 0 ? { borderColor: "var(--rd)" } : undefined}
                   />
+                  {!validations.gst && form.gst.length > 0 && (
+                    <span id="client-gst-err" role="alert" className="text-[11px] text-rd">Invalid GST format</span>
+                  )}
                 </div>
                 <div className="field">
-                  <div className="flbl">PAN number (10 char)</div>
+                  <label className="flbl" htmlFor="client-pan">PAN number (10 char)</label>
                   <input
+                    id="client-pan"
                     className="finp font-mono text-[11px]"
                     value={form.pan}
                     onChange={(e) =>
@@ -367,7 +373,13 @@ export default function Screen02EditClient({
                     }
                     maxLength={10}
                     placeholder="ABCDE1234F"
+                    aria-invalid={!validations.pan && form.pan.length > 0 ? true : undefined}
+                    aria-describedby={!validations.pan && form.pan.length > 0 ? "client-pan-err" : undefined}
+                    style={!validations.pan && form.pan.length > 0 ? { borderColor: "var(--rd)" } : undefined}
                   />
+                  {!validations.pan && form.pan.length > 0 && (
+                    <span id="client-pan-err" role="alert" className="text-[11px] text-rd">Invalid PAN format</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -376,38 +388,33 @@ export default function Screen02EditClient({
             <div className="card">
               <div className="card-t">Address</div>
               <div className="fgrid">
-                <div className="field span2">
-                  <div className="flbl">Address line</div>
-                  <textarea
-                    className="ftxt"
-                    value={form.addressLine}
-                    onChange={(e) => update("addressLine", e.target.value)}
-                    placeholder="Street, area..."
-                  />
-                </div>
-                <div className="field">
-                  <div className="flbl">City *</div>
-                  <input
-                    className="finp"
-                    value={form.city}
-                    onChange={(e) => update("city", e.target.value)}
-                  />
-                </div>
-                <div className="field">
-                  <div className="flbl">District *</div>
-                  <input
-                    className="finp"
-                    value={form.district}
-                    onChange={(e) => update("district", e.target.value)}
-                  />
-                </div>
-                <div className="field">
-                  <div className="flbl">State *</div>
-                  <select
-                    className="fsel"
-                    value={form.state}
-                    onChange={(e) => update("state", e.target.value)}
-                  >
+                <TextAreaField
+                  className="span2"
+                  label="Address line"
+                  value={form.addressLine}
+                  onChange={(e) => update("addressLine", e.target.value)}
+                  placeholder="Street, area..."
+                />
+                <TextField
+                  label="City"
+                  required
+                  value={form.city}
+                  onChange={(e) => update("city", e.target.value)}
+                  error={!validations.city && form.city.length > 0 ? "At least 2 characters" : undefined}
+                />
+                <TextField
+                  label="District"
+                  required
+                  value={form.district}
+                  onChange={(e) => update("district", e.target.value)}
+                  error={!validations.district && form.district.length > 0 ? "At least 2 characters" : undefined}
+                />
+                <SelectField
+                  label="State"
+                  required
+                  value={form.state}
+                  onChange={(e) => update("state", e.target.value)}
+                >
                     <option>Andhra Pradesh</option>
                     <option>Arunachal Pradesh</option>
                     <option>Assam</option>
@@ -445,20 +452,16 @@ export default function Screen02EditClient({
                     <option>Ladakh</option>
                     <option>Lakshadweep</option>
                     <option>Puducherry</option>
-                  </select>
-                </div>
-                <div className="field">
-                  <div className="flbl">PIN code</div>
-                  <input
-                    className="finp"
-                    value={form.pin}
-                    onChange={(e) =>
-                      update("pin", e.target.value.replace(/\D/g, ""))
-                    }
-                    maxLength={6}
-                    placeholder="390001"
-                  />
-                </div>
+                </SelectField>
+                <TextField
+                  label="PIN code"
+                  value={form.pin}
+                  onChange={(e) =>
+                    update("pin", e.target.value.replace(/\D/g, ""))
+                  }
+                  maxLength={6}
+                  placeholder="390001"
+                />
               </div>
             </div>
 

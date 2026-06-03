@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
 import type { Equipment } from "@/lib/types";
+import { useToast } from "../ui/Toast";
 
 export default function Screen19AssetReportPDF() {
   const router = useRouter();
+  const toast = useToast();
   const [summary, setSummary] = useState<api.EquipmentSummary | null>(null);
   const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,7 +108,7 @@ export default function Screen19AssetReportPDF() {
       URL.revokeObjectURL(url);
     } catch (err: any) {
       console.error("CSV export failed:", err);
-      alert("Export failed: " + (err.message || "Unknown error"));
+      toast.error("Export failed: " + (err.message || "Unknown error"));
     } finally {
       setExporting(false);
     }

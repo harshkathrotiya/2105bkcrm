@@ -4,6 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-context";
 import { CurrentUserProvider } from "@/lib/current-user-provider";
 import AppLayout from "@/components/layout/AppLayout";
+import { ToastProvider } from "@/components/ui/Toast";
+import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 
 const ibmPlexSans = IBM_Plex_Sans({
   variable: "--font-ibm-plex-sans",
@@ -54,7 +56,11 @@ export default function RootLayout({
       <body className="font-sans bg-bg text-tx min-h-screen">
         <ThemeProvider>
           <CurrentUserProvider>
-            <AppLayout>{children}</AppLayout>
+            <ToastProvider>
+              <ConfirmProvider>
+                <AppLayout>{children}</AppLayout>
+              </ConfirmProvider>
+            </ToastProvider>
           </CurrentUserProvider>
         </ThemeProvider>
       </body>

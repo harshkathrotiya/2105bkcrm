@@ -8,6 +8,8 @@ import LoadingSkeleton from "../ui/LoadingSkeleton";
 import Badge from "../ui/Badge";
 import * as api from "@/lib/api";
 import { useEquipment, useQuotations, useInvoices } from "@/lib/store";
+import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 
 interface Screen15EquipmentDetailProps {
   equipmentId: number;
@@ -17,11 +19,11 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
   const { refreshEquipment } = useEquipment();
   const { quotations } = useQuotations();
   const { invoices } = useInvoices();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
   const [returningId, setReturningId] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -55,21 +57,22 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
   }, [equipmentId, refreshKey]);
 
   const handleReturn = async (bookingId: number) => {
-    if (!confirm("Are you sure you want to mark this item as returned? This updates the equipment status to AVAILABLE.")) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Mark item as returned?",
+      message: "This updates the equipment status to AVAILABLE.",
+      confirmLabel: "Mark returned",
+    });
+    if (!ok) return;
     try {
       setReturningId(bookingId);
       await api.returnEquipmentBooking(bookingId);
-      setToastMessage("Item returned and set to AVAILABLE!");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
-      
+      toast.success("Item returned and set to AVAILABLE!");
+
       // Refresh current details via key & global store
       setRefreshKey((prev) => prev + 1);
       await refreshEquipment();
     } catch (err: any) {
-      alert(err.message || "Failed to mark as returned");
+      toast.error(err.message || "Failed to mark as returned");
     } finally {
       setReturningId(null);
     }
@@ -463,20 +466,6 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
           </table>
         </div>
       </ScreenFrame>
-
-      {showToast && (
-        <div
-          className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-[13px] font-medium shadow-lg"
-          style={{
-            background: "var(--sem-gr-bg)",
-            border: "1px solid var(--sem-gr-bdr)",
-            color: "var(--sem-gr-tx)",
-          }}
-        >
-          <span>✓</span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </>
   );
 }

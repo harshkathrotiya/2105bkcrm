@@ -5,10 +5,12 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import { useToast } from "../ui/Toast";
 import { type Permission, MODULE_PERMISSIONS } from "@/lib/permissions";
 
 
 export default function Screen33PermissionsMatrix() {
+  const toast = useToast();
   const [dbRoles, setDbRoles] = useState<Record<string, string[]>>({});
   const [rolesList, setRolesList] = useState<string[]>(["Admin", "Manager", "Operator"]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +65,7 @@ export default function Screen33PermissionsMatrix() {
         throw new Error(data.error ?? "Failed to save permissions");
       }
     } catch (err: any) {
-      alert(err.message || "Failed to update permissions");
+      toast.error(err.message || "Failed to update permissions");
       loadRoles(); // Rollback
     }
   };

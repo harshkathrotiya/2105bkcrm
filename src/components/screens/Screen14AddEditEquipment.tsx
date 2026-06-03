@@ -8,6 +8,8 @@ import ScreenFrame from "../ui/ScreenFrame";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useEquipment } from "@/lib/store";
 import * as api from "@/lib/api";
+import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 
 interface Screen14AddEditEquipmentProps {
   equipmentId?: number;
@@ -16,6 +18,8 @@ interface Screen14AddEditEquipmentProps {
 export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEditEquipmentProps) {
   const router = useRouter();
   const { dispatchEquipment } = useEquipment();
+  const toast = useToast();
+  const confirm = useConfirm();
   
   const isEdit = typeof equipmentId !== "undefined";
   const [loading, setLoading] = useState(isEdit);
@@ -74,7 +78,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
       setNewCategory("");
       setAddingCategory(false);
     } catch (err: any) {
-      alert(err.message || "Failed to add category");
+      toast.error(err.message || "Failed to add category");
     }
   };
 
@@ -225,7 +229,13 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
   };
 
   const handleDelete = async () => {
-    if (saving || !confirm("Are you sure you want to retire/delete this equipment item?")) return;
+    if (saving) return;
+    const ok = await confirm({
+      message: "Are you sure you want to retire/delete this equipment item?",
+      confirmLabel: "Retire/Delete",
+      danger: true,
+    });
+    if (!ok) return;
     setSaving(true);
     setError("");
     try {

@@ -7,10 +7,13 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import Pagination from "../ui/Pagination";
 import { useEquipment } from "@/lib/store";
+import { useToast } from "../ui/Toast";
 
 export default function Screen13EquipmentList() {
   const router = useRouter();
+  const toast = useToast();
   const {
     equipment,
     total,
@@ -123,7 +126,7 @@ export default function Screen13EquipmentList() {
       URL.revokeObjectURL(url);
     } catch (err: any) {
       console.error("CSV export failed:", err);
-      alert("Export failed: " + (err.message || "Unknown error"));
+      toast.error("Export failed: " + (err.message || "Unknown error"));
     } finally {
       setExporting(false);
     }
@@ -376,6 +379,7 @@ export default function Screen13EquipmentList() {
                 <LoadingSkeleton rows={6} message="Querying equipment..." />
               ) : (
                 <>
+                  <div className="tbl-scroll">
                   <table className="tbl">
                     <thead>
                       <tr>
@@ -444,44 +448,15 @@ export default function Screen13EquipmentList() {
                       )}
                     </tbody>
                   </table>
-
-                  {/* Pagination */}
-                  <div className="flex justify-between items-center text-[11px] text-tx3" style={{ paddingTop: "20px" }}>
-                    <span>
-                      {total === 0
-                        ? "0 results"
-                        : ((currentPage - 1) * 20 + 1) + "\u2013" + Math.min(
-                            currentPage * 20,
-                            total
-                          ) + " of " + total}
-                    </span>
-                    <div className="flex gap-1">
-                      <button
-                        className="btn"
-                        disabled={currentPage <= 1}
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      >
-                        {"\u2039"} Prev
-                      </button>
-                      {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                          key={i}
-                          className={"btn " + (currentPage === i + 1 ? "btn-primary" : "")}
-                          style={{ padding: "5px 10px" }}
-                          onClick={() => setCurrentPage(i + 1)}
-                        >
-                          {i + 1}
-                        </button>
-                      ))}
-                      <button
-                        className="btn"
-                        disabled={currentPage >= totalPages}
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      >
-                        Next {"\u203A"}
-                      </button>
-                    </div>
                   </div>
+
+                  <Pagination
+                    page={currentPage}
+                    totalPages={totalPages}
+                    totalItems={total}
+                    itemsPerPage={20}
+                    onPageChange={setCurrentPage}
+                  />
                 </>
               )}
             </div>

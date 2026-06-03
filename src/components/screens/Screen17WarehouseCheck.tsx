@@ -7,6 +7,8 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 import * as api from "@/lib/api";
 import type { Vendor } from "@/lib/types";
 import { useInvoices, useInquiries } from "@/lib/store";
@@ -52,6 +54,8 @@ function equipmentMatchesSearch(candidate: string, terms: string[]): boolean {
 
 export default function Screen17WarehouseCheck() {
   const searchParams = useSearchParams();
+  const toast = useToast();
+  const confirm = useConfirm();
   const inquiryId = searchParams.get("inquiryId");
 
   const [data, setData] = useState<api.WarehouseCheckResult | null>(null);
@@ -250,7 +254,7 @@ export default function Screen17WarehouseCheck() {
       const updatedWh = await api.fetchWarehouseCheck(inquiryId);
       setData(updatedWh);
     } catch (err: any) {
-      alert(err.message || "Failed to assign equipment");
+      toast.error(err.message || "Failed to assign equipment");
     } finally {
       setSavingRows((prev) => ({ ...prev, [positionStr]: false }));
     }
@@ -301,7 +305,7 @@ export default function Screen17WarehouseCheck() {
       const updatedWh = await api.fetchWarehouseCheck(inquiryId);
       setData(updatedWh);
     } catch (err: any) {
-      alert(err.message || "Failed to assign vendor");
+      toast.error(err.message || "Failed to assign vendor");
     } finally {
       setSavingRows((prev) => ({ ...prev, [positionStr]: false }));
     }
@@ -319,7 +323,7 @@ export default function Screen17WarehouseCheck() {
       const updatedWh = await api.fetchWarehouseCheck(inquiryId!);
       setData(updatedWh);
     } catch (err: any) {
-      alert(err.message || "Failed to confirm handover");
+      toast.error(err.message || "Failed to confirm handover");
     } finally {
       setHandoverLoading((prev) => ({ ...prev, [bookingId]: false }));
     }
@@ -337,7 +341,7 @@ export default function Screen17WarehouseCheck() {
       const updatedWh = await api.fetchWarehouseCheck(inquiryId!);
       setData(updatedWh);
     } catch (err: any) {
-      alert(err.message || "Failed to return item");
+      toast.error(err.message || "Failed to return item");
     } finally {
       setHandoverLoading((prev) => ({ ...prev, [bookingId]: false }));
     }
@@ -350,13 +354,15 @@ export default function Screen17WarehouseCheck() {
       .map((b) => b.id);
 
     if (bookedIds.length === 0) {
-      alert("No pending bookings to confirm handover.");
+      toast.error("No pending bookings to confirm handover.");
       return;
     }
 
-    if (!confirm(`Are you sure you want to bulk-confirm handover for all ${bookedIds.length} booked item(s)? This will set their statuses to OUT.`)) {
-      return;
-    }
+    const ok = await confirm({
+      message: `Are you sure you want to bulk-confirm handover for all ${bookedIds.length} booked item(s)? This will set their statuses to OUT.`,
+      confirmLabel: "Confirm handover",
+    });
+    if (!ok) return;
 
     try {
       setBulkConfirming(true);
@@ -368,7 +374,7 @@ export default function Screen17WarehouseCheck() {
       const updatedWh = await api.fetchWarehouseCheck(inquiryId!);
       setData(updatedWh);
     } catch (err: any) {
-      alert(err.message || "Bulk handover confirmation failed");
+      toast.error(err.message || "Bulk handover confirmation failed");
     } finally {
       setBulkConfirming(false);
     }
@@ -433,7 +439,7 @@ export default function Screen17WarehouseCheck() {
       const updatedWh = await api.fetchWarehouseCheck(inquiryId);
       setData(updatedWh);
     } catch (err: any) {
-      alert(err.message || "Failed to save logistics");
+      toast.error(err.message || "Failed to save logistics");
     } finally {
       setSavingLogistics(false);
     }
@@ -828,7 +834,8 @@ export default function Screen17WarehouseCheck() {
                                 className="btn btn-danger"
                                 style={{ padding: "3px 8px", fontSize: "10.5px" }}
                                 onClick={async () => {
-                                  if (confirm("Are you sure you want to release BK stock panels?")) {
+                                  const ok = await confirm({ message: "Are you sure you want to release BK stock panels?", confirmLabel: "Release", danger: true });
+                                  if (ok) {
                                     await api.returnEquipmentBooking(currentInhouseBooking.id);
                                     window.location.reload();
                                   }
@@ -924,7 +931,8 @@ export default function Screen17WarehouseCheck() {
                                   className="btn btn-danger"
                                   style={{ padding: "3px 8px", fontSize: "10.5px" }}
                                   onClick={async () => {
-                                    if (confirm("Are you sure you want to release vendor panels?")) {
+                                    const ok = await confirm({ message: "Are you sure you want to release vendor panels?", confirmLabel: "Release", danger: true });
+                                    if (ok) {
                                       await api.returnEquipmentBooking(currentVendorBooking.id);
                                       window.location.reload();
                                     }
@@ -943,11 +951,11 @@ export default function Screen17WarehouseCheck() {
                                     const vId = Number(vEl?.value);
                                     const rate = Number(rEl?.value) || 0;
                                     if (!vId) {
-                                      alert("Please select a vendor.");
+                                      toast.error("Please select a vendor.");
                                       return;
                                     }
                                     if (rate <= 0) {
-                                      alert("Please enter a valid rate per sq.ft.");
+                                      toast.error("Please enter a valid rate per sq.ft.");
                                       return;
                                     }
                                     await api.createEquipmentBooking({
@@ -1154,7 +1162,7 @@ export default function Screen17WarehouseCheck() {
                               if (el && el.value) {
                                 handleAssignInhouse(row.no, el.value);
                               } else {
-                                alert("Please select an item from the dropdown first.");
+                                toast.error("Please select an item from the dropdown first.");
                               }
                             }}
                             disabled={isSaving}
@@ -1316,7 +1324,7 @@ export default function Screen17WarehouseCheck() {
                               if (vendorEl && vendorEl.value && tempRate) {
                                 handleAssignVendor(row.no, vendorEl.value, tempRate);
                               } else {
-                                alert("Please select a vendor and enter their rental rate.");
+                                toast.error("Please select a vendor and enter their rental rate.");
                               }
                             }}
                             disabled={isSaving || !tempRate}

@@ -118,6 +118,7 @@ export default function Screen01ClientList() {
             </select>
           </div>
 
+          <div className="tbl-scroll">
           <table className="tbl">
             <thead>
               <tr>
@@ -257,6 +258,7 @@ export default function Screen01ClientList() {
               )}
             </tbody>
           </table>
+          </div>
 
           <Pagination
             page={page}

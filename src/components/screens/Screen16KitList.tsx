@@ -300,6 +300,7 @@ export default function Screen16KitList() {
             </div>
           ) : (
             <>
+              <div className="tbl-scroll">
               <table className="tbl">
                 <thead>
                   <tr>
@@ -358,6 +359,7 @@ export default function Screen16KitList() {
                   )}
                 </tbody>
               </table>
+              </div>
 
               {/* Pagination */}
               {filteredKits.length > ITEMS_PER_PAGE && (

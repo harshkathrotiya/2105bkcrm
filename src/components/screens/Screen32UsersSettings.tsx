@@ -5,6 +5,8 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
+import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 import { useCurrentUser } from "@/lib/use-current-user";
 
 interface UserRow {
@@ -24,6 +26,8 @@ const ROLE_BADGE: Record<string, "rd" | "bl" | "gr" | "gy"> = {
 
 export default function Screen32UsersSettings() {
   const { user: currentUser } = useCurrentUser();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -122,10 +126,15 @@ export default function Screen32UsersSettings() {
   };
 
   const handleDelete = async (u: UserRow) => {
-    if (!confirm(`Delete user "${u.username}"? This cannot be undone.`)) return;
+    const ok = await confirm({
+      message: `Delete user "${u.username}"? This cannot be undone.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/users/${u.id}`, { method: "DELETE" });
     const data = await res.json();
-    if (!res.ok) { alert(data.error ?? "Failed to delete"); return; }
+    if (!res.ok) { toast.error(data.error ?? "Failed to delete"); return; }
     load();
   };
 

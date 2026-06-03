@@ -2,13 +2,8 @@
 
 import { useTheme } from "@/lib/theme-context";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { ROLE_COLORS } from "@/lib/constants";
 import GlobalSearch from "./GlobalSearch";
-
-const ROLE_COLORS: Record<string, string> = {
-  Admin:    "var(--sem-rd-tx)",
-  Manager:  "var(--sem-bl-tx)",
-  Operator: "var(--sem-gr-tx)",
-};
 
 export default function SiteHeader() {
   const { theme, toggleTheme } = useTheme();
