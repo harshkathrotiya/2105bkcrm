@@ -7,64 +7,65 @@ datasource db {
 }
 
 model Client {
-  id           String    @id
-  initials     String
-  bg           String    @default("#EEEDFE")
-  fg           String    @default("#3C3489")
-  name         String
-  contact      String
-  mobile       String
-  email        String    @default("")
-  gst          String    @default("")
-  pan          String    @default("")
-  address_line String    @default("")
-  city         String    @default("")
-  district     String    @default("")
-  state        String    @default("")
-  pin          String    @default("")
-  status       String    @default("Active")
-  created_at   String
-  updated_at   String?
-  inquiries    Inquiry[]
+  id              String                @id
+  initials        String
+  bg              String                @default("#EEEDFE")
+  fg              String                @default("#3C3489")
+  name            String
+  contact         String
+  mobile          String
+  email           String                @default("")
+  gst             String                @default("")
+  pan             String                @default("")
+  address_line    String                @default("")
+  city            String                @default("")
+  district        String                @default("")
+  state           String                @default("")
+  pin             String                @default("")
+  status          String                @default("Active")
+  created_at      String
+  updated_at      String?
+  inquiries       Inquiry[]
+  equipment_rates ClientEquipmentRate[]
 
   @@map("clients")
 }
 
 model Inquiry {
-  id                 String             @id
+  id                 String @id
   client_id          String
-  client             Client             @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  client             Client @relation(fields: [client_id], references: [id], onDelete: Cascade)
   event_type         String
-  event_name         String             @default("")
+  event_name         String @default("")
   start_date         String
   end_date           String
-  start_time         String             @default("")
-  end_time           String             @default("")
-  venue              String             @default("")
-  notes              String             @default("")
-  status             String             @default("New")
-  department         String             @default("VIDEO") // "VIDEO" | "LED" | "MERGED"
-  power_requirements String             @default("")
-  tables_space       String             @default("")
-  other_requirements String             @default("")
-  
+  start_time         String @default("")
+  end_time           String @default("")
+  venue              String @default("")
+  notes              String @default("")
+  status             String @default("New")
+  department         String @default("VIDEO") // "VIDEO" | "LED" | "MERGED"
+  power_requirements String @default("")
+  tables_space       String @default("")
+  other_requirements String @default("")
+
   // LED Specific Fields (Nullable to support Video-only inquiries)
-  screen_width       Float?
-  screen_height      Float?
-  screen_area_sqft   Float?
-  total_cabinets     Int?
-  led_type           String?            // P4 | P3 | P2 | FLOOR | P4_CURVED
-  rate_per_sqft      Float?
-  location           String             @default("INDOOR") // INDOOR | OUTDOOR
-  stage_type         String?            // Main stage, Backdrop, etc.
+  screen_width     Float?
+  screen_height    Float?
+  screen_area_sqft Float?
+  total_cabinets   Int?
+  led_type         String? // P4 | P3 | P2 | FLOOR | P4_CURVED
+  rate_per_sqft    Float?
+  location         String  @default("INDOOR") // INDOOR | OUTDOOR
+  stage_type       String? // Main stage, Backdrop, etc.
 
   // LED Dispatch fields
-  dispatch_date      String?
-  dispatch_time      String?            @default("06:00 AM")
-  vehicle1_number    String?
-  vehicle1_driver    String?
-  vehicle2_number    String?
-  vehicle2_driver    String?
+  dispatch_date   String?
+  dispatch_time   String? @default("06:00 AM")
+  vehicle1_number String?
+  vehicle1_driver String?
+  vehicle2_number String?
+  vehicle2_driver String?
 
   created_at         String
   updated_at         String?
@@ -185,10 +186,18 @@ model Equipment {
   created_at     String
   updated_at     String?
   bookings       EquipmentBooking[]
-  ownership_type String             @default("INHOUSE")
+  ownership_type String             @default("INHOUSE") // "INHOUSE" | "VENDOR" | "STAFF"
   vendor_id      Int?
   vendor         Vendor?            @relation(fields: [vendor_id], references: [id], onDelete: SetNull)
+  owner_staff_id Int?
+  owner_staff    Staff?             @relation("StaffOwnedEquipment", fields: [owner_staff_id], references: [id], onDelete: SetNull)
 
+  // Per-day rental rate charged to clients for this equipment (default; client overrides live in client_equipment_rates)
+  default_rate Float?
+  // Client-specific rate overrides for this equipment
+  client_rates ClientEquipmentRate[]
+
+  @@index([owner_staff_id])
   @@map("equipment")
 }
 
@@ -210,45 +219,51 @@ model Vendor {
 }
 
 model Staff {
-  id             Int               @id @default(autoincrement())
-  name           String
-  phone          String
-  role           String
-  staff_type     String
-  payment_type   String
-  department     String             @default("VIDEO") // "VIDEO" | "LED" | "BOTH"
-  rate_per_day   Float?
-  monthly_salary Float?
-  with_equipment Int               @default(0)
-  equipment_desc String?
-  aadhar_number  String?
-  aadhar_front   String?
-  aadhar_back    String?
-  is_active      Int               @default(1)
-  created_at     String
-  updated_at     String?
-  assignments    StaffAssignment[]
-  payments       StaffPayment[]
+  id                     Int               @id @default(autoincrement())
+  name                   String
+  phone                  String
+  role                   String
+  staff_type             String
+  payment_type           String
+  department             String            @default("VIDEO") // "VIDEO" | "LED" | "BOTH"
+  rate_per_day           Float?
+  monthly_salary         Float?
+  with_equipment         Int               @default(0)
+  equipment_desc         String?
+  // Extra per-day rate added when this staff brings their own equipment to a job
+  equipment_rate_per_day Float?
+  aadhar_number          String?
+  aadhar_front           String?
+  aadhar_back            String?
+  is_active              Int               @default(1)
+  created_at             String
+  updated_at             String?
+  assignments            StaffAssignment[]
+  payments               StaffPayment[]
+  owned_equipment        Equipment[]       @relation("StaffOwnedEquipment")
 
   @@map("staff")
 }
 
 model StaffAssignment {
-  id            Int            @id @default(autoincrement())
-  staff_id      Int
-  staff         Staff          @relation(fields: [staff_id], references: [id], onDelete: Cascade)
-  inquiry_id    String
-  inquiry       Inquiry        @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
-  position_no   Int?
-  position_name String?
-  days_assigned Int
-  rate_per_day  Float
-  total_amount  Float
-  is_duplicate  Int            @default(0)
-  confirmed_dup Int            @default(0)
-  reporting_time String        @default("09:00 AM")
-  created_at    String
-  payments      StaffPayment[]
+  id                     Int            @id @default(autoincrement())
+  staff_id               Int
+  staff                  Staff          @relation(fields: [staff_id], references: [id], onDelete: Cascade)
+  inquiry_id             String
+  inquiry                Inquiry        @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  position_no            Int?
+  position_name          String?
+  days_assigned          Int
+  rate_per_day           Float
+  // Whether the staff brought their own equipment on this job, and the extra per-day rate for it
+  with_equipment         Int            @default(0)
+  equipment_rate_per_day Float          @default(0)
+  total_amount           Float
+  is_duplicate           Int            @default(0)
+  confirmed_dup          Int            @default(0)
+  reporting_time         String         @default("09:00 AM")
+  created_at             String
+  payments               StaffPayment[]
 
   @@index([inquiry_id])
   @@index([staff_id])
@@ -318,14 +333,14 @@ model User {
 }
 
 model LedDispatchBox {
-  id          Int      @id @default(autoincrement())
-  inquiry_id  String
-  inquiry     Inquiry  @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
-  box_number  Int
-  contents    String
-  cabinets    Int
-  vehicle     String   // "Vehicle 1" | "Vehicle 2"
-  source      String   // "BK_MEDIA" | "VENDOR"
+  id         Int     @id @default(autoincrement())
+  inquiry_id String
+  inquiry    Inquiry @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  box_number Int
+  contents   String
+  cabinets   Int
+  vehicle    String // "Vehicle 1" | "Vehicle 2"
+  source     String // "BK_MEDIA" | "VENDOR"
 
   @@map("led_dispatch_boxes")
 }
@@ -337,4 +352,40 @@ model RolePermission {
 
   @@unique([role, permission])
   @@map("role_permissions")
+}
+
+// Generic user-managed option lists (e.g. staff roles, quotation positions).
+// Lets users add their own choices to dropdowns without a code change.
+model OptionList {
+  id         Int     @id @default(autoincrement())
+  type       String // "STAFF_ROLE" | "QUOTATION_POSITION"
+  value      String // the option text shown in the dropdown
+  // Optional metadata for quotation positions (default equipment + rate)
+  meta_equip String?
+  meta_rate  Float?
+  sort_order Int     @default(0)
+  is_active  Int     @default(1)
+  created_at String
+
+  @@unique([type, value])
+  @@index([type])
+  @@map("option_lists")
+}
+
+// Per-client rate override for a specific equipment item.
+// If no row exists for a (client, equipment) pair, the equipment's default_rate is used.
+model ClientEquipmentRate {
+  id           Int       @id @default(autoincrement())
+  client_id    String
+  client       Client    @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  equipment_id Int
+  equipment    Equipment @relation(fields: [equipment_id], references: [id], onDelete: Cascade)
+  rate         Float
+  created_at   String
+  updated_at   String?
+
+  @@unique([client_id, equipment_id])
+  @@index([client_id])
+  @@index([equipment_id])
+  @@map("client_equipment_rates")
 }

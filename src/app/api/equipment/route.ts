@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getEquipment, createEquipment, getEquipmentCategoryCounts } from "@/lib/queries/equipment";
-import { Validator, EQUIPMENT_CATEGORIES, EQUIPMENT_STATUSES } from "@/lib/validate";
+import { Validator, EQUIPMENT_STATUSES } from "@/lib/validate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
 
     const v = new Validator(body);
     v.required("productName", "product name").minLength("productName", 2).maxLength("productName", 200);
-    v.required("category").oneOf("category", EQUIPMENT_CATEGORIES);
+    // Category is now user-extensible (managed via OptionList); require non-empty, capped length
+    v.required("category").maxLength("category", 50);
     if (body.quantity !== undefined) v.positiveInteger("quantity");
     if (body.serialNumber) v.maxLength("serialNumber", 100, "serial number");
     if (body.bodyName) v.maxLength("bodyName", 100, "body name");
@@ -50,8 +51,12 @@ export async function POST(request: NextRequest) {
     if (body.purchasePrice !== undefined) v.nonNegativeNumber("purchasePrice", "purchase price");
     if (body.status !== undefined) v.oneOf("status", EQUIPMENT_STATUSES);
     if (body.notes) v.maxLength("notes", 1000);
-    if (body.ownershipType !== undefined) v.oneOf("ownershipType", ["INHOUSE", "VENDOR"]);
+    if (body.ownershipType !== undefined) v.oneOf("ownershipType", ["INHOUSE", "VENDOR", "STAFF"]);
     if (body.vendorId !== undefined && body.vendorId !== null && body.vendorId !== "") v.positiveInteger("vendorId", "vendor ID");
+    if (body.ownerStaffId !== undefined && body.ownerStaffId !== null && body.ownerStaffId !== "") v.positiveInteger("ownerStaffId", "owner staff ID");
+    if (body.defaultRate !== undefined && body.defaultRate !== null && body.defaultRate !== "") v.nonNegativeNumber("defaultRate", "default rate");
+    if (body.ownershipType === "VENDOR" && !body.vendorId) v.add("vendorId", "Vendor is required when owner is a vendor");
+    if (body.ownershipType === "STAFF" && !body.ownerStaffId) v.add("ownerStaffId", "Staff is required when owner is a staff member");
     if (v.hasErrors()) return v.response();
 
     const item = await createEquipment({
@@ -69,7 +74,9 @@ export async function POST(request: NextRequest) {
       status: body.status || "AVAILABLE",
       notes: body.notes?.trim() || null,
       ownershipType: body.ownershipType || "INHOUSE",
-      vendorId: body.vendorId ? parseInt(body.vendorId, 10) : null,
+      vendorId: body.ownershipType === "VENDOR" && body.vendorId ? parseInt(body.vendorId, 10) : null,
+      ownerStaffId: body.ownershipType === "STAFF" && body.ownerStaffId ? parseInt(body.ownerStaffId, 10) : null,
+      defaultRate: body.defaultRate !== undefined && body.defaultRate !== null && body.defaultRate !== "" ? parseFloat(body.defaultRate) : null,
       department: body.department ?? "VIDEO",
     });
 

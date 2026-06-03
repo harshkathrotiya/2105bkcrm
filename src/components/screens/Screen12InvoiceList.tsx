@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -31,8 +31,12 @@ export default function Screen12InvoiceList() {
     return inq?.department ?? 'VIDEO';
   };
 
+  const searchParams = useSearchParams();
+  const initialStatus = searchParams.get("status") ?? "All";
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState(
+    ["All", "Paid", "Partial paid", "Unpaid"].includes(initialStatus) ? initialStatus : "All"
+  );
   const [selectedDepts, setSelectedDepts] = useState<string[]>(['VIDEO', 'LED']);
   const [page, setPage] = useState(1);
 

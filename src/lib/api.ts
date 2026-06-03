@@ -4,7 +4,16 @@
  * All functions return the raw JSON response (or throw on error).
  */
 
-import type { Client, Inquiry, Quotation, Invoice, CalendarEvent, Equipment, Kit, Vendor, Staff, StaffAssignment, StaffPayment } from "./types";
+import type { Client, Inquiry, Quotation, Invoice, CalendarEvent, Equipment, Kit, Vendor, Staff, StaffAssignment, StaffPayment, ClientEquipmentRate } from "./types";
+
+export type OptionItem = {
+  id: number;
+  type: "STAFF_ROLE" | "QUOTATION_POSITION" | "EQUIPMENT_CATEGORY";
+  value: string;
+  metaEquip?: string | null;
+  metaRate?: number | null;
+  sortOrder: number;
+};
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -566,3 +575,49 @@ export function deleteDispatchBox(inquiryId: string, boxId: number): Promise<voi
   });
 }
 
+
+// ── Option lists (dynamic dropdowns: staff roles, quotation positions) ─────────
+
+export function fetchOptions(type: OptionItem["type"]): Promise<OptionItem[]> {
+  return request(`/api/options?type=${encodeURIComponent(type)}`);
+}
+
+export function addOption(
+  type: OptionItem["type"],
+  value: string,
+  meta?: { equip?: string; rate?: number }
+): Promise<OptionItem> {
+  return request("/api/options", {
+    method: "POST",
+    body: JSON.stringify({ type, value, ...meta }),
+  });
+}
+
+export function removeOption(type: OptionItem["type"], value: string): Promise<void> {
+  return request(`/api/options?type=${encodeURIComponent(type)}&value=${encodeURIComponent(value)}`, {
+    method: "DELETE",
+  });
+}
+
+// ── Client equipment rate overrides (client-specific pricing) ──────────────────
+
+export function fetchClientRates(clientId: string): Promise<ClientEquipmentRate[]> {
+  return request(`/api/clients/${clientId}/rates`);
+}
+
+export function saveClientRate(
+  clientId: string,
+  equipmentId: number,
+  rate: number
+): Promise<ClientEquipmentRate> {
+  return request(`/api/clients/${clientId}/rates`, {
+    method: "POST",
+    body: JSON.stringify({ equipmentId, rate }),
+  });
+}
+
+export function deleteClientRate(clientId: string, equipmentId: number): Promise<void> {
+  return request(`/api/clients/${clientId}/rates/${equipmentId}`, {
+    method: "DELETE",
+  });
+}

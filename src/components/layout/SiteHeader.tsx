@@ -2,6 +2,7 @@
 
 import { useTheme } from "@/lib/theme-context";
 import { useCurrentUser } from "@/lib/use-current-user";
+import GlobalSearch from "./GlobalSearch";
 
 const ROLE_COLORS: Record<string, string> = {
   Admin:    "var(--sem-rd-tx)",
@@ -38,6 +39,11 @@ export default function SiteHeader() {
             <div className="text-[9px] text-tx3 leading-tight -mt-[1px]">CRM · Video Department</div>
           </div>
         </div>
+      </div>
+
+      {/* Global search — center */}
+      <div className="hidden md:flex flex-1 justify-center px-4">
+        <GlobalSearch />
       </div>
 
       <div className="flex items-center gap-2">

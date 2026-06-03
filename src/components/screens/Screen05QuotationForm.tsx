@@ -10,10 +10,11 @@ import type { QuotationRow } from "@/lib/store";
 import type { Equipment, Kit } from "@/lib/types";
 import { generateId } from "@/lib/types";
 import { generateQuoteNo, calcDays } from "@/lib/utils";
+import * as api from "@/lib/api";
 
 
-// ── Full position list per FRD appendix ──────────────────────────────────────
-const POSITION_MAP: Record<string, { equip: string; rate: number }> = {
+// ── Default position list per FRD appendix (fallback if API list not loaded) ──
+const DEFAULT_POSITION_MAP: Record<string, { equip: string; rate: number }> = {
   "Center Tally":        { equip: "FS6",            rate: 20000 },
   "Center Semi Wide":    { equip: "FS6",            rate: 20000 },
   "Center Full Wide":    { equip: "Z150",           rate:  8000 },
@@ -36,8 +37,7 @@ const POSITION_MAP: Record<string, { equip: string; rate: number }> = {
   "FPV":                 { equip: "FPV",            rate: 15000 },
 };
 
-const POSITIONS = Object.keys(POSITION_MAP);
-const EQUIPMENT_LIST = Array.from(new Set(Object.values(POSITION_MAP).map((m) => m.equip)));
+const EQUIPMENT_LIST = Array.from(new Set(Object.values(DEFAULT_POSITION_MAP).map((m) => m.equip)));
 
 function makeRow(no: number, days: number): QuotationRow {
   return { no, position: "", equip: "", rate: 0, days, amount: 0 };
@@ -174,6 +174,51 @@ export default function Screen05QuotationForm() {
   const { kits } = useKits();
   const { equipment: allEquipment } = useEquipment();
 
+  // ── Dynamic positions (user-managed) ────────────────────────────────────────
+  const [positionMap, setPositionMap] = useState<Record<string, { equip: string; rate: number }>>(DEFAULT_POSITION_MAP);
+  const [addingPosition, setAddingPosition] = useState(false);
+  const [newPosition, setNewPosition] = useState("");
+
+  const positions = useMemo(() => Object.keys(positionMap), [positionMap]);
+
+  useEffect(() => {
+    let active = true;
+    api.fetchOptions("QUOTATION_POSITION")
+      .then((opts) => {
+        if (!active || opts.length === 0) return;
+        const map: Record<string, { equip: string; rate: number }> = {};
+        for (const o of opts) map[o.value] = { equip: o.metaEquip || "", rate: o.metaRate || 0 };
+        setPositionMap(map);
+      })
+      .catch(() => { /* keep defaults */ });
+    return () => { active = false; };
+  }, []);
+
+  const handleAddPosition = async () => {
+    const value = newPosition.trim();
+    if (!value) return;
+    try {
+      await api.addOption("QUOTATION_POSITION", value);
+      setPositionMap((prev) => ({ ...prev, [value]: { equip: "", rate: 0 } }));
+      setNewPosition("");
+      setAddingPosition(false);
+    } catch (err: any) {
+      alert(err.message || "Failed to add position");
+    }
+  };
+
+  // ── Client-specific equipment rates ─────────────────────────────────────────
+  // Map of equipment name -> id (for rate lookup) and the current client's rate overrides
+  const equipNameToId = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const e of allEquipment) {
+      if (!(e.productName in m)) m[e.productName] = e.id;
+    }
+    return m;
+  }, [allEquipment]);
+  // equipment id -> { rate, isOverride } for the selected client (override or default)
+  const [clientRateMap, setClientRateMap] = useState<Record<number, number>>({});
+
   // Build live grouped equipment options from DB:
   // Group 1 — Kits, Group 2 — Individual available items
   const liveEquipOptions = useMemo(() => {
@@ -215,6 +260,30 @@ export default function Screen05QuotationForm() {
   const selectedClient = selectedInquiry
     ? clients.find((c) => c.id === selectedInquiry.clientId)
     : null;
+  const selectedClientId = selectedClient?.id;
+
+  // Build the effective rate map: equipment default rates overlaid with this client's overrides
+  useEffect(() => {
+    // Base: every equipment's default rate
+    const base: Record<number, number> = {};
+    for (const e of allEquipment) {
+      if (e.defaultRate != null) base[e.id] = e.defaultRate;
+    }
+    if (!selectedClientId) {
+      setClientRateMap(base);
+      return;
+    }
+    let active = true;
+    api.fetchClientRates(selectedClientId)
+      .then((rates) => {
+        if (!active) return;
+        const merged = { ...base };
+        for (const r of rates) merged[r.equipmentId] = r.rate;
+        setClientRateMap(merged);
+      })
+      .catch(() => { if (active) setClientRateMap(base); });
+    return () => { active = false; };
+  }, [selectedClientId, allEquipment]);
 
   // Days from inquiry
   const eventDays = useMemo(
@@ -468,8 +537,15 @@ export default function Screen05QuotationForm() {
         if (row.no !== no) return row;
         const updated = { ...row, [field]: value };
         if (field === "position") {
-          const m = POSITION_MAP[value as string];
+          const m = positionMap[value as string];
           if (m) { updated.equip = m.equip; updated.rate = m.rate; }
+        }
+        if (field === "equip") {
+          // Auto-fill the client's effective rate (override → default) when picking a real equipment item
+          const eqId = equipNameToId[value as string];
+          if (eqId != null && clientRateMap[eqId] != null) {
+            updated.rate = clientRateMap[eqId];
+          }
         }
         updated.amount = updated.rate * updated.days;
         return updated;
@@ -799,7 +875,27 @@ export default function Screen05QuotationForm() {
                 >
                   ● Live DB
                 </span>
-                <button className="btn ml-auto text-[10px]" onClick={addRow}>+ Add row</button>
+                {addingPosition ? (
+                  <div className="ml-auto" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <input
+                      className="finp text-[10px]"
+                      autoFocus
+                      placeholder="New position name"
+                      value={newPosition}
+                      onChange={(e) => setNewPosition(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { e.preventDefault(); handleAddPosition(); }
+                        if (e.key === "Escape") { setAddingPosition(false); setNewPosition(""); }
+                      }}
+                      style={{ width: 150 }}
+                    />
+                    <button className="btn btn-primary text-[10px]" onClick={handleAddPosition}>Add</button>
+                    <button className="btn text-[10px]" onClick={() => { setAddingPosition(false); setNewPosition(""); }}>✕</button>
+                  </div>
+                ) : (
+                  <button className="btn ml-auto text-[10px]" onClick={() => setAddingPosition(true)}>+ Add position</button>
+                )}
+                <button className="btn text-[10px]" onClick={addRow}>+ Add row</button>
               </div>
               <div className="overflow-x-auto" style={{ overflow: "visible" }}>
                 <table className="tbl" style={{ minWidth: 520 }}>
@@ -825,7 +921,7 @@ export default function Screen05QuotationForm() {
                               className="text-[10px]"
                               value={row.position}
                               onChange={(val) => updateRow(row.no, "position", val)}
-                              options={POSITIONS.map(p => ({ value: p, label: p }))}
+                              options={positions.map(p => ({ value: p, label: p }))}
                               placeholder="Select position"
                               placement={placement}
                             />

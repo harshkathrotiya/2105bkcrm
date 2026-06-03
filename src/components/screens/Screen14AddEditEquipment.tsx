@@ -26,7 +26,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
 
   const [form, setForm] = useState({
     productName: "",
-    category: "CAMERA" as "CAMERA" | "VIDEO_MIXER" | "VIDEO_RECORDER" | "AUDIO_MIXER" | "WIRELESS_TX" | "UPS" | "ACCESSORY" | "LED_PANEL" | "LED_PROCESSOR" | "LED_CABLE" | "LED_ACCESSORY",
+    category: "CAMERA" as string,
     quantity: 1,
     serialNumber: "",
     bodyName: "",
@@ -37,11 +37,46 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
     purchasePrice: "" as string | number,
     status: "AVAILABLE" as "AVAILABLE" | "IN_USE" | "MAINTENANCE" | "SOLD" | "RETIRED",
     notes: "",
-    ownershipType: "INHOUSE" as "INHOUSE" | "VENDOR",
+    ownershipType: "INHOUSE" as "INHOUSE" | "VENDOR" | "STAFF",
     vendorId: "" as string | number,
+    ownerStaffId: "" as string | number,
+    defaultRate: "" as string | number,
   });
 
   const [vendors, setVendors] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<{ id: number; name: string }[]>([]);
+
+  // Dynamic, user-managed equipment categories
+  const [categories, setCategories] = useState<string[]>([]);
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+
+  // Humanize a category code for display: "LED_PANEL" -> "Led Panel"
+  const catLabel = (c: string) =>
+    c.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+
+  useEffect(() => {
+    let active = true;
+    api.fetchOptions("EQUIPMENT_CATEGORY")
+      .then((opts) => { if (active) setCategories(opts.map((o) => o.value)); })
+      .catch(() => { /* keep empty; current value still selectable */ });
+    return () => { active = false; };
+  }, []);
+
+  const handleAddCategory = async () => {
+    // Store as an UPPER_SNAKE_CASE code to match existing categories
+    const value = newCategory.trim().toUpperCase().replace(/\s+/g, "_");
+    if (!value) return;
+    try {
+      await api.addOption("EQUIPMENT_CATEGORY", value);
+      setCategories((prev) => (prev.includes(value) ? prev : [...prev, value]));
+      update("category", value);
+      setNewCategory("");
+      setAddingCategory(false);
+    } catch (err: any) {
+      alert(err.message || "Failed to add category");
+    }
+  };
 
   // Fetch equipment item details if editing
   useEffect(() => {
@@ -68,6 +103,8 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
             notes: data.notes || "",
             ownershipType: data.ownershipType || "INHOUSE",
             vendorId: data.vendorId !== null && data.vendorId !== undefined ? data.vendorId : "",
+            ownerStaffId: data.ownerStaffId !== null && data.ownerStaffId !== undefined ? data.ownerStaffId : "",
+            defaultRate: data.defaultRate !== null && data.defaultRate !== undefined ? data.defaultRate : "",
           });
         }
       } catch (err: any) {
@@ -101,6 +138,23 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
     };
   }, []);
 
+  // Fetch active staff (for staff-owned / partner equipment)
+  useEffect(() => {
+    let active = true;
+    async function loadStaff() {
+      try {
+        const list = await api.fetchStaff();
+        if (active) setStaffList(list.map((s) => ({ id: s.id, name: s.name })));
+      } catch (err) {
+        console.error("Failed to load staff:", err);
+      }
+    }
+    loadStaff();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const update = (field: string, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -108,16 +162,18 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
   const validations = useMemo(() => {
     const priceNum = Number(form.purchasePrice);
     const hasVendorId = form.ownershipType === "VENDOR" ? (form.vendorId !== "" && form.vendorId !== null && form.vendorId !== undefined) : true;
+    const hasOwnerStaff = form.ownershipType === "STAFF" ? (form.ownerStaffId !== "" && form.ownerStaffId !== null && form.ownerStaffId !== undefined) : true;
     return {
       productName: form.productName.trim().length >= 2,
-      category: ["CAMERA", "VIDEO_MIXER", "VIDEO_RECORDER", "AUDIO_MIXER", "WIRELESS_TX", "UPS", "ACCESSORY"].includes(form.category),
+      category: form.category.trim().length > 0,
       quantity: Number(form.quantity) >= 1,
       purchasePrice: form.purchasePrice === "" || (!isNaN(priceNum) && priceNum >= 0),
       vendorSelected: hasVendorId,
+      ownerStaffSelected: hasOwnerStaff,
     };
   }, [form]);
 
-  const allRequired = validations.productName && validations.category && validations.quantity && validations.purchasePrice && validations.vendorSelected;
+  const allRequired = validations.productName && validations.category && validations.quantity && validations.purchasePrice && validations.vendorSelected && validations.ownerStaffSelected;
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -139,6 +195,8 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
         notes: form.notes.trim() || null,
         ownershipType: form.ownershipType,
         vendorId: form.ownershipType === "VENDOR" && form.vendorId ? Number(form.vendorId) : null,
+        ownerStaffId: form.ownershipType === "STAFF" && form.ownerStaffId ? Number(form.ownerStaffId) : null,
+        defaultRate: form.defaultRate === "" ? null : Number(form.defaultRate),
       };
 
       if (isEdit) {
@@ -257,25 +315,51 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                 </div>
 
                 <div className="field">
-                  <div className="flbl">Category *</div>
-                  <select
-                    className="fsel"
-                    value={form.category}
-                    onChange={(e) => update("category", e.target.value)}
-                    required
-                  >
-                    <option value="CAMERA">Camera</option>
-                    <option value="VIDEO_MIXER">Video Mixer</option>
-                    <option value="VIDEO_RECORDER">Video Recorder</option>
-                    <option value="AUDIO_MIXER">Audio Mixer</option>
-                    <option value="WIRELESS_TX">Wireless TX</option>
-                    <option value="UPS">UPS System</option>
-                    <option value="ACCESSORY">Accessory</option>
-                    <option value="LED_PANEL">LED Panel</option>
-                    <option value="LED_PROCESSOR">LED Processor</option>
-                    <option value="LED_CABLE">LED Cable</option>
-                    <option value="LED_ACCESSORY">LED Accessory / Rigging</option>
-                  </select>
+                  <div className="flbl" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>Category *</span>
+                    {!addingCategory && (
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ fontSize: 10, padding: "2px 6px" }}
+                        onClick={() => setAddingCategory(true)}
+                      >
+                        + Add category
+                      </button>
+                    )}
+                  </div>
+                  {addingCategory ? (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        className="finp"
+                        autoFocus
+                        placeholder="New category name"
+                        value={newCategory}
+                        onChange={(e) => setNewCategory(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); handleAddCategory(); }
+                          if (e.key === "Escape") { setAddingCategory(false); setNewCategory(""); }
+                        }}
+                      />
+                      <button type="button" className="btn btn-primary" style={{ fontSize: 11 }} onClick={handleAddCategory}>Add</button>
+                      <button type="button" className="btn" style={{ fontSize: 11 }} onClick={() => { setAddingCategory(false); setNewCategory(""); }}>Cancel</button>
+                    </div>
+                  ) : (
+                    <select
+                      className="fsel"
+                      value={form.category}
+                      onChange={(e) => update("category", e.target.value)}
+                      required
+                    >
+                      {/* Keep current value selectable even if it's a custom category not yet in the list */}
+                      {form.category && !categories.includes(form.category) && (
+                        <option value={form.category}>{catLabel(form.category)}</option>
+                      )}
+                      {categories.map((c) => (
+                        <option key={c} value={c}>{catLabel(c)}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <div className="field">
@@ -323,17 +407,20 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                     className="fsel"
                     value={form.ownershipType}
                     onChange={(e) => {
-                      const val = e.target.value as "INHOUSE" | "VENDOR";
+                      const val = e.target.value as "INHOUSE" | "VENDOR" | "STAFF";
                       setForm(prev => ({
                         ...prev,
                         ownershipType: val,
-                        vendorId: val === "INHOUSE" ? "" : prev.vendorId
+                        // Keep only the FK relevant to the selected owner type
+                        vendorId: val === "VENDOR" ? prev.vendorId : "",
+                        ownerStaffId: val === "STAFF" ? prev.ownerStaffId : "",
                       }));
                     }}
                     required
                   >
-                    <option value="INHOUSE">In-House</option>
-                    <option value="VENDOR">Outsourced (Vendor)</option>
+                    <option value="INHOUSE">BK Media (Self)</option>
+                    <option value="STAFF">Staff (Partner)</option>
+                    <option value="VENDOR">Vendor (Outsourced)</option>
                   </select>
                 </div>
 
@@ -355,6 +442,40 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                     </select>
                   </div>
                 )}
+
+                {form.ownershipType === "STAFF" && (
+                  <div className="field">
+                    <div className="flbl">Owner (Staff) *</div>
+                    <select
+                      className="fsel"
+                      value={form.ownerStaffId}
+                      onChange={(e) => update("ownerStaffId", e.target.value)}
+                      required
+                    >
+                      <option value="">-- Select Staff --</option>
+                      {staffList.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="field">
+                  <div className="flbl">Default rental rate / day (₹)</div>
+                  <input
+                    type="number"
+                    min={0}
+                    className="finp"
+                    placeholder="e.g. 20000"
+                    value={form.defaultRate}
+                    onChange={(e) => update("defaultRate", e.target.value)}
+                  />
+                  <div style={{ fontSize: "10.5px", color: "var(--tx3)", marginTop: "4px" }}>
+                    Standard per-day rate charged to clients. Specific clients can have their own rate on the client page.
+                  </div>
+                </div>
 
                 {form.category === "ACCESSORY" && (
                   <div className="field span2">

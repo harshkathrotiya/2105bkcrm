@@ -33,9 +33,12 @@ function mapEquipment(row: any): Equipment {
     notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    ownershipType: (row.ownership_type as "INHOUSE" | "VENDOR") || "INHOUSE",
+    ownershipType: (row.ownership_type as "INHOUSE" | "VENDOR" | "STAFF") || "INHOUSE",
     vendorId: row.vendor_id || null,
     vendorName: row.vendor?.name || null,
+    ownerStaffId: row.owner_staff_id || null,
+    ownerStaffName: row.owner_staff?.name || null,
+    defaultRate: row.default_rate ?? null,
     department: row.department as "VIDEO" | "LED",
   };
 }
@@ -68,7 +71,7 @@ export async function getEquipment(filters: EquipmentFilters = {}): Promise<{ it
   const [rows, total] = await Promise.all([
     db.equipment.findMany({
       where,
-      include: { kit: true, vendor: true },
+      include: { kit: true, vendor: true, owner_staff: true },
       orderBy: { id: "desc" },
       take: filters.limit,
       skip: filters.offset,
@@ -85,7 +88,7 @@ export async function getEquipment(filters: EquipmentFilters = {}): Promise<{ it
 export async function getEquipmentById(id: number): Promise<Equipment | undefined> {
   const row = await db.equipment.findUnique({
     where: { id },
-    include: { kit: true, vendor: true },
+    include: { kit: true, vendor: true, owner_staff: true },
   });
   return row ? mapEquipment(row) : undefined;
 }
@@ -146,7 +149,7 @@ export async function getEquipmentDetailsById(id: number) {
 export async function getEquipmentByKitId(kitId: number): Promise<Equipment[]> {
   const rows = await db.equipment.findMany({
     where: { kit_id: kitId },
-    include: { kit: true, vendor: true },
+    include: { kit: true, vendor: true, owner_staff: true },
   });
   return rows.map(mapEquipment);
 }
@@ -171,9 +174,11 @@ export async function createEquipment(item: Omit<Equipment, "id" | "createdAt">)
       created_at: nowStr,
       ownership_type: item.ownershipType || "INHOUSE",
       vendor_id: item.vendorId ?? null,
+      owner_staff_id: item.ownerStaffId ?? null,
+      default_rate: item.defaultRate ?? null,
       department: item.department || "VIDEO",
     },
-    include: { kit: true, vendor: true }
+    include: { kit: true, vendor: true, owner_staff: true }
   });
 
   return mapEquipment(row);
@@ -205,9 +210,11 @@ export async function updateEquipment(id: number, patch: Partial<Omit<Equipment,
       updated_at: nowStr,
       ownership_type: merged.ownershipType || "INHOUSE",
       vendor_id: merged.vendorId ?? null,
+      owner_staff_id: merged.ownerStaffId ?? null,
+      default_rate: merged.defaultRate ?? null,
       department: merged.department || "VIDEO",
     },
-    include: { kit: true, vendor: true }
+    include: { kit: true, vendor: true, owner_staff: true }
   });
 
   return mapEquipment(row);

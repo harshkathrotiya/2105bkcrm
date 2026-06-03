@@ -340,6 +340,24 @@ export default function Screen10InquiryList() {
                               Invoice →
                             </Link>
                           )}
+                          {inq.status === "Confirmed" && (
+                            <div className="flex gap-1">
+                              <Link
+                                href={`/staff/assign?inquiryId=${inq.id}`}
+                                className="btn text-[10px] px-[6px] py-[4px]"
+                                title="Assign crew"
+                              >
+                                Crew
+                              </Link>
+                              <Link
+                                href={`/warehouse/check?inquiryId=${inq.id}`}
+                                className="btn text-[10px] px-[6px] py-[4px]"
+                                title="Warehouse check"
+                              >
+                                Warehouse
+                              </Link>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>

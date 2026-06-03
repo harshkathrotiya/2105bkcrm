@@ -75,6 +75,7 @@ export async function getAllStaff(params?: {
       monthlySalary: s.monthly_salary,
       withEquipment: s.with_equipment === 1,
       equipmentDesc: s.equipment_desc,
+      equipmentRatePerDay: s.equipment_rate_per_day,
       aadharNumber: s.aadhar_number,
       aadharFront: s.aadhar_front,
       aadharBack: s.aadhar_back,
@@ -109,6 +110,7 @@ export async function getStaffById(id: number): Promise<Staff | undefined> {
     monthlySalary: s.monthly_salary,
     withEquipment: s.with_equipment === 1,
     equipmentDesc: s.equipment_desc,
+    equipmentRatePerDay: s.equipment_rate_per_day,
     aadharNumber: s.aadhar_number,
     aadharFront: s.aadhar_front,
     aadharBack: s.aadhar_back,
@@ -132,6 +134,7 @@ export async function createStaff(staff: Omit<Staff, "id" | "createdAt" | "isAct
       monthly_salary: staff.monthlySalary ?? null,
       with_equipment: staff.withEquipment ? 1 : 0,
       equipment_desc: staff.equipmentDesc ?? null,
+      equipment_rate_per_day: staff.equipmentRatePerDay ?? null,
       aadhar_number: staff.aadharNumber ?? null,
       aadhar_front: staff.aadharFront ?? null,
       aadhar_back: staff.aadharBack ?? null,
@@ -163,6 +166,7 @@ export async function updateStaff(id: number, patch: Partial<Omit<Staff, "id" | 
       monthly_salary: merged.monthlySalary ?? null,
       with_equipment: merged.withEquipment ? 1 : 0,
       equipment_desc: merged.equipmentDesc ?? null,
+      equipment_rate_per_day: merged.equipmentRatePerDay ?? null,
       aadhar_number: merged.aadharNumber ?? null,
       aadhar_front: merged.aadharFront ?? null,
       aadhar_back: merged.aadharBack ?? null,
@@ -208,6 +212,7 @@ export async function getAllStaffIncludingInactive(): Promise<Staff[]> {
     monthlySalary: s.monthly_salary,
     withEquipment: s.with_equipment === 1,
     equipmentDesc: s.equipment_desc,
+    equipmentRatePerDay: s.equipment_rate_per_day,
     aadharNumber: s.aadhar_number,
     aadharFront: s.aadhar_front,
     aadharBack: s.aadhar_back,
@@ -323,6 +328,7 @@ export async function getStaffAssignments(inquiryId: string) {
       positionName: a.position_name,
       daysAssigned: a.days_assigned,
       ratePerDay: a.rate_per_day,
+      equipmentRatePerDay: a.equipment_rate_per_day,
       totalAmount: a.total_amount,
       isDuplicate: a.is_duplicate === 1,
       confirmedDup: a.confirmed_dup === 1,
@@ -330,7 +336,11 @@ export async function getStaffAssignments(inquiryId: string) {
       createdAt: a.created_at,
       staffName: a.staff?.name,
       staffType: a.staff?.staff_type,
-      withEquipment: a.staff?.with_equipment === 1,
+      // withEquipment on the assignment = did they actually bring equipment on this job
+      withEquipment: a.with_equipment === 1,
+      // staffOwnsEquipment = whether the staff profile is flagged as equipment-owning (for the UI prompt)
+      staffOwnsEquipment: a.staff?.with_equipment === 1,
+      staffEquipmentRatePerDay: a.staff?.equipment_rate_per_day,
       equipmentDesc: a.staff?.equipment_desc,
       paidAmount,
       paidAt: lastPayment?.paid_at || null,
@@ -349,7 +359,9 @@ export async function checkDuplicateAssignment(inquiryId: string, staffId: numbe
 }
 
 export async function assignStaff(assignment: Omit<StaffAssignment, "id" | "totalAmount" | "isDuplicate" | "confirmedDup" | "createdAt">): Promise<StaffAssignment> {
-  const totalAmount = assignment.ratePerDay * assignment.daysAssigned;
+  const withEquipment = assignment.withEquipment ?? false;
+  const equipmentRatePerDay = withEquipment ? (assignment.equipmentRatePerDay ?? 0) : 0;
+  const totalAmount = (assignment.ratePerDay + equipmentRatePerDay) * assignment.daysAssigned;
   const nowStr = new Date().toISOString();
 
   const dupCheck = await checkDuplicateAssignment(assignment.inquiryId, assignment.staffId);
@@ -366,6 +378,8 @@ export async function assignStaff(assignment: Omit<StaffAssignment, "id" | "tota
         position_name: assignment.positionName ?? null,
         days_assigned: assignment.daysAssigned,
         rate_per_day: assignment.ratePerDay,
+        with_equipment: withEquipment ? 1 : 0,
+        equipment_rate_per_day: equipmentRatePerDay,
         total_amount: totalAmount,
         is_duplicate: isDuplicate,
         confirmed_dup: 0,
@@ -386,6 +400,8 @@ export async function assignStaff(assignment: Omit<StaffAssignment, "id" | "tota
   return {
     id: newId,
     ...assignment,
+    withEquipment,
+    equipmentRatePerDay,
     totalAmount,
     isDuplicate: isDuplicate === 1,
     confirmedDup: false,
@@ -611,6 +627,7 @@ export async function getStaffAvailability(startDate: string, endDate: string, r
       monthlySalary: row.monthly_salary,
       withEquipment: row.with_equipment === 1,
       equipmentDesc: row.equipment_desc,
+      equipmentRatePerDay: row.equipment_rate_per_day,
       aadharNumber: row.aadhar_number,
       aadharFront: row.aadhar_front,
       aadharBack: row.aadhar_back,

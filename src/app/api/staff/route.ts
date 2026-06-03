@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
 
     if (body.aadharNumber) v.aadhar("aadharNumber", "Aadhar number");
     if (body.equipmentDesc) v.maxLength("equipmentDesc", 200, "equipment description");
+    if (body.equipmentRatePerDay !== undefined && body.equipmentRatePerDay !== null && body.equipmentRatePerDay !== "") v.nonNegativeNumber("equipmentRatePerDay", "equipment rate per day");
     if (v.hasErrors()) return v.response();
 
     const staff = await createStaff({
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       monthlySalary: body.monthlySalary ? parseFloat(body.monthlySalary) : null,
       withEquipment: !!body.withEquipment,
       equipmentDesc: body.equipmentDesc?.trim() || null,
+      equipmentRatePerDay: body.equipmentRatePerDay !== undefined && body.equipmentRatePerDay !== null && body.equipmentRatePerDay !== "" ? parseFloat(body.equipmentRatePerDay) : null,
       aadharNumber: body.aadharNumber?.trim() || null,
       aadharFront: body.aadharFront || null,
       aadharBack: body.aadharBack || null,
