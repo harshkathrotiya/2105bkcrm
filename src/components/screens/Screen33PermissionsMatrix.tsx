@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
@@ -151,9 +151,9 @@ export default function Screen33PermissionsMatrix() {
             </thead>
             <tbody>
               {Object.entries(MODULE_PERMISSIONS).map(([moduleName, perms]) => (
-                <>
+                <React.Fragment key={moduleName}>
                   {/* Category Header Row */}
-                  <tr key={moduleName} style={{ background: "var(--alt2)", borderBottom: "1px solid var(--b1)" }}>
+                  <tr style={{ background: "var(--alt2)", borderBottom: "1px solid var(--b1)" }}>
                     <td colSpan={rolesList.length + 1} style={{ padding: "8px 14px", fontWeight: 700, fontSize: "11.5px", color: "var(--acc)", textTransform: "uppercase" }}>
                       {moduleName}
                     </td>
@@ -182,7 +182,7 @@ export default function Screen33PermissionsMatrix() {
                       })}
                     </tr>
                   ))}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>

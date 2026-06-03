@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { getOptions, addOption, removeOption, type OptionType } from "@/lib/queries/options";
+import { getOptions, addOption, removeOption, updateOption, type OptionType } from "@/lib/queries/options";
 import { Validator } from "@/lib/validate";
 
 const VALID_TYPES: OptionType[] = ["STAFF_ROLE", "QUOTATION_POSITION", "EQUIPMENT_CATEGORY"];
@@ -44,6 +44,28 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("[POST /api/options]", err);
     return Response.json({ error: "Failed to add option" }, { status: 500 });
+  }
+}
+
+// PUT /api/options — update an existing option { type, oldValue, newValue }
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    if (!isValidType(body.type)) {
+      return Response.json({ error: "type must be STAFF_ROLE, QUOTATION_POSITION or EQUIPMENT_CATEGORY" }, { status: 400 });
+    }
+
+    const v = new Validator(body);
+    v.required("oldValue").minLength("oldValue", 1).maxLength("oldValue", 100);
+    v.required("newValue").minLength("newValue", 1).maxLength("newValue", 100);
+    if (v.hasErrors()) return v.response();
+
+    const ok = await updateOption(body.type, String(body.oldValue).trim(), String(body.newValue).trim());
+    if (!ok) return Response.json({ error: "Failed to update option or option value already exists" }, { status: 400 });
+    return Response.json({ success: true });
+  } catch (err) {
+    console.error("[PUT /api/options]", err);
+    return Response.json({ error: "Failed to update option" }, { status: 500 });
   }
 }
 

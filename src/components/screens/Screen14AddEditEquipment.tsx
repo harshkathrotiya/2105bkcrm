@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
@@ -54,6 +55,20 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
   const [categories, setCategories] = useState<string[]>([]);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategory, setNewCategory] = useState("");
+  const [editingCategory, setEditingCategory] = useState(false);
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [showCatDropdown, setShowCatDropdown] = useState(false);
+  const catRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) {
+        setShowCatDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Humanize a category code for display: "LED_PANEL" -> "Led Panel"
   const catLabel = (c: string) =>
@@ -81,6 +96,45 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
       toast.error(err.message || "Failed to add category");
     }
   };
+
+  const handleEditCategory = async () => {
+    const oldValue = form.category;
+    const newValue = editCategoryName.trim().toUpperCase().replace(/\s+/g, "_");
+    if (!newValue || oldValue === newValue) {
+      setEditingCategory(false);
+      return;
+    }
+    try {
+      await api.updateOption("EQUIPMENT_CATEGORY", oldValue, newValue);
+      setCategories((prev) => prev.map((c) => (c === oldValue ? newValue : c)));
+      update("category", newValue);
+      setEditingCategory(false);
+      toast.success("Category updated successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update category");
+    }
+  };
+
+  const handleRemoveCategory = async () => {
+    const value = form.category;
+    if (!value) return;
+    const ok = await confirm({
+      message: `Are you sure you want to remove the category "${catLabel(value)}"? Existing equipment items of this category will remain unchanged, but it will be removed from the option list.`,
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await api.removeOption("EQUIPMENT_CATEGORY", value);
+      const remaining = categories.filter((c) => c !== value);
+      setCategories(remaining);
+      update("category", remaining.length > 0 ? remaining[0] : "");
+      toast.success("Category removed successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove category");
+    }
+  };
+
 
   // Fetch equipment item details if editing
   useEffect(() => {
@@ -327,7 +381,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                 <div className="field">
                   <div className="flbl" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span>Category *</span>
-                    {!addingCategory && (
+                    {!addingCategory && !editingCategory && (
                       <button
                         type="button"
                         className="btn"
@@ -354,21 +408,108 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                       <button type="button" className="btn btn-primary" style={{ fontSize: 11 }} onClick={handleAddCategory}>Add</button>
                       <button type="button" className="btn" style={{ fontSize: 11 }} onClick={() => { setAddingCategory(false); setNewCategory(""); }}>Cancel</button>
                     </div>
+                  ) : editingCategory ? (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        className="finp"
+                        autoFocus
+                        placeholder="Edit category name"
+                        value={editCategoryName}
+                        onChange={(e) => setEditCategoryName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); handleEditCategory(); }
+                          if (e.key === "Escape") { setEditingCategory(false); setEditCategoryName(""); }
+                        }}
+                      />
+                      <button type="button" className="btn btn-primary" style={{ fontSize: 11 }} onClick={handleEditCategory}>Save</button>
+                      <button type="button" className="btn" style={{ fontSize: 11 }} onClick={() => { setEditingCategory(false); setEditCategoryName(""); }}>Cancel</button>
+                    </div>
                   ) : (
-                    <select
-                      className="fsel"
-                      value={form.category}
-                      onChange={(e) => update("category", e.target.value)}
-                      required
-                    >
-                      {/* Keep current value selectable even if it's a custom category not yet in the list */}
-                      {form.category && !categories.includes(form.category) && (
-                        <option value={form.category}>{catLabel(form.category)}</option>
+                    <div ref={catRef} style={{ position: "relative" }}>
+                      <div
+                        className="fsel"
+                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                        onClick={() => setShowCatDropdown(!showCatDropdown)}
+                      >
+                        <span>{form.category ? catLabel(form.category) : "-- Select Category --"}</span>
+                        <span style={{ fontSize: 10, color: "var(--tx3)", opacity: 0.7 }}>▼</span>
+                      </div>
+
+                      {showCatDropdown && (
+                        <div
+                          className="card"
+                          style={{
+                            position: "absolute",
+                            top: "100%",
+                            left: 0,
+                            right: 0,
+                            zIndex: 999,
+                            marginTop: 4,
+                            padding: "6px",
+                            maxHeight: 250,
+                            overflowY: "auto",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                            border: "1px solid var(--b1)",
+                          }}
+                        >
+                          {/* Keep current value selectable even if it's a custom category not yet in the list */}
+                          {form.category && !categories.includes(form.category) && (
+                            <div
+                              className="flex items-center justify-between px-3 py-2 text-[12px] cursor-pointer hover:bg-s2 transition-colors text-tx font-medium rounded"
+                              onClick={() => {
+                                update("category", form.category);
+                                setShowCatDropdown(false);
+                              }}
+                            >
+                              <span>{catLabel(form.category)}</span>
+                            </div>
+                          )}
+                          {categories.map((c) => (
+                            <div
+                              key={c}
+                              className={`flex items-center justify-between px-3 py-2 text-[12px] cursor-pointer hover:bg-s2 transition-colors rounded ${
+                                form.category === c ? "bg-s2 font-medium" : "text-tx"
+                              }`}
+                              onClick={() => {
+                                update("category", c);
+                                setShowCatDropdown(false);
+                              }}
+                            >
+                              <span>{catLabel(c)}</span>
+                              <div
+                                className="flex items-center gap-3 pr-2"
+                                onClick={(e) => e.stopPropagation()} // Prevent select trigger on icon click
+                              >
+                                <button
+                                  type="button"
+                                  className="p-1 hover:bg-s3 rounded text-tx3 hover:text-bl transition-all"
+                                  title="Rename Category"
+                                  onClick={() => {
+                                    setEditingCategory(true);
+                                    setEditCategoryName(c);
+                                    update("category", c);
+                                    setShowCatDropdown(false);
+                                  }}
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="p-1 hover:bg-s3 rounded text-tx3 hover:text-rd transition-all"
+                                  title="Delete Category"
+                                  onClick={async () => {
+                                    update("category", c);
+                                    await handleRemoveCategory();
+                                  }}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
-                      {categories.map((c) => (
-                        <option key={c} value={c}>{catLabel(c)}</option>
-                      ))}
-                    </select>
+                    </div>
                   )}
                 </div>
 

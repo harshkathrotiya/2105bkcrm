@@ -148,3 +148,31 @@ export async function removeOption(type: OptionType, value: string): Promise<boo
     return false;
   }
 }
+
+export async function updateOption(
+  type: OptionType,
+  oldValue: string,
+  newValue: string
+): Promise<boolean> {
+  try {
+    // Rename the option itself in the optionList table
+    await db.optionList.update({
+      where: { type_value: { type, value: oldValue } },
+      data: { value: newValue },
+    });
+
+    // If it's an equipment category, also update references in equipment
+    if (type === "EQUIPMENT_CATEGORY") {
+      await db.equipment.updateMany({
+        where: { category: oldValue },
+        data: { category: newValue },
+      });
+    }
+
+    return true;
+  } catch (err) {
+    console.error("[updateOption] error:", err);
+    return false;
+  }
+}
+

@@ -599,6 +599,18 @@ export function removeOption(type: OptionItem["type"], value: string): Promise<v
   });
 }
 
+export function updateOption(
+  type: OptionItem["type"],
+  oldValue: string,
+  newValue: string
+): Promise<void> {
+  return request("/api/options", {
+    method: "PUT",
+    body: JSON.stringify({ type, oldValue, newValue }),
+  });
+}
+
+
 // ── Client equipment rate overrides (client-specific pricing) ──────────────────
 
 export function fetchClientRates(clientId: string): Promise<ClientEquipmentRate[]> {
