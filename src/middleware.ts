@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
     "/staff", "/warehouse", "/reports", "/settings",
   ];
 
-  const isProtected = protectedRoutes.some(
+  const isProtected = pathname === "/" || protectedRoutes.some(
     (r) => pathname === r || pathname.startsWith(r + "/")
   );
 
