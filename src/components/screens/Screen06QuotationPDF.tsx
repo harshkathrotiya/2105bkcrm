@@ -148,6 +148,12 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
         actions={
           <>
             {statusBadge}
+            <Link href={`/staff/assign?inquiryId=${quotation.inquiryId}`} className="btn">
+              Crew
+            </Link>
+            <Link href={`/warehouse/check?inquiryId=${quotation.inquiryId}`} className="btn">
+              Warehouse
+            </Link>
             <button className="btn" onClick={handleRevise}>
               + Revise
             </button>

@@ -361,6 +361,24 @@ export default function Screen11QuotationList() {
                                 Invoice
                               </Link>
                             )}
+                            {lt.status === "Approved" && (
+                              <>
+                                <Link
+                                  href={`/staff/assign?inquiryId=${lt.inquiryId}`}
+                                  className="btn text-[10px] px-[8px] py-[4px]"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Crew
+                                </Link>
+                                <Link
+                                  href={`/warehouse/check?inquiryId=${lt.inquiryId}`}
+                                  className="btn text-[10px] px-[8px] py-[4px]"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Warehouse
+                                </Link>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>

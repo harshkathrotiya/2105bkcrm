@@ -294,7 +294,13 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
         {tab === "crew" && (
           <div className="card" style={{ margin: 0 }}>
             <div className="card-t">Crew assignments</div>
-            {assignments.length === 0 ? (
+            {!quotation ? (
+              <Empty
+                msg="Crew positions come from the quotation. Create a quotation first."
+                icon={<Users size={26} />}
+                action={{ label: "Create quotation", href: `/quotations/new?inquiryId=${inquiry.id}` }}
+              />
+            ) : assignments.length === 0 ? (
               <Empty msg="No crew assigned yet." action={{ label: "Assign crew", href: `/staff/assign?inquiryId=${inquiry.id}` }} />
             ) : (
               <>
@@ -324,11 +330,19 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
         {tab === "equipment" && (
           <div className="card" style={{ margin: 0 }}>
             <div className="card-t">Equipment &amp; warehouse</div>
-            <Empty
-              msg="Manage equipment bookings, vendor rentals, and (for LED) dispatch logistics in the warehouse check."
-              icon={<Building2 size={26} />}
-              action={{ label: "Open warehouse check", href: `/warehouse/check?inquiryId=${inquiry.id}` }}
-            />
+            {!quotation ? (
+              <Empty
+                msg="Equipment needs come from the quotation. Create a quotation first."
+                icon={<Building2 size={26} />}
+                action={{ label: "Create quotation", href: `/quotations/new?inquiryId=${inquiry.id}` }}
+              />
+            ) : (
+              <Empty
+                msg="Manage equipment bookings, vendor rentals, and (for LED) dispatch logistics in the warehouse check."
+                icon={<Building2 size={26} />}
+                action={{ label: "Open warehouse check", href: `/warehouse/check?inquiryId=${inquiry.id}` }}
+              />
+            )}
           </div>
         )}
 
