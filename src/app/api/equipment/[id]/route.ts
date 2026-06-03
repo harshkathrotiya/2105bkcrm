@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getEquipmentDetailsById, updateEquipment, deleteEquipment } from "@/lib/queries/equipment";
-import { Validator, EQUIPMENT_CATEGORIES, EQUIPMENT_STATUSES } from "@/lib/validate";
+import { Validator, EQUIPMENT_STATUSES } from "@/lib/validate";
 
 export async function GET(
   _req: NextRequest,
@@ -29,7 +29,7 @@ export async function PATCH(
 
     const v = new Validator(body);
     if (body.productName !== undefined) v.minLength("productName", 2).maxLength("productName", 200);
-    if (body.category !== undefined) v.oneOf("category", EQUIPMENT_CATEGORIES);
+    if (body.category !== undefined) v.maxLength("category", 50);
     if (body.quantity !== undefined) v.positiveInteger("quantity");
     if (body.serialNumber !== undefined && body.serialNumber) v.maxLength("serialNumber", 100, "serial number");
     if (body.bodyName !== undefined && body.bodyName) v.maxLength("bodyName", 100, "body name");

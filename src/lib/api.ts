@@ -8,7 +8,7 @@ import type { Client, Inquiry, Quotation, Invoice, CalendarEvent, Equipment, Kit
 
 export type OptionItem = {
   id: number;
-  type: "STAFF_ROLE" | "QUOTATION_POSITION";
+  type: "STAFF_ROLE" | "QUOTATION_POSITION" | "EQUIPMENT_CATEGORY";
   value: string;
   metaEquip?: string | null;
   metaRate?: number | null;

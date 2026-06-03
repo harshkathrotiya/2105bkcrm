@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getEquipment, createEquipment, getEquipmentCategoryCounts } from "@/lib/queries/equipment";
-import { Validator, EQUIPMENT_CATEGORIES, EQUIPMENT_STATUSES } from "@/lib/validate";
+import { Validator, EQUIPMENT_STATUSES } from "@/lib/validate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
 
     const v = new Validator(body);
     v.required("productName", "product name").minLength("productName", 2).maxLength("productName", 200);
-    v.required("category").oneOf("category", EQUIPMENT_CATEGORIES);
+    // Category is now user-extensible (managed via OptionList); require non-empty, capped length
+    v.required("category").maxLength("category", 50);
     if (body.quantity !== undefined) v.positiveInteger("quantity");
     if (body.serialNumber) v.maxLength("serialNumber", 100, "serial number");
     if (body.bodyName) v.maxLength("bodyName", 100, "body name");

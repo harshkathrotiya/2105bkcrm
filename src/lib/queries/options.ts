@@ -7,9 +7,9 @@
  */
 
 import { db } from "@/lib/db";
-import { STAFF_ROLES } from "@/lib/validate";
+import { STAFF_ROLES, EQUIPMENT_CATEGORIES } from "@/lib/validate";
 
-export type OptionType = "STAFF_ROLE" | "QUOTATION_POSITION";
+export type OptionType = "STAFF_ROLE" | "QUOTATION_POSITION" | "EQUIPMENT_CATEGORY";
 
 export interface OptionItem {
   id: number;
@@ -78,6 +78,16 @@ async function ensureSeeded(type: OptionType): Promise<void> {
         value: p.value,
         meta_equip: p.equip,
         meta_rate: p.rate,
+        sort_order: i,
+        created_at: nowStr,
+      })),
+      skipDuplicates: true,
+    });
+  } else if (type === "EQUIPMENT_CATEGORY") {
+    await db.optionList.createMany({
+      data: EQUIPMENT_CATEGORIES.map((value, i) => ({
+        type,
+        value,
         sort_order: i,
         created_at: nowStr,
       })),

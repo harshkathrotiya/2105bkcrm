@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { getOptions, addOption, removeOption, type OptionType } from "@/lib/queries/options";
 import { Validator } from "@/lib/validate";
 
-const VALID_TYPES: OptionType[] = ["STAFF_ROLE", "QUOTATION_POSITION"];
+const VALID_TYPES: OptionType[] = ["STAFF_ROLE", "QUOTATION_POSITION", "EQUIPMENT_CATEGORY"];
 
 function isValidType(t: string | null): t is OptionType {
   return t !== null && VALID_TYPES.includes(t as OptionType);
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const type = request.nextUrl.searchParams.get("type");
     if (!isValidType(type)) {
-      return Response.json({ error: "type must be STAFF_ROLE or QUOTATION_POSITION" }, { status: 400 });
+      return Response.json({ error: "type must be STAFF_ROLE, QUOTATION_POSITION or EQUIPMENT_CATEGORY" }, { status: 400 });
     }
     const options = await getOptions(type);
     return Response.json(options);
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     if (!isValidType(body.type)) {
-      return Response.json({ error: "type must be STAFF_ROLE or QUOTATION_POSITION" }, { status: 400 });
+      return Response.json({ error: "type must be STAFF_ROLE, QUOTATION_POSITION or EQUIPMENT_CATEGORY" }, { status: 400 });
     }
 
     const v = new Validator(body);
@@ -53,7 +53,7 @@ export async function DELETE(request: NextRequest) {
     const type = request.nextUrl.searchParams.get("type");
     const value = request.nextUrl.searchParams.get("value");
     if (!isValidType(type)) {
-      return Response.json({ error: "type must be STAFF_ROLE or QUOTATION_POSITION" }, { status: 400 });
+      return Response.json({ error: "type must be STAFF_ROLE, QUOTATION_POSITION or EQUIPMENT_CATEGORY" }, { status: 400 });
     }
     if (!value) {
       return Response.json({ error: "value is required" }, { status: 400 });
