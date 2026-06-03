@@ -592,8 +592,8 @@ export default function Screen17WarehouseCheck() {
         breadcrumb={<>Warehouse check › Inquiry #{data.inquiry.id}</>}
         actions={
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            <Link href="/inquiries" className="btn">
-              ← Inquiries
+            <Link href={inquiryId ? `/inquiries/${inquiryId}` : "/inquiries"} className="btn">
+              ← Back to inquiry
             </Link>
             {data?.quotation && (
               <Link href={`/quotations/${data.quotation.id}/pdf`} className="btn">

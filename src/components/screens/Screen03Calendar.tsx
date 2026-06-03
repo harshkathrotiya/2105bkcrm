@@ -619,7 +619,7 @@ export default function Screen03Calendar() {
                   Close
                 </button>
                 <Link
-                  href={targetInquiryId ? `/inquiries/new?id=${targetInquiryId}` : `/inquiries`}
+                  href={targetInquiryId ? `/inquiries/${targetInquiryId}` : `/inquiries`}
                   className="btn btn-primary flex-1 justify-center text-center"
                   onClick={() => setSelectedEvent(null)}
                 >

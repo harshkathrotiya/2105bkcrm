@@ -256,7 +256,7 @@ export default function Screen24PerEventPayment() {
         breadcrumb={`Quotations › ${quotation.quoteNo || "Draft"} › Staff Payments`}
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
-            <Link href={`/warehouse/check?inquiryId=${inquiryId}`} className="btn">Back to Warehouse Check</Link>
+            <Link href={`/inquiries/${inquiryId}`} className="btn">← Back to inquiry</Link>
             <button
               onClick={handlePayAllPending}
               className="btn btn-success"

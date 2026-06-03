@@ -74,12 +74,12 @@ export default function GlobalSearch() {
     for (const i of inquiries) {
       const cn = clients.find((c) => c.id === i.clientId)?.name;
       if (hit(i.eventName) || hit(i.eventType) || hit(i.venue) || hit(cn)) {
-        out.push({ label: i.eventName || i.eventType || "Inquiry", sub: `${cn || ""} · ${i.startDate}`, group: "Inquiries", href: `/inquiries/new?id=${i.id}` });
+        out.push({ label: i.eventName || i.eventType || "Inquiry", sub: `${cn || ""} · ${i.startDate}`, group: "Inquiries", href: `/inquiries/${i.id}` });
       }
     }
     for (const qt of quotations) {
       if (hit(qt.quoteNo) || hit(qt.clientName) || hit(qt.eventName)) {
-        out.push({ label: qt.quoteNo || qt.eventName, sub: `${qt.clientName} · ${qt.status}`, group: "Quotations", href: `/quotations/${qt.id}/approval` });
+        out.push({ label: qt.quoteNo || qt.eventName, sub: `${qt.clientName} · ${qt.status}`, group: "Quotations", href: `/quotations/${qt.id}/pdf` });
       }
     }
     for (const inv of invoices) {

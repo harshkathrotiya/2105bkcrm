@@ -651,7 +651,7 @@ export default function Screen04NewInquiry() {
                   </Link>
                   {linkedQuotation && !linkedInvoice && (
                     <Link
-                      href={`/quotations/${linkedQuotation.id}/approval`}
+                      href={`/inquiries/${editInquiryId}`}
                       className="btn btn-warning w-full justify-center"
                     >
                       Approval & invoice →

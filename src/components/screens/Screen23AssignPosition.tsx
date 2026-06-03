@@ -415,7 +415,8 @@ export default function Screen23AssignPosition() {
         breadcrumb={`Quotations › ${quotation.quoteNo || "Draft"} › Assignments`}
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
-            <Link href={`/warehouse/check?inquiryId=${inquiryId}`} className="btn">Cancel</Link>
+            <Link href={`/inquiries/${inquiryId}`} className="btn">← Back to inquiry</Link>
+            <Link href={`/warehouse/check?inquiryId=${inquiryId}`} className="btn">Warehouse</Link>
             <Link
               href={`/staff/new?type=EXTERNAL&redirect=/staff/assign?inquiryId=${inquiryId}`}
               className="btn btn-warning"

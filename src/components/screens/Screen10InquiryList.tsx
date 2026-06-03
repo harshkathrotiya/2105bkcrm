@@ -258,7 +258,7 @@ export default function Screen10InquiryList() {
                     <tr 
                       key={inq.id}
                       className="cursor-pointer"
-                      onClick={() => router.push(`/inquiries/new?id=${inq.id}`)}
+                      onClick={() => router.push(`/inquiries/${inq.id}`)}
                     >
                       <td>
                         {client ? (

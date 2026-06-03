@@ -685,7 +685,7 @@ export default function Screen05QuotationForm() {
       <ScreenFrame
         breadcrumbs={[
           { label: "Inquiries", href: "/inquiries" },
-          { label: selectedInquiry?.eventName || selectedInquiry?.eventType || "—", href: selectedInquiry ? `/inquiries/new?id=${selectedInquiry.id}` : undefined },
+          { label: selectedInquiry?.eventName || selectedInquiry?.eventType || "—", href: selectedInquiry ? `/inquiries/${selectedInquiry.id}` : undefined },
           { label: "Quotation" },
         ]}
         actions={

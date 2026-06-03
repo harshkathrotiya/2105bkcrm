@@ -237,7 +237,7 @@ export default function Screen00Dashboard() {
                         return (
                           <tr key={inq.id} style={{ cursor: "pointer" }}>
                             <td>
-                              <Link href={`/inquiries/new?id=${inq.id}`} className="font-semibold text-tx">
+                              <Link href={`/inquiries/${inq.id}`} className="font-semibold text-tx">
                                 {inq.eventName || "Unnamed Event"}
                               </Link>
                             </td>

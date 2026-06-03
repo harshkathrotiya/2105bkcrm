@@ -500,7 +500,7 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                   + Create revision
                 </button>
                 <Link
-                  href={`/quotations/${quotation.id}/approval`}
+                  href={`/inquiries/${quotation.inquiryId}`}
                   className="btn btn-primary justify-center text-center"
                 >
                   Go to approval

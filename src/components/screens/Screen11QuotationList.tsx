@@ -319,7 +319,7 @@ export default function Screen11QuotationList() {
                             if (lt.status === "Approved") {
                               return (
                                 <Link
-                                  href={`/quotations/${lt.id}/approval`}
+                                  href={`/inquiries/${lt.inquiryId}`}
                                   className="text-[9px] text-acc hover:underline"
                                   onClick={(e) => e.stopPropagation()}
                                 >
@@ -341,7 +341,7 @@ export default function Screen11QuotationList() {
                             </Link>
                             {lt.status !== "Approved" && !hasInvoice && (
                               <Link
-                                href={`/quotations/${lt.id}/approval`}
+                                href={`/inquiries/${lt.inquiryId}`}
                                 className="btn btn-success text-[10px] px-[8px] py-[4px]"
                                 onClick={(e) => e.stopPropagation()}
                               >
@@ -462,7 +462,7 @@ export default function Screen11QuotationList() {
                                     {rev.status !== "Approved" &&
                                       !revHasInvoice && (
                                         <Link
-                                          href={`/quotations/${rev.id}/approval`}
+                                          href={`/inquiries/${rev.inquiryId}`}
                                           className="btn btn-success text-[10px] px-[8px] py-[4px]"
                                           onClick={(e) =>
                                             e.stopPropagation()
