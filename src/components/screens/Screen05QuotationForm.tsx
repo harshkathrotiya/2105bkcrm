@@ -11,6 +11,7 @@ import type { QuotationRow } from "@/lib/store";
 import type { Equipment, Kit } from "@/lib/types";
 import { generateId } from "@/lib/types";
 import { generateQuoteNo, calcDays } from "@/lib/utils";
+import { computeGst } from "@/lib/pricing";
 import * as api from "@/lib/api";
 import { useToast } from "../ui/Toast";
 
@@ -408,9 +409,7 @@ export default function Screen05QuotationForm() {
   };
 
   const subtotal = rows.reduce((s, r) => s + r.amount, 0);
-  const cgst = Math.round(subtotal * 0.09);
-  const sgst = Math.round(subtotal * 0.09);
-  const total = subtotal + cgst + sgst;
+  const { cgst, sgst, total } = computeGst(subtotal);
 
   const updateRow = (no: number, field: keyof QuotationRow, value: string | number) => {
     setRows((prev) =>

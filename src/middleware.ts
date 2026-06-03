@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyJWT } from "@/lib/auth";
+import { verifyJWT, type SessionPayload } from "@/lib/auth";
 import { ROUTE_PERMISSION, NAV_ITEMS } from "@/lib/permissions";
 
-/** First nav route the user is allowed to see, used as a safe landing page. */
 function firstAllowedPath(role: string, permissions: string[] | undefined): string {
   if (role === "Admin") return "/";
   const perms = permissions ?? [];
@@ -14,13 +13,14 @@ function firstAllowedPath(role: string, permissions: string[] | undefined): stri
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get("bk-media-session")?.value;
   const { pathname } = request.nextUrl;
+  let payload: SessionPayload | null = null;
 
   // Auth API — always allow
   if (pathname.startsWith("/api/auth")) {
     return NextResponse.next();
   }
 
-  const payload = token ? await verifyJWT(token) : null;
+  payload = token ? await verifyJWT(token) : null;
   const isAuthenticated = !!payload;
 
   // Redirect authenticated users away from login
@@ -59,8 +59,8 @@ export async function middleware(request: NextRequest) {
 
   // Permission check — find matching route rule
   if (isAuthenticated && payload) {
-    const role = (payload as any).role as string;
-    const permissions = (payload as any).permissions as string[] | undefined;
+    const role = payload.role;
+    const permissions = payload.permissions;
     const matched = ROUTE_PERMISSION.find(
       ({ prefix }) => pathname === prefix || pathname.startsWith(prefix + "/")
     );

@@ -8,15 +8,8 @@ import Badge from "../ui/Badge";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { useCurrentUser } from "@/lib/use-current-user";
-
-interface UserRow {
-  id: string;
-  username: string;
-  name: string;
-  role: string;
-  is_active: number;
-  created_at: string;
-}
+import * as api from "@/lib/api";
+import type { UserRow } from "@/lib/api";
 
 const ROLE_BADGE: Record<string, "rd" | "bl" | "gr" | "gy"> = {
   Admin: "rd",
@@ -55,21 +48,17 @@ export default function Screen32UsersSettings() {
 
   const load = () => {
     setLoading(true);
-    fetch("/api/users")
-      .then((r) => r.json())
+    api.fetchUsers()
       .then((data) => { setUsers(data); setLoading(false); })
       .catch(() => { setError("Failed to load users"); setLoading(false); });
   };
 
   const loadRoles = async () => {
     try {
-      const res = await fetch("/api/roles");
-      const data = await res.json();
-      if (res.ok && data.roles) {
-        setRolesList(Object.keys(data.roles));
-      }
-    } catch (err) {
-      console.error("Failed to load roles", err);
+      const data = await api.fetchRoles();
+      if (data.roles) setRolesList(Object.keys(data.roles));
+    } catch {
+      // Keep default roles on failure
     }
   };
 
@@ -85,17 +74,16 @@ export default function Screen32UsersSettings() {
       return;
     }
     setCreating(true);
-    const res = await fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: newUsername.trim(), name: newName.trim(), password: newPassword, role: newRole }),
-    });
-    const data = await res.json();
-    setCreating(false);
-    if (!res.ok) { setCreateError(data.error ?? "Failed to create user"); return; }
-    setShowCreate(false);
-    setNewUsername(""); setNewName(""); setNewPassword(""); setNewRole("Operator");
-    load();
+    try {
+      await api.createUser({ username: newUsername.trim(), name: newName.trim(), password: newPassword, role: newRole });
+      setShowCreate(false);
+      setNewUsername(""); setNewName(""); setNewPassword(""); setNewRole("Operator");
+      load();
+    } catch (err: unknown) {
+      setCreateError(err instanceof Error ? err.message : "Failed to create user");
+    } finally {
+      setCreating(false);
+    }
   };
 
   const openEdit = (u: UserRow) => {
@@ -110,19 +98,17 @@ export default function Screen32UsersSettings() {
   const handleSave = async () => {
     if (!editUser) return;
     setSaving(true); setSaveError("");
-    const body: any = { name: editName, role: editRole, is_active: editActive ? 1 : 0 };
-    if (editPassword.trim()) body.password = editPassword.trim();
-
-    const res = await fetch(`/api/users/${editUser.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    setSaving(false);
-    if (!res.ok) { setSaveError(data.error ?? "Failed to save"); return; }
-    setEditUser(null);
-    load();
+    try {
+      const body: Parameters<typeof api.updateUser>[1] = { name: editName, role: editRole, is_active: editActive ? 1 : 0 };
+      if (editPassword.trim()) body.password = editPassword.trim();
+      await api.updateUser(editUser.id, body);
+      setEditUser(null);
+      load();
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (u: UserRow) => {
@@ -132,10 +118,12 @@ export default function Screen32UsersSettings() {
       danger: true,
     });
     if (!ok) return;
-    const res = await fetch(`/api/users/${u.id}`, { method: "DELETE" });
-    const data = await res.json();
-    if (!res.ok) { toast.error(data.error ?? "Failed to delete"); return; }
-    load();
+    try {
+      await api.deleteUser(u.id);
+      load();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
+    }
   };
 
   return (

@@ -10,6 +10,7 @@ import Button from "../ui/Button";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { MODULE_PERMISSIONS } from "@/lib/permissions";
+import * as api from "@/lib/api";
 
 const DEFAULT_ROLES = ["Admin", "Manager", "Operator"];
 
@@ -28,14 +29,13 @@ export default function Screen33PermissionsMatrix() {
   const loadRoles = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/roles");
-      const data = await res.json();
-      if (res.ok && data.roles) {
+      const data = await api.fetchRoles();
+      if (data.roles) {
         setDbRoles(data.roles);
         setRolesList(Object.keys(data.roles));
       }
-    } catch (err) {
-      console.error("Failed to load roles", err);
+    } catch {
+      // Keep existing state on failure
     } finally {
       setLoading(false);
     }
@@ -60,17 +60,9 @@ export default function Screen33PermissionsMatrix() {
     }));
 
     try {
-      const res = await fetch("/api/roles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, permissions: nextPerms }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Failed to save permissions");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update permissions");
+      await api.setRolePermissions(role, nextPerms);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update permissions");
       loadRoles(); // Rollback
     }
   };
@@ -88,21 +80,13 @@ export default function Screen33PermissionsMatrix() {
     }
 
     try {
-      const res = await fetch("/api/roles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: trimmed, permissions: [] }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Failed to create role");
-      }
+      await api.setRolePermissions(trimmed, []);
       setShowAddRole(false);
       setNewRoleName("");
       await loadRoles();
       toast.success(`Role "${trimmed}" created.`);
-    } catch (err: any) {
-      setAddRoleError(err.message || "Failed to create role");
+    } catch (err: unknown) {
+      setAddRoleError(err instanceof Error ? err.message : "Failed to create role");
     }
   };
 
@@ -116,19 +100,11 @@ export default function Screen33PermissionsMatrix() {
     if (!ok) return;
 
     try {
-      const res = await fetch("/api/roles", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Failed to delete role");
-      }
+      await api.deleteRole(role);
       await loadRoles();
       toast.success(`Role "${role}" deleted.`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete role");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete role");
     }
   };
 

@@ -8,6 +8,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useToast } from "../ui/Toast";
+import * as api from "@/lib/api";
 
 interface Props {
   inquiryId: string;
@@ -30,12 +31,10 @@ export default function Screen30StaffBrief({ inquiryId, staffId }: Props) {
     async function loadBrief() {
       try {
         setLoading(true);
-        const res = await fetch(`/api/reports/staff-brief?inquiryId=${inquiryId}&staffId=${staffId}`);
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Failed to load brief");
+        const json = await api.fetchStaffBrief(inquiryId, staffId);
         if (active) setData(json);
-      } catch (err: any) {
-        if (active) setError(err.message);
+      } catch (err: unknown) {
+        if (active) setError(err instanceof Error ? err.message : "Failed to load brief");
       } finally {
         if (active) setLoading(false);
       }
@@ -88,23 +87,11 @@ Koi sawaal hoy to call karo: +91 98250 00000`;
   const handleBroadcast = async () => {
     setBroadcasting(true);
     try {
-      const res = await fetch("/api/reports/staff-brief", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          inquiryId,
-          staffId,
-          messageText: briefMessage,
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Broadcast failed");
-
+      await api.broadcastStaffBrief(inquiryId, staffId, briefMessage);
       setToast({ show: true, msg: "WhatsApp Event Brief broadcasted successfully (simulated)!" });
       setTimeout(() => setToast({ show: false, msg: "" }), 3000);
-    } catch (err: any) {
-      toastApi.error(err.message || "Failed to trigger simulated broadcast");
+    } catch (err: unknown) {
+      toastApi.error(err instanceof Error ? err.message : "Failed to trigger simulated broadcast");
     } finally {
       setBroadcasting(false);
     }

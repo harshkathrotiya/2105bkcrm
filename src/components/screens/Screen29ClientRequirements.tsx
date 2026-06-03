@@ -8,6 +8,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useToast } from "../ui/Toast";
+import * as api from "@/lib/api";
 
 interface Props {
   inquiryId: string;
@@ -34,18 +35,15 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
     async function loadRequirements() {
       try {
         setLoading(true);
-        const res = await fetch(`/api/reports/client-requirements?inquiryId=${inquiryId}`);
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Failed to load requirements");
-        
+        const json = await api.fetchClientRequirements(inquiryId);
         if (active) {
           setData(json);
-          setPower(json.powerRequirements || "");
-          setTables(json.tablesSpace || "");
-          setOther(json.otherRequirements || "");
+          setPower((json.powerRequirements as string) || "");
+          setTables((json.tablesSpace as string) || "");
+          setOther((json.otherRequirements as string) || "");
         }
-      } catch (err: any) {
-        if (active) setError(err.message);
+      } catch (err: unknown) {
+        if (active) setError(err instanceof Error ? err.message : "Failed to load requirements");
       } finally {
         if (active) setLoading(false);
       }
@@ -58,25 +56,16 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch("/api/reports/client-requirements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          inquiryId,
-          powerRequirements: power.trim(),
-          tablesSpace: tables.trim(),
-          otherRequirements: other.trim(),
-        }),
+      const json = await api.saveClientRequirements(inquiryId, {
+        powerRequirements: power.trim(),
+        tablesSpace: tables.trim(),
+        otherRequirements: other.trim(),
       });
-
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Failed to save requirements");
-      
       setData(json);
       setToast(true);
       setTimeout(() => setToast(false), 2000);
-    } catch (err: any) {
-      toastApi.error(err.message || "Failed to save client requirements");
+    } catch (err: unknown) {
+      toastApi.error(err instanceof Error ? err.message : "Failed to save client requirements");
     } finally {
       setSaving(false);
     }

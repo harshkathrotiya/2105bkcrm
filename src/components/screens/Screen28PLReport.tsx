@@ -7,6 +7,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
+import * as api from "@/lib/api";
 
 interface Props {
   inquiryId: string;
@@ -25,12 +26,10 @@ export default function Screen28PLReport({ inquiryId }: Props) {
     async function loadReport() {
       try {
         setLoading(true);
-        const res = await fetch(`/api/reports/pl?inquiryId=${inquiryId}`);
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Failed to load report");
+        const json = await api.fetchPLReport(inquiryId);
         if (active) setData(json);
-      } catch (err: any) {
-        if (active) setError(err.message);
+      } catch (err: unknown) {
+        if (active) setError(err instanceof Error ? err.message : "Failed to load report");
       } finally {
         if (active) setLoading(false);
       }

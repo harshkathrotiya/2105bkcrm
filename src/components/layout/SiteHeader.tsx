@@ -4,6 +4,7 @@ import { useTheme } from "@/lib/theme-context";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { ROLE_COLORS } from "@/lib/constants";
 import GlobalSearch from "./GlobalSearch";
+import * as api from "@/lib/api";
 
 export default function SiteHeader() {
   const { theme, toggleTheme } = useTheme();
@@ -11,11 +12,11 @@ export default function SiteHeader() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      window.location.href = "/login";
-    } catch (err) {
-      console.error("Logout failed:", err);
+      await api.logout();
+    } catch {
+      // proceed to login regardless
     }
+    window.location.href = "/login";
   };
 
   const displayName = user?.name || user?.username || "—";

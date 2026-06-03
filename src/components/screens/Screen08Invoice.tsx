@@ -6,6 +6,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useInvoices, useInquiries, useQuotations, useClients } from "@/lib/store";
 import { calcDays } from "@/lib/utils";
+import { computeGst } from "@/lib/pricing";
 
 interface Props {
   invoiceId: string;
@@ -258,11 +259,11 @@ export default function Screen08Invoice({ invoiceId }: Props) {
                   </div>
                   <div className="pdf-trow">
                     <span>CGST @ 9%</span>
-                    <span>₹{fmt(Math.round((invoice.videographyAmount + invoice.photographyAmount) * 0.09))}</span>
+                    <span>₹{fmt(computeGst(invoice.videographyAmount + invoice.photographyAmount).cgst)}</span>
                   </div>
                   <div className="pdf-trow">
                     <span>SGST @ 9%</span>
-                    <span>₹{fmt(Math.round((invoice.videographyAmount + invoice.photographyAmount) * 0.09))}</span>
+                    <span>₹{fmt(computeGst(invoice.videographyAmount + invoice.photographyAmount).sgst)}</span>
                   </div>
                   <div className="pdf-trow">
                     <span>Gross total</span>

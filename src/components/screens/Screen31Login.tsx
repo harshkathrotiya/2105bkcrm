@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TextField } from "../ui/Field";
 import Button from "../ui/Button";
+import * as api from "@/lib/api";
 
 export default function Screen31Login() {
   const router = useRouter();
@@ -26,24 +27,11 @@ export default function Screen31Login() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: username.trim(),
-          password: password.trim(),
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Login failed");
-      }
-
-      // Success -> force a reload to clients or redirect URL to re-trigger middleware and context state
+      await api.login(username.trim(), password.trim());
+      // Force a full navigation to re-trigger middleware and context state
       window.location.href = redirectUrl;
-    } catch (err: any) {
-      setError(err.message || "An error occurred during login.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred during login.");
       setLoading(false);
     }
   };

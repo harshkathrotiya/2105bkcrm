@@ -633,3 +633,104 @@ export function deleteClientRate(clientId: string, equipmentId: number): Promise
     method: "DELETE",
   });
 }
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+
+export function login(username: string, password: string): Promise<{ user: { id: string; username: string; name: string; role: string } }> {
+  return request("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+  });
+}
+
+export function logout(): Promise<void> {
+  return request("/api/auth/logout", { method: "POST" });
+}
+
+// ── Reports ──────────────────────────────────────────────────────────────────
+
+export function fetchClientRequirements(inquiryId: string): Promise<Record<string, unknown>> {
+  return request(`/api/reports/client-requirements?inquiryId=${encodeURIComponent(inquiryId)}`);
+}
+
+export function saveClientRequirements(
+  inquiryId: string,
+  data: { powerRequirements: string; tablesSpace: string; otherRequirements: string }
+): Promise<Record<string, unknown>> {
+  return request("/api/reports/client-requirements", {
+    method: "POST",
+    body: JSON.stringify({ inquiryId, ...data }),
+  });
+}
+
+export function fetchExpenseReport(inquiryId: string): Promise<Record<string, unknown>> {
+  return request(`/api/reports/expense?inquiryId=${encodeURIComponent(inquiryId)}`);
+}
+
+export function fetchPLReport(inquiryId: string): Promise<Record<string, unknown>> {
+  return request(`/api/reports/pl?inquiryId=${encodeURIComponent(inquiryId)}`);
+}
+
+export function fetchStaffBrief(inquiryId: string, staffId: string): Promise<Record<string, unknown>> {
+  return request(`/api/reports/staff-brief?inquiryId=${encodeURIComponent(inquiryId)}&staffId=${encodeURIComponent(staffId)}`);
+}
+
+export function broadcastStaffBrief(inquiryId: string, staffId: string, messageText: string): Promise<Record<string, unknown>> {
+  return request("/api/reports/staff-brief", {
+    method: "POST",
+    body: JSON.stringify({ inquiryId, staffId, messageText }),
+  });
+}
+
+// ── Users ────────────────────────────────────────────────────────────────────
+
+export interface UserRow {
+  id: string;
+  username: string;
+  name: string;
+  role: string;
+  is_active: number;
+  created_at: string;
+}
+
+export function fetchUsers(): Promise<UserRow[]> {
+  return request("/api/users");
+}
+
+export function createUser(data: { username: string; name: string; password: string; role: string }): Promise<UserRow> {
+  return request("/api/users", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateUser(id: string, data: { name?: string; role?: string; password?: string; is_active?: number }): Promise<UserRow> {
+  return request(`/api/users/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteUser(id: string): Promise<void> {
+  return request(`/api/users/${id}`, { method: "DELETE" });
+}
+
+// ── Roles & Permissions ───────────────────────────────────────────────────────
+
+export function fetchRoles(): Promise<{ roles: Record<string, string[]> }> {
+  return request("/api/roles");
+}
+
+export function setRolePermissions(role: string, permissions: string[]): Promise<void> {
+  return request("/api/roles", {
+    method: "POST",
+    body: JSON.stringify({ role, permissions }),
+  });
+}
+
+export function deleteRole(role: string): Promise<void> {
+  return request("/api/roles", {
+    method: "DELETE",
+    body: JSON.stringify({ role }),
+  });
+}
