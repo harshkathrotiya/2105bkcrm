@@ -16,7 +16,10 @@ const pool =
   globalForPrisma.prismaPool ??
   new pg.Pool({
     connectionString: process.env.DATABASE_URL || process.env.DIRECT_URL!,
-    max: !!process.env.VERCEL ? 1 : 2, // Use 1 connection per serverless function instance on Vercel to optimize pooler utilization
+    // 1 connection per serverless instance on Vercel (the platform pooler fans
+    // out); locally use a larger pool so multi-query routes / HMR don't starve
+    // it and trigger Prisma P2028 "unable to start a transaction in time".
+    max: !!process.env.VERCEL ? 1 : 10,
     ssl: (process.env.DATABASE_URL || process.env.DIRECT_URL)?.includes("sslmode=require")
       ? { rejectUnauthorized: false }
       : undefined,

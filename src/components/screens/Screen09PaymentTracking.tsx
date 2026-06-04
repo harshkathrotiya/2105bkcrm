@@ -458,13 +458,15 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                         </div>
                       </div>
                     )}
-                    <button
-                      className={`btn w-full justify-center ${invoice.deinstallDone ? "btn-success" : (invoice.balanceReceived ? "btn-primary" : "")}`}
-                      onClick={handleToggleDeinstall}
-                      disabled={!invoice.balanceReceived}
-                    >
-                      {invoice.deinstallDone ? "✓ De-installation done!" : "✓ Mark de-installation done"}
-                    </button>
+                    {canRecordPayment && (
+                      <button
+                        className={`btn w-full justify-center ${invoice.deinstallDone ? "btn-success" : (invoice.balanceReceived ? "btn-primary" : "")}`}
+                        onClick={handleToggleDeinstall}
+                        disabled={!invoice.balanceReceived}
+                      >
+                        {invoice.deinstallDone ? "✓ De-installation done!" : "✓ Mark de-installation done"}
+                      </button>
+                    )}
                   </>
                 ) : (
                   <>
@@ -479,12 +481,14 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                         Deinstallation must be completed before recording the final balance payment.
                       </div>
                     </div>
-                    <button
-                      className={`btn w-full justify-center ${invoice.deinstallDone ? "" : "btn-primary"}`}
-                      onClick={handleToggleDeinstall}
-                    >
-                      {invoice.deinstallDone ? "✓ Mark Pending" : "✓ Mark Deinstalled"}
-                    </button>
+                    {canRecordPayment && (
+                      <button
+                        className={`btn w-full justify-center ${invoice.deinstallDone ? "" : "btn-primary"}`}
+                        onClick={handleToggleDeinstall}
+                      >
+                        {invoice.deinstallDone ? "✓ Mark Pending" : "✓ Mark Deinstalled"}
+                      </button>
+                    )}
                   </>
                 )}
               </div>
@@ -500,6 +504,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                       style={{ width: "100px", height: "28px", padding: "0 8px" }}
                       placeholder="e.g. 480"
                       value={totalGb}
+                      disabled={!canRecordPayment}
                       onChange={(e) => setTotalGb(e.target.value === "" ? "" : Number(e.target.value))}
                     />
                   </div>
@@ -516,15 +521,17 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                     </Badge>
                   </div>
                 </div>
-                <button
-                  className={`btn w-full justify-center ${
-                    invoice.balanceReceived ? "btn-success" : ""
-                  }`}
-                  onClick={handleMarkHDD}
-                  disabled={!invoice.balanceReceived && !invoice.hddDelivered}
-                >
-                  {invoice.hddDelivered ? "✓ HDD delivered" : "✓ Mark HDD delivered ↗"}
-                </button>
+                {canRecordPayment && (
+                  <button
+                    className={`btn w-full justify-center ${
+                      invoice.balanceReceived ? "btn-success" : ""
+                    }`}
+                    onClick={handleMarkHDD}
+                    disabled={!invoice.balanceReceived && !invoice.hddDelivered}
+                  >
+                    {invoice.hddDelivered ? "✓ HDD delivered" : "✓ Mark HDD delivered ↗"}
+                  </button>
+                )}
                 <div className="text-[10px] text-tx3 text-center" style={{ marginTop: "6px" }}>
                   HDD deliver only after full payment
                 </div>

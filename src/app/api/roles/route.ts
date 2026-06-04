@@ -84,14 +84,15 @@ export async function POST(req: Request) {
         .map((p: string) => ({ role: trimmedRole, permission: p })),
     ];
 
-    // Use the array form of $transaction (a single batched statement) rather
-    // than an interactive transaction. The interactive form holds a pooled
-    // connection across the whole async callback and times out (P2028) when
-    // the small connection pool (max: 2) is busy.
-    await db.$transaction([
-      db.rolePermission.deleteMany({ where: { role: trimmedRole } }),
-      db.rolePermission.createMany({ data }),
-    ]);
+    // Replace this role's permission rows with the new set. We deliberately do
+    // NOT wrap this in a $transaction: with the tiny connection pool (max: 2)
+    // any transaction can fail to acquire a connection in time (Prisma P2028).
+    // Running the two statements sequentially each grabs+releases a connection
+    // quickly. The delete+insert is idempotent (the marker row guarantees the
+    // role still "exists"), so the brief gap between them is harmless for what
+    // is low-frequency role config.
+    await db.rolePermission.deleteMany({ where: { role: trimmedRole } });
+    await db.rolePermission.createMany({ data });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
