@@ -14,6 +14,7 @@ import { generateQuoteNo, calcDays } from "@/lib/utils";
 import { computeGst } from "@/lib/pricing";
 import * as api from "@/lib/api";
 import { useToast } from "../ui/Toast";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 
 // ── Default position list per FRD appendix (fallback if API list not loaded) ──
@@ -49,6 +50,7 @@ function makeRow(no: number, days: number): QuotationRow {
 export default function Screen05QuotationForm() {
   const router = useRouter();
   const toast = useToast();
+  const { can } = useCurrentUser();
   const searchParams = useSearchParams();
   const { quotations, dispatchQuotations } = useQuotations();
   const { inquiries, dispatchInquiries } = useInquiries();
@@ -178,6 +180,8 @@ export default function Screen05QuotationForm() {
     () => quotations.find((q) => q.inquiryId === selectedInquiryId && q.status !== "Revised"),
     [quotations, selectedInquiryId]
   );
+
+  const canWrite = existingQuotation ? can("quotations.edit") : can("quotations.create");
 
   // LED config states
   const [screenWidth, setScreenWidth] = useState("");
@@ -575,13 +579,17 @@ export default function Screen05QuotationForm() {
           { label: "Quotation" },
         ]}
         actions={
-          <button
-            className={`btn btn-success ${!selectedInquiry || saving ? "opacity-50" : ""}`}
-            onClick={handleSave}
-            disabled={!selectedInquiry || saving}
-          >
-            {saving ? "Saving..." : existingQuotation ? "Update quotation ↗" : "Save quotation ↗"}
-          </button>
+          canWrite ? (
+            <button
+              className={`btn btn-success ${!selectedInquiry || saving ? "opacity-50" : ""}`}
+              onClick={handleSave}
+              disabled={!selectedInquiry || saving}
+            >
+              {saving ? "Saving..." : existingQuotation ? "Update quotation ↗" : "Save quotation ↗"}
+            </button>
+          ) : (
+            <span className="text-[11px] text-tx3">View only — you don&apos;t have {existingQuotation ? "edit" : "create"} access.</span>
+          )
         }
       >
         {/* Inquiry selector */}
@@ -642,7 +650,7 @@ export default function Screen05QuotationForm() {
 
         {/* LED Screen Configuration (Editable) */}
         {selectedInquiry && (selectedInquiry.department === 'LED' || selectedInquiry.department === 'MERGED') && (
-          <div className="card" style={{ padding: "16px", marginBottom: "14px", border: "1px solid var(--sem-bl-bdr)" }}>
+          <fieldset disabled={!canWrite} className="card" style={{ padding: "16px", marginBottom: "14px", border: "1px solid var(--sem-bl-bdr)", minInlineSize: "auto" }}>
             <div className="text-[12px] font-medium text-bl" style={{ marginBottom: "12px" }}>LED Screen Configuration</div>
             <div className="fgrid">
               <div className="field">
@@ -737,12 +745,12 @@ export default function Screen05QuotationForm() {
                 <span className="ml-auto">Estimated amount: <strong>₹{(screenArea * ratePerSqft * eventDays).toLocaleString('en-IN')}</strong></span>
               </div>
             )}
-          </div>
+          </fieldset>
         )}
 
         <div className="two-col">
           {/* Left — equipment table */}
-          <div>
+          <fieldset disabled={!canWrite} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto" }}>
             <div className="card">
               <div className="card-t">
                 <span>Equipment table</span>
@@ -864,7 +872,7 @@ export default function Screen05QuotationForm() {
                 + Add equipment row
               </button>
             </div>
-          </div>
+          </fieldset>
 
           {/* Right — calculation */}
           <div>

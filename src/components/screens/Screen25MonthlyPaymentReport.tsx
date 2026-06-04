@@ -7,10 +7,13 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
+import { useCurrentUser } from "@/lib/use-current-user";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 
 export default function Screen25MonthlyPaymentReport() {
+  const { can } = useCurrentUser();
+  const canPay = can("staff.payments");
   const toast = useToast();
   const confirm = useConfirm();
   // Monthly selection
@@ -248,13 +251,15 @@ export default function Screen25MonthlyPaymentReport() {
                 ))}
               </select>
               <button onClick={handlePrint} className="btn">Print / Download PDF</button>
-              <button
-                onClick={handlePayAllPending}
-                className="btn btn-success"
-                disabled={loading || !report || report.totals.pending === 0}
-              >
-                Pay All Pending ↗
-              </button>
+              {canPay && (
+                <button
+                  onClick={handlePayAllPending}
+                  className="btn btn-success"
+                  disabled={loading || !report || report.totals.pending === 0}
+                >
+                  Pay All Pending ↗
+                </button>
+              )}
             </div>
           }
         >
@@ -414,13 +419,17 @@ export default function Screen25MonthlyPaymentReport() {
                               </td>
                               <td className="tc">
                                 {pd.pending > 0 ? (
-                                  <button
-                                    onClick={() => handleOpenPayModal(pd.staff.id, pd.staff.name, pd.pending, "PER_DAY")}
-                                    className="btn btn-success"
-                                    style={{ fontSize: "10px", padding: "2px 8px" }}
-                                  >
-                                    Pay
-                                  </button>
+                                  canPay ? (
+                                    <button
+                                      onClick={() => handleOpenPayModal(pd.staff.id, pd.staff.name, pd.pending, "PER_DAY")}
+                                      className="btn btn-success"
+                                      style={{ fontSize: "10px", padding: "2px 8px" }}
+                                    >
+                                      Pay
+                                    </button>
+                                  ) : (
+                                    <Badge variant="am">Pending</Badge>
+                                  )
                                 ) : (
                                   <Badge variant="gr">Paid</Badge>
                                 )}
@@ -484,13 +493,17 @@ export default function Screen25MonthlyPaymentReport() {
                                 </td>
                                 <td className="tc">
                                   {!isPaid ? (
-                                    <button
-                                      onClick={() => handleOpenPayModal(ms.staff.id, ms.staff.name, ms.monthlySalary, "MONTHLY")}
-                                      className="btn btn-success"
-                                      style={{ fontSize: "10px", padding: "2px 8px" }}
-                                    >
-                                      Pay
-                                    </button>
+                                    canPay ? (
+                                      <button
+                                        onClick={() => handleOpenPayModal(ms.staff.id, ms.staff.name, ms.monthlySalary, "MONTHLY")}
+                                        className="btn btn-success"
+                                        style={{ fontSize: "10px", padding: "2px 8px" }}
+                                      >
+                                        Pay
+                                      </button>
+                                    ) : (
+                                      <Badge variant="am">Pending</Badge>
+                                    )
                                   ) : (
                                     <span style={{ fontSize: "11px", color: "var(--tx3)" }}>Done</span>
                                   )}
@@ -637,6 +650,7 @@ export default function Screen25MonthlyPaymentReport() {
 
               <div style={{ height: "1px", background: "var(--b1)" }} />
 
+              <fieldset disabled={!canPay} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
               <div className="field">
                 <div className="flbl">Payment Method</div>
                 <select
@@ -661,6 +675,7 @@ export default function Screen25MonthlyPaymentReport() {
                   onChange={(e) => setReferenceNo(e.target.value)}
                 />
               </div>
+              </fieldset>
             </div>
 
             <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
@@ -671,13 +686,15 @@ export default function Screen25MonthlyPaymentReport() {
               >
                 Cancel
               </button>
-              <button
-                onClick={handleConfirmPayment}
-                className="btn btn-success"
-                disabled={processingPayment}
-              >
-                {processingPayment ? "Processing..." : "Confirm Payout ↗"}
-              </button>
+              {canPay && (
+                <button
+                  onClick={handleConfirmPayment}
+                  className="btn btn-success"
+                  disabled={processingPayment}
+                >
+                  {processingPayment ? "Processing..." : "Confirm Payout ↗"}
+                </button>
+              )}
             </div>
           </div>
         </div>

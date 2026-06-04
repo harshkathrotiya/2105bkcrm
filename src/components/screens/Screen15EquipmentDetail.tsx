@@ -8,6 +8,7 @@ import LoadingSkeleton from "../ui/LoadingSkeleton";
 import Badge from "../ui/Badge";
 import * as api from "@/lib/api";
 import { useEquipment, useQuotations, useInvoices } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 
@@ -16,6 +17,8 @@ interface Screen15EquipmentDetailProps {
 }
 
 export default function Screen15EquipmentDetail({ equipmentId }: Screen15EquipmentDetailProps) {
+  const { can } = useCurrentUser();
+  const canEdit = can("equipment.edit");
   const { refreshEquipment } = useEquipment();
   const { quotations } = useQuotations();
   const { invoices } = useInvoices();
@@ -164,9 +167,11 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
             <Link href="/equipment" className="btn">
               ← Back to List
             </Link>
-            <Link href={`/equipment/${item.id}/edit`} className="btn btn-primary">
-              ✎ Edit Equipment
-            </Link>
+            {canEdit && (
+              <Link href={`/equipment/${item.id}/edit`} className="btn btn-primary">
+                ✎ Edit Equipment
+              </Link>
+            )}
           </div>
         }
       >
@@ -360,15 +365,17 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                     </div>
                   )}
 
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{ width: "100%", marginTop: "8px", fontSize: "11px" }}
-                    onClick={() => handleReturn(activeBooking.id)}
-                    disabled={returningId === activeBooking.id}
-                  >
-                    {returningId === activeBooking.id ? "Returning..." : "✓ Mark as Returned"}
-                  </button>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ width: "100%", marginTop: "8px", fontSize: "11px" }}
+                      onClick={() => handleReturn(activeBooking.id)}
+                      disabled={returningId === activeBooking.id}
+                    >
+                      {returningId === activeBooking.id ? "Returning..." : "✓ Mark as Returned"}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div style={{

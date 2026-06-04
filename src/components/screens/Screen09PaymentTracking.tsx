@@ -10,6 +10,7 @@ import { useInvoices, useQuotations, useInquiries } from "@/lib/store";
 import * as api from "@/lib/api";
 import { useMemo } from "react";
 import { useToast } from "../ui/Toast";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 interface Props {
   invoiceId: string;
@@ -18,6 +19,8 @@ interface Props {
 export default function Screen09PaymentTracking({ invoiceId }: Props) {
   const router = useRouter();
   const toast = useToast();
+  const { can } = useCurrentUser();
+  const canRecordPayment = can("invoices.edit");
   const { invoices, dispatchInvoices } = useInvoices();
   const { quotations } = useQuotations();
   const { inquiries } = useInquiries();
@@ -320,6 +323,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
             {!(invoice.advanceReceived && invoice.balanceReceived) && (
               <div className="card">
                 <div className="card-t">Record new payment</div>
+                <fieldset disabled={!canRecordPayment} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto" }}>
                 <div className="fgrid">
                   <div className="field">
                     <div className="flbl">Amount (₹)</div>
@@ -387,13 +391,16 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                     />
                   </div>
                 </div>
-                <button
-                  className="btn btn-success w-full justify-center"
-                  style={{ marginTop: "10px" }}
-                  onClick={handleRecordPayment}
-                >
-                  ✓ Record payment ↗
-                </button>
+                </fieldset>
+                {canRecordPayment && (
+                  <button
+                    className="btn btn-success w-full justify-center"
+                    style={{ marginTop: "10px" }}
+                    onClick={handleRecordPayment}
+                  >
+                    ✓ Record payment ↗
+                  </button>
+                )}
               </div>
             )}
           </div>

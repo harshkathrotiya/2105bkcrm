@@ -8,6 +8,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
+import { useCurrentUser } from "@/lib/use-current-user";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import type { Inquiry, Quotation, StaffAssignment } from "@/lib/types";
@@ -33,6 +34,8 @@ interface GroupedStaffPayment {
 
 export default function Screen24PerEventPayment() {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  const canPay = can("staff.payments");
   const searchParams = useSearchParams();
   const inquiryId = searchParams.get("inquiryId") || "";
   const toast = useToast();
@@ -263,13 +266,15 @@ export default function Screen24PerEventPayment() {
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href={`/inquiries/${inquiryId}`} className="btn">← Back to inquiry</Link>
-            <button
-              onClick={handlePayAllPending}
-              className="btn btn-success"
-              disabled={bulkSubmitting || aggregates.pending === 0}
-            >
-              {bulkSubmitting ? "Processing..." : "Pay All Pending ↗"}
-            </button>
+            {canPay && (
+              <button
+                onClick={handlePayAllPending}
+                className="btn btn-success"
+                disabled={bulkSubmitting || aggregates.pending === 0}
+              >
+                {bulkSubmitting ? "Processing..." : "Pay All Pending ↗"}
+              </button>
+            )}
           </div>
         }
       >
@@ -415,7 +420,7 @@ export default function Screen24PerEventPayment() {
                           <div style={{ fontSize: "10px", color: "var(--tx3)", borderTop: "1px solid #1A4A34", paddingTop: "8px" }}>
                             Paid on: {g.paidAt ? new Date(g.paidAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }) : "N/A"} • Method: {g.paymentMethod} • Ref: {g.referenceNo || "None"}
                           </div>
-                        ) : (
+                        ) : canPay ? (
                           <div
                             style={{
                               display: "flex",
@@ -452,6 +457,10 @@ export default function Screen24PerEventPayment() {
                             >
                               {submitting === g.staffId ? "Processing..." : "Mark Paid"}
                             </button>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: "11px", color: "var(--tx3)", borderTop: "1px solid #4A3010", paddingTop: "10px" }}>
+                            View only — you don&apos;t have access.
                           </div>
                         )}
                       </div>

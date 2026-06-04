@@ -11,6 +11,7 @@ import SearchableSelect from "../ui/SearchableSelect";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { useKits, useEquipment } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import type { Equipment, Kit } from "@/lib/types";
 
@@ -29,6 +30,10 @@ function formatSerialNumber(sn: string | null | undefined): string {
 
 export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  // The kit DELETE API is gated by "kits.edit" (no separate kits.delete permission exists)
+  const canEditKit = can("kits.edit");
+  const canDeleteKit = can("kits.edit");
   const toast = useToast();
   const confirm = useConfirm();
   const { kits, loading: kitsLoading, refreshKits, dispatchKits } = useKits();
@@ -345,13 +350,15 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
             <Link href="/kits" className="btn">
               ‹ Back to Kits
             </Link>
-            <button
-              type="button"
-              className="btn text-rd"
-              onClick={handleDeleteKit}
-            >
-              ✕ Delete Kit
-            </button>
+            {canDeleteKit && (
+              <button
+                type="button"
+                className="btn text-rd"
+                onClick={handleDeleteKit}
+              >
+                ✕ Delete Kit
+              </button>
+            )}
           </div>
         }
       >
@@ -407,15 +414,17 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                         Status: <Badge variant={getEquipmentStatusBadgeVariant(mainBody.status)}>{mainBody.status}</Badge>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      className="btn text-rd"
-                      style={{ padding: "4px 8px", fontSize: "11px" }}
-                      onClick={handleRemoveMainBody}
-                      disabled={settingMainBody}
-                    >
-                      Unlink Main Body
-                    </button>
+                    {canEditKit && (
+                      <button
+                        type="button"
+                        className="btn text-rd"
+                        style={{ padding: "4px 8px", fontSize: "11px" }}
+                        onClick={handleRemoveMainBody}
+                        disabled={settingMainBody}
+                      >
+                        Unlink Main Body
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div style={{ color: "var(--rd)", fontSize: "12px" }}>Main body linked but item not found.</div>
@@ -426,7 +435,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                 <div style={{ color: "var(--am)", fontSize: "12px", marginBottom: "12px", background: "var(--sem-am-bg)", border: "1px solid var(--sem-am-bdr)", borderRadius: "6px", padding: "8px" }}>
                   ⚠️ Warning: No main body (e.g. Camera or Mixer) linked to this kit. A kit requires a main body to track correctly.
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <fieldset disabled={!canEditKit} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
                   <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
                     <SearchableSelect
                       style={{ flex: 1 }}
@@ -470,7 +479,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                       ⚠️ {selectedMainBodyQtyError}
                     </div>
                   )}
-                </div>
+                </fieldset>
               </div>
             )}
           </div>
@@ -507,14 +516,16 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                           <Badge variant={getEquipmentStatusBadgeVariant(item.status)}>{item.status}</Badge>
                         </td>
                         <td>
-                          <button
-                            type="button"
-                            className="btn text-rd"
-                            style={{ padding: "2px 6px", fontSize: "10.5px" }}
-                            onClick={() => handleRemoveAccessory(item.id)}
-                          >
-                            Remove
-                          </button>
+                          {canEditKit && (
+                            <button
+                              type="button"
+                              className="btn text-rd"
+                              style={{ padding: "2px 6px", fontSize: "10.5px" }}
+                              onClick={() => handleRemoveAccessory(item.id)}
+                            >
+                              Remove
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -524,6 +535,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
 
             {/* Add Accessory Form */}
             <div style={{ borderTop: "1px solid var(--b1)", paddingTop: "15px" }}>
+              <fieldset disabled={!canEditKit} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto" }}>
               <div style={{ fontSize: "11.3px", fontWeight: 600, color: "var(--tx3)", marginBottom: "6px" }}>ADD EQUIPMENT TO KIT</div>
               <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -569,6 +581,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                   ⚠️ {accessoryQtyError}
                 </div>
               )}
+              </fieldset>
             </div>
           </div>
 

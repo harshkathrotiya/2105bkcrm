@@ -10,6 +10,7 @@ import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { useStaff, useInquiries } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import type { Staff } from "@/lib/types";
 
@@ -36,6 +37,8 @@ interface StaffSummary {
 
 export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  const canEditStaff = can("staff.edit");
   const toast = useToast();
   const confirm = useConfirm();
   const { staff, loading: staffLoading, refreshStaff } = useStaff();
@@ -286,7 +289,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href="/staff" className="btn">Back to List</Link>
-            {staffMember.isActive ? (
+            {canEditStaff && (staffMember.isActive ? (
               <button
                 onClick={handleDeactivate}
                 className="btn"
@@ -303,8 +306,10 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
               >
                 {actionLoading ? "..." : "Reactivate"}
               </button>
+            ))}
+            {canEditStaff && (
+              <Link href={`/staff/${staffMember.id}/edit`} className="btn btn-primary">Edit Profile ↗</Link>
             )}
-            <Link href={`/staff/${staffMember.id}/edit`} className="btn btn-primary">Edit Profile ↗</Link>
           </div>
         }
       >
@@ -537,13 +542,15 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <Badge variant="bl">Deployed</Badge>
-                      <button
-                        onClick={() => handleUnassign(activeDeployment.id)}
-                        className="btn"
-                        style={{ padding: "4px 8px", fontSize: "10px", borderColor: "var(--rd)", color: "var(--rd)", minHeight: "auto", height: "auto" }}
-                      >
-                        Unassign
-                      </button>
+                      {canEditStaff && (
+                        <button
+                          onClick={() => handleUnassign(activeDeployment.id)}
+                          className="btn"
+                          style={{ padding: "4px 8px", fontSize: "10px", borderColor: "var(--rd)", color: "var(--rd)", minHeight: "auto", height: "auto" }}
+                        >
+                          Unassign
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -573,6 +580,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
               <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
                 <div className="ct">Assign to Event</div>
                 <form onSubmit={handleAssign} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <fieldset disabled={!canEditStaff} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div className="field">
                     <div className="flbl">Upcoming Event</div>
                     <select
@@ -654,6 +662,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                   >
                     {isAssigning ? "Assigning..." : "✓ Deploy Staff"}
                   </button>
+                  </fieldset>
                 </form>
               </div>
 

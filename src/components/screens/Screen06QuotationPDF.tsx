@@ -7,6 +7,8 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useQuotations, useInquiries } from "@/lib/store";
 import { generateRevisionNo } from "@/lib/utils";
+import { generateId } from "@/lib/types";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 interface Props {
   quotationId: string;
@@ -31,6 +33,10 @@ const equipmentDescriptions: Record<string, string> = {
 
 export default function Screen06QuotationPDF({ quotationId }: Props) {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  const canEditQuote = can("quotations.edit");
+  const canAssignCrew = can("staff.edit");
+  const canViewWarehouse = can("warehouse.view");
   const { quotations, dispatchQuotations } = useQuotations();
   const { inquiries } = useInquiries();
   const quotation = quotations.find((q) => q.id === quotationId);
@@ -78,7 +84,7 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
 
     const allQuoteNos = quotations.map((q) => q.quoteNo);
     const newQuoteNo = generateRevisionNo(quotation.quoteNo, allQuoteNos);
-    const newId = `quote-${Date.now()}`;
+    const newId = `quote-${generateId()}`;
 
     // Mark current as Revised
     dispatchQuotations({
@@ -148,37 +154,47 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
         actions={
           <>
             {statusBadge}
-            <Link href={`/staff/assign?inquiryId=${quotation.inquiryId}`} className="btn">
-              Crew
-            </Link>
-            <Link href={`/warehouse/check?inquiryId=${quotation.inquiryId}`} className="btn">
-              Warehouse
-            </Link>
-            <button className="btn" onClick={handleRevise}>
-              + Revise
-            </button>
-            <button
-              className="btn btn-success"
-              onClick={handleMarkApproved}
-              disabled={quotation.status === "Approved"}
-            >
-              ✓ Mark approved
-            </button>
-            <button
-              className="btn"
-              onClick={() => {
-                dispatchQuotations({
-                  type: "UPDATE_QUOTATION",
-                  payload: {
-                    id: quotation.id,
-                    sentAt: new Date().toISOString().split("T")[0],
-                    status: "Sent",
-                  },
-                });
-              }}
-            >
-              WhatsApp ↗
-            </button>
+            {canAssignCrew && (
+              <Link href={`/staff/assign?inquiryId=${quotation.inquiryId}`} className="btn">
+                Crew
+              </Link>
+            )}
+            {canViewWarehouse && (
+              <Link href={`/warehouse/check?inquiryId=${quotation.inquiryId}`} className="btn">
+                Warehouse
+              </Link>
+            )}
+            {canEditQuote && (
+              <button className="btn" onClick={handleRevise}>
+                + Revise
+              </button>
+            )}
+            {canEditQuote && (
+              <button
+                className="btn btn-success"
+                onClick={handleMarkApproved}
+                disabled={quotation.status === "Approved"}
+              >
+                ✓ Mark approved
+              </button>
+            )}
+            {canEditQuote && (
+              <button
+                className="btn"
+                onClick={() => {
+                  dispatchQuotations({
+                    type: "UPDATE_QUOTATION",
+                    payload: {
+                      id: quotation.id,
+                      sentAt: new Date().toISOString().split("T")[0],
+                      status: "Sent",
+                    },
+                  });
+                }}
+              >
+                WhatsApp ↗
+              </button>
+            )}
             <button className="btn btn-primary" onClick={handleDownloadPDF}>
               Download PDF
             </button>
@@ -462,49 +478,53 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
               </div>
               <div className="divider"></div>
               <div className="flex flex-col gap-[6px]">
-                <button
-                  className="btn justify-center"
-                  onClick={() => {
-                    dispatchQuotations({
-                      type: "UPDATE_QUOTATION",
-                      payload: {
-                        id: quotation.id,
-                        sentAt: new Date().toISOString().split("T")[0],
-                        status: "Sent",
-                      },
-                    });
-                  }}
-                >
-                  WhatsApp send ↗
-                </button>
-                <button
-                  className="btn justify-center"
-                  onClick={() => {
-                    dispatchQuotations({
-                      type: "UPDATE_QUOTATION",
-                      payload: {
-                        id: quotation.id,
-                        sentAt: new Date().toISOString().split("T")[0],
-                        status: "Sent",
-                      },
-                    });
-                  }}
-                >
-                  Email send ↗
-                </button>
-                <button
-                  className="btn btn-success justify-center"
-                  onClick={handleMarkApproved}
-                  disabled={quotation.status === "Approved"}
-                >
-                  ✓ Mark approved
-                </button>
-                <button
-                  className="btn justify-center"
-                  onClick={handleRevise}
-                >
-                  + Create revision
-                </button>
+                {canEditQuote && (
+                  <>
+                    <button
+                      className="btn justify-center"
+                      onClick={() => {
+                        dispatchQuotations({
+                          type: "UPDATE_QUOTATION",
+                          payload: {
+                            id: quotation.id,
+                            sentAt: new Date().toISOString().split("T")[0],
+                            status: "Sent",
+                          },
+                        });
+                      }}
+                    >
+                      WhatsApp send ↗
+                    </button>
+                    <button
+                      className="btn justify-center"
+                      onClick={() => {
+                        dispatchQuotations({
+                          type: "UPDATE_QUOTATION",
+                          payload: {
+                            id: quotation.id,
+                            sentAt: new Date().toISOString().split("T")[0],
+                            status: "Sent",
+                          },
+                        });
+                      }}
+                    >
+                      Email send ↗
+                    </button>
+                    <button
+                      className="btn btn-success justify-center"
+                      onClick={handleMarkApproved}
+                      disabled={quotation.status === "Approved"}
+                    >
+                      ✓ Mark approved
+                    </button>
+                    <button
+                      className="btn justify-center"
+                      onClick={handleRevise}
+                    >
+                      + Create revision
+                    </button>
+                  </>
+                )}
                 <Link
                   href={`/inquiries/${quotation.inquiryId}`}
                   className="btn btn-primary justify-center text-center"

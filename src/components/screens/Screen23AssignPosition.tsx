@@ -8,6 +8,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useStaff } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import type { Inquiry, Quotation, Staff, StaffAssignment } from "@/lib/types";
 import { useToast } from "../ui/Toast";
@@ -23,6 +24,8 @@ interface PositionRow {
 
 export default function Screen23AssignPosition() {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  const canAssign = can("staff.edit");
   const toast = useToast();
   const searchParams = useSearchParams();
   const inquiryId = searchParams.get("inquiryId") || "";
@@ -419,19 +422,23 @@ export default function Screen23AssignPosition() {
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href={`/inquiries/${inquiryId}`} className="btn">← Back to inquiry</Link>
             <Link href={`/warehouse/check?inquiryId=${inquiryId}`} className="btn">Warehouse</Link>
-            <Link
-              href={`/staff/new?type=EXTERNAL&redirect=/staff/assign?inquiryId=${inquiryId}`}
-              className="btn btn-warning"
-            >
-              + Add External Staff
-            </Link>
-            <button
-              onClick={handleSave}
-              className="btn btn-success"
-              disabled={saving}
-            >
-              {saving ? "Saving..." : "Save Assignments ↗"}
-            </button>
+            {canAssign && (
+              <Link
+                href={`/staff/new?type=EXTERNAL&redirect=/staff/assign?inquiryId=${inquiryId}`}
+                className="btn btn-warning"
+              >
+                + Add External Staff
+              </Link>
+            )}
+            {canAssign && (
+              <button
+                onClick={handleSave}
+                className="btn btn-success"
+                disabled={saving}
+              >
+                {saving ? "Saving..." : "Save Assignments ↗"}
+              </button>
+            )}
           </div>
         }
       >
@@ -560,6 +567,7 @@ export default function Screen23AssignPosition() {
             )}
 
             {/* Positions Table */}
+            <fieldset disabled={!canAssign} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto" }}>
             <div className="card" style={{ padding: 0, border: "none" }}>
               <div className="ct" style={{ padding: "12px 14px 4px", fontSize: "13px" }}>Position-Wise Operator Selection</div>
               <div style={{ overflowX: "auto" }}>
@@ -687,6 +695,7 @@ export default function Screen23AssignPosition() {
                 </table>
               </div>
             </div>
+            </fieldset>
 
             {/* Crew Cost Summary Table */}
             <div className="card" style={{ padding: "14px", marginTop: "16px", marginBottom: 0 }}>

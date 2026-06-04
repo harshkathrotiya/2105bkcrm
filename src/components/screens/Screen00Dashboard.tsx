@@ -14,6 +14,7 @@ import {
   useClients,
 } from "@/lib/store";
 import * as api from "@/lib/api";
+import { useCurrentUser } from "@/lib/use-current-user";
 import {
   Users,
   ClipboardList,
@@ -27,6 +28,7 @@ import {
 } from "lucide-react";
 
 export default function Screen00Dashboard() {
+  const { can } = useCurrentUser();
   const { inquiries, loading: inquiriesLoading } = useInquiries();
   const { quotations, loading: quotationsLoading } = useQuotations();
   const { invoices, loading: invoicesLoading } = useInvoices();
@@ -153,14 +155,16 @@ export default function Screen00Dashboard() {
     { label: "Total Asset Value", value: `₹${fmt(assetSummary?.totalValue || 0)}`, sub: `Valuation of ${assetSummary?.totalCount || 0} items`, color: "var(--gr)", href: "/equipment" },
   ];
 
-  const quickActions = [
-    { label: "Create New Inquiry", href: "/inquiries/new", icon: ClipboardList, primary: true },
-    { label: "Add Client", href: "/clients/new", icon: Users },
-    { label: "New Quotation", href: "/quotations/new", icon: FileText },
+  const quickActions: { label: string; href: string; icon: typeof Users; primary?: boolean; perm?: Parameters<typeof can>[0] }[] = [
+    { label: "Create New Inquiry", href: "/inquiries/new", icon: ClipboardList, primary: true, perm: "inquiries.create" },
+    { label: "Add Client", href: "/clients/new", icon: Users, perm: "clients.create" },
+    { label: "New Quotation", href: "/quotations/new", icon: FileText, perm: "quotations.create" },
     { label: "Warehouse Check", href: "/warehouse/check", icon: Building2 },
     { label: "Manage Staff", href: "/staff", icon: UserCheck },
-    { label: "Add Equipment", href: "/equipment/new", icon: Wrench },
+    { label: "Add Equipment", href: "/equipment/new", icon: Wrench, perm: "equipment.create" },
   ];
+
+  const visibleQuickActions = quickActions.filter((qa) => !qa.perm || can(qa.perm));
 
   return (
     <>
@@ -228,7 +232,7 @@ export default function Screen00Dashboard() {
                     {recentInquiries.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="text-center py-6 text-tx3" style={{ fontStyle: "italic" }}>
-                          No inquiries yet. <Link href="/inquiries/new" className="text-acc hover:underline">Create one</Link>.
+                          No inquiries yet.{can("inquiries.create") && (<> <Link href="/inquiries/new" className="text-acc hover:underline">Create one</Link>.</>)}
                         </td>
                       </tr>
                     ) : (
@@ -291,7 +295,7 @@ export default function Screen00Dashboard() {
             <div className="card" style={{ padding: "16px", margin: 0 }}>
               <div className="card-t" style={{ fontSize: "14px", fontWeight: 600, marginBottom: "14px" }}>Quick Actions</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                {quickActions.map((qa) => {
+                {visibleQuickActions.map((qa) => {
                   const Icon = qa.icon;
                   return (
                     <Link key={qa.href} href={qa.href} className={`btn ${qa.primary ? "btn-primary" : ""} text-[11.5px]`} style={{ justifyContent: "flex-start", gap: 6, padding: "8px 10px" }}>

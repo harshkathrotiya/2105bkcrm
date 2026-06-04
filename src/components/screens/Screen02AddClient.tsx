@@ -7,6 +7,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import { TextField, TextAreaField, SelectField } from "../ui/Field";
 import { useClients } from "@/lib/store";
 import { AVATAR_PALETTE } from "@/lib/constants";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 interface FormData {
   name: string;
@@ -38,6 +39,8 @@ const initialState: FormData = {
 
 export default function Screen02AddClient() {
   const router = useRouter();
+  const { can } = useCurrentUser();
+  const canCreate = can("clients.create");
   const { dispatchClients } = useClients();
   const [form, setForm] = useState<FormData>(initialState);
   const [saving, setSaving] = useState(false);
@@ -128,23 +131,27 @@ export default function Screen02AddClient() {
       <ScreenFrame
         breadcrumbs={[{ label: "Clients", href: "/clients" }, { label: "New client" }]}
         actions={
-          <>
-            <button className="btn" onClick={handleReset} disabled={saving}>
-              Reset
-            </button>
-            <button
-              className={`btn btn-success ${!allRequired || saving ? "opacity-50" : ""}`}
-              onClick={handleSave}
-              disabled={!allRequired || saving}
-            >
-              {saving ? "Saving..." : "Save client ↗"}
-            </button>
-          </>
+          canCreate ? (
+            <>
+              <button className="btn" onClick={handleReset} disabled={saving}>
+                Reset
+              </button>
+              <button
+                className={`btn btn-success ${!allRequired || saving ? "opacity-50" : ""}`}
+                onClick={handleSave}
+                disabled={!allRequired || saving}
+              >
+                {saving ? "Saving..." : "Save client ↗"}
+              </button>
+            </>
+          ) : (
+            <span className="text-[11px] text-tx3">View only — you don&apos;t have create access.</span>
+          )
         }
       >
         <div className="two-col">
           {/* Left - Forms */}
-          <div>
+          <fieldset disabled={!canCreate} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto" }}>
             {/* Basic Information */}
             <div className="card">
               <div className="card-t">Basic information</div>
@@ -317,7 +324,7 @@ export default function Screen02AddClient() {
                 />
               </div>
             </div>
-          </div>
+          </fieldset>
 
           {/* Right - Preview & Validation */}
           <div>

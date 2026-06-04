@@ -9,6 +9,7 @@ import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useToast } from "../ui/Toast";
 import * as api from "@/lib/api";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 interface Props {
   inquiryId: string;
@@ -17,6 +18,8 @@ interface Props {
 export default function Screen29ClientRequirements({ inquiryId }: Props) {
   const router = useRouter();
   const toastApi = useToast();
+  const { can } = useCurrentUser();
+  const canEdit = can("inquiries.edit");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -109,9 +112,11 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <button className="btn" onClick={() => window.print()}>⎙ Print / Save PDF</button>
-            <button className="btn btn-success" onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : "✓ Save Requirements"}
-            </button>
+            {canEdit && (
+              <button className="btn btn-success" onClick={handleSave} disabled={saving}>
+                {saving ? "Saving..." : "✓ Save Requirements"}
+              </button>
+            )}
             <Link href={`/inquiries`} className="btn">Back to List</Link>
           </div>
         }
@@ -164,8 +169,8 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div className="card" style={{ padding: "16px", marginBottom: 0 }}>
               <div className="card-t">Logistics &amp; Infrastructure Inputs</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                
+              <fieldset disabled={!canEdit} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto", display: "flex", flexDirection: "column", gap: "14px" }}>
+
                 <div className="field">
                   <label className="flbl">Power Requirements</label>
                   <textarea
@@ -199,7 +204,7 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
                   />
                 </div>
 
-              </div>
+              </fieldset>
             </div>
           </div>
 

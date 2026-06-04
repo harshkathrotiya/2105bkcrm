@@ -7,6 +7,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useCalendar, useInquiries, useClients, useQuotations, useInvoices } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import type { CalendarEvent } from "@/lib/store";
 
 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -40,6 +41,8 @@ function parseEventId(id: string) {
 }
 
 export default function Screen03Calendar() {
+  const { can } = useCurrentUser();
+  const canCreateInquiry = can("inquiries.create");
   const { calendarEvents } = useCalendar();
   const { inquiries } = useInquiries();
   const { clients } = useClients();
@@ -70,7 +73,7 @@ export default function Screen03Calendar() {
     }
     
     // Check if this is a valid inquiry ID
-    let found = inquiries.find((inq) => inq.id === cleanId);
+    const found = inquiries.find((inq) => inq.id === cleanId);
     if (found) return found.id;
 
     // 2. Fallback: Try to map legacy seed IDs or name matches
@@ -387,9 +390,11 @@ export default function Screen03Calendar() {
             <button className="btn" onClick={() => navigate(1)}>
               Next ›
             </button>
-            <Link href="/inquiries/new" className="btn btn-primary ml-2">
-              + New inquiry
-            </Link>
+            {canCreateInquiry && (
+              <Link href="/inquiries/new" className="btn btn-primary ml-2">
+                + New inquiry
+              </Link>
+            )}
           </>
         }
       >

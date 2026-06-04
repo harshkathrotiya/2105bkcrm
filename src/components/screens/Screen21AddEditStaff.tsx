@@ -7,6 +7,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useStaff } from "@/lib/store";
+import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import { useToast } from "../ui/Toast";
 import { STAFF_ROLES } from "@/lib/validate";
@@ -30,10 +31,12 @@ interface FormData {
 
 export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) {
   const router = useRouter();
+  const { can } = useCurrentUser();
   const { staff, dispatchStaff } = useStaff();
   const toast = useToast();
 
   const isEditMode = staffId !== undefined;
+  const canWrite = isEditMode ? can("staff.edit") : can("staff.create");
   const staffMember = useMemo(() => {
     if (!isEditMode) return undefined;
     return staff.find((s) => s.id === staffId);
@@ -241,20 +244,22 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href="/staff" className={`btn ${saving ? "opacity-50 pointer-events-none" : ""}`}>Cancel</Link>
-            <button
-              onClick={handleSave}
-              className={`btn btn-success ${!allRequiredValid || saving ? "opacity-50" : ""}`}
-              disabled={!allRequiredValid || saving}
-            >
-              {saving ? "Saving..." : (isEditMode ? "Save Changes ↗" : "Save Staff ↗")}
-            </button>
+            {canWrite && (
+              <button
+                onClick={handleSave}
+                className={`btn btn-success ${!allRequiredValid || saving ? "opacity-50" : ""}`}
+                disabled={!allRequiredValid || saving}
+              >
+                {saving ? "Saving..." : (isEditMode ? "Save Changes ↗" : "Save Staff ↗")}
+              </button>
+            )}
           </div>
         }
       >
         <div className="two-col">
           {/* Left Form Panel */}
-          <div>
-            
+          <fieldset disabled={!canWrite} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto" }}>
+
             {/* Basic Information */}
             <div className="card">
               <div className="card-t">Basic Information</div>
@@ -494,7 +499,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
               </div>
             </div>
 
-          </div>
+          </fieldset>
 
           {/* Right Live Preview Panel */}
           <div>

@@ -9,6 +9,7 @@ import SearchableSelect from "../ui/SearchableSelect";
 import { useClients, useInquiries, useCalendar, useQuotations, useInvoices } from "@/lib/store";
 import { calcDays, calcHours, timeToMinutes } from "@/lib/utils";
 import { generateId } from "@/lib/types";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 const TIME_OPTIONS = [
   "06:00 AM","07:00 AM","08:00 AM","09:00 AM","10:00 AM","11:00 AM",
@@ -29,6 +30,7 @@ const EVENT_TYPES = [
 export default function Screen04NewInquiry() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { can } = useCurrentUser();
   const { clients } = useClients();
   const { inquiries, dispatchInquiries } = useInquiries();
   const { calendarEvents, dispatchCalendar } = useCalendar();
@@ -72,6 +74,9 @@ export default function Screen04NewInquiry() {
   const editInquiry = useMemo(() => {
     return inquiries.find((i) => i.id === editInquiryId);
   }, [inquiries, editInquiryId]);
+
+  const isEditing = !!editInquiry;
+  const hasWritePermission = isEditing ? can("inquiries.edit") : can("inquiries.create");
 
   useEffect(() => {
     if (editInquiry) {
@@ -286,23 +291,27 @@ export default function Screen04NewInquiry() {
           : [{ label: "Inquiries", href: "/inquiries" }, { label: "New inquiry" }]
         }
         actions={
-          <>
-            {!editInquiry && (
-              <button className="btn" onClick={handleReset} disabled={saving}>Reset</button>
-            )}
-            <button
-              className={`btn btn-success ${!canSave || saving ? "opacity-50" : ""}`}
-              onClick={handleSave}
-              disabled={!canSave || saving}
-            >
-              {saving ? "Saving..." : editInquiry ? "Update inquiry ↗" : "Save inquiry ↗"}
-            </button>
-          </>
+          hasWritePermission ? (
+            <>
+              {!editInquiry && (
+                <button className="btn" onClick={handleReset} disabled={saving}>Reset</button>
+              )}
+              <button
+                className={`btn btn-success ${!canSave || saving ? "opacity-50" : ""}`}
+                onClick={handleSave}
+                disabled={!canSave || saving}
+              >
+                {saving ? "Saving..." : editInquiry ? "Update inquiry ↗" : "Save inquiry ↗"}
+              </button>
+            </>
+          ) : (
+            <span className="text-[11px] text-tx3">View only — you don&apos;t have {isEditing ? "edit" : "create"} access.</span>
+          )
         }
       >
         <div className="two-col">
           {/* Left — form */}
-          <div>
+          <fieldset disabled={!hasWritePermission} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto" }}>
             {/* Department selector */}
             <div className="card" style={{ marginBottom: '14px', padding: '12px' }}>
               <div className="flbl" style={{ marginBottom: '8px' }}>Department *</div>
@@ -492,7 +501,7 @@ export default function Screen04NewInquiry() {
             </div>
 
 
-          </div>
+          </fieldset>
 
           {/* Right — summary */}
           <div>

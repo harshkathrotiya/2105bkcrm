@@ -7,12 +7,15 @@ import Badge from "../ui/Badge";
 import { useInvoices, useInquiries, useQuotations, useClients } from "@/lib/store";
 import { calcDays } from "@/lib/utils";
 import { computeGst } from "@/lib/pricing";
+import { useCurrentUser } from "@/lib/use-current-user";
 
 interface Props {
   invoiceId: string;
 }
 
 export default function Screen08Invoice({ invoiceId }: Props) {
+  const { can } = useCurrentUser();
+  const canEditInvoice = can("invoices.edit");
   const { invoices, dispatchInvoices } = useInvoices();
   const { inquiries } = useInquiries();
   const { quotations } = useQuotations();
@@ -381,17 +384,19 @@ export default function Screen08Invoice({ invoiceId }: Props) {
                   </Badge>
                 </div>
               </div>
-              <button
-                className={`btn w-full justify-center ${
-                  invoice.balanceReceived ? "" : "btn-success"
-                }`}
-                onClick={() => !invoice.balanceReceived && setShowConfirm(true)}
-                disabled={invoice.balanceReceived}
-              >
-                {invoice.balanceReceived
-                  ? "✓ Balance received"
-                  : "✓ Mark balance received ↗"}
-              </button>
+              {canEditInvoice && (
+                <button
+                  className={`btn w-full justify-center ${
+                    invoice.balanceReceived ? "" : "btn-success"
+                  }`}
+                  onClick={() => !invoice.balanceReceived && setShowConfirm(true)}
+                  disabled={invoice.balanceReceived}
+                >
+                  {invoice.balanceReceived
+                    ? "✓ Balance received"
+                    : "✓ Mark balance received ↗"}
+                </button>
+              )}
             </div>
           </div>
         </div>
