@@ -574,17 +574,77 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
     if (!quotation || approving || !inquiry) return;
     setApproving(true);
     try {
-      const res = await approveQuotation({
+      await approveQuotation({
         quotation, inquiry, invoices, calendarEvents, videoPercent,
         dispatchQuotations, dispatchInquiries, dispatchInvoices, dispatchCalendar,
       });
       setShowApprove(false);
-      setTab("invoice");
-      if (res.invoiceCreated) router.refresh();
+      toast.success("Quotation approved — invoice generated!");
+      // Small delay so the store updates before we switch tabs
+      setTimeout(() => setTab("invoice"), 150);
     } catch (err: any) {
       toast.error(err.message || "Failed to approve");
     } finally {
       setApproving(false);
+    }
+  };
+
+  // ── Revert approval ─────────────────────────────────────────────────────────
+  const [reverting, setReverting] = useState(false);
+
+  const doRevert = async () => {
+    if (!quotation || !inquiry || reverting) return;
+    const ok = await confirm({
+      title: "Revert approval?",
+      message: invoice
+        ? `This will set the quotation back to Draft, revert the inquiry to Quoted, and DELETE the auto-generated invoice (${invoice.invoiceNo}). This cannot be undone if payments have been recorded.`
+        : "This will set the quotation back to Draft and revert the inquiry to Quoted.",
+      confirmLabel: "Yes, revert",
+      danger: true,
+    });
+    if (!ok) return;
+    setReverting(true);
+    try {
+      // 1. Delete invoice if it exists and is unpaid
+      if (invoice) {
+        await dispatchInvoices({ type: "DELETE_INVOICE", payload: { id: invoice.id } });
+      }
+      // 2. Revert quotation to Draft
+      await dispatchQuotations({
+        type: "UPDATE_QUOTATION",
+        payload: { id: quotation.id, status: "Draft", approvedAt: null },
+      });
+      // 3. Revert inquiry to Quoted
+      await dispatchInquiries({
+        type: "UPDATE_INQUIRY",
+        payload: { id: inquiry.id, status: "Quoted" },
+      });
+      // 4. Rebuild calendar events back to "inquiry" type
+      const toDelete = calendarEvents.filter((e) => e.id.startsWith(`cal-${inquiry.id}-confirmed-`));
+      if (toDelete.length > 0) {
+        await dispatchCalendar({ type: "BULK_DELETE_CALENDAR_EVENTS", payload: toDelete.map((e) => e.id) });
+      }
+      const startDt = new Date(quotation.startDate);
+      const endDt = new Date(quotation.endDate);
+      const toAdd: any[] = [];
+      let idx = 0;
+      for (let d = new Date(startDt); d <= endDt; d.setDate(d.getDate() + 1)) {
+        toAdd.push({
+          id: `cal-${inquiry.id}-${idx++}`,
+          date: d.getDate(), month: d.getMonth() + 1, year: d.getFullYear(),
+          label: `${quotation.eventName || inquiry.eventType} — ${quotation.clientName}`,
+          type: "inquiry",
+        });
+      }
+      if (toAdd.length > 0) {
+        await dispatchCalendar({ type: "BULK_ADD_CALENDAR_EVENTS", payload: toAdd });
+      }
+      toast.success("Approval reverted — quotation is back to Draft.");
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to revert approval");
+    } finally {
+      setReverting(false);
     }
   };
 
@@ -1176,107 +1236,235 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
         {/* ── STEP 5: PREVIEW ── */}
         {tab === "preview" && (
           <div>
+
+            {/* ── Row 1: Event + Quotation ── */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-              {/* Event details */}
+
+              {/* Event details — full */}
               <div className="card" style={{ margin: 0 }}>
-                <div className="card-t">Event details</div>
+                <div className="card-t">① Event details</div>
                 <Row k="Client" v={client?.name} />
-                <Row k="Event" v={inquiry.eventName || inquiry.eventType} />
-                <Row k="Dates" v={`${inquiry.startDate} → ${inquiry.endDate || inquiry.startDate}`} />
-                <Row k="Venue" v={inquiry.venue || "—"} />
+                <Row k="Event name" v={inquiry.eventName || "—"} />
+                <Row k="Type" v={inquiry.eventType} />
                 <Row k="Department" v={inquiry.department} />
+                <Row k="Dates" v={`${inquiry.startDate} → ${inquiry.endDate || inquiry.startDate}`} />
+                <Row k="Time" v={`${inquiry.startTime || "—"} – ${inquiry.endTime || "—"}`} />
+                <Row k="Venue" v={inquiry.venue || "—"} />
+                {inquiry.notes && <Row k="Notes" v={inquiry.notes} />}
+                <div style={{ marginTop: 8 }}>
+                  <button className="btn text-[11px]" onClick={() => setTab("overview")}>
+                    ✎ Edit inquiry
+                  </button>
+                </div>
               </div>
 
-              {/* Quotation summary */}
+              {/* Quotation — full line items */}
               <div className="card" style={{ margin: 0 }}>
-                <div className="card-t">Quotation summary</div>
-                {quotation ? (
+                <div className="card-t" style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>② Quotation</span>
+                  {quotation && <Badge variant={quotation.status === "Approved" ? "gr" : quotation.status === "Sent" ? "am" : "gy"}>{quotation.status}</Badge>}
+                </div>
+                {!quotation ? (
+                  <Empty msg="No quotation yet." action={{ label: "Create quotation", onClick: () => setTab("quotation") }} />
+                ) : (
                   <>
                     <Row k="Quote no." v={quotation.quoteNo} />
-                    <Row k="Status" v={quotation.status} />
-                    <Row k="Total" v={`₹${fmt(quotation.total)}`} />
+                    <Row k="Date" v={quotation.createdAt} />
+                    {/* Line items */}
+                    <div style={{ margin: "10px 0 6px", fontSize: 10, fontWeight: 700, color: "var(--tx3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Line items</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                      {quotation.equipment.map((row) => (
+                        <div key={row.no} style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, padding: "3px 0", borderBottom: "1px solid var(--b1)" }}>
+                          <span style={{ color: "var(--tx2)" }}>{row.no}. {row.position}</span>
+                          <span style={{ color: "var(--tx3)", fontFamily: "var(--font-mono)" }}>{row.days}d</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                      <span className="text-tx3">Subtotal</span><span className="font-mono">₹{fmt(quotation.subtotal)}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                      <span className="text-tx3">GST (18%)</span><span className="font-mono">₹{fmt(quotation.cgst + quotation.sgst)}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, paddingTop: 6, borderTop: "1px solid var(--b1)", marginTop: 4 }}>
+                      <span>Total</span><span className="font-mono text-bl">₹{fmt(quotation.total)}</span>
+                    </div>
+                    <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
+                      <button className="btn text-[11px]" onClick={() => setTab("quotation")}>✎ Edit</button>
+                      <button className="btn text-[11px]" onClick={() => setShowPdfModal(true)}>📄 View PDF</button>
+                    </div>
                   </>
-                ) : (
-                  <div style={{ padding: "12px 0", fontSize: 12, color: "var(--tx3)" }}>No quotation created yet.</div>
-                )}
-              </div>
-
-              {/* Crew summary */}
-              <div className="card" style={{ margin: 0 }}>
-                <div className="card-t">Crew summary</div>
-                <Row k="Crew count" v={`${assignments.length} member${assignments.length !== 1 ? "s" : ""}`} />
-                <Row k="Total crew cost" v={`₹${fmt(crewCost)}`} />
-              </div>
-
-              {/* Invoice status */}
-              <div className="card" style={{ margin: 0 }}>
-                <div className="card-t">Invoice status</div>
-                {invoice ? (
-                  <>
-                    <Row k="Invoice no." v={invoice.invoiceNo} />
-                    <Row k="Status" v={invoice.status} />
-                    <Row k="Balance" v={`₹${fmt(invoice.balance)}`} />
-                  </>
-                ) : (
-                  <div style={{ padding: "12px 0", fontSize: 12, color: "var(--tx3)" }}>Invoice not yet generated.</div>
                 )}
               </div>
             </div>
 
-            {/* Approve section */}
-            {quotation && quotation.status !== "Approved" && !invoice && (
-              <div className="card" style={{ margin: 0, marginBottom: 16 }}>
-                <div className="card-t">Approval</div>
-                {!showApprove ? (
-                  <div style={{ padding: "8px 0" }}>
-                    <button className="btn btn-success" onClick={() => setShowApprove(true)} style={{ fontSize: 13 }}>
-                      <CheckCircle2 size={14} /> Approve &amp; generate invoice
-                    </button>
-                  </div>
+            {/* ── Row 2: Crew + Warehouse ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+
+              {/* Crew breakdown */}
+              <div className="card" style={{ margin: 0 }}>
+                <div className="card-t">③ Crew assignments</div>
+                {assignments.length === 0 ? (
+                  <Empty msg="No crew assigned." action={{ label: "Assign crew", onClick: () => setTab("crew") }} />
                 ) : (
-                  <div>
-                    {!isLed && (
-                      <div className="field" style={{ marginBottom: 10 }}>
-                        <div className="flbl">Video / Photo split</div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <input
-                            type="number" className="finp" style={{ width: 80 }} min={0} max={100}
-                            value={videoPercent}
-                            onChange={(e) => setVideoPercent(Math.max(0, Math.min(100, Number(e.target.value))))}
-                          />
-                          <span className="text-[11px] text-tx3">
-                            % Video · {100 - videoPercent}% Photo
-                            {quotation.subtotal > 0 && (
-                              <span style={{ marginLeft: 8, color: "var(--tx2)" }}>
-                                (₹{fmt(Math.round(quotation.subtotal * videoPercent / 100))} + ₹{fmt(Math.round(quotation.subtotal * (100 - videoPercent) / 100))})
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    <div className="text-[11px] text-tx3" style={{ marginBottom: 10 }}>
-                      This confirms the inquiry, creates calendar events, and generates an invoice (50% advance).
+                  <>
+                    <table className="tbl" style={{ marginBottom: 8 }}>
+                      <thead><tr><th>Staff</th><th>Position</th><th className="text-right">Amount</th></tr></thead>
+                      <tbody>
+                        {assignments.map((a) => (
+                          <tr key={a.id}>
+                            <td style={{ fontSize: 11.5 }}>{a.staffName}</td>
+                            <td style={{ fontSize: 11.5, color: "var(--tx3)" }}>{a.positionName || "—"}</td>
+                            <td className="text-right font-mono" style={{ fontSize: 11.5 }}>₹{fmt(a.totalAmount)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 12, fontWeight: 600 }}>Total: <span className="font-mono text-bl">₹{fmt(crewCost)}</span></span>
+                      <button className="btn text-[11px]" onClick={() => setTab("crew")}>✎ Manage</button>
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button className="btn btn-success text-[12px]" onClick={doApprove} disabled={approving}>
-                        {approving ? "Approving…" : "✓ Confirm approval"}
-                      </button>
-                      <button className="btn text-[12px]" onClick={() => setShowApprove(false)}>Cancel</button>
-                    </div>
-                  </div>
+                  </>
                 )}
               </div>
-            )}
 
-            {quotation?.status === "Approved" && (
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <Badge variant="gr">Approved ✓</Badge>
-                <button className="btn btn-primary" onClick={() => setTab("invoice")} style={{ fontSize: 12 }}>
-                  Next: Invoice →
-                </button>
+              {/* Warehouse + Invoice status */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="card" style={{ margin: 0 }}>
+                  <div className="card-t">④ Warehouse</div>
+                  <div style={{ fontSize: 12, color: "var(--tx3)", padding: "6px 0 8px" }}>
+                    Equipment bookings and dispatch logistics.
+                  </div>
+                  <button className="btn text-[11px]" onClick={() => setTab("warehouse")}>Open warehouse →</button>
+                </div>
+                <div className="card" style={{ margin: 0 }}>
+                  <div className="card-t">⑥ Invoice</div>
+                  {invoice ? (
+                    <>
+                      <Row k="Invoice no." v={invoice.invoiceNo} />
+                      <Row k="Status" v={invoice.status} />
+                      <Row k="Advance" v={`₹${fmt(invoice.advance)} ${invoice.advanceReceived ? "✓ received" : "pending"}`} />
+                      <Row k="Balance" v={`₹${fmt(invoice.balance)} ${invoice.balanceReceived ? "✓ received" : "pending"}`} />
+                      <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
+                        <Link href={`/invoices/${invoice.id}`} className="btn text-[11px]">View invoice</Link>
+                        <Link href={`/invoices/${invoice.id}/payment`} className="btn btn-primary text-[11px]">Record payment</Link>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 12, color: "var(--tx3)", padding: "6px 0" }}>Generated after approval.</div>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
+
+            {/* ── Approval / Re-approve panel ── */}
+            <div className="card" style={{ margin: 0, marginBottom: 16 }}>
+              <div className="card-t">⑤ Approval &amp; invoice generation</div>
+
+              {!quotation ? (
+                <div style={{ fontSize: 12, color: "var(--tx3)", padding: "8px 0" }}>
+                  Create a quotation first before approving.
+                </div>
+              ) : quotation.status === "Approved" ? (
+                /* Already approved — show status + revert option */
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                    <Badge variant="gr">✓ Approved</Badge>
+                    <span style={{ fontSize: 12, color: "var(--tx3)" }}>
+                      {quotation.approvedAt ? `Approved on ${quotation.approvedAt}` : "Approved"}
+                      {invoice ? ` · Invoice ${invoice.invoiceNo} generated` : ""}
+                    </span>
+                  </div>
+
+                  {/* Two options: revise (safe) or revert (destructive) */}
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {/* Option 1 — create a revision (non-destructive, keeps invoice) */}
+                    <div style={{ flex: 1, minWidth: 200, padding: "12px 14px", background: "var(--s2)", borderRadius: 8, border: "1px solid var(--b1)" }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--tx)", marginBottom: 4 }}>Edit quotation (safe)</div>
+                      <div style={{ fontSize: 11, color: "var(--tx3)", marginBottom: 10 }}>
+                        Creates a new revision draft you can edit. The existing invoice stays.
+                      </div>
+                      <button className="btn text-[11px]" onClick={() => setTab("quotation")}>
+                        ← Go to Quotation · Create revision
+                      </button>
+                    </div>
+
+                    {/* Option 2 — fully revert (destructive) */}
+                    <div style={{ flex: 1, minWidth: 200, padding: "12px 14px", background: "var(--sem-rd-bg)", borderRadius: 8, border: "1px solid var(--sem-rd-bdr)" }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--sem-rd-tx)", marginBottom: 4 }}>Revert approval</div>
+                      <div style={{ fontSize: 11, color: "var(--sem-rd-tx)", opacity: 0.8, marginBottom: 10 }}>
+                        Sets quotation back to Draft{invoice ? ` and deletes invoice ${invoice.invoiceNo}` : ""}. Use only if no payments recorded.
+                      </div>
+                      <button
+                        className="btn"
+                        style={{ fontSize: 11, color: "var(--rd)", borderColor: "var(--sem-rd-bdr)" }}
+                        onClick={doRevert}
+                        disabled={reverting || (invoice?.advanceReceived || invoice?.balanceReceived) ? true : false}
+                      >
+                        {reverting ? "Reverting…" : "↩ Revert to Draft"}
+                      </button>
+                      {(invoice?.advanceReceived || invoice?.balanceReceived) && (
+                        <div style={{ fontSize: 10, color: "var(--sem-rd-tx)", marginTop: 6 }}>
+                          Cannot revert — payment already recorded.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {invoice && (
+                    <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+                      <Link href={`/invoices/${invoice.id}`} className="btn btn-primary text-[12px]">
+                        <Receipt size={13} /> View invoice →
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Not yet approved */
+                <div>
+                  <div style={{ fontSize: 12, color: "var(--tx2)", marginBottom: 12 }}>
+                    Approving will: confirm the inquiry, lock the quotation, create calendar events, and auto-generate an invoice with 50% advance.
+                  </div>
+                  {!showApprove ? (
+                    <button className="btn btn-success" onClick={() => setShowApprove(true)}>
+                      <CheckCircle2 size={14} /> Approve &amp; generate invoice
+                    </button>
+                  ) : (
+                    <div style={{ background: "var(--s2)", borderRadius: 8, padding: 14 }}>
+                      {!isLed && (
+                        <div className="field" style={{ marginBottom: 12 }}>
+                          <div className="flbl">Video / Photo split</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <input
+                              type="number" className="finp" style={{ width: 80 }} min={0} max={100}
+                              value={videoPercent}
+                              onChange={(e) => setVideoPercent(Math.max(0, Math.min(100, Number(e.target.value))))}
+                            />
+                            <span className="text-[11px] text-tx3">
+                              % Video · {100 - videoPercent}% Photo
+                              {quotation.subtotal > 0 && (
+                                <span style={{ marginLeft: 8, color: "var(--tx2)" }}>
+                                  (₹{fmt(Math.round(quotation.subtotal * videoPercent / 100))} + ₹{fmt(Math.round(quotation.subtotal * (100 - videoPercent) / 100))})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11.5, color: "var(--tx3)", marginBottom: 12 }}>
+                        Invoice will be: <strong>₹{fmt(Math.round(quotation.total * 0.5))}</strong> advance + <strong>₹{fmt(quotation.total - Math.round(quotation.total * 0.5))}</strong> balance
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button className="btn btn-success" onClick={doApprove} disabled={approving}>
+                          {approving ? "Approving…" : "✓ Confirm approval"}
+                        </button>
+                        <button className="btn" onClick={() => setShowApprove(false)}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {bottomNav()}
           </div>
@@ -1285,26 +1473,100 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
         {/* ── STEP 6: INVOICE ── */}
         {tab === "invoice" && (
           <div>
-            <div className="card" style={{ margin: 0 }}>
-              <div className="card-t">Invoice</div>
-              {!invoice ? (
+            {!invoice ? (
+              <div className="card" style={{ margin: 0 }}>
+                <div className="card-t">Invoice</div>
                 <Empty
-                  msg={quotation?.status === "Approved" ? "Approved — invoice not generated yet." : "Invoice is created when the quotation is approved."}
-                  action={quotation ? { label: "Go to Preview", onClick: () => setTab("preview") } : undefined}
+                  msg={quotation?.status === "Approved" ? "Quotation approved — invoice generating, please wait a moment…" : "Invoice is created when the quotation is approved in Step 5."}
+                  action={quotation?.status !== "Approved" ? { label: "Go to Preview & Approve", onClick: () => setTab("preview") } : undefined}
                 />
-              ) : (
-                <>
-                  <Row k="Invoice no." v={invoice.invoiceNo} />
-                  <Row k="Status" v={invoice.status} />
-                  <Row k="Advance" v={`₹${fmt(invoice.advance)} ${invoice.advanceReceived ? "(received)" : "(pending)"}`} />
-                  <Row k="Balance" v={`₹${fmt(invoice.balance)} ${invoice.balanceReceived ? "(received)" : "(pending)"}`} />
-                  <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-                    <Link href={`/invoices/${invoice.id}`} className="btn text-[12px]"><Receipt size={13} /> View invoice</Link>
-                    <Link href={`/invoices/${invoice.id}/payment`} className="btn btn-primary text-[12px]"><Wallet size={13} /> Record payment</Link>
+                {quotation?.status === "Approved" && (
+                  <div style={{ textAlign: "center", padding: "0 0 16px" }}>
+                    <button className="btn text-[12px]" onClick={() => router.refresh()}>
+                      ↻ Refresh
+                    </button>
                   </div>
-                </>
-              )}
-            </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                {/* Invoice summary */}
+                <div className="card" style={{ margin: 0 }}>
+                  <div className="card-t" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>Invoice details</span>
+                    <Badge variant={invoice.status === "Paid" ? "gr" : invoice.status === "Partial paid" ? "am" : "rd"}>
+                      {invoice.status}
+                    </Badge>
+                  </div>
+                  <Row k="Invoice no." v={invoice.invoiceNo} />
+                  <Row k="Event" v={invoice.eventName} />
+                  <Row k="Client" v={invoice.clientName} />
+                  <Row k="Dates" v={`${invoice.startDate} → ${invoice.endDate}`} />
+                  <Row k="Venue" v={invoice.venue} />
+                  <div style={{ margin: "12px 0 4px", height: 1, background: "var(--b1)" }} />
+                  <Row k="Invoice total" v={`₹${fmt(invoice.advance + invoice.balance)}`} />
+                </div>
+
+                {/* Payment breakdown */}
+                <div className="card" style={{ margin: 0 }}>
+                  <div className="card-t">Payment breakdown</div>
+
+                  {/* Advance */}
+                  <div style={{ padding: "10px 0", borderBottom: "1px solid var(--b1)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600 }}>Advance — 50%</span>
+                      <Badge variant={invoice.advanceReceived ? "gr" : "rd"}>
+                        {invoice.advanceReceived ? "Received" : "Pending"}
+                      </Badge>
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "var(--font-mono)", color: invoice.advanceReceived ? "var(--gr)" : "var(--acc)" }}>
+                      ₹{fmt(invoice.advance)}
+                    </div>
+                    {invoice.advanceReceived && invoice.advanceReceivedAt && (
+                      <div style={{ fontSize: 10.5, color: "var(--tx3)", marginTop: 2 }}>
+                        Received {invoice.advanceReceivedAt} · {invoice.advanceMethod}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Balance */}
+                  <div style={{ padding: "10px 0" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600 }}>Balance — 50%</span>
+                      <Badge variant={invoice.balanceReceived ? "gr" : "rd"}>
+                        {invoice.balanceReceived ? "Received" : "Pending"}
+                      </Badge>
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "var(--font-mono)", color: invoice.balanceReceived ? "var(--gr)" : "var(--tx3)" }}>
+                      ₹{fmt(invoice.balance)}
+                    </div>
+                    {invoice.balanceReceived && invoice.balanceReceivedAt && (
+                      <div style={{ fontSize: 10.5, color: "var(--tx3)", marginTop: 2 }}>
+                        Received {invoice.balanceReceivedAt} · {invoice.balanceMethod}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 12, borderTop: "1px solid var(--b1)" }}>
+                    <Link
+                      href={`/invoices/${invoice.id}`}
+                      className="btn btn-primary justify-center text-center"
+                      style={{ fontSize: 13 }}
+                    >
+                      <Receipt size={14} /> Open full invoice
+                    </Link>
+                    <Link
+                      href={`/invoices/${invoice.id}/payment`}
+                      className="btn btn-success justify-center text-center"
+                      style={{ fontSize: 13 }}
+                    >
+                      <Wallet size={14} /> Record payment
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
             {bottomNav()}
           </div>
         )}
