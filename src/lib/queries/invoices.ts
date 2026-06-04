@@ -2,7 +2,7 @@
  * queries/invoices.ts — typed DB helpers for the invoices table using Prisma
  */
 
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import type { Invoice } from "@/lib/types";
 
 export async function getAllInvoices(): Promise<Invoice[]> {

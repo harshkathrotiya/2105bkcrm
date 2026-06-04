@@ -6,7 +6,7 @@
  * so the list is never empty.
  */
 
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import { STAFF_ROLES, EQUIPMENT_CATEGORIES } from "@/lib/validate";
 
 export type OptionType = "STAFF_ROLE" | "QUOTATION_POSITION" | "EQUIPMENT_CATEGORY";

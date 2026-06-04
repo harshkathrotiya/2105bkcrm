@@ -2,14 +2,14 @@
  * queries/vendors.ts — typed DB helpers for the vendors table using Prisma
  */
 
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
 
 export async function getAllVendors(): Promise<(Vendor & { timesUsed: number })[]> {
-  const vendors = await db.vendor.findMany({
+  const vendors = await withRetry(() => db.vendor.findMany({
     include: { equipment_bookings: true },
     orderBy: { name: "asc" },
-  });
+  }));
 
   return vendors.map(v => ({
     id: v.id,

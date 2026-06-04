@@ -77,6 +77,7 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
         approvedAt: new Date().toISOString().split("T")[0],
       },
     });
+    router.push(`/inquiries/${quotation.inquiryId}?tab=preview`);
   };
 
   const handleRevise = () => {
@@ -120,8 +121,8 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
       },
     });
 
-    // Navigate to the form so they can edit the new revision before generating the PDF
-    router.push(`/quotations/new?inquiryId=${quotation.inquiryId}`);
+    // Navigate back to the inquiry hub quotation step to edit the new revision
+    router.push(`/inquiries/${quotation.inquiryId}?tab=quotation`);
   };
 
   const handleDownloadPDF = () => {
@@ -148,6 +149,10 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
       <ScreenFrame
         breadcrumb={
           <>
+            <Link href={`/inquiries/${quotation.inquiryId}?tab=quotation`} style={{ color: "var(--tx2)" }} className="hover:underline">
+              {inquiry?.eventName || inquiry?.eventType || "Inquiry"}
+            </Link>
+            {" › "}
             <span className="text-tx2">{quotation.quoteNo}</span> › Quotation PDF
           </>
         }
@@ -526,7 +531,7 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                   </>
                 )}
                 <Link
-                  href={`/inquiries/${quotation.inquiryId}`}
+                  href={`/inquiries/${quotation.inquiryId}?tab=preview`}
                   className="btn btn-primary justify-center text-center"
                 >
                   Go to approval

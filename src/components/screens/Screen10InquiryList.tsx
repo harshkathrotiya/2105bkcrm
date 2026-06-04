@@ -127,19 +127,6 @@ export default function Screen10InquiryList() {
           <LoadingSkeleton rows={6} message="Loading inquiries…" />
         ) : (
         <>
-        {/* Pipeline flow indicator */}
-        <div className="flow" style={{ marginBottom: "20px" }}>
-          <span className="flow-step flow-done">1 · Inquiry</span>
-          <span className="flow-arr">→</span>
-          <span className="flow-step flow-next">2 · Quotation</span>
-          <span className="flow-arr">→</span>
-          <span className="flow-step flow-next">3 · Approval</span>
-          <span className="flow-arr">→</span>
-          <span className="flow-step flow-next">4 · Invoice</span>
-          <span className="flow-arr">→</span>
-          <span className="flow-step flow-next">5 · Payment</span>
-        </div>
-
         {/* Metrics */}
         <div className="metrics">
           <div className="met">
@@ -324,7 +311,7 @@ export default function Screen10InquiryList() {
                         <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
                           {!hasQuotation && canCreateQuote && (
                             <Link
-                              href={`/quotations/new?inquiryId=${inq.id}`}
+                              href={`/inquiries/${inq.id}?tab=quotation`}
                               className="btn btn-primary text-[10px] px-[8px] py-[4px]"
                               title="Create quotation"
                             >
@@ -333,7 +320,7 @@ export default function Screen10InquiryList() {
                           )}
                           {hasQuotation && !invoice && (
                             <Link
-                              href={`/quotations/new?inquiryId=${inq.id}`}
+                              href={`/inquiries/${inq.id}?tab=quotation`}
                               className="btn text-[10px] px-[8px] py-[4px]"
                               title="View/edit quotation"
                             >

@@ -2,7 +2,7 @@
  * queries/calendar.ts — typed DB helpers for the calendar_events table using Prisma
  */
 
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import type { CalendarEvent } from "@/lib/types";
 
 export async function getAllCalendarEvents(): Promise<CalendarEvent[]> {

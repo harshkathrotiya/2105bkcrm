@@ -2,7 +2,7 @@
  * queries/clients.ts — typed DB helpers for the clients table using Prisma
  */
 
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import type { Client } from "@/lib/types";
 
 // ── Queries ──────────────────────────────────────────────────────────────────

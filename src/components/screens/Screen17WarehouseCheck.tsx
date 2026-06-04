@@ -52,11 +52,11 @@ function equipmentMatchesSearch(candidate: string, terms: string[]): boolean {
   return terms.some((term) => normalizedCandidate.includes(term));
 }
 
-export default function Screen17WarehouseCheck() {
+export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { inquiryIdProp?: string; embedded?: boolean } = {}) {
   const searchParams = useSearchParams();
   const toast = useToast();
   const confirm = useConfirm();
-  const inquiryId = searchParams.get("inquiryId");
+  const inquiryId = inquiryIdProp ?? searchParams.get("inquiryId");
 
   const [data, setData] = useState<api.WarehouseCheckResult | null>(null);
   const { invoices } = useInvoices();
@@ -446,6 +446,7 @@ export default function Screen17WarehouseCheck() {
   };
 
   if (loading) {
+    if (embedded) return <LoadingSkeleton rows={8} message="Performing inventory audit and calendar overlap calculations..." />;
     return (
       <>
         <SectionHeader title="Warehouse Availability Check" />
@@ -459,6 +460,7 @@ export default function Screen17WarehouseCheck() {
   }
 
   if (!inquiryId) {
+    if (embedded) return <div className="text-[12px] text-tx3 p-4">No inquiry selected.</div>;
     return (
       <>
         <SectionHeader title="Warehouse Availability Check" />
@@ -502,6 +504,7 @@ export default function Screen17WarehouseCheck() {
   }
 
   if (error || !data) {
+    if (embedded) return <div className="text-[12px] text-tx3 p-4">{error || "No warehouse data yet."}</div>;
     return (
       <>
         <SectionHeader title="Warehouse Availability Check" />
@@ -528,79 +531,94 @@ export default function Screen17WarehouseCheck() {
   const greenRows = mappedQuotationRows.filter((r) => r.hasAvailableStock || (r.booking && !r.booking.vendorId));
   const amberRows = mappedQuotationRows.filter((r) => !r.hasAvailableStock && (!r.booking || r.booking.vendorId));
 
-  return (
+  const wrapInFrame = (content: React.ReactNode) => {
+    if (embedded) return <>{content}</>;
+    return (
+      <>
+        <SectionHeader
+          title={<>Warehouse <strong>Availability Check</strong></>}
+          description="Audit required equipment against active calendar dates, assign inventory specific serials, or delegate to rental vendors."
+        />
+        {content}
+      </>
+    );
+  };
+
+  return wrapInFrame(
     <>
-      <SectionHeader
-        title={<>Warehouse <strong>Availability Check</strong></>}
-        description="Audit required equipment against active calendar dates, assign inventory specific serials, or delegate to rental vendors."
-      />
 
-      {/* Event Details Ribbon */}
-      <div className="card" style={{ background: "var(--alt2)", borderLeft: "4px solid var(--bl)", padding: "16px", marginBottom: "20px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr 1fr", gap: "20px" }}>
-          <div>
-            <span style={{ fontSize: "10px", color: "var(--tx3)", textTransform: "uppercase" }}>Event / Client</span>
-            <div style={{ fontWeight: 600, color: "var(--tx)", fontSize: "15px", marginTop: "2px" }}>
-              {(data.inquiry as any).eventName || data.inquiry.eventType}
+      {/* Event Details Ribbon — hidden when embedded (hub header already shows this) */}
+      {!embedded && (
+        <div className="card" style={{ background: "var(--alt2)", borderLeft: "4px solid var(--bl)", padding: "16px", marginBottom: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1.5fr 1fr 1fr", gap: "20px" }}>
+            <div>
+              <span style={{ fontSize: "10px", color: "var(--tx3)", textTransform: "uppercase" }}>Event / Client</span>
+              <div style={{ fontWeight: 600, color: "var(--tx)", fontSize: "15px", marginTop: "2px" }}>
+                {(data.inquiry as any).eventName || data.inquiry.eventType}
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--tx2)", marginTop: "2px" }}>
+                Client: <strong>{(data.inquiry as any).clientName || "—"}</strong>
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--tx3)", marginTop: "2px" }}>
+                Inquiry: <strong>#{data.inquiry.id}</strong>
+              </div>
             </div>
-            <div style={{ fontSize: "12px", color: "var(--tx2)", marginTop: "2px" }}>
-              Client: <strong>{(data.inquiry as any).clientName || "—"}</strong>
+            <div>
+              <span style={{ fontSize: "10px", color: "var(--tx3)", textTransform: "uppercase" }}>Dates & Duration</span>
+              <div style={{ fontWeight: 500, color: "var(--tx)", fontSize: "13px", marginTop: "2px" }}>
+                {data.inquiry.startDate} to {data.inquiry.endDate}
+              </div>
+              <div style={{ fontSize: "11px", color: "var(--tx3)", marginTop: "2px" }}>
+                Duration: <strong>{eventDays} day(s)</strong>
+              </div>
             </div>
-            <div style={{ fontSize: "11px", color: "var(--tx3)", marginTop: "2px" }}>
-              Inquiry: <strong>#{data.inquiry.id}</strong>
+            <div>
+              <span style={{ fontSize: "10px", color: "var(--tx3)", textTransform: "uppercase" }}>Venue</span>
+              <div style={{ fontSize: "12px", color: "var(--tx2)", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {data.inquiry.venue || "No venue assigned"}
+              </div>
             </div>
-          </div>
-          <div>
-            <span style={{ fontSize: "10px", color: "var(--tx3)", textTransform: "uppercase" }}>Dates & Duration</span>
-            <div style={{ fontWeight: 500, color: "var(--tx)", fontSize: "13px", marginTop: "2px" }}>
-              {data.inquiry.startDate} to {data.inquiry.endDate}
-            </div>
-            <div style={{ fontSize: "11px", color: "var(--tx3)", marginTop: "2px" }}>
-              Duration: <strong>{eventDays} day(s)</strong>
-            </div>
-          </div>
-          <div>
-            <span style={{ fontSize: "10px", color: "var(--tx3)", textTransform: "uppercase" }}>Venue</span>
-            <div style={{ fontSize: "12px", color: "var(--tx2)", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {data.inquiry.venue || "No venue assigned"}
-            </div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <span style={{ fontSize: "10px", color: "var(--tx3)", textTransform: "uppercase" }}>Quote Reference</span>
-            <div style={{ fontWeight: 600, color: "var(--tx2)", fontSize: "13px", marginTop: "2px" }}>
-              {data.quotation?.quoteNo || "No Quotation"}
+            <div style={{ textAlign: "right" }}>
+              <span style={{ fontSize: "10px", color: "var(--tx3)", textTransform: "uppercase" }}>Quote Reference</span>
+              <div style={{ fontWeight: 600, color: "var(--tx2)", fontSize: "13px", marginTop: "2px" }}>
+                {data.quotation?.quoteNo || "No Quotation"}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Metrics Row */}
-      <div className="metrics" style={{ marginBottom: "20px" }}>
-        <div className="met">
-          <div className="met-l">Total Items Needed</div>
-          <div className="met-v">{metrics.total}</div>
+      {/* Metrics Row — hidden when embedded */}
+      {!embedded && (
+        <div className="metrics" style={{ marginBottom: "20px" }}>
+          <div className="met">
+            <div className="met-l">Total Items Needed</div>
+            <div className="met-v">{metrics.total}</div>
+          </div>
+          <div className="met">
+            <div className="met-l">Available In-Stock</div>
+            <div className="met-v g">{metrics.available}</div>
+          </div>
+          <div className="met">
+            <div className="met-l">External Rental Needed</div>
+            <div className="met-v a">{metrics.vendor}</div>
+          </div>
+          <div className="met">
+            <div className="met-l">Assignments Confirmed</div>
+            <div className="met-v b">{metrics.confirmed} of {metrics.total}</div>
+          </div>
         </div>
-        <div className="met">
-          <div className="met-l">Available In-Stock</div>
-          <div className="met-v g">{metrics.available}</div>
-        </div>
-        <div className="met">
-          <div className="met-l">External Rental Needed</div>
-          <div className="met-v a">{metrics.vendor}</div>
-        </div>
-        <div className="met">
-          <div className="met-l">Assignments Confirmed</div>
-          <div className="met-v b">{metrics.confirmed} of {metrics.total}</div>
-        </div>
-      </div>
+      )}
 
       <ScreenFrame
-        breadcrumb={<>Warehouse check › Inquiry #{data.inquiry.id}</>}
+        breadcrumb={embedded ? undefined : <>Warehouse check › Inquiry #{data.inquiry.id}</>}
         actions={
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            <Link href={inquiryId ? `/inquiries/${inquiryId}` : "/inquiries"} className="btn">
-              ← Back to inquiry
-            </Link>
+            {!embedded && (
+              <Link href={inquiryId ? `/inquiries/${inquiryId}` : "/inquiries"} className="btn">
+                ← Back to inquiry
+              </Link>
+            )}
             {data?.quotation && (
               <Link href={`/quotations/${data.quotation.id}/pdf`} className="btn">
                 📋 Quotation
@@ -1344,7 +1362,7 @@ export default function Screen17WarehouseCheck() {
 
       {showToast && (
         <div
-          className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-[13px] font-medium shadow-lg"
+          className="fixed top-4 right-4 z-[9999] flex items-center gap-2 rounded-lg px-4 py-3 text-[13px] font-medium shadow-lg"
           style={{
             background: "var(--sem-gr-bg)",
             border: "1px solid var(--sem-gr-bdr)",
@@ -1358,3 +1376,4 @@ export default function Screen17WarehouseCheck() {
     </>
   );
 }
+

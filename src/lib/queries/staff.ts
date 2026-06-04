@@ -2,7 +2,7 @@
  * queries/staff.ts — typed DB helpers for staff, staff_assignments, and staff_payments using Prisma
  */
 
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import type { Staff, StaffAssignment, StaffPayment } from "@/lib/types";
 
 export async function getAllStaff(params?: {
@@ -308,13 +308,13 @@ export async function getStaffYtdSummary(staffId: number) {
 }
 
 export async function getStaffAssignments(inquiryId: string) {
-  const assignments = await db.staffAssignment.findMany({
+  const assignments = await withRetry(() => db.staffAssignment.findMany({
     where: { inquiry_id: inquiryId },
     include: {
       staff: true,
       payments: { orderBy: { paid_at: "desc" } }
     }
-  });
+  }));
 
   return assignments.map((a: any) => {
     const paidAmount = a.payments.reduce((s: number, p: any) => s + p.amount, 0);

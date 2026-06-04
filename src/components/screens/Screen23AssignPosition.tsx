@@ -22,13 +22,13 @@ interface PositionRow {
   amount: number;
 }
 
-export default function Screen23AssignPosition() {
+export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { inquiryIdProp?: string; embedded?: boolean } = {}) {
   const router = useRouter();
   const { can } = useCurrentUser();
   const canAssign = can("staff.edit");
   const toast = useToast();
   const searchParams = useSearchParams();
-  const inquiryId = searchParams.get("inquiryId") || "";
+  const inquiryId = inquiryIdProp ?? searchParams.get("inquiryId") ?? "";
 
   const { staff, refreshStaff } = useStaff();
 
@@ -39,6 +39,7 @@ export default function Screen23AssignPosition() {
   const [selectedStaff, setSelectedStaff] = useState<Record<number, number>>({}); // position.no -> staffId
   const [confirmedDuplicates, setConfirmedDuplicates] = useState<Record<number, boolean>>({}); // staffId -> confirmed
   const [reportingTimes, setReportingTimes] = useState<Record<number, string>>({}); // position.no -> time string
+  const [payRates, setPayRates] = useState<Record<number, number>>({}); // position.no -> overridden rate per day
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -54,6 +55,7 @@ export default function Screen23AssignPosition() {
 
   // Overlap warning state
   const [showOverlapWarning, setShowOverlapWarning] = useState(false);
+  const [showConfirmSave, setShowConfirmSave] = useState(false);
   const [overlapStaff, setOverlapStaff] = useState<Staff | null>(null);
   const [overlapPositionNo, setOverlapPositionNo] = useState<number | null>(null);
   const [overlapPositionName, setOverlapPositionName] = useState("");
@@ -82,11 +84,13 @@ export default function Screen23AssignPosition() {
           const initialSelections: Record<number, number> = {};
           const confirmedDups: Record<number, boolean> = {};
           const initialTimes: Record<number, string> = {};
+          const initialRates: Record<number, number> = {};
 
           assignmentsData.forEach((a) => {
             if (a.positionNo !== null && a.positionNo !== undefined) {
               initialSelections[a.positionNo] = a.staffId;
               initialTimes[a.positionNo] = a.reportingTime || "09:00 AM";
+              if (a.ratePerDay != null) initialRates[a.positionNo] = a.ratePerDay;
               if (a.confirmedDup) {
                 confirmedDups[a.staffId] = true;
               }
@@ -96,6 +100,7 @@ export default function Screen23AssignPosition() {
           setSelectedStaff(initialSelections);
           setConfirmedDuplicates(confirmedDups);
           setReportingTimes(initialTimes);
+          setPayRates(initialRates);
 
           // Fetch staff availability
           if (inq && inq.startDate && inq.endDate) {
@@ -216,6 +221,9 @@ export default function Screen23AssignPosition() {
       setShowDupWarning(true);
     } else {
       setSelectedStaff((prev) => ({ ...prev, [positionNo]: targetStaff.id }));
+      // Pre-fill pay rate from staff profile (only if not already overridden)
+      const defaultRate = targetStaff.paymentType === "PER_DAY" ? targetStaff.ratePerDay || 0 : 0;
+      setPayRates((prev) => ({ ...prev, [positionNo]: prev[positionNo] ?? defaultRate }));
     }
   };
 
@@ -244,6 +252,8 @@ export default function Screen23AssignPosition() {
     if (dupStaff && dupPositionNo) {
       setSelectedStaff((prev) => ({ ...prev, [dupPositionNo]: dupStaff.id }));
       setConfirmedDuplicates((prev) => ({ ...prev, [dupStaff.id]: true }));
+      const defaultRate = dupStaff.paymentType === "PER_DAY" ? dupStaff.ratePerDay || 0 : 0;
+      setPayRates((prev) => ({ ...prev, [dupPositionNo]: prev[dupPositionNo] ?? defaultRate }));
     }
     setShowDupWarning(false);
     setDupStaff(null);
@@ -271,13 +281,15 @@ export default function Screen23AssignPosition() {
     > = {};
 
     Object.entries(selectedStaff).forEach(([posNo, id]) => {
-      const pos = positions.find((p) => p.no === parseInt(posNo, 10));
+      const posNoInt = parseInt(posNo, 10);
+      const pos = positions.find((p) => p.no === posNoInt);
       if (!pos) return;
 
       const staffMember = staff.find((s) => s.id === id);
       if (!staffMember) return;
 
-      const rate = staffMember.paymentType === "PER_DAY" ? staffMember.ratePerDay || 0 : 0; // monthly staff rate is 0 for event days
+      // Use overridden rate if set, otherwise fall back to staff profile rate
+      const rate = payRates[posNoInt] ?? (staffMember.paymentType === "PER_DAY" ? staffMember.ratePerDay || 0 : 0);
       const total = rate * eventDays;
 
       if (!summaryMap[id]) {
@@ -295,7 +307,7 @@ export default function Screen23AssignPosition() {
     });
 
     return Object.values(summaryMap);
-  }, [selectedStaff, positions, staff, eventDays]);
+  }, [selectedStaff, positions, staff, eventDays, payRates]);
 
   // Grand Total Staff Cost
   const totalStaffCost = useMemo(() => {
@@ -348,7 +360,8 @@ export default function Screen23AssignPosition() {
 
         if (!existing) {
           const staffMember = staff.find((s) => s.id === staffId);
-          const rate = staffMember?.paymentType === "PER_DAY" ? staffMember.ratePerDay || 0 : 0;
+          // Use overridden pay rate if set, otherwise fall back to staff profile rate
+          const rate = payRates[posNo] ?? (staffMember?.paymentType === "PER_DAY" ? staffMember.ratePerDay || 0 : 0);
 
           toCreate.push({
             staffId,
@@ -394,6 +407,7 @@ export default function Screen23AssignPosition() {
   };
 
   if (loading) {
+    if (embedded) return <LoadingSkeleton rows={6} message="Loading quotation and staff data..." />;
     return (
       <ScreenFrame breadcrumb="Staff › Assignments › Loading...">
         <LoadingSkeleton rows={6} message="Loading quotation and staff data..." />
@@ -402,6 +416,7 @@ export default function Screen23AssignPosition() {
   }
 
   if (!inquiry || !quotation) {
+    if (embedded) return <div className="text-center py-12 text-tx3">Quotation details not found for this inquiry.</div>;
     return (
       <ScreenFrame breadcrumb="Staff › Assignments › Error">
         <div className="text-center py-12 text-tx3">Quotation details not found for this inquiry.</div>
@@ -409,19 +424,14 @@ export default function Screen23AssignPosition() {
     );
   }
 
-  return (
+  const content = (
     <>
-      <SectionHeader
-        title={<>Operator <strong>Assignments</strong></>}
-        description={`Allocate positions and staff operators for ${inquiry.eventName || inquiry.eventType}. Handles duplicate validation and tracks total crew costs.`}
-      />
-
       <ScreenFrame
-        breadcrumb={`Quotations › ${quotation.quoteNo || "Draft"} › Assignments`}
+        breadcrumb={embedded ? undefined : `Quotations › ${quotation.quoteNo || "Draft"} › Assignments`}
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
-            <Link href={`/inquiries/${inquiryId}`} className="btn">← Back to inquiry</Link>
-            <Link href={`/warehouse/check?inquiryId=${inquiryId}`} className="btn">Warehouse</Link>
+            {!embedded && <Link href={`/inquiries/${inquiryId}`} className="btn">← Back to inquiry</Link>}
+            {!embedded && <Link href={`/warehouse/check?inquiryId=${inquiryId}`} className="btn">Warehouse</Link>}
             {canAssign && (
               <Link
                 href={`/staff/new?type=EXTERNAL&redirect=/staff/assign?inquiryId=${inquiryId}`}
@@ -432,11 +442,11 @@ export default function Screen23AssignPosition() {
             )}
             {canAssign && (
               <button
-                onClick={handleSave}
+                onClick={() => setShowConfirmSave(true)}
                 className="btn btn-success"
-                disabled={saving}
+                disabled={saving || Object.keys(selectedStaff).length === 0}
               >
-                {saving ? "Saving..." : "Save Assignments ↗"}
+                Review &amp; Save ↗
               </button>
             )}
           </div>
@@ -679,11 +689,22 @@ export default function Screen23AssignPosition() {
                             {isDup ? (
                               <span style={{ color: "var(--acc)", fontWeight: 500 }}>Duplicate!</span>
                             ) : staffMember ? (
-                              <span style={{ color: "var(--gr)", fontFamily: "var(--font-mono)", fontSize: "11.5px" }}>
-                                {staffMember.paymentType === "PER_DAY"
-                                  ? `₹${(staffMember.ratePerDay || 0).toLocaleString("en-IN")}`
-                                  : "Salary Fixed"}
-                              </span>
+                              staffMember.paymentType === "PER_DAY" ? (
+                                <input
+                                  type="number"
+                                  min={0}
+                                  className="finp font-mono text-right"
+                                  style={{ width: 80, fontSize: "11.5px", padding: "2px 6px" }}
+                                  value={payRates[pos.no] ?? staffMember.ratePerDay ?? 0}
+                                  onChange={(e) => setPayRates((prev) => ({
+                                    ...prev,
+                                    [pos.no]: Math.max(0, Number(e.target.value) || 0),
+                                  }))}
+                                  title="Override pay per day for this event"
+                                />
+                              ) : (
+                                <span style={{ color: "var(--tx3)", fontSize: "11.5px" }}>Salary Fixed</span>
+                              )
                             ) : (
                               <span style={{ color: "var(--tx3)" }}>--</span>
                             )}
@@ -766,12 +787,96 @@ export default function Screen23AssignPosition() {
               >
                 Total Crew Cost ({eventDays} days): <span style={{ color: "var(--bl)", fontFamily: "var(--font-mono)" }}>₹{totalStaffCost.toLocaleString("en-IN")}</span>
               </div>
+
+              {/* ── Confirmation panel ── */}
+              {showConfirmSave && (
+                <div style={{
+                  marginTop: 16,
+                  padding: "16px",
+                  background: "var(--sem-gr-bg)",
+                  border: "1px solid var(--sem-gr-bdr)",
+                  borderRadius: 10,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--sem-gr-tx)", marginBottom: 10 }}>
+                    ✓ Confirm crew assignments
+                  </div>
+
+                  {/* Summary of what will be saved */}
+                  <div style={{ fontSize: 11.5, color: "var(--tx2)", marginBottom: 12 }}>
+                    You are about to save <strong>{Object.keys(selectedStaff).length} position assignment{Object.keys(selectedStaff).length !== 1 ? "s" : ""}</strong> for <strong>{quotation.eventName || inquiry.eventType}</strong>:
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
+                    {Object.entries(selectedStaff).map(([posNoStr, staffId]) => {
+                      const posNo = parseInt(posNoStr, 10);
+                      const pos = positions.find((p) => p.no === posNo);
+                      const staffMember = staff.find((s) => s.id === staffId);
+                      const rate = payRates[posNo] ?? (staffMember?.paymentType === "PER_DAY" ? staffMember.ratePerDay || 0 : 0);
+                      const total = rate * eventDays;
+                      return (
+                        <div key={posNoStr} style={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          padding: "7px 10px", background: "var(--s1)", borderRadius: 7,
+                          border: "1px solid var(--b1)", fontSize: 11.5,
+                        }}>
+                          <div>
+                            <span style={{ fontWeight: 600, color: "var(--tx)" }}>{pos?.position || `#${posNo}`}</span>
+                            <span style={{ color: "var(--tx3)", margin: "0 6px" }}>→</span>
+                            <span style={{ color: "var(--tx2)" }}>{staffMember?.name || "—"}</span>
+                          </div>
+                          <div style={{ fontFamily: "var(--font-mono)", color: "var(--gr)", fontWeight: 600, fontSize: 12 }}>
+                            {staffMember?.paymentType === "PER_DAY"
+                              ? `₹${rate.toLocaleString("en-IN")}/day · ₹${total.toLocaleString("en-IN")} total`
+                              : "Salary Fixed"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    paddingTop: 10, borderTop: "1px solid var(--sem-gr-bdr)",
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--tx)" }}>
+                      Grand total: <span style={{ color: "var(--bl)", fontFamily: "var(--font-mono)" }}>₹{totalStaffCost.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        className="btn"
+                        onClick={() => setShowConfirmSave(false)}
+                        disabled={saving}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="btn btn-success"
+                        onClick={() => { setShowConfirmSave(false); handleSave(); }}
+                        disabled={saving}
+                      >
+                        {saving ? "Saving…" : "✓ Confirm & save"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>
 
         </div>
       </ScreenFrame>
+    </>
+  );
+
+  if (embedded) return content;
+  return (
+    <>
+      <SectionHeader
+        title={<>Operator <strong>Assignments</strong></>}
+        description={`Allocate positions and staff operators for ${inquiry.eventName || inquiry.eventType}. Handles duplicate validation and tracks total crew costs.`}
+      />
+      {content}
     </>
   );
 }

@@ -2,7 +2,7 @@
  * queries/kits.ts — typed DB helpers for the kits table using Prisma
  */
 
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import type { Kit } from "@/lib/types";
 import { isEquipmentBooked } from "./equipment";
 

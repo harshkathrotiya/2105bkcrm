@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 
 export async function getExpenseReport(inquiryId: string) {
   const inquiry = await db.inquiry.findUnique({
