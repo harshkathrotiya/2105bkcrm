@@ -31,10 +31,11 @@ export default function Screen18VendorList() {
   // Associated Equipment State
   const [fullVendorDetails, setFullVendorDetails] = useState<any>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [allEquipment, setAllEquipment] = useState<any[]>([]);
-  const [equipmentLoading, setEquipmentLoading] = useState(false);
-  const [selectedEquipId, setSelectedEquipId] = useState<string>("");
-  const [linking, setLinking] = useState(false);
+  const [showAddEquipForm, setShowAddEquipForm] = useState(false);
+  const [addEquipForm, setAddEquipForm] = useState({ productName: "", category: "", quantity: "1", rentalRatePerDay: "", notes: "" });
+  const [addEquipLoading, setAddEquipLoading] = useState(false);
+  const [addEquipError, setAddEquipError] = useState("");
+  const [equipCategories, setEquipCategories] = useState<string[]>([]);
 
   const searchParams = useSearchParams();
   const urlVendorId = searchParams ? searchParams.get("vendorId") : null;
@@ -88,22 +89,41 @@ export default function Screen18VendorList() {
     }
   }, [urlVendorId]);
 
-  // Load all equipment for linking dropdown
-  const loadEquipment = async () => {
+  useEffect(() => {
+    api.fetchOptions("EQUIPMENT_CATEGORY")
+      .then((opts) => setEquipCategories(opts.map((o: any) => o.value)))
+      .catch(() => {});
+  }, []);
+
+  const handleAddEquipment = async () => {
+    if (!selectedVendorId) return;
+    if (!addEquipForm.productName.trim()) { setAddEquipError("Product name is required."); return; }
+    if (!addEquipForm.category.trim()) { setAddEquipError("Category is required."); return; }
+    setAddEquipError("");
     try {
-      setEquipmentLoading(true);
-      const res = await api.fetchEquipment({ limit: 1000 });
-      setAllEquipment(res.items);
-    } catch (err) {
-      console.error("Failed to load equipment:", err);
+      setAddEquipLoading(true);
+      await api.createEquipment({
+        productName: addEquipForm.productName.trim(),
+        category: addEquipForm.category.trim(),
+        quantity: parseInt(addEquipForm.quantity) || 1,
+        rentalRatePerDay: addEquipForm.rentalRatePerDay ? parseFloat(addEquipForm.rentalRatePerDay) : null,
+        notes: addEquipForm.notes.trim() || null,
+        ownershipType: "VENDOR",
+        vendorId: selectedVendorId,
+        status: "AVAILABLE",
+        department: "VIDEO",
+      } as any);
+      setAddEquipForm({ productName: "", category: "", quantity: "1", rentalRatePerDay: "", notes: "" });
+      setShowAddEquipForm(false);
+      triggerToast("Equipment created and linked to vendor!");
+      const vendorDetails = await api.fetchVendor(selectedVendorId);
+      setFullVendorDetails(vendorDetails);
+    } catch (err: any) {
+      setAddEquipError(err.message || "Failed to create equipment");
     } finally {
-      setEquipmentLoading(false);
+      setAddEquipLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadEquipment();
-  }, []);
 
   // Fetch selected vendor details, history and YTD spend
   useEffect(() => {
@@ -361,51 +381,6 @@ export default function Screen18VendorList() {
     return vendors.find((v) => v.id === selectedVendorId) || null;
   }, [vendors, selectedVendorId]);
 
-  const handleLinkEquipment = async () => {
-    if (!selectedVendorId || !selectedEquipId) return;
-    try {
-      setLinking(true);
-      await api.updateEquipment(parseInt(selectedEquipId, 10), {
-        ownershipType: "VENDOR",
-        vendorId: selectedVendorId,
-      });
-      setSelectedEquipId("");
-      triggerToast("Equipment linked successfully!");
-      // Refresh details
-      const vendorDetails = await api.fetchVendor(selectedVendorId);
-      setFullVendorDetails(vendorDetails);
-      // Reload overall equipment options
-      await loadEquipment();
-    } catch (err: any) {
-      appToast.error(err.message || "Failed to link equipment");
-    } finally {
-      setLinking(false);
-    }
-  };
-
-  const handleUnlinkEquipment = async (equipId: number) => {
-    if (!selectedVendorId) return;
-    const ok = await confirm({
-      message: "Are you sure you want to unlink this equipment? It will revert to In-house ownership.",
-      confirmLabel: "Unlink",
-      danger: true,
-    });
-    if (!ok) return;
-    try {
-      await api.updateEquipment(equipId, {
-        ownershipType: "INHOUSE",
-        vendorId: null,
-      });
-      triggerToast("Equipment unlinked successfully!");
-      // Refresh details
-      const vendorDetails = await api.fetchVendor(selectedVendorId);
-      setFullVendorDetails(vendorDetails);
-      // Reload overall equipment options
-      await loadEquipment();
-    } catch (err: any) {
-      appToast.error(err.message || "Failed to unlink equipment");
-    }
-  };
 
   // Format Timeline items from history
   const timelineItems = useMemo(() => {
@@ -703,51 +678,120 @@ export default function Screen18VendorList() {
                           {eq.productName}
                         </Link>
                         <span style={{ fontSize: "10px", color: "var(--tx3)" }}>
-                          S/N: {eq.serialNumber || "—"} | Qty: {eq.quantity}
+                          {eq.category} | Qty: {eq.quantity}{eq.rentalRatePerDay ? ` | ₹${eq.rentalRatePerDay}/day` : ""}
                         </span>
                       </div>
-                      {canEdit && (
-                        <button
-                          type="button"
-                          className="btn btn-danger"
-                          style={{ padding: "2px 6px", fontSize: "10px" }}
-                          onClick={() => handleUnlinkEquipment(eq.id)}
-                          title="Unlink this equipment from vendor"
-                        >
-                          Unlink
-                        </button>
-                      )}
                     </div>
                   ))}
                 </div>
               )}
 
               {canEdit && (
-                <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "12px" }}>
-                  <select
-                    className="fsel"
-                    style={{ flex: 1, padding: "5px 8px", fontSize: "11.5px" }}
-                    value={selectedEquipId}
-                    onChange={(e) => setSelectedEquipId(e.target.value)}
-                  >
-                    <option value="">-- Link Equipment --</option>
-                    {allEquipment
-                      .filter((eq) => eq.ownershipType !== "VENDOR" || eq.vendorId !== selectedVendorId)
-                      .map((eq) => (
-                        <option key={eq.id} value={eq.id}>
-                          {eq.productName} ({eq.category})
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{ padding: "5px 12px", fontSize: "11.5px" }}
-                    onClick={handleLinkEquipment}
-                    disabled={!selectedEquipId || linking}
-                  >
-                    {linking ? "Linking..." : "Link"}
-                  </button>
+                <div style={{ marginTop: "10px" }}>
+                  {!showAddEquipForm ? (
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ padding: "5px 12px", fontSize: "11.5px", width: "100%" }}
+                      onClick={() => { setShowAddEquipForm(true); setAddEquipError(""); }}
+                    >
+                      + Add Equipment
+                    </button>
+                  ) : (
+                    <div style={{ border: "1px solid var(--b1)", borderRadius: "8px", padding: "14px", background: "var(--alt)", display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
+                        <span style={{ fontSize: "12px", fontWeight: 600 }}>New Equipment</span>
+                        <button type="button" onClick={() => { setShowAddEquipForm(false); setAddEquipError(""); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "var(--tx3)", lineHeight: 1 }}>×</button>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <label style={{ fontSize: "11px", color: "var(--tx3)", fontWeight: 500 }}>Product Name *</label>
+                        <input
+                          className="finp"
+                          style={{ padding: "5px 8px", fontSize: "12px" }}
+                          placeholder="e.g. Sony FX6"
+                          value={addEquipForm.productName}
+                          onChange={(e) => setAddEquipForm((f) => ({ ...f, productName: e.target.value }))}
+                        />
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <label style={{ fontSize: "11px", color: "var(--tx3)", fontWeight: 500 }}>Category *</label>
+                        <select
+                          className="fsel"
+                          style={{ padding: "5px 8px", fontSize: "12px" }}
+                          value={addEquipForm.category}
+                          onChange={(e) => setAddEquipForm((f) => ({ ...f, category: e.target.value }))}
+                        >
+                          <option value="">-- Select Category --</option>
+                          {equipCategories.map((c) => (
+                            <option key={c} value={c}>
+                              {c.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase())}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <label style={{ fontSize: "11px", color: "var(--tx3)", fontWeight: 500 }}>Quantity</label>
+                          <input
+                            className="finp"
+                            type="number"
+                            min="1"
+                            style={{ padding: "5px 8px", fontSize: "12px" }}
+                            value={addEquipForm.quantity}
+                            onChange={(e) => setAddEquipForm((f) => ({ ...f, quantity: e.target.value }))}
+                          />
+                        </div>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <label style={{ fontSize: "11px", color: "var(--tx3)", fontWeight: 500 }}>Rental Rate / Day (₹)</label>
+                          <input
+                            className="finp"
+                            type="number"
+                            min="0"
+                            style={{ padding: "5px 8px", fontSize: "12px" }}
+                            placeholder="0"
+                            value={addEquipForm.rentalRatePerDay}
+                            onChange={(e) => setAddEquipForm((f) => ({ ...f, rentalRatePerDay: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <label style={{ fontSize: "11px", color: "var(--tx3)", fontWeight: 500 }}>Note</label>
+                        <textarea
+                          className="finp"
+                          style={{ padding: "5px 8px", fontSize: "12px", resize: "vertical", minHeight: "56px" }}
+                          placeholder="Any additional details..."
+                          value={addEquipForm.notes}
+                          onChange={(e) => setAddEquipForm((f) => ({ ...f, notes: e.target.value }))}
+                        />
+                      </div>
+
+                      {addEquipError && <div style={{ fontSize: "11px", color: "var(--rd)", fontWeight: 500 }}>{addEquipError}</div>}
+
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          style={{ flex: 1, padding: "6px 12px", fontSize: "11.5px" }}
+                          onClick={handleAddEquipment}
+                          disabled={addEquipLoading}
+                        >
+                          {addEquipLoading ? "Creating..." : "Create Equipment"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn"
+                          style={{ padding: "6px 12px", fontSize: "11.5px" }}
+                          onClick={() => { setShowAddEquipForm(false); setAddEquipError(""); }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -577,7 +577,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
             )}
 
             {/* Positions Table */}
-            <fieldset disabled={!canAssign} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto" }}>
+            <div style={{ opacity: canAssign ? 1 : 0.5, pointerEvents: canAssign ? "auto" : "none" }}>
             <div className="card" style={{ padding: 0, border: "none" }}>
               <div className="card-t" style={{ padding: "12px 14px 4px", fontSize: "13px" }}>Position-Wise Operator Selection</div>
               <div style={{ overflowX: "auto" }}>
@@ -599,7 +599,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                       const staffId = selectedStaff[pos.no] || 0;
                       const staffMember = staff.find((s) => s.id === staffId);
                       const isDup = staffId ? staffSummary.find((sum) => sum.staff.id === staffId)?.isDuplicate : false;
-                      const rowBg = isDup ? "#1A1000" : "transparent";
+                      const rowBg = isDup ? "var(--sem-am-bg)" : "transparent";
 
                       return (
                         <tr key={pos.no} style={{ background: rowBg }}>
@@ -716,7 +716,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                 </table>
               </div>
             </div>
-            </fieldset>
+            </div>
 
             {/* Crew Cost Summary Table */}
             <div className="card" style={{ padding: "14px", marginTop: "16px", marginBottom: 0 }}>

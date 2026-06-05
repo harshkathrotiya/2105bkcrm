@@ -186,6 +186,8 @@ export async function GET(request: NextRequest) {
         vendorId: b.vendor_id,
         vendorCostPerDay: b.vendor_cost_per_day,
         totalVendorCost: b.total_vendor_cost,
+        bookedFrom: b.booked_from,
+        bookedTo: b.booked_to,
       })),
       equipment: equipmentWithStatus,
       kits: kitsWithStatus,

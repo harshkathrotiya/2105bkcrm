@@ -330,6 +330,22 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
   };
 
   const handleReturnItem = async (bookingId: number) => {
+    // Warn if the equipment's own booked period hasn't ended yet
+    const booking = data?.bookings?.find((b: any) => b.id === bookingId);
+    if (booking?.bookedTo) {
+      const bookedEnd = new Date(booking.bookedTo);
+      bookedEnd.setHours(23, 59, 59, 999);
+      const now = new Date();
+      if (now < bookedEnd) {
+        const daysLeft = Math.ceil((bookedEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const ok = await confirm({
+          title: "Early Return — Booking Not Over",
+          message: `This equipment is booked until ${booking.bookedTo} (${daysLeft} day${daysLeft !== 1 ? "s" : ""} remaining). Are you sure you want to return it early?`,
+          confirmLabel: "Yes, return early",
+        });
+        if (!ok) return;
+      }
+    }
     try {
       setHandoverLoading((prev) => ({ ...prev, [bookingId]: true }));
       await api.returnEquipmentBooking(bookingId);
