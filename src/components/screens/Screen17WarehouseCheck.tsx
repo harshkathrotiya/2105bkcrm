@@ -1367,6 +1367,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
             background: "var(--sem-gr-bg)",
             border: "1px solid var(--sem-gr-bdr)",
             color: "var(--sem-gr-tx)",
+            padding: "12px 16px",
           }}
         >
           <span>✓</span>

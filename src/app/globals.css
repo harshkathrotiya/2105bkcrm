@@ -660,6 +660,10 @@ a:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-shadow); bord
   to   { opacity: 1; transform: translateY(0); }
 }
 
+.fixed.top-4.right-4 {
+  padding: 12px 16px !important;
+}
+
 /* ===== TABLE SCROLL CONTAINER ===== */
 /* Wrap wide data tables so they scroll horizontally instead of overflowing
    the viewport on narrow screens. */

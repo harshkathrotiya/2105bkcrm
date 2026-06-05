@@ -154,10 +154,10 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
   const positions: PositionRow[] = useMemo(() => {
     if (!quotation?.equipment) return [];
     try {
-      // quotation.equipment is already parsed if fetched via API
-      return typeof quotation.equipment === "string"
-        ? JSON.parse(quotation.equipment)
-        : quotation.equipment;
+      const raw = quotation.equipment;
+      if (Array.isArray(raw)) return raw as PositionRow[];
+      if (typeof raw === "string") return JSON.parse(raw) as PositionRow[];
+      return [];
     } catch (e) {
       console.error("Failed to parse quotation equipment:", e);
       return [];
@@ -579,7 +579,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
             {/* Positions Table */}
             <fieldset disabled={!canAssign} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto" }}>
             <div className="card" style={{ padding: 0, border: "none" }}>
-              <div className="ct" style={{ padding: "12px 14px 4px", fontSize: "13px" }}>Position-Wise Operator Selection</div>
+              <div className="card-t" style={{ padding: "12px 14px 4px", fontSize: "13px" }}>Position-Wise Operator Selection</div>
               <div style={{ overflowX: "auto" }}>
                 <table className="tbl">
                   <thead>
@@ -720,7 +720,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
 
             {/* Crew Cost Summary Table */}
             <div className="card" style={{ padding: "14px", marginTop: "16px", marginBottom: 0 }}>
-              <div className="ct" style={{ fontSize: "13px" }}>Crew Cost Summary</div>
+              <div className="card-t" style={{ fontSize: "13px" }}>Crew Cost Summary</div>
               <div style={{ overflowX: "auto" }}>
                 <table className="tbl">
                   <thead>

@@ -112,7 +112,6 @@ export default function Screen05QuotationForm() {
   };
 
   // ── Client-specific equipment rates ─────────────────────────────────────────
-  // Map of equipment name -> id (for rate lookup) and the current client's rate overrides
   const equipNameToId = useMemo(() => {
     const m: Record<string, number> = {};
     for (const e of allEquipment) {
@@ -120,8 +119,18 @@ export default function Screen05QuotationForm() {
     }
     return m;
   }, [allEquipment]);
-  // equipment id -> { rate, isOverride } for the selected client (override or default)
+  // equipment id -> rate for the selected client (override or default)
   const [clientRateMap, setClientRateMap] = useState<Record<number, number>>({});
+  // kit name -> rate (via kit's mainBodyId equipment rate)
+  const kitNameToRate = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const k of kits) {
+      if (k.mainBodyId != null && clientRateMap[k.mainBodyId] != null) {
+        m[k.name] = clientRateMap[k.mainBodyId];
+      }
+    }
+    return m;
+  }, [kits, clientRateMap]);
 
   // Build live grouped equipment options from DB:
   // Group 0 — Special, Group 1 — Kits, Group 2 — Individual available items
@@ -440,15 +449,13 @@ export default function Screen05QuotationForm() {
       prev.map((row) => {
         if (row.no !== no) return row;
         const updated = { ...row, [field]: value };
-        if (field === "position") {
-          const m = positionMap[value as string];
-          if (m) { updated.equip = m.equip; updated.rate = m.rate; }
-        }
         if (field === "equip") {
-          // Auto-fill the client's effective rate (override → default) when picking a real equipment item
-          const eqId = equipNameToId[value as string];
+          const name = value as string;
+          const eqId = equipNameToId[name];
           if (eqId != null && clientRateMap[eqId] != null) {
             updated.rate = clientRateMap[eqId];
+          } else if (kitNameToRate[name] != null) {
+            updated.rate = kitNameToRate[name];
           }
         }
         // When creating (not editing), cap days at eventDays

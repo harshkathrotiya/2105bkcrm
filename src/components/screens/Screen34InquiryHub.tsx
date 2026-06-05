@@ -61,7 +61,6 @@ const DEFAULT_POSITION_MAP: Record<string, { equip: string; rate: number }> = {
   "FPV":                 { equip: "FPV",            rate: 15000 },
 };
 
-const EQUIPMENT_LIST = Array.from(new Set(Object.values(DEFAULT_POSITION_MAP).map((m) => m.equip)));
 
 function makeRow(no: number, days: number): QuotationRow {
   return { no, position: "", equip: "", rate: 0, days, amount: 0 };
@@ -132,10 +131,15 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
   const inquiry = inquiries.find((i) => i.id === inquiryId);
   const client = inquiry ? clients.find((c) => c.id === inquiry.clientId) : undefined;
 
-  const quotation = useMemo(
-    () => quotations.find((q) => q.inquiryId === inquiryId && q.status !== "Revised"),
-    [quotations, inquiryId]
-  );
+  const quotation = useMemo(() => {
+    const all = quotations.filter((q) => q.inquiryId === inquiryId);
+    if (!all.length) return undefined;
+    return all.sort((a, b) => {
+      const aRev = parseInt(a.quoteNo?.match(/-(\d+)$/)?.[1] ?? "-1");
+      const bRev = parseInt(b.quoteNo?.match(/-(\d+)$/)?.[1] ?? "-1");
+      return bRev - aRev;
+    })[0];
+  }, [quotations, inquiryId]);
   const invoice = useMemo(
     () => (quotation ? invoices.find((inv) => inv.quotationId === quotation.id) : undefined),
     [invoices, quotation]
@@ -160,6 +164,24 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
 
   // ── Quotation form helpers ───────────────────────────────────────────────────
   const positions = useMemo(() => Object.keys(positionMap), [positionMap]);
+
+  // Available equipment/kit names for the inquiry's date range (from warehouse check)
+  const [availableNames, setAvailableNames] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    if (!inquiry) return;
+    api.fetchWarehouseCheck(inquiryId)
+      .then((data: any) => {
+        const names = new Set<string>();
+        for (const e of data.equipment ?? []) {
+          if (!e.isBookedForRange && e.status === "AVAILABLE") names.add(e.productName);
+        }
+        for (const k of data.kits ?? []) {
+          if (k.availabilityStatus === "AVAILABLE" || k.availabilityStatus === "PARTIAL") names.add(k.name);
+        }
+        setAvailableNames(names);
+      })
+      .catch(() => setAvailableNames(null));
+  }, [inquiryId, inquiry]);
 
   // Only fetch position options when the quotation tab is first opened
   const positionsFetchedRef = useRef(false);
@@ -255,24 +277,38 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
     return m;
   }, [allEquipment]);
 
+  const kitNameToRate = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const k of kits) {
+      if (k.mainBodyId != null && clientRateMap[k.mainBodyId] != null) {
+        m[k.name] = clientRateMap[k.mainBodyId];
+      }
+    }
+    return m;
+  }, [kits, clientRateMap]);
+
   const liveEquipOptions = useMemo(() => {
-    const kitOpts = kits.map((k: Kit) => ({ value: k.name, label: `${k.name}`, group: "Kits" }));
+    const kitOpts = kits
+      .filter((k: Kit) => availableNames === null || availableNames.has(k.name))
+      .map((k: Kit) => ({ value: k.name, label: k.name, group: "Kits" }));
     const eqOpts = allEquipment
-      .filter((e: Equipment) => e.status === "AVAILABLE" || e.status === "IN_USE")
+      .filter((e: Equipment) => {
+        if (e.status !== "AVAILABLE") return false;
+        if (availableNames !== null && !availableNames.has(e.productName)) return false;
+        return true;
+      })
       .map((e: Equipment) => ({
         value: e.productName,
         label: `${e.productName}${e.serialNumber ? ` (${e.serialNumber})` : ""}`,
-        group: "Equipment Items",
+        group: "Equipment",
       }));
     const seen = new Set<string>();
-    const all = [...kitOpts, ...eqOpts].filter((o) => {
+    return [...kitOpts, ...eqOpts].filter((o) => {
       if (seen.has(o.value)) return false;
       seen.add(o.value);
       return true;
     });
-    if (all.length === 0) return EQUIPMENT_LIST.map((e) => ({ value: e, label: e, group: "" }));
-    return all;
-  }, [kits, allEquipment]);
+  }, [kits, allEquipment, availableNames]);
 
   const selectedClientId = client?.id;
 
@@ -417,14 +453,13 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
       prev.map((row) => {
         if (row.no !== no) return row;
         const updated = { ...row, [field]: value };
-        if (field === "position") {
-          const m = positionMap[value as string];
-          if (m) { updated.equip = m.equip; updated.rate = m.rate; }
-        }
         if (field === "equip") {
-          const eqId = equipNameToId[value as string];
+          const name = value as string;
+          const eqId = equipNameToId[name];
           if (eqId != null && clientRateMap[eqId] != null) {
             updated.rate = clientRateMap[eqId];
+          } else if (kitNameToRate[name] != null) {
+            updated.rate = kitNameToRate[name];
           }
         }
         // When creating (not editing), cap days at eventDays

@@ -37,10 +37,16 @@ export async function GET(request: NextRequest) {
       department: inquiryRow.department,
     };
 
-    // Get the quotation for this inquiry
-    const quotation = await db.quotation.findFirst({
-      where: { inquiry_id: inquiryId }
+    // Get the latest quotation for this inquiry (highest revision suffix, then newest created_at)
+    const allQuotations = await db.quotation.findMany({
+      where: { inquiry_id: inquiryId },
+      orderBy: { created_at: "desc" },
     });
+    const quotation = allQuotations.sort((a: any, b: any) => {
+      const aRev = parseInt(a.quote_no?.match(/-(\d+)$/)?.[1] ?? "-1");
+      const bRev = parseInt(b.quote_no?.match(/-(\d+)$/)?.[1] ?? "-1");
+      return bRev - aRev;
+    })[0] ?? null;
     
     let quoteRows: any[] = [];
     if (quotation) {
