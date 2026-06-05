@@ -34,14 +34,28 @@ const DEFAULT_POSITION_MAP: Record<string, { equip: string; rate: number }> = {
   "Photo 4":             { equip: "DSLR",           rate:  8000 },
   "Source PC":           { equip: "PC",             rate:  5000 },
   "Youtube Live":        { equip: "Live PC",        rate:  5000 },
-  "Editor":              { equip: "Editor",         rate:  5000 },
-  "Photo Editor":        { equip: "Photo Editor",   rate:  5000 },
+  "Editor":              { equip: "Video Editing System", rate:  5000 },
+  "Photo Editor":        { equip: "Photo Editing Laptop", rate:  5000 },
   "Video Crane 32 Feet": { equip: "Crane 32 Feet",  rate: 15000 },
   "Drone":               { equip: "Drone",          rate: 12000 },
   "FPV":                 { equip: "FPV",            rate: 15000 },
+  "Installation & de-installation charges": { equip: "Service",  rate: 5000 },
+  "Content management operator":            { equip: "Operator", rate: 2000 },
 };
 
 const EQUIPMENT_LIST = Array.from(new Set(Object.values(DEFAULT_POSITION_MAP).map((m) => m.equip)));
+
+// Service labels and LED types used in auto-generated rows — not real DB equipment/kits
+// but must appear as valid selections in the Equipment/Kits dropdown.
+const SPECIAL_EQUIP_OPTIONS = [
+  { value: "Service",       label: "Service",       group: "Special" },
+  { value: "Operator",      label: "Operator",      group: "Special" },
+  { value: "P4 LED",        label: "P4 LED",        group: "Special" },
+  { value: "P3 LED",        label: "P3 LED",        group: "Special" },
+  { value: "P2 LED",        label: "P2 LED",        group: "Special" },
+  { value: "FLOOR LED",     label: "FLOOR LED",     group: "Special" },
+  { value: "P4_CURVED LED", label: "P4_CURVED LED", group: "Special" },
+];
 
 function makeRow(no: number, days: number): QuotationRow {
   return { no, position: "", equip: "", rate: 0, days, amount: 0 };
@@ -69,9 +83,15 @@ export default function Screen05QuotationForm() {
     let active = true;
     api.fetchOptions("QUOTATION_POSITION")
       .then((opts) => {
-        if (!active || opts.length === 0) return;
-        const map: Record<string, { equip: string; rate: number }> = {};
-        for (const o of opts) map[o.value] = { equip: o.metaEquip || "", rate: o.metaRate || 0 };
+        if (!active) return;
+        // Start from defaults so any entries missing from DB are still available
+        const map: Record<string, { equip: string; rate: number }> = { ...DEFAULT_POSITION_MAP };
+        for (const o of opts) {
+          let eq = o.metaEquip || "";
+          if (eq === "Photo Editor") eq = "Photo Editing Laptop";
+          if (eq === "Editor") eq = "Video Editing System";
+          map[o.value] = { equip: eq, rate: o.metaRate || 0 };
+        }
         setPositionMap(map);
       })
       .catch(() => { /* keep defaults */ });
@@ -104,7 +124,7 @@ export default function Screen05QuotationForm() {
   const [clientRateMap, setClientRateMap] = useState<Record<number, number>>({});
 
   // Build live grouped equipment options from DB:
-  // Group 1 — Kits, Group 2 — Individual available items
+  // Group 0 — Special, Group 1 — Kits, Group 2 — Individual available items
   const liveEquipOptions = useMemo(() => {
     const kitOpts = kits.map((k: Kit) => ({
       value: k.name,
@@ -118,9 +138,9 @@ export default function Screen05QuotationForm() {
         label: `${e.productName}${e.serialNumber ? ` (${e.serialNumber})` : ""}`,
         group: "Equipment Items",
       }));
-    // Deduplicate by value
+    // Deduplicate by value (special entries first so they're preserved)
     const seen = new Set<string>();
-    const all = [...kitOpts, ...eqOpts].filter((o) => {
+    const all = [...SPECIAL_EQUIP_OPTIONS, ...kitOpts, ...eqOpts].filter((o) => {
       if (seen.has(o.value)) return false;
       seen.add(o.value);
       return true;
@@ -431,6 +451,10 @@ export default function Screen05QuotationForm() {
             updated.rate = clientRateMap[eqId];
           }
         }
+        // When creating (not editing), cap days at eventDays
+        if (field === "days" && !existingQuotation) {
+          updated.days = Math.min(Number(value), eventDays);
+        }
         updated.amount = updated.rate * updated.days;
         return updated;
       })
@@ -473,6 +497,12 @@ export default function Screen05QuotationForm() {
       }
       if (typeof row.rate !== "number" || row.rate < 0) {
         toast.error(`Row #${row.no}: Rate must be a non-negative number.`);
+        setSaving(false);
+        return;
+      }
+      // When creating, days cannot exceed event duration
+      if (!existingQuotation && row.days > days) {
+        toast.error(`Row #${row.no}: Days (${row.days}) cannot exceed event duration (${days} days).`);
         setSaving(false);
         return;
       }
@@ -717,7 +747,7 @@ export default function Screen05QuotationForm() {
               </div>
             </div>
             <div style={{ marginTop: "16px", borderTop: "1px dashed var(--b1)", paddingTop: "12px" }}>
-              <div className="text-[11px] font-medium text-tx2" style={{ marginBottom: "8px" }}>⚙️ LED Type Rate Settings (Editable per Quotation)</div>
+              <div className="text-[11px] font-medium text-tx2" style={{ marginBottom: "8px" }}>LED Type Rate Settings (Editable per Quotation)</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
                 {Object.entries(ledRates).map(([type, rate]) => (
                   <div key={type} className="field">
@@ -797,7 +827,7 @@ export default function Screen05QuotationForm() {
                     <tr>
                       <th style={{ width: 28 }}>No.</th>
                       <th style={{ width: 160 }}>Position</th>
-                      <th style={{ width: 130 }}>Equipment</th>
+                      <th style={{ width: 130 }}>Equipment/Kits</th>
                       <th style={{ width: 90, textAlign: "right" }}>Rate/day (₹)</th>
                       <th style={{ width: 70, textAlign: "center" }}>Days</th>
                       <th style={{ width: 90, textAlign: "right" }}>Amount (₹)</th>
@@ -811,14 +841,24 @@ export default function Screen05QuotationForm() {
                         <tr key={row.no}>
                           <td className="text-tx3">{row.no}</td>
                           <td>
-                            <SearchableSelect
-                              className="text-[10px]"
-                              value={row.position}
-                              onChange={(val) => updateRow(row.no, "position", val)}
-                              options={positions.map(p => ({ value: p, label: p }))}
-                              placeholder="Select position"
-                              placement={placement}
-                            />
+                            {/* LED description rows have a free-form position (not in the positions list) */}
+                            {row.equip.endsWith(" LED") ? (
+                              <input
+                                className="finp text-[10px]"
+                                value={row.position}
+                                onChange={(e) => updateRow(row.no, "position", e.target.value)}
+                                placeholder="LED screen description"
+                              />
+                            ) : (
+                              <SearchableSelect
+                                className="text-[10px]"
+                                value={row.position}
+                                onChange={(val) => updateRow(row.no, "position", val)}
+                                options={positions.map(p => ({ value: p, label: p }))}
+                                placeholder="Select position"
+                                placement={placement}
+                              />
+                            )}
                           </td>
                           <td>
                             <SearchableSelect
@@ -844,6 +884,8 @@ export default function Screen05QuotationForm() {
                               className="finp text-[10px] text-center"
                               type="number"
                               min={1}
+                              max={!existingQuotation ? eventDays : undefined}
+                              title={!existingQuotation ? `Max ${eventDays} days (event duration)` : undefined}
                               value={row.days}
                               style={{ minWidth: 58 }}
                               onChange={(e) => updateRow(row.no, "days", Math.max(1, Number(e.target.value) || 1))}

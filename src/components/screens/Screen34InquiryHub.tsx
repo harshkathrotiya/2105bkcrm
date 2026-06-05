@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import SearchableSelect from "../ui/SearchableSelect";
@@ -54,8 +54,8 @@ const DEFAULT_POSITION_MAP: Record<string, { equip: string; rate: number }> = {
   "Photo 4":             { equip: "DSLR",           rate:  8000 },
   "Source PC":           { equip: "PC",             rate:  5000 },
   "Youtube Live":        { equip: "Live PC",        rate:  5000 },
-  "Editor":              { equip: "Editor",         rate:  5000 },
-  "Photo Editor":        { equip: "Photo Editor",   rate:  5000 },
+  "Editor":              { equip: "Video Editing System", rate:  5000 },
+  "Photo Editor":        { equip: "Photo Editing Laptop", rate:  5000 },
   "Video Crane 32 Feet": { equip: "Crane 32 Feet",  rate: 15000 },
   "Drone":               { equip: "Drone",          rate: 12000 },
   "FPV":                 { equip: "FPV",            rate: 15000 },
@@ -78,7 +78,7 @@ const STEP_LABELS: Record<Tab, string> = {
   invoice: "Invoice",
 };
 
-export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string }) {
+export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId: string; activeTab?: Tab }) {
   const router = useRouter();
   const toast = useToast();
   const { can } = useCurrentUser();
@@ -91,9 +91,13 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
   const { equipment: allEquipment } = useEquipment();
 
   // ── Hub state ────────────────────────────────────────────────────────────────
-  const searchParams = useSearchParams();
-  const initialTab = (searchParams.get("tab") as Tab) || "overview";
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const tab: Tab = activeTab || "overview";
+
+  // setTab navigates to the sub-route URL so the active tab persists on refresh
+  const setTab = (next: Tab) => {
+    const base = `/inquiries/${inquiryId}`;
+    router.push(next === "overview" ? base : `${base}/${next}`);
+  };
   const [assignments, setAssignments] = useState<any[]>([]);
   const [approving, setApproving] = useState(false);
   const [videoPercent, setVideoPercent] = useState(82);
@@ -164,7 +168,12 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
       .then((opts) => {
         if (!active || opts.length === 0) return;
         const map: Record<string, { equip: string; rate: number }> = {};
-        for (const o of opts) map[o.value] = { equip: o.metaEquip || "", rate: o.metaRate || 0 };
+        for (const o of opts) {
+          let eq = o.metaEquip || "";
+          if (eq === "Photo Editor") eq = "Photo Editing Laptop";
+          if (eq === "Editor") eq = "Video Editing System";
+          map[o.value] = { equip: eq, rate: o.metaRate || 0 };
+        }
         setPositionMap(map);
       })
       .catch(() => { /* keep defaults */ });
@@ -441,6 +450,10 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
             updated.rate = clientRateMap[eqId];
           }
         }
+        // When creating (not editing), cap days at eventDays
+        if (field === "days" && !existingQuotation) {
+          updated.days = Math.min(Number(value), eventDays);
+        }
         updated.amount = updated.rate * updated.days;
         return updated;
       })
@@ -485,6 +498,12 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
       }
       if (typeof row.rate !== "number" || row.rate < 0) {
         toast.error(`Row #${row.no}: Rate must be a non-negative number.`);
+        setSaving(false);
+        return;
+      }
+      // When creating, days cannot exceed event duration
+      if (!existingQuotation && row.days > days) {
+        toast.error(`Row #${row.no}: Days (${row.days}) cannot exceed event duration (${days} days).`);
         setSaving(false);
         return;
       }
@@ -990,7 +1009,7 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
                         <tr>
                           <th style={{ width: 28 }}>No.</th>
                           <th style={{ width: 160 }}>Position</th>
-                          <th style={{ width: 130 }}>Equipment</th>
+                          <th style={{ width: 130 }}>Equipment/Kits</th>
                           <th style={{ width: 90, textAlign: "right" }}>Rate/day (₹)</th>
                           <th style={{ width: 70, textAlign: "center" }}>Days</th>
                           <th style={{ width: 90, textAlign: "right" }}>Amount (₹)</th>
@@ -1110,6 +1129,8 @@ export default function Screen34InquiryHub({ inquiryId }: { inquiryId: string })
                                   className="finp text-[10px] text-center"
                                   type="number"
                                   min={1}
+                                  max={!existingQuotation ? eventDays : undefined}
+                                  title={!existingQuotation ? `Max ${eventDays} days (event duration)` : undefined}
                                   value={row.days}
                                   style={{ minWidth: 58 }}
                                   onChange={(e) => updateRow(row.no, "days", Math.max(1, Number(e.target.value) || 1))}

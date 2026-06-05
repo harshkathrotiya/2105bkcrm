@@ -37,11 +37,13 @@ const DEFAULT_POSITIONS: { value: string; equip: string; rate: number }[] = [
   { value: "Photo 4", equip: "DSLR", rate: 8000 },
   { value: "Source PC", equip: "PC", rate: 5000 },
   { value: "Youtube Live", equip: "Live PC", rate: 5000 },
-  { value: "Editor", equip: "Editor", rate: 5000 },
-  { value: "Photo Editor", equip: "Photo Editor", rate: 5000 },
+  { value: "Editor", equip: "Video Editing System", rate: 5000 },
+  { value: "Photo Editor", equip: "Photo Editing Laptop", rate: 5000 },
   { value: "Video Crane 32 Feet", equip: "Crane 32 Feet", rate: 15000 },
   { value: "Drone", equip: "Drone", rate: 12000 },
   { value: "FPV", equip: "FPV", rate: 15000 },
+  { value: "Installation & de-installation charges", equip: "Service", rate: 5000 },
+  { value: "Content management operator", equip: "Operator", rate: 2000 },
 ];
 
 function mapOption(row: any): OptionItem {

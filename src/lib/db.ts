@@ -25,8 +25,8 @@ const pool =
     max: isVercel ? 1 : 5,
     // Release idle connections after 10 s so Neon doesn't close them first.
     idleTimeoutMillis: 10_000,
-    // Give up acquiring a connection after 5 s rather than hanging forever.
-    connectionTimeoutMillis: 5_000,
+    // Give up acquiring a connection after 15 s rather than hanging forever.
+    connectionTimeoutMillis: 15_000,
     ssl: (process.env.DATABASE_URL || process.env.DIRECT_URL)?.includes("sslmode=require")
       ? { rejectUnauthorized: false }
       : undefined,
