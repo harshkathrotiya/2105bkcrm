@@ -398,7 +398,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
       }
 
       await refreshStaff();
-      router.push(`/warehouse/check?inquiryId=${inquiryId}`);
+      router.push(`/inquiries/${inquiryId}/warehouse`);
     } catch (err: any) {
       toast.error(err.message || "Failed to save assignments");
     } finally {
@@ -431,7 +431,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             {!embedded && <Link href={`/inquiries/${inquiryId}`} className="btn">← Back to inquiry</Link>}
-            {!embedded && <Link href={`/warehouse/check?inquiryId=${inquiryId}`} className="btn">Warehouse</Link>}
+            {!embedded && <Link href={`/inquiries/${inquiryId}/warehouse`} className="btn">Warehouse</Link>}
             {canAssign && (
               <Link
                 href={`/staff/new?type=EXTERNAL&redirect=/staff/assign?inquiryId=${inquiryId}`}
@@ -730,12 +730,13 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                       <th style={{ width: "80px" }} className="tc">Positions</th>
                       <th style={{ width: "110px" }} className="tr">Rate / Day</th>
                       <th style={{ width: "130px" }} className="tr">Total ({eventDays} days)</th>
+                      <th style={{ width: "90px" }} className="tc">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {staffSummary.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="text-center py-4 text-tx3" style={{ fontStyle: "italic" }}>
+                        <td colSpan={6} className="text-center py-4 text-tx3" style={{ fontStyle: "italic" }}>
                           No staff operators assigned yet.
                         </td>
                       </tr>
@@ -767,6 +768,14 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                           </td>
                           <td className="tr" style={{ fontFamily: "var(--font-mono)", fontWeight: 500, color: "var(--gr)", fontSize: "12px" }}>
                             ₹{item.total.toLocaleString("en-IN")}
+                          </td>
+                          <td className="tc">
+                            <Link
+                              href={`/inquiries/${inquiryId}/brief/${item.staff.id}`}
+                              className="btn text-[10px] py-[3px] px-[6px]"
+                            >
+                              📲 Brief
+                            </Link>
                           </td>
                         </tr>
                       ))

@@ -311,7 +311,7 @@ export default function Screen10InquiryList() {
                         <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
                           {!hasQuotation && canCreateQuote && (
                             <Link
-                              href={`/inquiries/${inq.id}?tab=quotation`}
+                              href={`/inquiries/${inq.id}/quotation`}
                               className="btn btn-primary text-[10px] px-[8px] py-[4px]"
                               title="Create quotation"
                             >
@@ -320,7 +320,7 @@ export default function Screen10InquiryList() {
                           )}
                           {hasQuotation && !invoice && (
                             <Link
-                              href={`/inquiries/${inq.id}?tab=quotation`}
+                              href={`/inquiries/${inq.id}/quotation`}
                               className="btn text-[10px] px-[8px] py-[4px]"
                               title="View/edit quotation"
                             >
@@ -340,7 +340,7 @@ export default function Screen10InquiryList() {
                             <div className="flex gap-1">
                               {canAssignCrew && (
                                 <Link
-                                  href={`/staff/assign?inquiryId=${inq.id}`}
+                                  href={`/inquiries/${inq.id}/crew`}
                                   className="btn text-[10px] px-[6px] py-[4px]"
                                   title="Assign crew"
                                 >
@@ -349,7 +349,7 @@ export default function Screen10InquiryList() {
                               )}
                               {canViewWarehouse && (
                                 <Link
-                                  href={`/warehouse/check?inquiryId=${inq.id}`}
+                                  href={`/inquiries/${inq.id}/warehouse`}
                                   className="btn text-[10px] px-[6px] py-[4px]"
                                   title="Warehouse check"
                                 >

@@ -10,9 +10,13 @@ import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 import * as api from "@/lib/api";
 import { useStaff } from "@/lib/store";
 import type { Staff } from "@/lib/types";
+import { useToast } from "@/components/ui/Toast";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
 
 export default function InactiveStaffPage() {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const { refreshStaff } = useStaff();
   const [inactiveStaff, setInactiveStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,14 +39,19 @@ export default function InactiveStaffPage() {
   }, []);
 
   const handleReactivate = async (id: number, name: string) => {
-    if (!confirm(`Reactivate ${name}? They will appear in the staff list again.`)) return;
+    const ok = await confirm({
+      message: `Reactivate ${name}? They will appear in the staff list again.`,
+      confirmLabel: "Reactivate",
+    });
+    if (!ok) return;
     setReactivating(id);
     try {
       await api.reactivateStaff(id);
       await refreshStaff();
       await loadInactive();
+      toast.success(`${name} has been reactivated.`);
     } catch (err: any) {
-      alert(err.message || "Failed to reactivate staff");
+      toast.error(err.message || "Failed to reactivate staff");
     } finally {
       setReactivating(null);
     }

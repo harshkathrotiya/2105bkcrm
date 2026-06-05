@@ -12,9 +12,9 @@ import { generateId } from "@/lib/types";
 import { useCurrentUser } from "@/lib/use-current-user";
 
 const TIME_OPTIONS = [
-  "06:00 AM","07:00 AM","08:00 AM","09:00 AM","10:00 AM","11:00 AM",
-  "12:00 PM","01:00 PM","02:00 PM","03:00 PM","04:00 PM","05:00 PM",
-  "06:00 PM","07:00 PM","08:00 PM","09:00 PM","10:00 PM","11:00 PM",
+  "06:00 AM", "06:30 AM", "07:00 AM", "07:30 AM", "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+  "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM",
+  "06:00 PM", "06:30 PM", "07:00 PM", "07:30 PM", "08:00 PM", "08:30 PM", "09:00 PM", "09:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM",
 ];
 
 const EVENT_TYPES = [
@@ -100,7 +100,16 @@ export default function Screen04NewInquiry() {
   }, [editInquiry]);
 
   // Auto-update rate when LED type changes
-  useEffect(() => { setRatePerSqft(LED_TYPE_RATES[ledType] ?? 500); }, [ledType]);
+  useEffect(() => { setRatePerSqft(LED_TYPE_RATES[ledType] ?? 50); }, [ledType]);
+
+  // Clear LED fields when department changes to VIDEO
+  useEffect(() => {
+    if (department === 'VIDEO') {
+      setScreenWidth('');
+      setScreenHeight('');
+      setStageType('');
+    }
+  }, [department]);
 
   const selectedClient = clients.find((c) => c.id === clientId);
 
@@ -127,6 +136,12 @@ export default function Screen04NewInquiry() {
     endDate === startDate && timeToMinutes(endTime) <= timeToMinutes(startTime);
   const venueError = venue.trim().length > 0 && venue.trim().length < 3;
 
+  const isLedOrMerged = department === 'LED' || department === 'MERGED';
+  const ledFieldsValid = !isLedOrMerged || (
+    screenWidth && parseFloat(screenWidth) > 0 &&
+    screenHeight && parseFloat(screenHeight) > 0
+  );
+
   const canSave = !!(
     clientId &&
     eventType &&
@@ -135,7 +150,8 @@ export default function Screen04NewInquiry() {
     endDate &&
     venue.trim().length >= 3 &&
     !dateError &&
-    !timeError
+    !timeError &&
+    ledFieldsValid
   );
 
   const handleReset = () => {
@@ -148,6 +164,9 @@ export default function Screen04NewInquiry() {
     setEndTime("09:00 PM");
     setVenue("");
     setNotes("");
+    setScreenWidth('');
+    setScreenHeight('');
+    setStageType('');
   };
 
   const handleSave = async () => {
@@ -187,15 +206,24 @@ export default function Screen04NewInquiry() {
       }
 
       const ledPayload = (department !== 'VIDEO') ? {
-        screenWidth: screenWidth ? parseFloat(screenWidth) : undefined,
-        screenHeight: screenHeight ? parseFloat(screenHeight) : undefined,
-        screenAreaSqft: screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : undefined,
-        totalCabinets: screenWidth && screenHeight ? Math.ceil(parseFloat(screenWidth) * parseFloat(screenHeight) / 4) : undefined,
+        screenWidth: screenWidth ? parseFloat(screenWidth) : null,
+        screenHeight: screenHeight ? parseFloat(screenHeight) : null,
+        screenAreaSqft: screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : null,
+        totalCabinets: screenWidth && screenHeight ? Math.ceil(parseFloat(screenWidth) * parseFloat(screenHeight) / 4) : null,
         ledType,
         ratePerSqft: LED_TYPE_RATES[ledType] ?? ratePerSqft,
         location,
-        stageType: stageType || undefined,
-      } : {};
+        stageType: stageType || null,
+      } : {
+        screenWidth: null,
+        screenHeight: null,
+        screenAreaSqft: null,
+        totalCabinets: null,
+        ledType: null,
+        ratePerSqft: null,
+        location: "INDOOR",
+        stageType: null,
+      };
 
       // 2. Update existing inquiry
       await dispatchInquiries({
@@ -217,15 +245,24 @@ export default function Screen04NewInquiry() {
       });
     } else {
       const ledPayload = (department !== 'VIDEO') ? {
-        screenWidth: screenWidth ? parseFloat(screenWidth) : undefined,
-        screenHeight: screenHeight ? parseFloat(screenHeight) : undefined,
-        screenAreaSqft: screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : undefined,
-        totalCabinets: screenWidth && screenHeight ? Math.ceil(parseFloat(screenWidth) * parseFloat(screenHeight) / 4) : undefined,
+        screenWidth: screenWidth ? parseFloat(screenWidth) : null,
+        screenHeight: screenHeight ? parseFloat(screenHeight) : null,
+        screenAreaSqft: screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : null,
+        totalCabinets: screenWidth && screenHeight ? Math.ceil(parseFloat(screenWidth) * parseFloat(screenHeight) / 4) : null,
         ledType,
         ratePerSqft: LED_TYPE_RATES[ledType] ?? ratePerSqft,
         location,
-        stageType: stageType || undefined,
-      } : {};
+        stageType: stageType || null,
+      } : {
+        screenWidth: null,
+        screenHeight: null,
+        screenAreaSqft: null,
+        totalCabinets: null,
+        ledType: null,
+        ratePerSqft: null,
+        location: "INDOOR",
+        stageType: null,
+      };
 
       // Create new inquiry
       await dispatchInquiries({
@@ -446,7 +483,7 @@ export default function Screen04NewInquiry() {
                     style={{ background: "var(--sem-bl-bg)", color: "var(--sem-bl-tx)", padding: "8px 12px", gap: "12px" }}
                   >
                     <span className="flex items-center" style={{ gap: "6px" }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
                         <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -456,7 +493,7 @@ export default function Screen04NewInquiry() {
                     </span>
                     <div className="rounded-full bg-current opacity-30" style={{ width: "3px", height: "3px" }}></div>
                     <span className="flex items-center" style={{ gap: "6px" }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
                       </svg>
@@ -464,7 +501,7 @@ export default function Screen04NewInquiry() {
                     </span>
                     <div className="rounded-full bg-current opacity-30" style={{ width: "3px", height: "3px" }}></div>
                     <span className="flex items-center" style={{ gap: "6px" }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden="true">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 10"></polyline>
                       </svg>
@@ -500,6 +537,85 @@ export default function Screen04NewInquiry() {
               </div>
             </div>
 
+            {/* LED Screen Configuration Card */}
+            {(department === 'LED' || department === 'MERGED') && (
+              <div className="card" style={{ marginTop: '14px' }}>
+                <div className="card-t">LED Screen Configuration</div>
+                <div className="fgrid">
+                  <div className="field">
+                    <div className="flbl">Screen Width (ft) *</div>
+                    <input
+                      className="finp"
+                      type="number"
+                      min="1"
+                      value={screenWidth}
+                      onChange={(e) => setScreenWidth(e.target.value)}
+                      placeholder="e.g. 10"
+                    />
+                  </div>
+                  <div className="field">
+                    <div className="flbl">Screen Height (ft) *</div>
+                    <input
+                      className="finp"
+                      type="number"
+                      min="1"
+                      value={screenHeight}
+                      onChange={(e) => setScreenHeight(e.target.value)}
+                      placeholder="e.g. 8"
+                    />
+                  </div>
+                  <div className="field span2">
+                    <div className="flbl">LED Type *</div>
+                    <select
+                      className="fsel"
+                      value={ledType}
+                      onChange={(e) => setLedType(e.target.value)}
+                    >
+                      {["P4", "P3", "P2", "FLOOR", "P4_CURVED"].map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <div className="flbl">Location</div>
+                    <select
+                      className="fsel"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                    >
+                      <option value="INDOOR">Indoor</option>
+                      <option value="OUTDOOR">Outdoor</option>
+                    </select>
+                  </div>
+                  <div className="field">
+                    <div className="flbl">Stage Type</div>
+                    <input
+                      className="finp"
+                      value={stageType}
+                      onChange={(e) => setStageType(e.target.value)}
+                      placeholder="e.g. Main stage"
+                    />
+                  </div>
+                  <div className="field span2">
+                    <div className="flbl">Rate per sq.ft (₹)</div>
+                    <input
+                      className="finp"
+                      type="number"
+                      min="1"
+                      value={ratePerSqft}
+                      onChange={(e) => setRatePerSqft(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+                {screenArea > 0 && (
+                  <div className="flex gap-4 mt-3 text-[11px]" style={{ background: "var(--sem-bl-bg)", color: "var(--sem-bl-tx)", borderRadius: "6px", padding: "8px 12px" }}>
+                    <span>Area: <strong>{screenArea.toFixed(1)} sq.ft</strong></span>
+                    <span>Cabinets: <strong>{totalCabinets} pcs</strong></span>
+                    <span className="ml-auto">Estimated amount: <strong>₹{estimatedAmount.toLocaleString("en-IN")}</strong></span>
+                  </div>
+                )}
+              </div>
+            )}
 
           </fieldset>
 

@@ -920,6 +920,39 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                 <Row k="Crew assigned" v={`${assignments.length} · ₹${fmt(crewCost)}`} />
               </div>
             </div>
+
+            {/* Event Reports & Sheets card */}
+            <div className="card" style={{ marginTop: 18 }}>
+              <div className="card-t">Event Reports & Sheets</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginTop: 8 }}>
+                <Link href={`/inquiries/${inquiry.id}/requirements`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span>📋</span>
+                    <span>Client Requirements Roster</span>
+                  </span>
+                  <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                </Link>
+                {can("reports.view") && (
+                  <>
+                    <Link href={`/inquiries/${inquiry.id}/pl`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>📊</span>
+                        <span>Profit & Loss Analysis</span>
+                      </span>
+                      <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                    </Link>
+                    <Link href={`/inquiries/${inquiry.id}/expense`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>💸</span>
+                        <span>Expense Report</span>
+                      </span>
+                      <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+
             {bottomNav()}
           </div>
         )}
@@ -1496,6 +1529,38 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                     <div style={{ fontSize: 12, color: "var(--tx3)", padding: "6px 0" }}>Generated after approval.</div>
                   )}
                 </div>
+              </div>
+            </div>
+
+            {/* Event Reports & Sheets card */}
+            <div className="card" style={{ margin: 0, marginBottom: 16 }}>
+              <div className="card-t">Event Reports & Sheets</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginTop: 8 }}>
+                <Link href={`/inquiries/${inquiry.id}/requirements`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span>📋</span>
+                    <span>Client Requirements Roster</span>
+                  </span>
+                  <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                </Link>
+                {can("reports.view") && (
+                  <>
+                    <Link href={`/inquiries/${inquiry.id}/pl`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>📊</span>
+                        <span>Profit & Loss Analysis</span>
+                      </span>
+                      <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                    </Link>
+                    <Link href={`/inquiries/${inquiry.id}/expense`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>💸</span>
+                        <span>Expense Report</span>
+                      </span>
+                      <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
 
