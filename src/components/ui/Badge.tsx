@@ -1,5 +1,5 @@
 interface BadgeProps {
-  variant: "gr" | "am" | "bl" | "rd" | "gy";
+  variant: "gr" | "am" | "bl" | "rd" | "gy" | "pu";
   children: React.ReactNode;
 }
 
@@ -9,6 +9,7 @@ const variantClass: Record<BadgeProps["variant"], string> = {
   bl: "bdg-bl",
   rd: "bdg-rd",
   gy: "bdg-gy",
+  pu: "bdg-pu",
 };
 
 export default function Badge({ variant, children }: BadgeProps) {

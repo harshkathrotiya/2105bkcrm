@@ -324,7 +324,7 @@ export default function Screen13EquipmentList() {
                       padding: "7px 10px",
                       borderRadius: "6px",
                       background: isActive ? "var(--sidebar-active)" : "transparent",
-                      color: isActive ? "var(--tx)" : "var(--tx2)",
+                      color: isActive ? "var(--sidebar-tx-active)" : "var(--tx2)",
                       border: "none",
                       cursor: "pointer",
                       fontSize: "12px",

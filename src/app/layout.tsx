@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Inter, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-context";
 import { CurrentUserProvider } from "@/lib/current-user-provider";
 import AppLayout from "@/components/layout/AppLayout";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
 const ibmPlexSans = IBM_Plex_Sans({
   variable: "--font-ibm-plex-sans",
@@ -30,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
       <head>
         <script
           id="theme-script"
@@ -40,8 +46,7 @@ export default function RootLayout({
               (function() {
                 try {
                   var stored = localStorage.getItem('bk-crm-theme');
-                  var supportLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-                  var theme = stored === 'light' || (stored !== 'dark' && supportLight) ? 'light' : 'dark';
+                  var theme = stored === 'dark' ? 'dark' : 'light';
                   if (theme === 'light') {
                     document.documentElement.classList.add('light');
                   } else {

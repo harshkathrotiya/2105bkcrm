@@ -53,11 +53,18 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
 
   // Assignment form states
   const [selectedInquiryId, setSelectedInquiryId] = useState("");
-  const [selectedPosition, setSelectedPosition] = useState("Helper");
+  const [selectedPosition, setSelectedPosition] = useState("");
   const [daysAssigned, setDaysAssigned] = useState(1);
   const [ratePerDay, setRatePerDay] = useState(0);
   const [reportingTime, setReportingTime] = useState("09:00 AM");
   const [isAssigning, setIsAssigning] = useState(false);
+  const [roleOptions, setRoleOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    api.fetchOptions("STAFF_ROLE")
+      .then((opts) => setRoleOptions(opts.map((o) => o.value)))
+      .catch(() => {});
+  }, []);
 
   // Find target staff member
   const staffMember = staff.find((s) => s.id === staffId) || fetchedStaff;
@@ -65,6 +72,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   useEffect(() => {
     if (staffMember) {
       setRatePerDay(staffMember.ratePerDay || 0);
+      setSelectedPosition((prev) => prev || staffMember.role || "");
     }
   }, [staffMember]);
 
@@ -611,12 +619,12 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                         value={selectedPosition}
                         onChange={(e) => setSelectedPosition(e.target.value)}
                       >
-                        <option value="Lead Technician">Lead Technician</option>
-                        <option value="Operator">Operator</option>
-                        <option value="Assistant">Assistant</option>
-                        <option value="Video Shooter">Video Shooter</option>
-                        <option value="Photographer">Photographer</option>
-                        <option value="Helper">Helper</option>
+                        {roleOptions.length === 0 && selectedPosition && (
+                          <option value={selectedPosition}>{selectedPosition}</option>
+                        )}
+                        {roleOptions.map((r) => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="field">

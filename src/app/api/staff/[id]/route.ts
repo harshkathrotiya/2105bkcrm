@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getStaffById, updateStaff, deleteStaff } from "@/lib/queries/staff";
-import { Validator, STAFF_ROLES, STAFF_TYPES, PAYMENT_TYPES } from "@/lib/validate";
+import { Validator, STAFF_TYPES, PAYMENT_TYPES } from "@/lib/validate";
 import { requirePermission } from "@/lib/role-permissions";
 
 export async function GET(
@@ -34,7 +34,7 @@ export async function PATCH(
     const v = new Validator(body);
     if (body.name !== undefined) v.minLength("name", 2).maxLength("name", 100);
     if (body.phone !== undefined) v.phone("phone");
-    if (body.role !== undefined) v.oneOf("role", STAFF_ROLES);
+    if (body.role !== undefined) v.maxLength("role", 100);
     if (body.staffType !== undefined) v.oneOf("staffType", STAFF_TYPES, "staff type");
     if (body.paymentType !== undefined) v.oneOf("paymentType", PAYMENT_TYPES, "payment type");
     if (body.ratePerDay !== undefined && body.ratePerDay !== null) v.positiveNumber("ratePerDay", "rate per day");

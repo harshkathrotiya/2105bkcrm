@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getAllStaff, createStaff } from "@/lib/queries/staff";
-import { Validator, STAFF_ROLES, STAFF_TYPES, PAYMENT_TYPES } from "@/lib/validate";
+import { Validator, STAFF_TYPES, PAYMENT_TYPES } from "@/lib/validate";
 import { requirePermission } from "@/lib/role-permissions";
 
 export async function GET(request: NextRequest) {
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const v = new Validator(body);
     v.required("name").minLength("name", 2).maxLength("name", 100);
     v.required("phone").phone("phone");
-    v.required("role").oneOf("role", STAFF_ROLES);
+    v.required("role").maxLength("role", 100);
     v.required("staffType", "staff type").oneOf("staffType", STAFF_TYPES, "staff type");
     v.required("paymentType", "payment type").oneOf("paymentType", PAYMENT_TYPES, "payment type");
 

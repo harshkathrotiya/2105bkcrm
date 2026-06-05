@@ -18,7 +18,7 @@ import {
 import type { QuotationRow } from "@/lib/store";
 import type { Equipment, Kit } from "@/lib/types";
 import { generateId } from "@/lib/types";
-import { generateQuoteNo, calcDays } from "@/lib/utils";
+import { generateQuoteNo, generateRevisionNo, calcDays } from "@/lib/utils";
 import { computeGst } from "@/lib/pricing";
 import * as api from "@/lib/api";
 import { approveQuotation } from "@/lib/approve-quotation";
@@ -103,6 +103,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
   const [videoPercent, setVideoPercent] = useState(82);
   const [showApprove, setShowApprove] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(null);
 
   // ── Quotation form state (embedded from Screen05) ────────────────────────────
   const [positionMap, setPositionMap] = useState<Record<string, { equip: string; rate: number }>>(DEFAULT_POSITION_MAP);
@@ -112,6 +113,8 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
   const [editPositionName, setEditPositionName] = useState("");
   const [showPosDropdown, setShowPosDropdown] = useState<number | null>(null); // row.no of open dropdown
   const posDropdownRef = useRef<HTMLDivElement>(null);
+  const justSavedRef = useRef(false);
+  const ledConfigInitRef = useRef(false);
   const [clientRateMap, setClientRateMap] = useState<Record<number, number>>({});
   const [screenWidth, setScreenWidth] = useState("");
   const [screenHeight, setScreenHeight] = useState("");
@@ -306,9 +309,20 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
     [inquiry]
   );
 
-  const existingQuotation = useMemo(
-    () => quotations.find((q) => q.inquiryId === inquiryId && q.status !== "Revised"),
-    [quotations, inquiryId]
+  const existingQuotation = useMemo(() => {
+    const all = quotations.filter((q) => q.inquiryId === inquiryId);
+    if (!all.length) return undefined;
+    // Pick the latest by: revisionNumber desc → quoteNo suffix desc → createdAt desc
+    return all.sort((a, b) => {
+      const aRev = parseInt(a.quoteNo?.match(/-(\d+)$/)?.[1] ?? "-1");
+      const bRev = parseInt(b.quoteNo?.match(/-(\d+)$/)?.[1] ?? "-1");
+      return bRev - aRev;
+    })[0];
+  }, [quotations, inquiryId]);
+
+  const viewingQuotation = useMemo(() =>
+    selectedRevisionId ? quotations.find(q => q.id === selectedRevisionId) ?? existingQuotation : existingQuotation,
+    [selectedRevisionId, quotations, existingQuotation]
   );
 
   const canWrite = existingQuotation ? can("quotations.edit") : can("quotations.create");
@@ -341,26 +355,25 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
     setRatePerSqft(ledRates[ledType] ?? 50);
   }, [ledType, ledRates]);
 
-  // Sync LED states to rows — only active on quotation tab
+  // Sync LED states to rows — only active on quotation tab, skip initial mount
   useEffect(() => {
     if (tab !== "quotation") return;
     const isLedOrMerged = inquiry?.department === "LED" || inquiry?.department === "MERGED";
     if (!isLedOrMerged) return;
+    if (!ledConfigInitRef.current) { ledConfigInitRef.current = true; return; }
     const area = screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : 0;
     const rate = ratePerSqft * area;
-    const desc = `LED Screen ${screenWidth || 0}x${screenHeight || 0} ${ledType} (${location})${stageType ? ` at ${stageType}` : ""}`;
+    const desc = `${ledType} LED Screen ${screenWidth || 0}x${screenHeight || 0} (${location})${stageType ? ` at ${stageType}` : ""}`;
 
     setRows((prev) => {
-      const ledRowIdx = prev.findIndex(r => r.equip.includes("LED") || r.equip.toLowerCase() === "led screen");
-      const installRowIdx = prev.findIndex(r => r.position.toLowerCase().includes("installation"));
-      const operatorRowIdx = prev.findIndex(r => r.position.toLowerCase().includes("operator"));
+      const ledRowIdx = prev.findIndex(r => r.position.toLowerCase() === "led screen");
       const nextRows = [...prev];
 
       if (ledRowIdx !== -1) {
-        nextRows[ledRowIdx] = { ...nextRows[ledRowIdx], position: desc, equip: `${ledType} LED`, rate, days: eventDays, amount: rate * eventDays };
+        nextRows[ledRowIdx] = { ...nextRows[ledRowIdx], position: "LED Screen", equip: desc, rate, days: eventDays, amount: rate * eventDays };
       } else {
         const maxNo = nextRows.reduce((m, r) => Math.max(m, r.no), 0);
-        nextRows.push({ no: maxNo + 1, position: desc, equip: `${ledType} LED`, rate, days: eventDays, amount: rate * eventDays });
+        nextRows.push({ no: maxNo + 1, position: "LED Screen", equip: desc, rate, days: eventDays, amount: rate * eventDays });
       }
 
       const updatedInstallRowIdx = nextRows.findIndex(r => r.position.toLowerCase().includes("installation"));
@@ -383,54 +396,18 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
     });
   }, [screenWidth, screenHeight, ledType, location, stageType, ratePerSqft, inquiry, eventDays]);
 
-  const getDefaultRows = (inq: any, days: number): QuotationRow[] => {
-    if (!inq) return [];
-    const dept = inq.department || "VIDEO";
-    if (dept === "LED") {
-      const area = inq.screenWidth && inq.screenHeight ? inq.screenWidth * inq.screenHeight : 0;
-      const rateSetting = inq.ratePerSqft || 50;
-      const rate = rateSetting * area;
-      const desc = `LED Screen ${inq.screenWidth || 0}x${inq.screenHeight || 0} ${inq.ledType || "P4"} (${inq.location || "INDOOR"})${inq.stageType ? ` at ${inq.stageType}` : ""}`;
-      return [
-        { no: 1, position: desc, equip: `${inq.ledType || "P4"} LED`, rate, days, amount: rate * days },
-        { no: 2, position: "Installation & de-installation charges", equip: "Service", rate: 5000, days: 1, amount: 5000 },
-        { no: 3, position: "Content management operator", equip: "Operator", rate: 2000, days, amount: 2000 * days },
-      ];
-    } else if (dept === "MERGED") {
-      const area = inq.screenWidth && inq.screenHeight ? inq.screenWidth * inq.screenHeight : 0;
-      const rateSetting = inq.ratePerSqft || 50;
-      const rate = rateSetting * area;
-      const desc = `LED Screen ${inq.screenWidth || 0}x${inq.screenHeight || 0} ${inq.ledType || "P4"} (${inq.location || "INDOOR"})${inq.stageType ? ` at ${inq.stageType}` : ""}`;
-      return [
-        { no: 1, position: "Center Tally",       equip: "FS6",            rate: 20000, days, amount: 20000 * days },
-        { no: 2, position: "Center Semi Wide",    equip: "FS6",            rate: 20000, days, amount: 20000 * days },
-        { no: 3, position: "Wireless 1",          equip: "FX3 + Wireless", rate: 10000, days, amount: 10000 * days },
-        { no: 4, position: "Photo 1",             equip: "DSLR",           rate:  8000, days, amount:  8000 * days },
-        { no: 5, position: "Video Crane 32 Feet", equip: "Crane 32 Feet",  rate: 15000, days, amount: 15000 * days },
-        { no: 6, position: desc, equip: `${inq.ledType || "P4"} LED`, rate, days, amount: rate * days },
-        { no: 7, position: "Installation & de-installation charges", equip: "Service", rate: 5000, days: 1, amount: 5000 },
-        { no: 8, position: "Content management operator", equip: "Operator", rate: 2000, days, amount: 2000 * days },
-      ];
-    } else {
-      return [
-        { no: 1, position: "Center Tally",        equip: "FS6",            rate: 20000, days, amount: 20000 * days },
-        { no: 2, position: "Center Semi Wide",     equip: "FS6",            rate: 20000, days, amount: 20000 * days },
-        { no: 3, position: "Wireless 1",           equip: "FX3 + Wireless", rate: 10000, days, amount: 10000 * days },
-        { no: 4, position: "Photo 1",              equip: "DSLR",           rate:  8000, days, amount:  8000 * days },
-        { no: 5, position: "Video Crane 32 Feet",  equip: "Crane 32 Feet",  rate: 15000, days, amount: 15000 * days },
-      ];
-    }
-  };
 
-  // Initialize rows from existing quotation or defaults
+  // Initialize rows from viewing quotation or a single blank row
   useEffect(() => {
-    if (existingQuotation) {
-      setRows(existingQuotation.equipment);
-    } else if (inquiry) {
-      setRows(getDefaultRows(inquiry, eventDays));
+    if (justSavedRef.current) { justSavedRef.current = false; return; }
+    ledConfigInitRef.current = false;
+    if (viewingQuotation) {
+      setRows(viewingQuotation.equipment);
+    } else {
+      setRows([makeRow(1, eventDays)]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inquiryId, existingQuotation?.id]);
+  }, [inquiryId, viewingQuotation?.id]);
 
   const subtotal = rows.reduce((s, r) => s + r.amount, 0);
   const { cgst, sgst, total } = computeGst(subtotal);
@@ -538,6 +515,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
       }
 
       if (existingQuotation) {
+        justSavedRef.current = true;
         await dispatchQuotations({
           type: "UPDATE_QUOTATION",
           payload: { id: existingQuotation.id, ...quoteData },
@@ -581,6 +559,47 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
       }
       // Advance to warehouse step instead of router.push
       setTab("warehouse");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Create Revision ──────────────────────────────────────────────────────────
+  const handleCreateRevision = async () => {
+    if (!inquiry || !client || !existingQuotation || saving) return;
+    setSaving(true);
+    try {
+      const now = new Date();
+      const days = calcDays(inquiry.startDate, inquiry.endDate);
+      const newRevNo = generateRevisionNo(existingQuotation.quoteNo, allQuoteNos);
+      const nextRevNum = (existingQuotation.revisionNumber ?? 0) + 1;
+      await dispatchQuotations({
+        type: "UPDATE_QUOTATION",
+        payload: { id: existingQuotation.id, status: "Revised" },
+      });
+      const newId = `quote-${generateId()}`;
+      await dispatchQuotations({
+        type: "ADD_QUOTATION",
+        payload: {
+          id: newId,
+          inquiryId: inquiry.id,
+          clientName: client.name,
+          eventName: inquiry.eventName || inquiry.eventType,
+          quoteNo: newRevNo,
+          startDate: inquiry.startDate,
+          endDate: inquiry.endDate,
+          days,
+          venue: inquiry.venue,
+          equipment: rows,
+          subtotal, cgst, sgst, total,
+          status: "Draft" as const,
+          sentAt: null,
+          approvedAt: null,
+          revisionNumber: nextRevNum,
+          createdAt: now.toISOString().split("T")[0],
+        },
+      });
+      toast.success(`Revision ${nextRevNum} created — ${newRevNo}`);
     } finally {
       setSaving(false);
     }
@@ -817,7 +836,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                 border: "none",
                 borderBottom: isActive ? "2px solid var(--acc)" : "2px solid transparent",
                 cursor: "pointer",
-                color: isActive ? "var(--tx)" : isDone ? "var(--gr)" : "var(--tx3)",
+                color: isActive ? "var(--tx)" : isDone ? "var(--tx2)" : "var(--tx3)",
                 fontWeight: isActive ? 600 : 450,
                 fontSize: 12,
                 whiteSpace: "nowrap",
@@ -831,7 +850,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                 <span style={{
                   position: "absolute", top: 8, right: 10,
                   width: 8, height: 8, borderRadius: "50%",
-                  background: "var(--gr)",
+                  background: "var(--tx3)",
                 }} />
               )}
             </button>
@@ -886,7 +905,15 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
               <div>
                 <div className="text-[10px] text-tx3" style={{ marginBottom: "2px" }}>Quote no.</div>
                 <div className="text-[12px] font-medium font-mono text-bl">
-                  {existingQuotation?.quoteNo ?? "Auto-generated on save"}
+                  {viewingQuotation?.quoteNo ?? "Auto-generated on save"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-tx3" style={{ marginBottom: "2px" }}>Version</div>
+                <div className="text-[12px] font-medium">
+                  {viewingQuotation
+                    ? (() => { const m = viewingQuotation.quoteNo?.match(/-(\d+)$/); return `v${m ? parseInt(m[1]) + 1 : 1}`; })()
+                    : "—"}
                 </div>
               </div>
               <div>
@@ -978,9 +1005,6 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                 <div className="card">
                   <div className="card-t">
                     <span>Equipment table</span>
-                    <span style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.04em", padding: "2px 6px", borderRadius: "4px", background: "var(--sem-gr-bg)", color: "var(--gr)", border: "1px solid var(--sem-gr-bdr)", marginLeft: "8px" }}>
-                      ● Live DB
-                    </span>
                     {addingPosition ? (
                       <div className="ml-auto" style={{ display: "flex", gap: 6, alignItems: "center" }}>
                         <input
@@ -1022,7 +1046,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                           return (
                             <tr key={row.no}>
                               <td className="text-tx3">{row.no}</td>
-                              <td style={{ position: "relative" }}>
+                              <td style={{ position: "relative", maxWidth: 180 }}>
                                 {editingPosition && row.position === editingPosition ? (
                                   <div style={{ display: "flex", gap: 4 }}>
                                     <input
@@ -1042,18 +1066,18 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                                   <div ref={showPosDropdown === row.no ? posDropdownRef : undefined} style={{ position: "relative" }}>
                                     <div
                                       className="fsel text-[10px]"
-                                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: "5px 8px" }}
+                                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: "5px 8px", whiteSpace: "nowrap", overflow: "hidden" }}
                                       onClick={() => setShowPosDropdown(showPosDropdown === row.no ? null : row.no)}
                                     >
-                                      <span style={{ color: row.position ? "var(--tx)" : "var(--tx3)" }}>
+                                      <span style={{ color: row.position ? "var(--tx)" : "var(--tx3)", overflow: "hidden", textOverflow: "ellipsis" }}>
                                         {row.position || "Select position"}
                                       </span>
-                                      <span style={{ fontSize: 9, opacity: 0.6 }}>▼</span>
+                                      <span style={{ fontSize: 9, opacity: 0.6, flexShrink: 0, marginLeft: 4 }}>▼</span>
                                     </div>
                                     {showPosDropdown === row.no && (
                                       <div style={{
                                         position: "absolute", zIndex: 999,
-                                        top: "100%", left: 0, minWidth: "100%",
+                                        top: "100%", left: 0, minWidth: 200, width: "max-content",
                                         marginTop: 3, padding: 6,
                                         background: "var(--s1)", border: "1px solid var(--b1)",
                                         borderRadius: 8, boxShadow: "var(--shadow-lg)",
@@ -1190,6 +1214,58 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                     <span className="text-rd">Rate / Amount client ને show નહીં થાય</span>
                   </div>
                 </div>
+                <div className="card">
+                  <div className="card-t">Revision History</div>
+                  {(() => {
+                    const allRevs = quotations
+                      .filter((q) => q.inquiryId === inquiryId)
+                      .sort((a, b) => {
+                        const aRev = parseInt(a.quoteNo?.match(/-(\d+)$/)?.[1] ?? "-1") ;
+                        const bRev = parseInt(b.quoteNo?.match(/-(\d+)$/)?.[1] ?? "-1");
+                        return bRev - aRev;
+                      });
+                    if (!allRevs.length) return <div className="text-[11px] text-tx3">No revisions yet.</div>;
+                    return (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                        {allRevs.map((q) => {
+                          const isViewing = q.id === (selectedRevisionId ?? existingQuotation?.id);
+                          const revMatch = q.quoteNo?.match(/-(\d+)$/);
+                          const revNum = revMatch ? parseInt(revMatch[1]) + 1 : 1;
+                          return (
+                            <div
+                              key={q.id}
+                              onClick={() => setSelectedRevisionId(q.id)}
+                              style={{
+                                display: "flex", alignItems: "center", justifyContent: "space-between",
+                                padding: "7px 10px", borderRadius: 6, cursor: "pointer",
+                                background: isViewing ? "var(--sidebar-active)" : "var(--s2)",
+                                border: `1px solid ${isViewing ? "var(--b2)" : "var(--b1)"}`,
+                                transition: "all 0.12s ease",
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: isViewing ? "var(--sidebar-tx-active)" : "var(--tx)" }}>
+                                  v{revNum}
+                                </span>
+                                <span style={{ fontSize: 10, fontFamily: "monospace", color: isViewing ? "var(--sidebar-tx-active)" : "var(--tx3)" }}>
+                                  {q.quoteNo}
+                                </span>
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 10, color: isViewing ? "var(--sidebar-tx-active)" : "var(--tx3)" }}>
+                                  {q.createdAt}
+                                </span>
+                                <Badge variant={q.status === "Revised" ? "gy" : q.status === "Approved" ? "gr" : "am"}>
+                                  {q.status}
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
 
@@ -1206,6 +1282,16 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                 </button>
               ) : (
                 <span className="text-[11px] text-tx3">View only — you don&apos;t have {existingQuotation ? "edit" : "create"} access.</span>
+              )}
+              {canWrite && existingQuotation && (
+                <button
+                  className={`btn text-[12px]${saving ? " opacity-50" : ""}`}
+                  onClick={handleCreateRevision}
+                  disabled={saving}
+                  title="Creates a new revision with an incremented version number"
+                >
+                  + Create Revision
+                </button>
               )}
               {existingQuotation && (
                 <button className="btn text-[12px]" onClick={() => setShowPdfModal(true)}>
@@ -1540,7 +1626,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                         {invoice.advanceReceived ? "Received" : "Pending"}
                       </Badge>
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "var(--font-mono)", color: invoice.advanceReceived ? "var(--gr)" : "var(--acc)" }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--tx)" }}>
                       ₹{fmt(invoice.advance)}
                     </div>
                     {invoice.advanceReceived && invoice.advanceReceivedAt && (
@@ -1558,7 +1644,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                         {invoice.balanceReceived ? "Received" : "Pending"}
                       </Badge>
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "var(--font-mono)", color: invoice.balanceReceived ? "var(--gr)" : "var(--tx3)" }}>
+                    <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--tx)" }}>
                       ₹{fmt(invoice.balance)}
                     </div>
                     {invoice.balanceReceived && invoice.balanceReceivedAt && (
@@ -1594,9 +1680,9 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
       </div>{/* end step content */}
 
       {/* Quotation PDF modal */}
-      {showPdfModal && quotation && (
+      {showPdfModal && (viewingQuotation ?? quotation) && (
         <QuotationPDFModal
-          quotationId={quotation.id}
+          quotationId={(viewingQuotation ?? quotation)!.id}
           onClose={() => setShowPdfModal(false)}
         />
       )}

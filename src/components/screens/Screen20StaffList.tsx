@@ -183,7 +183,7 @@ export default function Screen20StaffList() {
                       padding: "7px 10px",
                       borderRadius: "6px",
                       background: isActive ? "var(--sidebar-active)" : "transparent",
-                      color: isActive ? "var(--tx)" : "var(--tx2)",
+                      color: isActive ? "var(--sidebar-tx-active)" : "var(--tx2)",
                       border: "none",
                       cursor: "pointer",
                       fontSize: "12px",
@@ -349,7 +349,7 @@ export default function Screen20StaffList() {
                                 )}
                               </td>
                               <td>
-                                <Badge variant={s.status === "Available" ? "gr" : "bl"}>
+                                <Badge variant={s.status === "Available" ? "gr" : "pu"}>
                                   {s.status}
                                 </Badge>
                               </td>

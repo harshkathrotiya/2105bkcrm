@@ -49,8 +49,8 @@ export default function SiteHeader() {
     <header className="site-hdr">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-acc flex items-center justify-center">
-            <span className="text-[10px] font-bold text-black">BK</span>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#111111" }}>
+            <span className="text-[10px] font-bold text-white">BK</span>
           </div>
           <div>
             <div className="text-[13px] font-medium text-tx leading-tight">BK Media</div>

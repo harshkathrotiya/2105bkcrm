@@ -791,9 +791,9 @@ export default function Screen05QuotationForm() {
                     letterSpacing: "0.04em",
                     padding: "2px 6px",
                     borderRadius: "4px",
-                    background: "var(--sem-gr-bg)",
-                    color: "var(--gr)",
-                    border: "1px solid var(--sem-gr-bdr)",
+                    background: "var(--bdg-gy-bg)",
+                    color: "var(--bdg-gy-tx)",
+                    border: "1px solid var(--b1)",
                     marginLeft: "8px",
                   }}
                 >
