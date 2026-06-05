@@ -277,6 +277,8 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
         rate: number;
         total: number;
         isDuplicate: boolean;
+        equipmentRatePerDay: number;
+        equipmentTotal: number;
       }
     > = {};
 
@@ -292,6 +294,11 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
       const rate = payRates[posNoInt] ?? (staffMember.paymentType === "PER_DAY" ? staffMember.ratePerDay || 0 : 0);
       const total = rate * eventDays;
 
+      // Equipment rate from saved assignment
+      const assignment = existingAssignments.find((ea) => ea.staffId === id && ea.positionNo === posNoInt);
+      const equipRate = assignment?.equipmentRatePerDay || 0;
+      const equipTotal = equipRate * (assignment?.daysAssigned || eventDays);
+
       if (!summaryMap[id]) {
         summaryMap[id] = {
           staff: staffMember,
@@ -299,19 +306,23 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
           rate,
           total,
           isDuplicate: false,
+          equipmentRatePerDay: equipRate,
+          equipmentTotal: equipTotal,
         };
       } else {
         summaryMap[id].positionsCount += 1;
         summaryMap[id].isDuplicate = true;
+        summaryMap[id].equipmentRatePerDay = Math.max(summaryMap[id].equipmentRatePerDay, equipRate);
+        summaryMap[id].equipmentTotal += equipTotal;
       }
     });
 
     return Object.values(summaryMap);
-  }, [selectedStaff, positions, staff, eventDays, payRates]);
+  }, [selectedStaff, positions, staff, eventDays, payRates, existingAssignments]);
 
-  // Grand Total Staff Cost
+  // Grand Total Staff Cost (salary + equipment)
   const totalStaffCost = useMemo(() => {
-    return staffSummary.reduce((acc, item) => acc + item.total, 0);
+    return staffSummary.reduce((acc, item) => acc + item.total + item.equipmentTotal, 0);
   }, [staffSummary]);
 
   // Positions metrics
@@ -718,6 +729,19 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
             </div>
             </div>
 
+            {/* Save button — only shown in embedded (tab) mode */}
+            {embedded && canAssign && (
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setShowConfirmSave(true)}
+                  disabled={saving || Object.keys(selectedStaff).length === 0}
+                >
+                  {saving ? "Saving…" : "Save Assignments"}
+                </button>
+              </div>
+            )}
+
             {/* Crew Cost Summary Table */}
             <div className="card" style={{ padding: "14px", marginTop: "16px", marginBottom: 0 }}>
               <div className="card-t" style={{ fontSize: "13px" }}>Crew Cost Summary</div>
@@ -730,7 +754,6 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                       <th style={{ width: "80px" }} className="tc">Positions</th>
                       <th style={{ width: "110px" }} className="tr">Rate / Day</th>
                       <th style={{ width: "130px" }} className="tr">Total ({eventDays} days)</th>
-                      <th style={{ width: "90px" }} className="tc">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -762,20 +785,20 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                             )}
                           </td>
                           <td className="tr" style={{ fontFamily: "var(--font-mono)", fontSize: "11.5px" }}>
-                            {item.staff.paymentType === "PER_DAY"
-                              ? `₹${item.rate.toLocaleString("en-IN")}`
-                              : "Salary Fixed"}
+                            <div>{item.staff.paymentType === "PER_DAY" ? `₹${item.rate.toLocaleString("en-IN")}` : "Salary Fixed"}</div>
+                            {item.equipmentRatePerDay > 0 && (
+                              <div style={{ fontSize: "10px", color: "var(--sem-bl-tx)", marginTop: "2px" }}>
+                                + ₹{item.equipmentRatePerDay.toLocaleString("en-IN")} equip.
+                              </div>
+                            )}
                           </td>
-                          <td className="tr" style={{ fontFamily: "var(--font-mono)", fontWeight: 500, color: "var(--gr)", fontSize: "12px" }}>
-                            ₹{item.total.toLocaleString("en-IN")}
-                          </td>
-                          <td className="tc">
-                            <Link
-                              href={`/inquiries/${inquiryId}/brief/${item.staff.id}`}
-                              className="btn text-[10px] py-[3px] px-[6px]"
-                            >
-                              📲 Brief
-                            </Link>
+                          <td className="tr" style={{ fontFamily: "var(--font-mono)", fontWeight: 500, fontSize: "12px" }}>
+                            <div style={{ color: "var(--gr)" }}>₹{item.total.toLocaleString("en-IN")}</div>
+                            {item.equipmentTotal > 0 && (
+                              <div style={{ fontSize: "10px", color: "var(--sem-bl-tx)", marginTop: "2px" }}>
+                                + ₹{item.equipmentTotal.toLocaleString("en-IN")} equip.
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -794,7 +817,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                   marginTop: "8px",
                 }}
               >
-                Total Crew Cost ({eventDays} days): <span style={{ color: "var(--bl)", fontFamily: "var(--font-mono)" }}>₹{totalStaffCost.toLocaleString("en-IN")}</span>
+                Total Crew Cost (salary + equipment): <span style={{ color: "var(--bl)", fontFamily: "var(--font-mono)" }}>₹{totalStaffCost.toLocaleString("en-IN")}</span>
               </div>
 
               {/* ── Confirmation panel ── */}

@@ -412,7 +412,7 @@ export default function Screen16KitList() {
           background: "var(--modal-overlay)", display: "flex", alignItems: "center",
           justifyContent: "center", zIndex: 1000, padding: "20px", overflowY: "auto"
         }}>
-          <div className="sf" style={{ width: "100%", maxWidth: "500px", background: "var(--s1)", overflow: "visible" }}>
+          <div className="sf" style={{ width: "100%", maxWidth: "520px", background: "var(--s1)", overflow: "hidden", borderRadius: "12px" }}>
             <div className="tb">
               <span style={{ fontWeight: 600, color: "var(--tx)" }}>Create New Equipment Kit</span>
               <button className="btn" style={{ padding: "4px 8px" }} type="button" onClick={() => {
@@ -420,7 +420,7 @@ export default function Screen16KitList() {
                 setModalEquipment([{ id: "", qty: 1 }]);
               }}>✕</button>
             </div>
-            <form onSubmit={handleCreateKit} style={{ padding: "20px" }}>
+            <form onSubmit={handleCreateKit} style={{ padding: "20px", maxHeight: "80vh", overflowY: "auto" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "20px" }}>
                 <div className="field">
                   <div className="flbl">Kit Name *</div>
@@ -471,36 +471,36 @@ export default function Screen16KitList() {
                       {modalEquipment.map((eq, index) => {
                         const err = modalEquipmentErrors[index];
                         return (
-                          <div key={index} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                              <SearchableSelect
-                                style={{ flex: 1 }}
-                                value={eq.id}
-                                onChange={(val) => {
-                                  const updated = [...modalEquipment];
-                                  updated[index].id = val;
-                                  updated[index].qty = 1;
-                                  setModalEquipment(updated);
-                                }}
-                                options={unassignedEquipmentOptions
-                                  .filter((item) => {
-                                    const isSelectedElsewhere = modalEquipment.some((itemEq, idx) => idx !== index && itemEq.id === String(item.id));
-                                    return !isSelectedElsewhere;
-                                  })
-                                  .map((item) => ({
-                                    value: String(item.id),
-                                    label: `${item.productName} (S/N: ${formatSerialNumber(item.serialNumber)}) [Avail: ${item.quantity}]`,
-                                  }))}
-                                placeholder="-- Select Equipment --"
-                                disabled={creating}
-                                placement={index >= Math.max(2, modalEquipment.length - 2) ? "top" : "bottom"}
-                              />
-
+                          <div key={index} style={{ display: "flex", flexDirection: "column", gap: "4px", background: "var(--alt)", border: "1px solid var(--b1)", borderRadius: "8px", padding: "10px" }}>
+                            <SearchableSelect
+                              style={{ width: "100%" }}
+                              value={eq.id}
+                              onChange={(val) => {
+                                const updated = [...modalEquipment];
+                                updated[index].id = val;
+                                updated[index].qty = 1;
+                                setModalEquipment(updated);
+                              }}
+                              options={unassignedEquipmentOptions
+                                .filter((item) => {
+                                  const isSelectedElsewhere = modalEquipment.some((itemEq, idx) => idx !== index && itemEq.id === String(item.id));
+                                  return !isSelectedElsewhere;
+                                })
+                                .map((item) => ({
+                                  value: String(item.id),
+                                  label: `${item.productName} (S/N: ${formatSerialNumber(item.serialNumber)}) [Avail: ${item.quantity}]`,
+                                }))}
+                              placeholder="-- Select Equipment --"
+                              disabled={creating}
+                              placement={index >= Math.max(2, modalEquipment.length - 2) ? "top" : "bottom"}
+                            />
+                            <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "4px" }}>
+                              <label style={{ fontSize: "11px", color: "var(--tx3)" }}>Qty:</label>
                               <input
                                 type="number"
                                 min={1}
                                 className="finp"
-                                style={{ width: "65px" }}
+                                style={{ width: "70px", padding: "3px 6px", fontSize: "12px" }}
                                 value={eq.qty}
                                 onChange={(e) => {
                                   const updated = [...modalEquipment];
@@ -509,11 +509,10 @@ export default function Screen16KitList() {
                                 }}
                                 disabled={creating || !eq.id}
                               />
-
                               <button
                                 type="button"
-                                className="btn text-rd"
-                                style={{ padding: "4px 8px" }}
+                                className="btn"
+                                style={{ padding: "3px 10px", fontSize: "11px", color: "var(--rd)", marginLeft: "auto" }}
                                 onClick={() => {
                                   const updated = modalEquipment.filter((_, i) => i !== index);
                                   setModalEquipment(updated);
@@ -524,7 +523,7 @@ export default function Screen16KitList() {
                               </button>
                             </div>
                             {err && (
-                              <div style={{ color: "var(--rd)", fontSize: "10.5px", paddingLeft: "4px" }}>
+                              <div style={{ color: "var(--rd)", fontSize: "10.5px" }}>
                                 ⚠️ {err}
                               </div>
                             )}

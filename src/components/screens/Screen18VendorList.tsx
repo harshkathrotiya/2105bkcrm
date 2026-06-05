@@ -106,7 +106,7 @@ export default function Screen18VendorList() {
         productName: addEquipForm.productName.trim(),
         category: addEquipForm.category.trim(),
         quantity: parseInt(addEquipForm.quantity) || 1,
-        rentalRatePerDay: addEquipForm.rentalRatePerDay ? parseFloat(addEquipForm.rentalRatePerDay) : null,
+        defaultRate: addEquipForm.rentalRatePerDay ? parseFloat(addEquipForm.rentalRatePerDay) : null,
         notes: addEquipForm.notes.trim() || null,
         ownershipType: "VENDOR",
         vendorId: selectedVendorId,
@@ -678,7 +678,7 @@ export default function Screen18VendorList() {
                           {eq.productName}
                         </Link>
                         <span style={{ fontSize: "10px", color: "var(--tx3)" }}>
-                          {eq.category} | Qty: {eq.quantity}{eq.rentalRatePerDay ? ` | ₹${eq.rentalRatePerDay}/day` : ""}
+                          {eq.category} | Qty: {eq.quantity}{eq.defaultRate ? ` | ₹${eq.defaultRate}/day` : ""}
                         </span>
                       </div>
                     </div>

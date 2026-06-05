@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useId, useMemo } from "react";
+import { useState, useEffect, useRef, useId, useMemo, useCallback } from "react";
 
 interface Option {
   value: string;
@@ -38,10 +38,24 @@ export default function SearchableSelect({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
+
+  const updateDropdownPosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const useTop = placement === "top" || (spaceBelow < 200 && spaceAbove > spaceBelow);
+    if (useTop) {
+      setDropdownStyle({ position: "fixed", bottom: window.innerHeight - rect.top + 4, left: rect.left, width: rect.width, zIndex: 9999 });
+    } else {
+      setDropdownStyle({ position: "fixed", top: rect.bottom + 4, left: rect.left, width: rect.width, zIndex: 9999 });
+    }
+  }, [placement]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -52,6 +66,17 @@ export default function SearchableSelect({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    updateDropdownPosition();
+    window.addEventListener("scroll", updateDropdownPosition, true);
+    window.addEventListener("resize", updateDropdownPosition);
+    return () => {
+      window.removeEventListener("scroll", updateDropdownPosition, true);
+      window.removeEventListener("resize", updateDropdownPosition);
+    };
+  }, [open, updateDropdownPosition]);
 
   const filtered = useMemo(
     () => options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase())),
@@ -84,6 +109,7 @@ export default function SearchableSelect({
 
   function openMenu() {
     if (disabled) return;
+    updateDropdownPosition();
     setOpen(true);
     setSearch("");
   }
@@ -170,6 +196,7 @@ export default function SearchableSelect({
         }`}
         onClick={() => {
           if (!disabled) {
+            if (!open) updateDropdownPosition();
             setOpen(!open);
             setSearch("");
           }
@@ -190,9 +217,9 @@ export default function SearchableSelect({
 
       {open && !disabled && (
         <div
-          className="absolute z-[999] left-0 w-full bg-s1 border border-b1 rounded-md shadow-lg flex flex-col min-w-[200px]"
+          className="bg-s1 border border-b1 rounded-md shadow-lg flex flex-col min-w-[200px]"
           style={{
-            ...(placement === "top" ? { bottom: "100%", marginBottom: "4px" } : { top: "100%", marginTop: "4px" }),
+            ...dropdownStyle,
             overflow: "hidden",
             maxHeight: "260px",
           }}

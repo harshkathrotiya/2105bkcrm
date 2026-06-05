@@ -10,6 +10,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || undefined;
     const search = searchParams.get("search") || undefined;
     const department = (searchParams.get("department") as "VIDEO" | "LED") || undefined;
+    const ownerStaffIdRaw = searchParams.get("ownerStaffId");
+    const ownerStaffId = ownerStaffIdRaw ? parseInt(ownerStaffIdRaw, 10) : undefined;
     const pageRaw = parseInt(searchParams.get("page") || "1", 10);
     const limitRaw = parseInt(searchParams.get("limit") || "20", 10);
 
@@ -24,6 +26,7 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
       department,
+      ownerStaffId: ownerStaffId && !isNaN(ownerStaffId) ? ownerStaffId : undefined,
     });
 
     const categoryCounts = await getEquipmentCategoryCounts();

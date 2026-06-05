@@ -224,6 +224,7 @@ export function fetchEquipment(params?: {
   page?: number;
   limit?: number;
   department?: string;
+  ownerStaffId?: number;
 }): Promise<EquipmentFetchResult> {
   const query = new URLSearchParams();
   if (params?.category) query.set("category", params.category);
@@ -232,6 +233,7 @@ export function fetchEquipment(params?: {
   if (params?.page) query.set("page", params.page.toString());
   if (params?.limit) query.set("limit", params.limit.toString());
   if (params?.department) query.set("department", params.department);
+  if (params?.ownerStaffId) query.set("ownerStaffId", params.ownerStaffId.toString());
   return request(`/api/equipment?${query.toString()}`);
 }
 
@@ -353,6 +355,18 @@ export interface WarehouseCheckResult {
   bookings: any[];
   equipment: any[];
   kits: any[];
+  staffAssignments: {
+    id: number;
+    staffId: number;
+    staffName: string;
+    positionName: string | null;
+    positionNo: number | null;
+    daysAssigned: number;
+    ratePerDay: number;
+    withEquipment: boolean;
+    equipmentRatePerDay: number;
+    totalAmount: number;
+  }[];
 }
 
 export function fetchWarehouseCheck(inquiryId: string): Promise<WarehouseCheckResult> {
@@ -467,7 +481,7 @@ export function createStaffAssignment(data: Omit<StaffAssignment, "id" | "totalA
 
 export function updateStaffAssignment(
   id: number,
-  data: Partial<{ daysAssigned: number; ratePerDay: number; positionName: string; positionNo: number | null }>
+  data: Partial<{ daysAssigned: number; ratePerDay: number; positionName: string; positionNo: number | null; withEquipment: boolean; equipmentRatePerDay: number }>
 ): Promise<StaffAssignment> {
   return request(`/api/staff-assignments/${id}`, {
     method: "PUT",

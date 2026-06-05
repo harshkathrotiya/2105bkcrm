@@ -543,9 +543,20 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
 
   const eventDays = getEventDays();
 
-  // Filter quotation rows into Green (Available Stock) and Amber (Conflicts / Vendor Fallback)
-  const greenRows = mappedQuotationRows.filter((r) => r.hasAvailableStock || (r.booking && !r.booking.vendorId));
-  const amberRows = mappedQuotationRows.filter((r) => !r.hasAvailableStock && (!r.booking || r.booking.vendorId));
+  // Filter quotation rows into Green (Available Stock), Amber (Conflicts / Vendor Fallback), and Staff-owned
+  // Staff rows: quotation row whose matched equipment is owned by a staff member
+  const staffEquipRows = mappedQuotationRows.filter((r) => {
+    const matchedEq = r.booking?.equipmentId
+      ? data?.equipment?.find((eq: any) => eq.id === r.booking?.equipmentId)
+      : data?.equipment?.find((eq: any) => {
+          const name = eq.productName?.toLowerCase();
+          return name && r.row.equip?.toLowerCase().includes(name.split(" ")[0]);
+        });
+    return matchedEq?.ownershipType === "STAFF";
+  });
+  const staffEquipRowNos = new Set(staffEquipRows.map((r) => r.row.no));
+  const greenRows = mappedQuotationRows.filter((r) => !staffEquipRowNos.has(r.row.no) && (r.hasAvailableStock || (r.booking && !r.booking.vendorId)));
+  const amberRows = mappedQuotationRows.filter((r) => !staffEquipRowNos.has(r.row.no) && !r.hasAvailableStock && (!r.booking || r.booking.vendorId));
 
   const wrapInFrame = (content: React.ReactNode) => {
     if (embedded) return <>{content}</>;
@@ -1375,6 +1386,115 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
           </table>
         </div>
       </ScreenFrame>
+
+      {/* STAFF EQUIPMENT SECTION */}
+      {staffEquipRows.length > 0 && (
+        <div style={{ padding: "0 20px 20px" }}>
+          <div style={{ background: "var(--sem-bl-bg)", border: "1px solid var(--sem-bl-bdr)", borderRadius: "10px", overflow: "hidden" }}>
+            <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--sem-bl-bdr)", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "16px" }}>🔵</span>
+              <span style={{ fontWeight: 600, fontSize: "13px", color: "var(--sem-bl-tx)" }}>
+                Staff-Owned Equipment ({staffEquipRows.length})
+              </span>
+              <span style={{ fontSize: "11px", color: "var(--tx3)", marginLeft: "4px" }}>
+                — Equipment owned by assigned staff. Enter rental rate per day to record equipment cost.
+              </span>
+            </div>
+            <table className="tbl" style={{ margin: 0 }}>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Equipment</th>
+                  <th>Owner (Staff)</th>
+                  <th>Days</th>
+                  <th>Rate / Day (₹)</th>
+                  <th>Total Cost</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {staffEquipRows.map(({ row, booking }) => {
+                  const matchedEq = booking?.equipmentId
+                    ? data?.equipment?.find((eq: any) => eq.id === booking.equipmentId)
+                    : data?.equipment?.find((eq: any) => eq.productName?.toLowerCase().includes(row.equip?.toLowerCase().split(" ")[0]));
+                  const ownerStaffId = matchedEq?.ownerStaffId;
+                  const ownerStaffName = matchedEq?.ownerStaffName || "Staff";
+                  // Find the staff assignment for this staff member
+                  const assignment = data?.staffAssignments?.find((a: any) => a.staffId === ownerStaffId);
+                  const savedRate = assignment?.equipmentRatePerDay || matchedEq?.defaultRate || 0;
+                  const days = row.days || eventDays;
+                  const rateInputId = `staff-eq-rate-${row.no}`;
+
+                  return (
+                    <tr key={row.no}>
+                      <td style={{ fontWeight: 600 }}>{row.no}</td>
+                      <td>
+                        <div style={{ fontWeight: 500, fontSize: "12px" }}>{row.equip}</div>
+                        <div style={{ fontSize: "10px", color: "var(--tx3)" }}>{row.position}</div>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--sem-bl-tx)" }}>
+                          {ownerStaffName}
+                        </span>
+                        {!assignment && (
+                          <div style={{ fontSize: "10px", color: "var(--rd)", marginTop: "2px" }}>
+                            Not yet assigned to this event
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ fontSize: "12px" }}>{days}</td>
+                      <td>
+                        <input
+                          id={rateInputId}
+                          className="finp"
+                          type="number"
+                          min="0"
+                          defaultValue={savedRate}
+                          style={{ width: "90px", padding: "3px 6px", fontSize: "12px" }}
+                          placeholder="0"
+                        />
+                      </td>
+                      <td style={{ fontSize: "12px", fontWeight: 500 }}>
+                        ₹{(savedRate * days).toLocaleString("en-IN")}
+                      </td>
+                      <td>
+                        {assignment ? (
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            style={{ padding: "4px 10px", fontSize: "11px" }}
+                            onClick={async () => {
+                              const input = document.getElementById(rateInputId) as HTMLInputElement;
+                              const rate = parseFloat(input?.value || "0") || 0;
+                              try {
+                                await api.updateStaffAssignment(assignment.id, {
+                                  withEquipment: true,
+                                  equipmentRatePerDay: rate,
+                                });
+                                setToastMessage(`Equipment rate saved for ${ownerStaffName}!`);
+                                setShowToast(true);
+                                setTimeout(() => setShowToast(false), 1500);
+                                const updatedWh = await api.fetchWarehouseCheck(inquiryId!);
+                                setData(updatedWh);
+                              } catch (err: any) {
+                                toast.error(err.message || "Failed to save equipment rate");
+                              }
+                            }}
+                          >
+                            Save Rate
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: "10px", color: "var(--tx3)" }}>Assign staff first</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {showToast && (
         <div

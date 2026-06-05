@@ -12,6 +12,7 @@ export interface EquipmentFilters {
   limit?: number;
   offset?: number;
   department?: "VIDEO" | "LED";
+  ownerStaffId?: number;
 }
 
 function mapEquipment(row: any): Equipment {
@@ -58,6 +59,10 @@ export async function getEquipment(filters: EquipmentFilters = {}): Promise<{ it
 
   if (filters.department) {
     where.department = filters.department;
+  }
+
+  if (filters.ownerStaffId) {
+    where.owner_staff_id = filters.ownerStaffId;
   }
 
   if (filters.search) {

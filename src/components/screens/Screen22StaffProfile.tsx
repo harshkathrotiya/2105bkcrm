@@ -9,7 +9,7 @@ import Badge from "../ui/Badge";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
-import { useStaff, useInquiries } from "@/lib/store";
+import { useStaff } from "@/lib/store";
 import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import type { Staff } from "@/lib/types";
@@ -49,98 +49,16 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   const [loadingDetails, setLoadingDetails] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const { inquiries } = useInquiries();
+  // Owned equipment states
+  const [ownedEquipment, setOwnedEquipment] = useState<any[]>([]);
+  const [equipCategories, setEquipCategories] = useState<string[]>([]);
+  const [showAddEquipForm, setShowAddEquipForm] = useState(false);
+  const [addEquipForm, setAddEquipForm] = useState({ productName: "", category: "", quantity: "1", rentalRatePerDay: "", notes: "" });
+  const [addEquipLoading, setAddEquipLoading] = useState(false);
+  const [addEquipError, setAddEquipError] = useState("");
 
-  // Assignment form states
-  const [selectedInquiryId, setSelectedInquiryId] = useState("");
-  const [selectedPosition, setSelectedPosition] = useState("");
-  const [daysAssigned, setDaysAssigned] = useState(1);
-  const [ratePerDay, setRatePerDay] = useState(0);
-  const [reportingTime, setReportingTime] = useState("09:00 AM");
-  const [isAssigning, setIsAssigning] = useState(false);
-  const [roleOptions, setRoleOptions] = useState<string[]>([]);
-
-  useEffect(() => {
-    api.fetchOptions("STAFF_ROLE")
-      .then((opts) => setRoleOptions(opts.map((o) => o.value)))
-      .catch(() => {});
-  }, []);
-
-  // Find target staff member
+// Find target staff member
   const staffMember = staff.find((s) => s.id === staffId) || fetchedStaff;
-
-  useEffect(() => {
-    if (staffMember) {
-      setRatePerDay(staffMember.ratePerDay || 0);
-      setSelectedPosition((prev) => prev || staffMember.role || "");
-    }
-  }, [staffMember]);
-
-  const handleInquiryChange = (inquiryId: string) => {
-    setSelectedInquiryId(inquiryId);
-    const inq = inquiries.find((i) => i.id === inquiryId);
-    if (inq) {
-      const s = new Date(inq.startDate);
-      const e = new Date(inq.endDate);
-      const days = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / 86400000) + 1);
-      setDaysAssigned(days);
-    }
-  };
-
-  const handleAssign = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedInquiryId) {
-      toast.error("Please select an event.");
-      return;
-    }
-    setIsAssigning(true);
-    try {
-      // 1. Check duplicates
-      const dupCheck = await api.checkDuplicateAssignment(selectedInquiryId, staffId);
-      if (dupCheck.isDuplicate) {
-        const proceed = await confirm({
-          message: `Conflict detected! This staff member is already assigned to an event on these dates (as ${dupCheck.existingPosition || "Staff"}). Do you want to assign them anyway?`,
-          confirmLabel: "Assign anyway",
-        });
-        if (!proceed) {
-          setIsAssigning(false);
-          return;
-        }
-      }
-
-      // 2. Create staff assignment
-      const newAssignment = await api.createStaffAssignment({
-        inquiryId: selectedInquiryId,
-        staffId,
-        positionName: selectedPosition,
-        daysAssigned,
-        ratePerDay,
-        reportingTime,
-      });
-
-      // 3. If duplicate is confirmed locally, update in DB
-      if (dupCheck.isDuplicate) {
-        await api.confirmDuplicateAssignment(newAssignment.id);
-      }
-
-      // 4. Reload page data
-      const [histData, summData] = await Promise.all([
-        api.fetchStaffHistory(staffId),
-        api.fetchStaffSummary(staffId),
-      ]);
-      setHistory(histData);
-      setSummary(summData);
-      await refreshStaff();
-      
-      // Reset form
-      setSelectedInquiryId("");
-      toast.success("Staff member successfully assigned!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create assignment");
-    } finally {
-      setIsAssigning(false);
-    }
-  };
 
   const handleUnassign = async (assignmentId: number) => {
     const ok = await confirm({ message: "Are you sure you want to remove this staff assignment?", confirmLabel: "Remove", danger: true });
@@ -176,31 +94,62 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
     async function loadData() {
       setLoadingDetails(true);
       try {
-        const [histData, summData, memberData] = await Promise.all([
+        const [histData, summData, memberData, equipRes, catOpts] = await Promise.all([
           api.fetchStaffHistory(staffId),
           api.fetchStaffSummary(staffId),
           api.fetchStaffItem(staffId).catch(() => null),
+          api.fetchEquipment({ ownerStaffId: staffId, limit: 200 }).catch(() => ({ items: [] })),
+          api.fetchOptions("EQUIPMENT_CATEGORY").catch(() => []),
         ]);
         if (active) {
           setHistory(histData);
           setSummary(summData);
-          if (memberData) {
-            setFetchedStaff(memberData);
-          }
+          if (memberData) setFetchedStaff(memberData);
+          setOwnedEquipment(equipRes.items);
+          setEquipCategories(catOpts.map((o: any) => o.value));
         }
       } catch (err) {
         console.error("Failed to load staff details:", err);
       } finally {
-        if (active) {
-          setLoadingDetails(false);
-        }
+        if (active) setLoadingDetails(false);
       }
     }
     loadData();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [staffId]);
+
+  const refreshOwnedEquipment = async () => {
+    const res = await api.fetchEquipment({ ownerStaffId: staffId, limit: 200 }).catch(() => ({ items: [] }));
+    setOwnedEquipment(res.items);
+  };
+
+  const handleAddEquipment = async () => {
+    if (!addEquipForm.productName.trim()) { setAddEquipError("Product name is required."); return; }
+    if (!addEquipForm.category) { setAddEquipError("Category is required."); return; }
+    setAddEquipError("");
+    try {
+      setAddEquipLoading(true);
+      await api.createEquipment({
+        productName: addEquipForm.productName.trim(),
+        category: addEquipForm.category,
+        quantity: parseInt(addEquipForm.quantity) || 1,
+        defaultRate: addEquipForm.rentalRatePerDay ? parseFloat(addEquipForm.rentalRatePerDay) : null,
+        notes: addEquipForm.notes.trim() || null,
+        ownershipType: "STAFF",
+        ownerStaffId: staffId,
+        status: "AVAILABLE",
+        department: "VIDEO",
+      } as any);
+      setAddEquipForm({ productName: "", category: "", quantity: "1", rentalRatePerDay: "", notes: "" });
+      setShowAddEquipForm(false);
+      toast.success("Equipment created!");
+      await refreshOwnedEquipment();
+    } catch (err: any) {
+      setAddEquipError(err.message || "Failed to create equipment");
+    } finally {
+      setAddEquipLoading(false);
+    }
+  };
 
   // Initials for avatar
   const initials = useMemo(() => {
@@ -584,95 +533,6 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                 )}
               </div>
 
-              {/* Assign to Event Card */}
-              <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
-                <div className="ct">Assign to Event</div>
-                <form onSubmit={handleAssign} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <fieldset disabled={!canEditStaff} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <div className="field">
-                    <div className="flbl">Upcoming Event</div>
-                    <select
-                      className="fsel"
-                      value={selectedInquiryId}
-                      onChange={(e) => handleInquiryChange(e.target.value)}
-                      required
-                    >
-                      <option value="">-- Select Event --</option>
-                      {inquiries
-                        .filter((inq) => {
-                          const today = new Date().toISOString().split("T")[0];
-                          return inq.startDate >= today && inq.status !== "Cancelled";
-                        })
-                        .map((inq) => (
-                          <option key={inq.id} value={inq.id}>
-                            {inq.eventName} ({inq.startDate})
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                    <div className="field">
-                      <div className="flbl">Position/Role</div>
-                      <select
-                        className="fsel"
-                        value={selectedPosition}
-                        onChange={(e) => setSelectedPosition(e.target.value)}
-                      >
-                        {roleOptions.length === 0 && selectedPosition && (
-                          <option value={selectedPosition}>{selectedPosition}</option>
-                        )}
-                        {roleOptions.map((r) => (
-                          <option key={r} value={r}>{r}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="field">
-                      <div className="flbl">Reporting Time</div>
-                      <input
-                        type="text"
-                        className="finp"
-                        placeholder="e.g. 09:00 AM"
-                        value={reportingTime}
-                        onChange={(e) => setReportingTime(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                    <div className="field">
-                      <div className="flbl">Days Assigned</div>
-                      <input
-                        type="number"
-                        min="1"
-                        className="finp"
-                        value={daysAssigned}
-                        onChange={(e) => setDaysAssigned(parseInt(e.target.value) || 1)}
-                      />
-                    </div>
-                    <div className="field">
-                      <div className="flbl">Rate Per Day (₹)</div>
-                      <input
-                        type="number"
-                        min="0"
-                        className="finp"
-                        value={ratePerDay}
-                        onChange={(e) => setRatePerDay(parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="btn btn-primary w-full justify-center"
-                    disabled={isAssigning}
-                    style={{ marginTop: "4px" }}
-                  >
-                    {isAssigning ? "Assigning..." : "✓ Deploy Staff"}
-                  </button>
-                  </fieldset>
-                </form>
-              </div>
 
               {/* Event History Table */}
               <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
@@ -716,6 +576,151 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              {/* Owned Equipment */}
+              <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
+                <h4 style={{ margin: "0 0 12px 0", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                    <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                    <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                  </svg>
+                  Owned Equipment ({ownedEquipment.length})
+                </h4>
+
+                {loadingDetails ? (
+                  <div style={{ fontSize: "11px", color: "var(--tx3)", fontStyle: "italic" }}>Loading...</div>
+                ) : ownedEquipment.length === 0 ? (
+                  <div style={{ fontSize: "11.5px", color: "var(--tx3)", fontStyle: "italic", background: "var(--alt2)", padding: "10px", borderRadius: "4px", marginBottom: "12px" }}>
+                    No equipment linked to this staff member.
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px", maxHeight: "180px", overflowY: "auto", paddingRight: "4px" }}>
+                    {ownedEquipment.map((eq: any) => (
+                      <div key={eq.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--alt)", padding: "8px 10px", borderRadius: "6px", border: "1px solid var(--b1)" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <Link href={`/equipment/${eq.id}`} style={{ fontSize: "12px", fontWeight: 500, color: "var(--bl)", textDecoration: "underline" }}>
+                            {eq.productName}
+                          </Link>
+                          <span style={{ fontSize: "10px", color: "var(--tx3)" }}>
+                            {eq.category.replace(/_/g, " ")} | Qty: {eq.quantity}{eq.defaultRate ? ` | ₹${eq.defaultRate}/day` : ""}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {canEditStaff && (
+                  <div style={{ marginTop: "10px" }}>
+                    {!showAddEquipForm ? (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ padding: "5px 12px", fontSize: "11.5px", width: "100%" }}
+                        onClick={() => { setShowAddEquipForm(true); setAddEquipError(""); }}
+                      >
+                        + Add Equipment
+                      </button>
+                    ) : (
+                      <div style={{ border: "1px solid var(--b1)", borderRadius: "8px", padding: "14px", background: "var(--alt)", display: "flex", flexDirection: "column", gap: "10px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
+                          <span style={{ fontSize: "12px", fontWeight: 600 }}>New Equipment</span>
+                          <button type="button" onClick={() => { setShowAddEquipForm(false); setAddEquipError(""); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "var(--tx3)", lineHeight: 1 }}>×</button>
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <label style={{ fontSize: "11px", color: "var(--tx3)", fontWeight: 500 }}>Product Name *</label>
+                          <input
+                            className="finp"
+                            style={{ padding: "5px 8px", fontSize: "12px" }}
+                            placeholder="e.g. Sony FX6"
+                            value={addEquipForm.productName}
+                            onChange={(e) => setAddEquipForm((f) => ({ ...f, productName: e.target.value }))}
+                          />
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <label style={{ fontSize: "11px", color: "var(--tx3)", fontWeight: 500 }}>Category *</label>
+                          <select
+                            className="fsel"
+                            style={{ padding: "5px 8px", fontSize: "12px" }}
+                            value={addEquipForm.category}
+                            onChange={(e) => setAddEquipForm((f) => ({ ...f, category: e.target.value }))}
+                          >
+                            <option value="">-- Select Category --</option>
+                            {equipCategories.map((c) => (
+                              <option key={c} value={c}>
+                                {c.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase())}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div style={{ display: "flex", gap: "10px" }}>
+                          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <label style={{ fontSize: "11px", color: "var(--tx3)", fontWeight: 500 }}>Quantity</label>
+                            <input
+                              className="finp"
+                              type="number"
+                              min="1"
+                              style={{ padding: "5px 8px", fontSize: "12px" }}
+                              value={addEquipForm.quantity}
+                              onChange={(e) => setAddEquipForm((f) => ({ ...f, quantity: e.target.value }))}
+                            />
+                          </div>
+                          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <label style={{ fontSize: "11px", color: "var(--tx3)", fontWeight: 500 }}>Rental Rate / Day (₹)</label>
+                            <input
+                              className="finp"
+                              type="number"
+                              min="0"
+                              style={{ padding: "5px 8px", fontSize: "12px" }}
+                              placeholder="0"
+                              value={addEquipForm.rentalRatePerDay}
+                              onChange={(e) => setAddEquipForm((f) => ({ ...f, rentalRatePerDay: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <label style={{ fontSize: "11px", color: "var(--tx3)", fontWeight: 500 }}>Note</label>
+                          <textarea
+                            className="finp"
+                            style={{ padding: "5px 8px", fontSize: "12px", resize: "vertical", minHeight: "56px" }}
+                            placeholder="Any additional details..."
+                            value={addEquipForm.notes}
+                            onChange={(e) => setAddEquipForm((f) => ({ ...f, notes: e.target.value }))}
+                          />
+                        </div>
+
+                        {addEquipError && <div style={{ fontSize: "11px", color: "var(--rd)", fontWeight: 500 }}>{addEquipError}</div>}
+
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            style={{ flex: 1, padding: "6px 12px", fontSize: "11.5px" }}
+                            onClick={handleAddEquipment}
+                            disabled={addEquipLoading}
+                          >
+                            {addEquipLoading ? "Creating..." : "Create Equipment"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn"
+                            style={{ padding: "6px 12px", fontSize: "11.5px" }}
+                            onClick={() => { setShowAddEquipForm(false); setAddEquipError(""); }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Payment Timeline */}

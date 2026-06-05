@@ -49,7 +49,7 @@
   --focus-shadow: rgba(0, 0, 0, 0.12);
   --modal-overlay: rgba(0,0,0,0.45);
   --row-hover: rgba(0,0,0,0.02);
-  --hdr-bg: rgba(247,247,245,0.92);
+  --hdr-bg: #FFFFFF;
   --sidebar-bg: #FFFFFF;
   --sidebar-hover: #F2F2F0;
   --sidebar-active: #E2E2DF;

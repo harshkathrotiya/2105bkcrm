@@ -850,11 +850,15 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
       {/* ── Step tab bar (like reference) ── */}
       <div style={{
         display: "flex", alignItems: "stretch", gap: 0,
-        borderBottom: "1px solid var(--b1)",
+        border: "1px solid var(--b1)",
+        borderRadius: 12,
         background: "var(--s1)",
         marginTop: 18,
+        marginLeft: 24,
+        marginRight: 24,
         overflowX: "auto",
-        paddingLeft: 24,
+        overflowY: "hidden",
+        paddingLeft: 0,
       }}>
         {STEPS.map((s, i) => {
           const isActive = tab === s.key;
@@ -865,8 +869,9 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
               key={s.key}
               onClick={() => setTab(s.key)}
               style={{
+                flex: 1,
                 display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-                padding: "14px 22px",
+                padding: "14px 12px",
                 background: "transparent",
                 border: "none",
                 borderBottom: isActive ? "2px solid var(--acc)" : "2px solid transparent",
@@ -880,21 +885,19 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
               }}
             >
               <Icon size={16} strokeWidth={isActive ? 2.2 : 1.8} />
-              <span>{s.label}</span>
-              {isDone && !isActive && (
-                <span style={{
-                  position: "absolute", top: 8, right: 10,
-                  width: 8, height: 8, borderRadius: "50%",
-                  background: "var(--tx3)",
-                }} />
-              )}
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {s.label}
+                {isDone && !isActive && (
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--gr)", flexShrink: 0 }} />
+                )}
+              </span>
             </button>
           );
         })}
       </div>
 
       {/* ── Step content (full width, no card border) ── */}
-      <div style={{ padding: "24px 24px 40px" }}>
+      <div style={{ padding: "16px 24px 40px" }}>
 
         {/* ── STEP 1: OVERVIEW ── */}
         {tab === "overview" && (

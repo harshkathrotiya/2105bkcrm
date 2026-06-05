@@ -62,6 +62,12 @@ export async function GET(request: NextRequest) {
       where: { inquiry_id: inquiryId }
     });
 
+    // Get staff assignments for this inquiry (to read/write equipment_rate_per_day)
+    const staffAssignments = await db.staffAssignment.findMany({
+      where: { inquiry_id: inquiryId },
+      include: { staff: true },
+    });
+
     // Fetch all overlapping active bookings for the inquiry dates, excluding this inquiry itself
     const overlappingBookings = await db.equipmentBooking.findMany({
       where: {
@@ -191,6 +197,18 @@ export async function GET(request: NextRequest) {
       })),
       equipment: equipmentWithStatus,
       kits: kitsWithStatus,
+      staffAssignments: staffAssignments.map((a: any) => ({
+        id: a.id,
+        staffId: a.staff_id,
+        staffName: a.staff?.name || "",
+        positionName: a.position_name,
+        positionNo: a.position_no,
+        daysAssigned: a.days_assigned,
+        ratePerDay: a.rate_per_day,
+        withEquipment: !!a.with_equipment,
+        equipmentRatePerDay: a.equipment_rate_per_day || 0,
+        totalAmount: a.total_amount,
+      })),
     });
   } catch (err) {
     console.error("[GET /api/warehouse/check]", err);
