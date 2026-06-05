@@ -318,7 +318,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
       <>
         <SectionHeader title={isEdit ? "Edit Equipment" : "Add Equipment"} />
         <ScreenFrame breadcrumb={isEdit ? "Equipment Master › Edit" : "Equipment Master › New"}>
-          <LoadingSkeleton rows={6} message="Loading equipment details…" />
+          <LoadingSkeleton rows={6} />
         </ScreenFrame>
       </>
     );

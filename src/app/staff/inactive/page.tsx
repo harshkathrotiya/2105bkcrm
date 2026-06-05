@@ -74,7 +74,7 @@ export default function InactiveStaffPage() {
         }
       >
         {loading ? (
-          <LoadingSkeleton rows={6} message="Loading inactive staff..." />
+          <LoadingSkeleton rows={6} />
         ) : inactiveStaff.length === 0 ? (
           <div className="text-center py-12 text-tx3" style={{ fontStyle: "italic" }}>
             No deactivated staff members found.

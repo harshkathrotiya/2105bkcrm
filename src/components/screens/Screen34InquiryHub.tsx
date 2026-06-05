@@ -752,7 +752,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
   if (loading) {
     return (
       <div style={{ padding: 24 }}>
-        <LoadingSkeleton rows={8} message="Loading inquiry…" />
+        <LoadingSkeleton rows={8} />
       </div>
     );
   }
@@ -847,51 +847,100 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
         </div>
       </div>
 
-      {/* ── Step tab bar (like reference) ── */}
+      {/* ── Step progress bar ── */}
       <div style={{
-        display: "flex", alignItems: "stretch", gap: 0,
-        border: "1px solid var(--b1)",
-        borderRadius: 12,
+        margin: "18px 24px 0",
         background: "var(--s1)",
-        marginTop: 18,
-        marginLeft: 24,
-        marginRight: 24,
-        overflowX: "auto",
-        overflowY: "hidden",
-        paddingLeft: 0,
+        border: "1px solid var(--b1)",
+        borderRadius: 14,
+        padding: "10px 8px",
+        display: "flex",
+        alignItems: "center",
       }}>
         {STEPS.map((s, i) => {
           const isActive = tab === s.key;
-          const isDone = s.done;
+          const isDone = s.done && !isActive;
+          const isPending = !s.done && !isActive;
           const Icon = [CalendarDays, FileText, Building2, Users, CheckCircle2, Receipt][i];
+          const isLast = i === STEPS.length - 1;
           return (
-            <button
-              key={s.key}
-              onClick={() => setTab(s.key)}
-              style={{
-                flex: 1,
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-                padding: "14px 12px",
-                background: "transparent",
-                border: "none",
-                borderBottom: isActive ? "2px solid var(--acc)" : "2px solid transparent",
-                cursor: "pointer",
-                color: isActive ? "var(--tx)" : isDone ? "var(--tx2)" : "var(--tx3)",
-                fontWeight: isActive ? 600 : 450,
-                fontSize: 12,
-                whiteSpace: "nowrap",
-                transition: "all 0.15s",
-                position: "relative",
-              }}
-            >
-              <Icon size={16} strokeWidth={isActive ? 2.2 : 1.8} />
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {s.label}
-                {isDone && !isActive && (
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--gr)", flexShrink: 0 }} />
+            <div key={s.key} style={{ flex: 1, display: "flex", alignItems: "center", minWidth: 0 }}>
+              {/* Step button */}
+              <button
+                onClick={() => setTab(s.key)}
+                style={{
+                  flex: 1,
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                  padding: "10px 6px",
+                  background: isActive ? "var(--sidebar-active)" : "transparent",
+                  border: "none",
+                  borderRadius: 10,
+                  cursor: "pointer",
+                  transition: "all 0.18s",
+                  position: "relative",
+                  minWidth: 0,
+                }}
+              >
+                {/* Circle with number / icon */}
+                <div style={{
+                  width: 32, height: 32,
+                  borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                  background: isActive
+                    ? "#111"
+                    : isDone
+                    ? "var(--gr)"
+                    : "var(--alt2)",
+                  border: isActive
+                    ? "2px solid #111"
+                    : isDone
+                    ? "2px solid var(--gr)"
+                    : "2px solid var(--b2)",
+                  transition: "all 0.18s",
+                }}>
+                  {isDone ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                  ) : (
+                    <Icon size={14} strokeWidth={isActive ? 2.4 : 1.8} color={isActive ? "#fff" : isPending ? "var(--tx3)" : "#fff"} />
+                  )}
+                </div>
+                {/* Label */}
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: isActive ? 700 : isDone ? 500 : 400,
+                  color: isActive ? "var(--tx)" : isDone ? "var(--tx2)" : "var(--tx3)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "100%",
+                  lineHeight: 1.2,
+                }}>
+                  {s.label}
+                </span>
+                {/* Active underline pill */}
+                {isActive && (
+                  <span style={{
+                    position: "absolute", bottom: 4, left: "50%", transform: "translateX(-50%)",
+                    width: 20, height: 3, borderRadius: 2,
+                    background: "var(--acc)",
+                  }} />
                 )}
-              </span>
-            </button>
+              </button>
+              {/* Connector line */}
+              {!isLast && (
+                <div style={{
+                  width: 24, flexShrink: 0,
+                  height: 2,
+                  background: s.done ? "var(--gr)" : "var(--b2)",
+                  borderRadius: 2,
+                  opacity: 0.5,
+                  transition: "background 0.3s",
+                }} />
+              )}
+            </div>
           );
         })}
       </div>

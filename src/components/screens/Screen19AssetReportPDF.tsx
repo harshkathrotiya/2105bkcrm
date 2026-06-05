@@ -117,7 +117,7 @@ export default function Screen19AssetReportPDF() {
   if (loading) {
     return (
       <div style={{ padding: "40px", maxWidth: "800px", margin: "0 auto" }}>
-        <LoadingSkeleton rows={10} message="Compiling physical asset valuations and category logs..." />
+        <LoadingSkeleton rows={10} />
       </div>
     );
   }

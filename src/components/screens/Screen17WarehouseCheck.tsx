@@ -462,13 +462,13 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
   };
 
   if (loading) {
-    if (embedded) return <LoadingSkeleton rows={8} message="Performing inventory audit and calendar overlap calculations..." />;
+    if (embedded) return <LoadingSkeleton rows={8} />;
     return (
       <>
         <SectionHeader title="Warehouse Availability Check" />
         <ScreenFrame breadcrumb="Warehouse › Check">
           <div style={{ padding: "30px" }}>
-            <LoadingSkeleton rows={8} message="Performing inventory audit and calendar overlap calculations..." />
+            <LoadingSkeleton rows={8} />
           </div>
         </ScreenFrame>
       </>

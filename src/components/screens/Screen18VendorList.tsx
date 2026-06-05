@@ -404,7 +404,7 @@ export default function Screen18VendorList() {
         <SectionHeader title="Rental Vendor Directory" />
         <ScreenFrame breadcrumb="Vendors › Directory">
           <div style={{ padding: "30px" }}>
-            <LoadingSkeleton rows={6} message="Retrieving vendor accounts and YTD metrics..." />
+            <LoadingSkeleton rows={6} />
           </div>
         </ScreenFrame>
       </>

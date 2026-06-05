@@ -221,7 +221,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   if (staffLoading || (loadingDetails && !staffMember)) {
     return (
       <ScreenFrame breadcrumb="Staff › Profile › Loading...">
-        <LoadingSkeleton rows={6} message="Loading profile details..." />
+        <LoadingSkeleton rows={6} />
       </ScreenFrame>
     );
   }

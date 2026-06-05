@@ -114,7 +114,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
       <>
         <SectionHeader title="Equipment Details" />
         <ScreenFrame breadcrumb="Equipment Master › Details">
-          <LoadingSkeleton rows={6} message="Loading equipment details…" />
+          <LoadingSkeleton rows={6} />
         </ScreenFrame>
       </>
     );

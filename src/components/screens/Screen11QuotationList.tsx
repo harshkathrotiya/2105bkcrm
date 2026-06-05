@@ -158,7 +158,7 @@ export default function Screen11QuotationList() {
         }
       >
         {quotationsLoading ? (
-          <LoadingSkeleton rows={6} message="Loading quotations\u2026" />
+          <LoadingSkeleton rows={6} />
         ) : (
         <>
         {/* Metrics */}

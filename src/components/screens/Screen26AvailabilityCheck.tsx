@@ -200,7 +200,7 @@ export default function Screen26AvailabilityCheck() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {loading ? (
-                  <LoadingSkeleton rows={5} message="Checking availability calendar..." />
+                  <LoadingSkeleton rows={5} />
                 ) : staffList.length === 0 ? (
                   <div style={{ fontStyle: "italic", color: "var(--tx3)", textAlign: "center", padding: "20px" }}>
                     No staff profiles matching role filters.

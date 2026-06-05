@@ -41,10 +41,11 @@ export default function Button({
       {...rest}
     >
       {loading && (
-        <span
-          className="inline-block w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin shrink-0"
-          aria-hidden="true"
-        />
+        <span className="inline-flex gap-[3px] items-center shrink-0" aria-hidden="true">
+          {[0,1,2].map(i => (
+            <span key={i} className="w-1 h-1 rounded-full animate-pulse" style={{background:"currentColor",animationDelay:`${i*150}ms`}} />
+          ))}
+        </span>
       )}
       {children}
     </button>

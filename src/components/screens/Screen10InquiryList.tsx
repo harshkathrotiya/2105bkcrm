@@ -124,7 +124,7 @@ export default function Screen10InquiryList() {
         }
       >
         {loading ? (
-          <LoadingSkeleton rows={6} message="Loading inquiries…" />
+          <LoadingSkeleton rows={6} />
         ) : (
         <>
         {/* Metrics */}

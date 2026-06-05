@@ -409,7 +409,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
       }
 
       await refreshStaff();
-      router.push(`/inquiries/${inquiryId}/warehouse`);
+      router.push(`/inquiries/${inquiryId}/preview`);
     } catch (err: any) {
       toast.error(err.message || "Failed to save assignments");
     } finally {
@@ -418,10 +418,10 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
   };
 
   if (loading) {
-    if (embedded) return <LoadingSkeleton rows={6} message="Loading quotation and staff data..." />;
+    if (embedded) return <LoadingSkeleton rows={6} />;
     return (
       <ScreenFrame breadcrumb="Staff › Assignments › Loading...">
-        <LoadingSkeleton rows={6} message="Loading quotation and staff data..." />
+        <LoadingSkeleton rows={6} />
       </ScreenFrame>
     );
   }
@@ -515,8 +515,8 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
               <div
                 className="warn"
                 style={{
-                  background: "#2E1F0A",
-                  border: "1px solid #4A3010",
+                  background: "var(--sem-am-bg)",
+                  border: "1px solid var(--sem-am-bdr)",
                   borderRadius: "8px",
                   padding: "14px",
                   marginBottom: "16px",
@@ -557,8 +557,8 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
               <div
                 className="warn"
                 style={{
-                  background: "#2E1F0A",
-                  border: "1px solid #4A3010",
+                  background: "var(--sem-am-bg)",
+                  border: "1px solid var(--sem-am-bdr)",
                   borderRadius: "8px",
                   padding: "14px",
                   marginBottom: "16px",

@@ -44,7 +44,7 @@ export default function Screen27ExpenseReport({ inquiryId }: Props) {
   if (loading) {
     return (
       <ScreenFrame breadcrumb="Reports › Expense Report › Loading...">
-        <LoadingSkeleton rows={6} message="Compiling event expenses, staff rosters, and vendor rental ledgers..." />
+        <LoadingSkeleton rows={6} />
       </ScreenFrame>
     );
   }

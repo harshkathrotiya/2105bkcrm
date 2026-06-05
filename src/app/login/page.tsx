@@ -11,7 +11,7 @@ export default function LoginPage() {
     <Suspense fallback={
       <div className="card !p-4 m-8">
         <div className="flex items-center justify-center gap-3 py-6">
-          <div className="w-5 h-5 rounded-full border-2 border-b2 border-t-acc animate-spin" />
+          <div className="flex gap-1.5">{[0,1,2].map(i=><div key={i} className="w-2 h-2 rounded-full animate-pulse" style={{background:"var(--tx3)",animationDelay:`${i*150}ms`}}/>)}</div>
           <span className="text-[12px] text-tx3">Loading Login...</span>
         </div>
       </div>

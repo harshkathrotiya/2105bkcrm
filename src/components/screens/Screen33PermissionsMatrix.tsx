@@ -111,7 +111,7 @@ export default function Screen33PermissionsMatrix() {
   if (loading) {
     return (
       <ScreenFrame breadcrumb="Settings › Permissions › Loading...">
-        <LoadingSkeleton rows={8} message="Reading database roles and permissions schema..." />
+        <LoadingSkeleton rows={8} />
       </ScreenFrame>
     );
   }

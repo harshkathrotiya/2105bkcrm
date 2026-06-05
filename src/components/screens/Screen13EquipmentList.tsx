@@ -383,7 +383,7 @@ export default function Screen13EquipmentList() {
               </div>
 
               {loading ? (
-                <LoadingSkeleton rows={6} message="Querying equipment..." />
+                <LoadingSkeleton rows={6} />
               ) : (
                 <>
                   <div className="tbl-scroll">

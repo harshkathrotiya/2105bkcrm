@@ -267,7 +267,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
     return (
       <ScreenFrame breadcrumb="Kit Details" actions={<Link href="/kits" className="btn">‹ Back to Kits</Link>}>
         <div style={{ padding: "20px" }}>
-          <LoadingSkeleton rows={6} message="Loading kit details..." />
+          <LoadingSkeleton rows={6} />
         </div>
       </ScreenFrame>
     );

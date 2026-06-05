@@ -264,7 +264,7 @@ export default function Screen25MonthlyPaymentReport() {
           }
         >
           {loading || !report ? (
-            <LoadingSkeleton rows={8} message="Loading report details..." />
+            <LoadingSkeleton rows={8} />
           ) : (
             <div style={{ display: "flex", border: "1px solid var(--b1)", borderRadius: "12px", overflow: "hidden", background: "var(--s1)" }}>
               

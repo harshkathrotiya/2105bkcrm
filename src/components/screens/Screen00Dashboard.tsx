@@ -142,7 +142,7 @@ export default function Screen00Dashboard() {
   if (isLoading) {
     return (
       <ScreenFrame breadcrumb="Dashboard › Loading...">
-        <LoadingSkeleton rows={8} message="Analyzing dashboard summary and metrics..." />
+        <LoadingSkeleton rows={8} />
       </ScreenFrame>
     );
   }

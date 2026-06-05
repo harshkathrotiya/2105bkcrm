@@ -301,7 +301,7 @@ export default function Screen16KitList() {
 
           {kitsLoading ? (
             <div style={{ padding: "30px 10px" }}>
-              <LoadingSkeleton rows={5} message="Loading kits list..." type="table" />
+              <LoadingSkeleton rows={5} type="table" />
             </div>
           ) : (
             <>

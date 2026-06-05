@@ -44,7 +44,7 @@ export default function Screen28PLReport({ inquiryId }: Props) {
   if (loading) {
     return (
       <ScreenFrame breadcrumb="Reports › P&L Report › Loading...">
-        <LoadingSkeleton rows={6} message="Analyzing revenue worksheets, payroll summaries, and outsourcing costs..." />
+        <LoadingSkeleton rows={6} />
       </ScreenFrame>
     );
   }

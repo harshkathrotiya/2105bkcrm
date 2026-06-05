@@ -273,7 +273,7 @@ export default function Screen20StaffList() {
               </div>
 
               {loading ? (
-                <LoadingSkeleton rows={6} message="Querying staff..." />
+                <LoadingSkeleton rows={6} />
               ) : (
                 <>
                   {/* Table */}

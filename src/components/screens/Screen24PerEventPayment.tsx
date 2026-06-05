@@ -241,7 +241,7 @@ export default function Screen24PerEventPayment() {
   if (loading) {
     return (
       <ScreenFrame breadcrumb="Staff › Payments › Loading...">
-        <LoadingSkeleton rows={6} message="Loading event payments data..." />
+        <LoadingSkeleton rows={6} />
       </ScreenFrame>
     );
   }

@@ -96,7 +96,7 @@ export default function Screen12InvoiceList() {
       />
       <ScreenFrame breadcrumbs={[{ label: "Invoices" }]}>
         {loading ? (
-          <LoadingSkeleton rows={6} message="Loading invoices…" />
+          <LoadingSkeleton rows={6} />
         ) : (
         <>
         {/* Metrics */}

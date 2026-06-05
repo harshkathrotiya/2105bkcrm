@@ -249,7 +249,7 @@ export default function Screen02EditClient({
           title={<>Edit <strong>client</strong></>}
         />
         <ScreenFrame breadcrumb={<>Clients › Edit client</>}>
-          <LoadingSkeleton rows={6} message="Loading client…" />
+          <LoadingSkeleton rows={6} />
         </ScreenFrame>
       </>
     );

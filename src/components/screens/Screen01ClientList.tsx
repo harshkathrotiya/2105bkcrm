@@ -78,7 +78,7 @@ export default function Screen01ClientList() {
         }
       >
         {loading ? (
-          <LoadingSkeleton rows={6} message="Loading clients\u2026" />
+          <LoadingSkeleton rows={6} />
         ) : (
         <>
         {/* Metrics */}

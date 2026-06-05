@@ -100,7 +100,7 @@ Koi sawaal hoy to call karo: +91 98250 00000`;
   if (loading) {
     return (
       <ScreenFrame breadcrumb="Staff › Event Brief › Loading...">
-        <LoadingSkeleton rows={6} message="Generating staff assignments details and templated WhatsApp payloads..." />
+        <LoadingSkeleton rows={6} />
       </ScreenFrame>
     );
   }

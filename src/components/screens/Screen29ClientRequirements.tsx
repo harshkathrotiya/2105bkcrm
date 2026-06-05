@@ -77,7 +77,7 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
   if (loading) {
     return (
       <ScreenFrame breadcrumb="Reports › Client Requirements › Loading...">
-        <LoadingSkeleton rows={6} message="Compiling crew roster details, state ID logs, and physical space requirements..." />
+        <LoadingSkeleton rows={6} />
       </ScreenFrame>
     );
   }
