@@ -30,7 +30,6 @@ function OrgNodeCardInner({ data }: NodeProps) {
 
   return (
     <div
-      onClick={() => (node.kind === "person" ? d.onOpen(node) : d.onToggle(node.id))}
       style={{
         width: 230,
         cursor: "pointer",
@@ -41,7 +40,9 @@ function OrgNodeCardInner({ data }: NodeProps) {
       onMouseEnter={(e) => (e.currentTarget.style.transform = matched ? "scale(1.04)" : "scale(1.02)")}
       onMouseLeave={(e) => (e.currentTarget.style.transform = matched ? "scale(1.03)" : "scale(1)")}
     >
-      <Handle type="target" position={Position.Top} style={{ opacity: 0, pointerEvents: "none" }} />
+      {/* target handles: top (for horizontal top levels) + left (for vertical column children) */}
+      <Handle id="t" type="target" position={Position.Top} style={{ opacity: 0, pointerEvents: "none" }} />
+      <Handle id="l" type="target" position={Position.Left} style={{ opacity: 0, pointerEvents: "none", top: 18 }} />
 
       <div
         style={{
@@ -146,7 +147,9 @@ function OrgNodeCardInner({ data }: NodeProps) {
         )}
       </div>
 
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0, pointerEvents: "none" }} />
+      <Handle id="b" type="source" position={Position.Bottom} style={{ opacity: 0, pointerEvents: "none" }} />
+      {/* bottom-left source: spine origin for the vertical indented-tree rail */}
+      <Handle id="bl" type="source" position={Position.Bottom} style={{ opacity: 0, pointerEvents: "none", left: 16 }} />
     </div>
   );
 }

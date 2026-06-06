@@ -72,7 +72,7 @@ export default function Screen31Login() {
               boxShadow: "0 4px 12px rgba(247,183,49,0.25)",
             }}
           >
-            <span style={{ fontSize: "16px", fontWeight: "bold", color: "#000" }}>BK</span>
+            <span style={{ fontSize: "16px", fontWeight: "bold", color: "#fff" }}>BK</span>
           </div>
           <h2 style={{ fontSize: "20px", fontWeight: 600, color: "var(--tx)", margin: 0 }}>
             Welcome to BK Media

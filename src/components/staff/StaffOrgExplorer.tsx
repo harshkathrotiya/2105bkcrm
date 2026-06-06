@@ -9,15 +9,18 @@ import {
   useNodesState,
   useEdgesState,
   type NodeTypes,
+  type EdgeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Search, Maximize2, X } from "lucide-react";
 import { buildOrgTree, type OrgNode, type StaffWithStatus } from "@/lib/staff-hierarchy";
 import { buildFlow } from "./orgLayout";
 import OrgNodeCard from "./OrgNodeCard";
+import ColumnEdge from "./ColumnEdge";
 import StaffDetailDrawer from "./StaffDetailDrawer";
 
 const nodeTypes: NodeTypes = { org: OrgNodeCard };
+const edgeTypes: EdgeTypes = { column: ColumnEdge };
 
 /** Walk the tree collecting ids of nodes that match the query + all their ancestors. */
 function searchTree(root: OrgNode, query: string): { matched: Set<string>; expand: Set<string> } {
@@ -85,6 +88,20 @@ export default function StaffOrgExplorer({ staff }: { staff: StaffWithStatus[] }
     if (node.staff) setDrawerStaff(node.staff);
   }, []);
 
+  // Single source of truth for node clicks (React Flow's own handler — robust
+  // against pointer-event quirks of custom-node inner onClick).
+  const onNodeClick = useCallback(
+    (_e: React.MouseEvent, rfNode: { data: unknown }) => {
+      const node = (rfNode.data as { node: OrgNode }).node;
+      if (node.kind === "person") {
+        if (node.staff) setDrawerStaff(node.staff);
+      } else {
+        toggle(node.id);
+      }
+    },
+    [toggle]
+  );
+
   // effective expansion = manual ∪ search-forced
   const effectiveExpanded = useMemo(() => {
     if (!query.trim()) return expanded;
@@ -143,7 +160,9 @@ export default function StaffOrgExplorer({ staff }: { staff: StaffWithStatus[] }
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           fitViewOptions={{ padding: 0.3, maxZoom: 1 }}
           minZoom={0.2}
@@ -151,7 +170,6 @@ export default function StaffOrgExplorer({ staff }: { staff: StaffWithStatus[] }
           proOptions={{ hideAttribution: true }}
           nodesDraggable={false}
           nodesConnectable={false}
-          elementsSelectable={false}
           panOnScroll
           zoomOnDoubleClick={false}
         >
