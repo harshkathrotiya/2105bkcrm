@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowLeft, Upload } from "lucide-react";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import * as api from "@/lib/api";
 import type { Equipment } from "@/lib/types";
@@ -133,7 +134,7 @@ export default function Screen19AssetReportPDF() {
         <h3>Report Generation Failed</h3>
         <p style={{ color: "var(--tx3)", fontSize: "13px" }}>{error || "Could not retrieve asset data."}</p>
         <button type="button" className="btn mt-4" onClick={() => router.back()}>
-          ← Go Back
+          <ArrowLeft size={13} /> Go Back
         </button>
       </div>
     );
@@ -237,7 +238,7 @@ export default function Screen19AssetReportPDF() {
           onClick={() => router.back()}
           style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
         >
-          ← Back to Equipment
+          <ArrowLeft size={13} /> Back to Equipment
         </button>
         <div style={{ display: "flex", gap: "8px" }}>
           <button
@@ -247,7 +248,7 @@ export default function Screen19AssetReportPDF() {
             disabled={exporting || equipmentList.length === 0}
             style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
           >
-            {exporting ? "Exporting…" : "↑ Export CSV"}
+            {exporting ? "Exporting…" : <><Upload size={13} /> Export CSV</>}
           </button>
           <button
             type="button"

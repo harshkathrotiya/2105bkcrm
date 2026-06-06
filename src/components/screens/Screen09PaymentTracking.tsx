@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Check, Lock, Unlock, PartyPopper } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -398,7 +399,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                     style={{ marginTop: "10px" }}
                     onClick={handleRecordPayment}
                   >
-                    ✓ Record payment ↗
+                    <Check size={13} strokeWidth={3} /> Record payment
                   </button>
                 )}
               </div>
@@ -416,7 +417,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                       /* State 1: Locked */
                       <div className="bg-[#2E1F0A] border border-[#4A3010] text-[#F5A623] rounded-lg p-3 text-[11px] mb-3">
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600 }}>
-                          <span style={{ fontSize: "14px" }}>🔒</span>
+                          <Lock size={14} />
                           <span>De-installation Locked</span>
                         </div>
                         <div style={{ marginTop: "6px", color: "var(--tx3)" }}>
@@ -430,7 +431,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                       /* State 2: Unlocked */
                       <div className="bg-[#0F2E22] border border-[#1A4A34] text-[#2DD4A0] rounded-lg p-3 text-[11px] mb-3">
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600 }}>
-                          <span style={{ fontSize: "14px" }}>🔓</span>
+                          <Unlock size={14} />
                           <span>De-installation Unlocked</span>
                         </div>
                         <div style={{ marginTop: "6px", color: "var(--tx3)" }}>
@@ -464,7 +465,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                         onClick={handleToggleDeinstall}
                         disabled={!invoice.balanceReceived}
                       >
-                        {invoice.deinstallDone ? "✓ De-installation done!" : "✓ Mark de-installation done"}
+                        <Check size={13} strokeWidth={3} /> {invoice.deinstallDone ? "De-installation done!" : "Mark de-installation done"}
                       </button>
                     )}
                   </>
@@ -486,7 +487,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                         className={`btn w-full justify-center ${invoice.deinstallDone ? "" : "btn-primary"}`}
                         onClick={handleToggleDeinstall}
                       >
-                        {invoice.deinstallDone ? "✓ Mark Pending" : "✓ Mark Deinstalled"}
+                        <Check size={13} strokeWidth={3} /> {invoice.deinstallDone ? "Mark Pending" : "Mark Deinstalled"}
                       </button>
                     )}
                   </>
@@ -529,7 +530,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                     onClick={handleMarkHDD}
                     disabled={!invoice.balanceReceived && !invoice.hddDelivered}
                   >
-                    {invoice.hddDelivered ? "✓ HDD delivered" : "✓ Mark HDD delivered ↗"}
+                    <Check size={13} strokeWidth={3} /> {invoice.hddDelivered ? "HDD delivered" : "Mark HDD delivered"}
                   </button>
                 )}
                 <div className="text-[10px] text-tx3 text-center" style={{ marginTop: "6px" }}>
@@ -581,7 +582,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
 
             {isLed && invoice.deinstallDone && (
               <div className="card text-center" style={{ background: "var(--sem-gr-bg)", border: "1px solid var(--sem-gr-bdr)", color: "var(--sem-gr-tx)", marginTop: "14px", padding: "16px" }}>
-                <div style={{ fontSize: "24px", marginBottom: "6px" }}>🎉</div>
+                <div style={{ marginBottom: "6px", display: "flex", justifyContent: "center" }}><PartyPopper size={24} /></div>
                 <div className="font-medium text-[14px]" style={{ marginBottom: "2px", color: "var(--sem-gr-tx)" }}>Event Completed</div>
                 <div className="text-[10px] text-tx3" style={{ marginBottom: "12px" }}>De-installation done & all panels returned.</div>
                 <div style={{ display: "flex", justifyContent: "space-around", borderTop: "1px solid var(--sem-gr-bdr)", paddingTop: "12px", fontSize: "11px" }}>

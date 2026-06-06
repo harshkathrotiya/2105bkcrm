@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Network } from "lucide-react";
+import { Network, ArrowUpRight, ArrowRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -238,7 +238,7 @@ export default function Screen20StaffList() {
                   textDecoration: "none",
                 }}
               >
-                Salary Reports & Payroll ↗
+                Salary Reports & Payroll <ArrowUpRight size={12} />
               </Link>
               <Link
                 href="/staff/inactive"
@@ -249,7 +249,7 @@ export default function Screen20StaffList() {
                   textDecoration: "none",
                 }}
               >
-                Inactive Staff →
+                Inactive Staff <ArrowRight size={12} />
               </Link>
             </div>
           </aside>

@@ -516,7 +516,7 @@ async function main() {
 
   let eqCount = 0;
   for (const row of equipRows) {
-    const { quantity, quantity_unit } = parseQty(row.qty_raw);
+    const { quantity, quantity_unit } = parseQty(row.qty_raw ?? 1);
     const sold = isSold(row.bill_number);
     // Find kit by body_name
     const kitId = row.body_name && kitMap[row.body_name] ? kitMap[row.body_name] : null;

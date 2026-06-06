@@ -27,8 +27,19 @@ export async function getExpenseReport(inquiryId: string) {
     },
   });
 
+  // Staff-owned equipment rental — paid to the equipment OWNER, regardless of who
+  // used the gear. Recorded on the booking, so it's a separate cost line from salary.
+  const rentalBookings = await db.equipmentBooking.findMany({
+    where: {
+      inquiry_id: inquiryId,
+      total_rental: { gt: 0 },
+    },
+    include: { equipment: true, rental_owner_staff: true },
+  });
+
   const totalStaffCost = staffAssignments.reduce((acc, curr) => acc + curr.total_amount, 0);
   const totalVendorCost = vendorBookings.reduce((acc, curr) => acc + (curr.total_vendor_cost || 0), 0);
+  const totalRentalCost = rentalBookings.reduce((acc, curr) => acc + (curr.total_rental || 0), 0);
 
   return {
     inquiry,
@@ -54,9 +65,19 @@ export async function getExpenseReport(inquiryId: string) {
       bookedFrom: b.booked_from,
       bookedTo: b.booked_to,
     })),
+    equipmentRentals: rentalBookings.map(b => ({
+      id: b.id,
+      itemName: b.equipment?.product_name || "Equipment",
+      ownerName: b.rental_owner_staff?.name || "Owner",
+      ratePerDay: b.rental_rate_per_day || 0,
+      totalCost: b.total_rental || 0,
+      bookedFrom: b.booked_from,
+      bookedTo: b.booked_to,
+    })),
     totalStaffCost,
     totalVendorCost,
-    totalExpense: totalStaffCost + totalVendorCost,
+    totalRentalCost,
+    totalExpense: totalStaffCost + totalVendorCost + totalRentalCost,
   };
 }
 
@@ -96,6 +117,7 @@ export async function getPLReport(inquiryId: string) {
     sgst,
     totalStaffCost: expenseData.totalStaffCost,
     totalVendorCost: expenseData.totalVendorCost,
+    totalRentalCost: expenseData.totalRentalCost,
     totalExpense,
     netProfit,
     profitMargin,

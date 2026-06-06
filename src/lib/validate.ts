@@ -267,7 +267,7 @@ export const STAFF_ROLES = [
 export const STAFF_TYPES = ["INHOUSE", "EXTERNAL"] as const;
 export const PAYMENT_TYPES = ["PER_DAY", "MONTHLY"] as const;
 export const PAYMENT_METHODS = ["CASH", "UPI", "BANK_TRANSFER", "CHEQUE"] as const;
-export const STAFF_PAYMENT_TYPES = ["PER_EVENT", "MONTHLY_SALARY"] as const;
+export const STAFF_PAYMENT_TYPES = ["PER_EVENT", "MONTHLY_SALARY", "EQUIPMENT_RENTAL"] as const;
 
 export const EQUIPMENT_CATEGORIES = [
   "CAMERA", "VIDEO_MIXER", "VIDEO_RECORDER", "AUDIO_MIXER",

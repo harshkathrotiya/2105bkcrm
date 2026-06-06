@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Check, AlertTriangle, ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -441,7 +442,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
         breadcrumb={embedded ? undefined : `Quotations › ${quotation.quoteNo || "Draft"} › Assignments`}
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
-            {!embedded && <Link href={`/inquiries/${inquiryId}`} className="btn">← Back to inquiry</Link>}
+            {!embedded && <Link href={`/inquiries/${inquiryId}`} className="btn"><ArrowLeft size={13} /> Back to inquiry</Link>}
             {!embedded && <Link href={`/inquiries/${inquiryId}/warehouse`} className="btn">Warehouse</Link>}
             {canAssign && (
               <Link
@@ -457,7 +458,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                 className="btn btn-success"
                 disabled={saving || Object.keys(selectedStaff).length === 0}
               >
-                Review &amp; Save ↗
+                Review &amp; Save <ArrowUpRight size={13} />
               </button>
             )}
           </div>
@@ -523,7 +524,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                 }}
               >
                 <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                  <div style={{ fontSize: "20px", color: "var(--acc)", lineHeight: 1 }}>⚠</div>
+                  <div style={{ color: "var(--acc)", lineHeight: 1 }}><AlertTriangle size={20} /></div>
                   <div style={{ flex: 1 }}>
                     <strong style={{ fontSize: "13px", color: "var(--tx)", display: "block", marginBottom: "4px" }}>
                       Overlapping Booking Conflict Warning
@@ -565,7 +566,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                 }}
               >
                 <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                  <div style={{ fontSize: "20px", color: "var(--acc)", lineHeight: 1 }}>⚠</div>
+                  <div style={{ color: "var(--acc)", lineHeight: 1 }}><AlertTriangle size={20} /></div>
                   <div style={{ flex: 1 }}>
                     <strong style={{ fontSize: "13px", color: "var(--tx)", display: "block", marginBottom: "4px" }}>
                       Duplicate Assignment Confirmation
@@ -601,7 +602,6 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                       <th>Operator Select</th>
                       <th style={{ width: "110px" }}>Reporting Time</th>
                       <th style={{ width: "90px" }}>Source</th>
-                      <th style={{ width: "90px" }}>With Equip.</th>
                       <th style={{ width: "90px" }} className="tr">Pay / Day</th>
                     </tr>
                   </thead>
@@ -681,17 +681,6 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                               <Badge variant={staffMember.staffType === "INHOUSE" ? "gr" : "am"}>
                                 {staffMember.staffType === "INHOUSE" ? "In-house" : "External"}
                               </Badge>
-                            ) : (
-                              <span style={{ color: "var(--tx3)" }}>--</span>
-                            )}
-                          </td>
-                          <td>
-                            {staffMember?.withEquipment ? (
-                              <Badge variant="bl">
-                                {staffMember.equipmentDesc ? `+${staffMember.equipmentDesc.split(",")[0]}` : "Yes"}
-                              </Badge>
-                            ) : staffMember ? (
-                              <span style={{ color: "var(--tx3)", fontSize: "11.5px" }}>No</span>
                             ) : (
                               <span style={{ color: "var(--tx3)" }}>--</span>
                             )}
@@ -829,8 +818,8 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                   border: "1px solid var(--sem-gr-bdr)",
                   borderRadius: 10,
                 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--sem-gr-tx)", marginBottom: 10 }}>
-                    ✓ Confirm crew assignments
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--sem-gr-tx)", marginBottom: 10, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <Check size={14} strokeWidth={3} /> Confirm crew assignments
                   </div>
 
                   {/* Summary of what will be saved */}
@@ -853,7 +842,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                         }}>
                           <div>
                             <span style={{ fontWeight: 600, color: "var(--tx)" }}>{pos?.position || `#${posNo}`}</span>
-                            <span style={{ color: "var(--tx3)", margin: "0 6px" }}>→</span>
+                            <ArrowRight size={11} style={{ color: "var(--tx3)", margin: "0 4px", display: "inline", verticalAlign: "middle" }} />
                             <span style={{ color: "var(--tx2)" }}>{staffMember?.name || "—"}</span>
                           </div>
                           <div style={{ fontFamily: "var(--font-mono)", color: "var(--gr)", fontWeight: 600, fontSize: 12 }}>
@@ -886,7 +875,7 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                         onClick={() => { setShowConfirmSave(false); handleSave(); }}
                         disabled={saving}
                       >
-                        {saving ? "Saving…" : "✓ Confirm & save"}
+                        {saving ? "Saving…" : <><Check size={13} strokeWidth={3} /> Confirm & save</>}
                       </button>
                     </div>
                   </div>

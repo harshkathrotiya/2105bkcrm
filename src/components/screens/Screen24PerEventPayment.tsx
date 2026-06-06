@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -265,14 +266,14 @@ export default function Screen24PerEventPayment() {
         breadcrumb={`Quotations › ${quotation.quoteNo || "Draft"} › Staff Payments`}
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
-            <Link href={`/inquiries/${inquiryId}`} className="btn">← Back to inquiry</Link>
+            <Link href={`/inquiries/${inquiryId}`} className="btn"><ArrowLeft size={13} /> Back to inquiry</Link>
             {canPay && (
               <button
                 onClick={handlePayAllPending}
                 className="btn btn-success"
                 disabled={bulkSubmitting || aggregates.pending === 0}
               >
-                {bulkSubmitting ? "Processing..." : "Pay All Pending ↗"}
+                {bulkSubmitting ? "Processing..." : "Pay All Pending"}
               </button>
             )}
           </div>

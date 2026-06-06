@@ -25,6 +25,7 @@ import {
   ArrowRight,
   CalendarCheck,
   Wrench,
+  PartyPopper,
 } from "lucide-react";
 
 export default function Screen00Dashboard() {
@@ -275,8 +276,8 @@ export default function Screen00Dashboard() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {todayEvents.length === 0 ? (
-                  <div style={{ padding: "20px", textAlign: "center", background: "var(--s2)", borderRadius: "8px", border: "1px solid var(--b1)", color: "var(--tx3)", fontSize: "12px" }}>
-                    🎉 Nothing scheduled today.
+                  <div style={{ padding: "20px", textAlign: "center", background: "var(--s2)", borderRadius: "8px", border: "1px solid var(--b1)", color: "var(--tx3)", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                    <PartyPopper size={14} /> Nothing scheduled today.
                   </div>
                 ) : (
                   todayEvents.map((evt) => (

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { X } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -569,7 +570,7 @@ export default function Screen05QuotationForm() {
               onClick={handleSave}
               disabled={!selectedInquiry || saving}
             >
-              {saving ? "Saving..." : existingQuotation ? "Update quotation ↗" : "Save quotation ↗"}
+              {saving ? "Saving..." : existingQuotation ? "Update quotation" : "Save quotation"}
             </button>
           ) : (
             <span className="text-[11px] text-tx3">View only — you don&apos;t have {existingQuotation ? "edit" : "create"} access.</span>
@@ -784,7 +785,7 @@ export default function Screen05QuotationForm() {
                       style={{ width: 80 }}
                     />
                     <button className="btn btn-primary text-[10px]" onClick={handleAddPosition}>Add</button>
-                    <button className="btn text-[10px]" onClick={() => { setAddingPosition(false); setNewPosition(""); setNewPositionEquip(""); setNewPositionRate(0); }}>✕</button>
+                    <button className="btn text-[10px]" onClick={() => { setAddingPosition(false); setNewPosition(""); setNewPositionEquip(""); setNewPositionRate(0); }}><X size={11} /></button>
                   </div>
                 ) : (
                   <button className="btn ml-auto text-[10px]" onClick={() => setAddingPosition(true)}>+ Add position</button>
@@ -871,7 +872,7 @@ export default function Screen05QuotationForm() {
                               onClick={() => removeRow(row.no)}
                               disabled={rows.length <= 1}
                             >
-                              ✕
+                              <X size={11} />
                             </button>
                           </td>
                         </tr>

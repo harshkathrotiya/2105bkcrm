@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { Settings, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
@@ -382,13 +383,13 @@ export default function Screen03Calendar() {
               </button>
             </div>
             <button className="btn" onClick={() => navigate(-1)}>
-              ‹ Prev
+              <ChevronLeft size={13} /> Prev
             </button>
             <button className="btn" onClick={goToday}>
               Today
             </button>
             <button className="btn" onClick={() => navigate(1)}>
-              Next ›
+              Next <ChevronRight size={13} />
             </button>
             {canCreateInquiry && (
               <Link href="/inquiries/new" className="btn btn-primary ml-2">
@@ -628,7 +629,7 @@ export default function Screen03Calendar() {
                   className="btn btn-primary flex-1 justify-center text-center"
                   onClick={() => setSelectedEvent(null)}
                 >
-                  View inquiry →
+                  View inquiry <ArrowRight size={12} />
                 </Link>
               </div>
               {targetInquiryId && (
@@ -656,7 +657,7 @@ export default function Screen03Calendar() {
                     className="btn justify-center text-center text-[11px] py-1.5"
                     onClick={() => setSelectedEvent(null)}
                   >
-                    Warehouse Check ⚙
+                    Warehouse Check <Settings size={11} />
                   </Link>
                 </div>
               )}

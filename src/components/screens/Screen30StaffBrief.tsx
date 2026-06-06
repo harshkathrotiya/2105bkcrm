@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Printer, Send, Check, ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -58,23 +59,23 @@ export default function Screen30StaffBrief({ inquiryId, staffId }: Props) {
     const { inquiry, staff, assignment, eventScale } = data;
     if (!assignment) return "";
 
-    return `*📋 Event Brief — BK Media*
+    return `*Event Brief — BK Media*
 
-Namaste ${staff.name} bhai 🙏
+Namaste ${staff.name} bhai
 Tamara next event ni details:
 
-📅 *Date:* ${formatDate(inquiry.startDate)} – ${formatDate(inquiry.endDate)}
-⏰ *Reporting time:* ${assignment.reportingTime || "09:00 AM"}
-📍 *Venue:* ${inquiry.venue}
-🎯 *Your position:* ${assignment.positionName || "Operator"}
+*Date:* ${formatDate(inquiry.startDate)} – ${formatDate(inquiry.endDate)}
+*Reporting time:* ${assignment.reportingTime || "09:00 AM"}
+*Venue:* ${inquiry.venue}
+*Your position:* ${assignment.positionName || "Operator"}
 *Equipment:* ${staff.withEquipment ? (staff.equipmentDesc || "Own Gear") : "Provided by BK Media"}
-👔 *Event:* ${inquiry.eventName || inquiry.eventType} — ${inquiry.client.name}
+*Event:* ${inquiry.eventName || inquiry.eventType} — ${inquiry.client.name}
 
 *Event scale:*
-👥 Total staff: ${eventScale.totalStaff}
+Total staff: ${eventScale.totalStaff}
 Camera positions: ${eventScale.cameraCount}
-🎛 Control room: ${eventScale.hasControlRoom ? "Yes" : "No"}
-🏗 Crane: ${eventScale.hasCrane ? "Yes" : "No"}
+Control room: ${eventScale.hasControlRoom ? "Yes" : "No"}
+Crane: ${eventScale.hasCrane ? "Yes" : "No"}
 
 *Important:*
 • ID card / Aadhar sathe aavo
@@ -111,7 +112,7 @@ Koi sawaal hoy to call karo: +91 98250 00000`;
         <div className="text-center py-12 text-tx3">
           {error || "Could not retrieve staff brief details."}
           <div className="mt-4">
-            <button className="btn" onClick={() => router.back()}>← Go Back</button>
+            <button className="btn" onClick={() => router.back()}><ArrowLeft size={13} /> Go Back</button>
           </div>
         </div>
       </ScreenFrame>
@@ -126,7 +127,7 @@ Koi sawaal hoy to call karo: +91 98250 00000`;
         <div className="text-center py-12 text-tx3">
           No assignment record found for <strong>{staff.name}</strong> on this event.
           <div className="mt-4">
-            <button className="btn" onClick={() => router.back()}>← Go Back</button>
+            <button className="btn" onClick={() => router.back()}><ArrowLeft size={13} /> Go Back</button>
           </div>
         </div>
       </ScreenFrame>
@@ -147,9 +148,9 @@ Koi sawaal hoy to call karo: +91 98250 00000`;
         }
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
-            <button className="btn" onClick={() => window.print()}>⎙ Print / Save PDF</button>
+            <button className="btn" onClick={() => window.print()}><Printer size={13} /> Print / Save PDF</button>
             <button className="btn btn-primary" onClick={handleBroadcast} disabled={broadcasting}>
-              {broadcasting ? "Broadcasting..." : "📲 WhatsApp Broadcast"}
+              {broadcasting ? "Broadcasting..." : <><Send size={13} /> WhatsApp Broadcast</>}
             </button>
             <button className="btn" onClick={() => router.back()}>Back</button>
           </div>
@@ -279,7 +280,7 @@ Koi sawaal hoy to call karo: +91 98250 00000`;
             className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-[13px] font-medium shadow-lg"
             style={{ background: "var(--sem-gr-bg)", border: "1px solid var(--sem-gr-bdr)", color: "var(--sem-gr-tx)" }}
           >
-            <span>✓</span>
+            <Check size={15} strokeWidth={3} />
             <span>{toast.msg}</span>
           </div>
         )}

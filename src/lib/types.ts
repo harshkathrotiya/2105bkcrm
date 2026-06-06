@@ -151,6 +151,9 @@ export interface Equipment {
   ownerStaffName?: string | null;
   defaultRate?: number | null;
   department?: "VIDEO" | "LED";
+  // Derived (not stored): true when an active booking (OUT/BOOKED, not RETURNED)
+  // covers today. Availability is date-based, not a permanent status flag.
+  inUseToday?: boolean;
 }
 
 export interface Kit {
@@ -248,7 +251,7 @@ export interface StaffPayment {
   assignmentId?: number | null;
   inquiryId?: string | null;
   amount: number;
-  paymentType: "PER_EVENT" | "MONTHLY_SALARY";
+  paymentType: "PER_EVENT" | "MONTHLY_SALARY" | "EQUIPMENT_RENTAL";
   paymentMethod: "CASH" | "UPI" | "BANK_TRANSFER" | "CHEQUE";
   referenceNo?: string | null;
   month?: string | null;

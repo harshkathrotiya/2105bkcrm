@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Check, AlertTriangle, ArrowUpRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -180,7 +181,7 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                 onClick={handleMarkApproved}
                 disabled={quotation.status === "Approved"}
               >
-                ✓ Mark approved
+                <Check size={13} strokeWidth={3} /> Mark approved
               </button>
             )}
             {canEditQuote && (
@@ -197,7 +198,7 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                   });
                 }}
               >
-                WhatsApp ↗
+                WhatsApp <ArrowUpRight size={13} />
               </button>
             )}
             <button className="btn btn-primary" onClick={handleDownloadPDF}>
@@ -218,9 +219,10 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
             border: "1px solid var(--sem-notif-bdr)",
             color: "var(--acc)",
             marginBottom: "20px",
+            gap: "8px",
           }}
         >
-          ⚠ Internal: Client ને item rates show નહીં થાય — Position + Equipment +
+          <AlertTriangle size={14} style={{ flexShrink: 0 }} /> Internal: Client ને item rates show નહીં થાય — Position + Equipment +
           Days only
         </div>
 
@@ -498,7 +500,7 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                         });
                       }}
                     >
-                      WhatsApp send ↗
+                      WhatsApp send <ArrowUpRight size={13} />
                     </button>
                     <button
                       className="btn justify-center"
@@ -513,14 +515,14 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
                         });
                       }}
                     >
-                      Email send ↗
+                      Email send <ArrowUpRight size={13} />
                     </button>
                     <button
                       className="btn btn-success justify-center"
                       onClick={handleMarkApproved}
                       disabled={quotation.status === "Approved"}
                     >
-                      ✓ Mark approved
+                      <Check size={13} strokeWidth={3} /> Mark approved
                     </button>
                     <button
                       className="btn justify-center"

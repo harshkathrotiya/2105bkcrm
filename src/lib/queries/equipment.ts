@@ -85,8 +85,36 @@ export async function getEquipment(filters: EquipmentFilters = {}): Promise<{ it
     db.equipment.count({ where }),
   ]);
 
+  // Derive "in use today" from active bookings covering today (date-based), rather
+  // than a permanent status column. An item is in use if it — or its kit — has a
+  // non-returned booking whose date range includes today.
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const equipmentIds = rows.map((r) => r.id);
+  const kitIds = rows.map((r) => r.kit_id).filter((id): id is number => id != null);
+
+  const activeBookings = (equipmentIds.length || kitIds.length)
+    ? await db.equipmentBooking.findMany({
+        where: {
+          status: { not: "RETURNED" },
+          booked_from: { lte: todayStr },
+          booked_to: { gte: todayStr },
+          OR: [
+            { equipment_id: { in: equipmentIds } },
+            ...(kitIds.length ? [{ kit_id: { in: kitIds } }] : []),
+          ],
+        },
+        select: { equipment_id: true, kit_id: true },
+      })
+    : [];
+
+  const inUseEquipmentIds = new Set(activeBookings.map((b) => b.equipment_id).filter((id): id is number => id != null));
+  const inUseKitIds = new Set(activeBookings.map((b) => b.kit_id).filter((id): id is number => id != null));
+
   return {
-    items: rows.map(mapEquipment),
+    items: rows.map((r) => ({
+      ...mapEquipment(r),
+      inUseToday: inUseEquipmentIds.has(r.id) || (r.kit_id != null && inUseKitIds.has(r.kit_id)),
+    })),
     total,
   };
 }
@@ -96,7 +124,24 @@ export async function getEquipmentById(id: number): Promise<Equipment | undefine
     where: { id },
     include: { kit: true, vendor: true, owner_staff: true },
   });
-  return row ? mapEquipment(row) : undefined;
+  if (!row) return undefined;
+
+  // Derive "in use today" from an active booking covering today (date-based).
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const activeBooking = await db.equipmentBooking.findFirst({
+    where: {
+      status: { not: "RETURNED" },
+      booked_from: { lte: todayStr },
+      booked_to: { gte: todayStr },
+      OR: [
+        { equipment_id: id },
+        ...(row.kit_id != null ? [{ kit_id: row.kit_id }] : []),
+      ],
+    },
+    select: { id: true },
+  });
+
+  return { ...mapEquipment(row), inUseToday: !!activeBooking };
 }
 
 export async function getEquipmentDetailsById(id: number) {

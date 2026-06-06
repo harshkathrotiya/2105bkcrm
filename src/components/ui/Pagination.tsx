@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 interface PaginationProps {
   page: number;
   totalPages: number;
@@ -53,7 +55,7 @@ export default function Pagination({
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
-          ‹ Prev
+          <ChevronLeft size={13} /> Prev
         </button>
         {pages.map((p, i) =>
           p === "..." ? (
@@ -76,7 +78,7 @@ export default function Pagination({
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >
-          Next ›
+          Next <ChevronRight size={13} />
         </button>
       </div>
     </nav>

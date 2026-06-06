@@ -395,6 +395,24 @@ export function confirmEquipmentBooking(id: number): Promise<any> {
   });
 }
 
+// Records equipment rental for a staff-owned equipment booking. Rental is always
+// credited to the equipment owner. Pass ratePerDay = 0 to clear the rental.
+export function updateBookingRental(
+  id: number,
+  ratePerDay: number
+): Promise<{
+  id: number;
+  rentalOwnerStaffId: number | null;
+  rentalRatePerDay: number | null;
+  totalRental: number | null;
+  days: number;
+}> {
+  return request(`/api/equipment-bookings/${id}/rental`, {
+    method: "PUT",
+    body: JSON.stringify({ ratePerDay }),
+  });
+}
+
 export function returnEquipmentBooking(id: number): Promise<any> {
   return request(`/api/equipment-bookings/${id}/return`, {
     method: "PUT",
@@ -464,6 +482,20 @@ export function fetchStaffHistory(id: number): Promise<any[]> {
 
 export function fetchStaffSummary(id: number): Promise<any> {
   return request(`/api/staff/${id}/summary`);
+}
+
+// Per-event equipment rental owed to this staff member as the OWNER of the gear.
+export function fetchStaffRentals(id: number): Promise<{
+  bookingId: number;
+  inquiryId: string;
+  eventName: string;
+  startDate: string;
+  endDate: string;
+  equipmentName: string;
+  ratePerDay: number;
+  totalRental: number;
+}[]> {
+  return request(`/api/staff/${id}/rentals`);
 }
 
 // ── Staff Assignments ────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AlertTriangle } from "lucide-react";
 import { TextField } from "../ui/Field";
 import Button from "../ui/Button";
 import * as api from "@/lib/api";
@@ -98,7 +99,7 @@ export default function Screen31Login() {
               gap: "8px",
             }}
           >
-            <span style={{ fontSize: "14px" }} aria-hidden="true">⚠</span>
+            <AlertTriangle size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
@@ -139,7 +140,7 @@ export default function Screen31Login() {
               fontWeight: 500,
             }}
           >
-            {loading ? "Signing in..." : "Sign In ↗"}
+            {loading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Check, ArrowUpRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -33,6 +34,20 @@ interface StaffSummary {
   totalEarned: number;
   paid: number;
   pending: number;
+  rentalEarned?: number;
+  rentalPaid?: number;
+  rentalPending?: number;
+}
+
+interface StaffRentalItem {
+  bookingId: number;
+  inquiryId: string;
+  eventName: string;
+  startDate: string;
+  endDate: string;
+  equipmentName: string;
+  ratePerDay: number;
+  totalRental: number;
 }
 
 export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
@@ -45,6 +60,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
 
   const [history, setHistory] = useState<StaffHistoryItem[]>([]);
   const [summary, setSummary] = useState<StaffSummary | null>(null);
+  const [rentals, setRentals] = useState<StaffRentalItem[]>([]);
   const [fetchedStaff, setFetchedStaff] = useState<Staff | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -94,9 +110,10 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
     async function loadData() {
       setLoadingDetails(true);
       try {
-        const [histData, summData, memberData, equipRes, catOpts] = await Promise.all([
+        const [histData, summData, rentalData, memberData, equipRes, catOpts] = await Promise.all([
           api.fetchStaffHistory(staffId),
           api.fetchStaffSummary(staffId),
+          api.fetchStaffRentals(staffId).catch(() => []),
           api.fetchStaffItem(staffId).catch(() => null),
           api.fetchEquipment({ ownerStaffId: staffId, limit: 200 }).catch(() => ({ items: [] })),
           api.fetchOptions("EQUIPMENT_CATEGORY").catch(() => []),
@@ -104,6 +121,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
         if (active) {
           setHistory(histData);
           setSummary(summData);
+          setRentals(rentalData);
           if (memberData) setFetchedStaff(memberData);
           setOwnedEquipment(equipRes.items);
           setEquipCategories(catOpts.map((o: any) => o.value));
@@ -121,6 +139,34 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
   const refreshOwnedEquipment = async () => {
     const res = await api.fetchEquipment({ ownerStaffId: staffId, limit: 200 }).catch(() => ({ items: [] }));
     setOwnedEquipment(res.items);
+  };
+
+  const [settlingRental, setSettlingRental] = useState(false);
+  const handleSettleRental = async () => {
+    const pending = summary?.rentalPending || 0;
+    if (pending <= 0) return;
+    const ok = await confirm({
+      message: `Record an equipment rental payment of ₹${pending.toLocaleString("en-IN")} to ${staffMember?.name}?`,
+      confirmLabel: "Record payment",
+    });
+    if (!ok) return;
+    setSettlingRental(true);
+    try {
+      await api.recordStaffPayment({
+        staffId,
+        amount: pending,
+        paymentType: "EQUIPMENT_RENTAL",
+        paymentMethod: "BANK_TRANSFER",
+        notes: "Equipment rental settlement",
+      } as any);
+      const summData = await api.fetchStaffSummary(staffId);
+      setSummary(summData);
+      toast.success("Rental payment recorded.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to record rental payment");
+    } finally {
+      setSettlingRental(false);
+    }
   };
 
   const handleAddEquipment = async () => {
@@ -265,7 +311,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
               </button>
             ))}
             {canEditStaff && (
-              <Link href={`/staff/${staffMember.id}/edit`} className="btn btn-primary">Edit Profile ↗</Link>
+              <Link href={`/staff/${staffMember.id}/edit`} className="btn btn-primary">Edit Profile <ArrowUpRight size={13} /></Link>
             )}
           </div>
         }
@@ -413,7 +459,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                       className="btn btn-success"
                       style={{ fontSize: "10.5px", padding: "6px 8px", justifyContent: "center", display: "flex" }}
                     >
-                      <span style={{ color: "var(--gr)", marginRight: "4px" }}>✓</span> Aadhar Front
+                      <Check size={12} strokeWidth={3} style={{ color: "var(--gr)", marginRight: "4px" }} /> Aadhar Front
                     </a>
                   ) : (
                     <div className="btn" style={{ fontSize: "10.5px", padding: "6px 8px", justifyContent: "center", display: "flex", opacity: 0.4, cursor: "not-allowed" }}>
@@ -428,7 +474,7 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                       className="btn btn-success"
                       style={{ fontSize: "10.5px", padding: "6px 8px", justifyContent: "center", display: "flex" }}
                     >
-                      <span style={{ color: "var(--gr)", marginRight: "4px" }}>✓</span> Aadhar Back
+                      <Check size={12} strokeWidth={3} style={{ color: "var(--gr)", marginRight: "4px" }} /> Aadhar Back
                     </a>
                   ) : (
                     <div className="btn" style={{ fontSize: "10.5px", padding: "6px 8px", justifyContent: "center", display: "flex", opacity: 0.4, cursor: "not-allowed" }}>
@@ -469,6 +515,65 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
                       ₹{summary.pending.toLocaleString("en-IN")}
                     </strong>
                   </div>
+
+                  {/* Equipment rental — owner's separate income stream */}
+                  {!!summary.rentalEarned && (
+                    <>
+                      <div style={{ borderTop: "1px dashed var(--bdr)", margin: "8px 0 4px" }} />
+                      <div className="row-item">
+                        <span style={{ color: "var(--tx3)" }}>Equipment rental earned</span>
+                        <strong style={{ color: "var(--gr)", fontFamily: "var(--font-mono)" }}>
+                          ₹{(summary.rentalEarned || 0).toLocaleString("en-IN")}
+                        </strong>
+                      </div>
+                      <div className="row-item">
+                        <span style={{ color: "var(--tx3)" }}>Rental paid</span>
+                        <span style={{ color: "var(--gr)", fontFamily: "var(--font-mono)" }}>
+                          ₹{(summary.rentalPaid || 0).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      <div className="row-item">
+                        <span style={{ color: "var(--tx3)" }}>Rental pending</span>
+                        <strong style={{ color: "var(--acc)", fontFamily: "var(--font-mono)" }}>
+                          ₹{(summary.rentalPending || 0).toLocaleString("en-IN")}
+                        </strong>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Equipment Rental Income — per-event, credited to this owner */}
+              {rentals.length > 0 && (
+                <div className="card" style={{ padding: "16px", marginBottom: 0, marginTop: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div className="ct">Equipment Rental Income</div>
+                    {canEditStaff && (summary?.rentalPending || 0) > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ padding: "4px 10px", fontSize: "11px" }}
+                        disabled={settlingRental}
+                        onClick={handleSettleRental}
+                      >
+                        {settlingRental ? "Recording…" : `Pay ₹${(summary?.rentalPending || 0).toLocaleString("en-IN")}`}
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: "11px", color: "var(--tx3)", marginBottom: 8 }}>
+                    Rental credited to {staffMember?.name} as the equipment owner, regardless of who used the gear.
+                  </div>
+                  {rentals.map((r) => (
+                    <div key={r.bookingId} className="row-item" style={{ alignItems: "flex-start" }}>
+                      <span style={{ color: "var(--tx3)" }}>
+                        <div style={{ color: "var(--tx)", fontWeight: 500 }}>{r.equipmentName}</div>
+                        <div style={{ fontSize: "10px" }}>{r.eventName} · {r.startDate} → {r.endDate}</div>
+                      </span>
+                      <strong style={{ color: "var(--gr)", fontFamily: "var(--font-mono)" }}>
+                        ₹{r.totalRental.toLocaleString("en-IN")}
+                      </strong>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

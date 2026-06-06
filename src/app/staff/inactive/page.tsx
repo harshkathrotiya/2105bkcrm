@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import SectionHeader from "@/components/ui/SectionHeader";
 import ScreenFrame from "@/components/ui/ScreenFrame";
 import Badge from "@/components/ui/Badge";
@@ -70,7 +71,7 @@ export default function InactiveStaffPage() {
       <ScreenFrame
         breadcrumb="Staff › Inactive"
         actions={
-          <Link href="/staff" className="btn">← Back to Staff List</Link>
+          <Link href="/staff" className="btn"><ArrowLeft size={13} /> Back to Staff List</Link>
         }
       >
         {loading ? (

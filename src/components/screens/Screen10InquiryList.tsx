@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -333,7 +334,7 @@ export default function Screen10InquiryList() {
                               className="btn btn-primary text-[10px] px-[8px] py-[4px]"
                               title="View invoice"
                             >
-                              Invoice →
+                              Invoice <ArrowRight size={11} />
                             </Link>
                           )}
                           {inq.status === "Confirmed" && (canAssignCrew || canViewWarehouse) && (

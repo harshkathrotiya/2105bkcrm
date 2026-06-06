@@ -54,6 +54,7 @@ export async function getVendorById(id: number): Promise<Vendor | undefined> {
       productName: row.product_name,
       category: row.category,
       quantity: row.quantity,
+      quantityUnit: (row.quantity_unit as "pieces" | "pair" | "metre") || "pieces",
       serialNumber: row.serial_number,
       bodyName: row.body_name,
       kitId: row.kit_id,

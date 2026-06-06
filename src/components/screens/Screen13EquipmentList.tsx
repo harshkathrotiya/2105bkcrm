@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { X, Upload, Download } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -286,11 +287,11 @@ export default function Screen13EquipmentList() {
               disabled={exporting}
               title="Download all equipment as a CSV file"
             >
-              {exporting ? "Exporting…" : "↑ Export CSV"}
+              {exporting ? "Exporting…" : <><Upload size={13} /> Export CSV</>}
             </button>
             {canCreate && (
               <button className="btn" onClick={() => setShowCsvModal(true)}>
-                ↓ Import CSV
+                <Download size={13} /> Import CSV
               </button>
             )}
             <Link href="/reports/assets/pdf" className="btn">
@@ -375,7 +376,6 @@ export default function Screen13EquipmentList() {
                 >
                   <option value="">All Statuses</option>
                   <option value="AVAILABLE">Available</option>
-                  <option value="IN_USE">In Use</option>
                   <option value="MAINTENANCE">Maintenance</option>
                   <option value="SOLD">Sold</option>
                   <option value="RETIRED">Retired</option>
@@ -423,6 +423,11 @@ export default function Screen13EquipmentList() {
                                     Vendor: {item.vendorName || "Outsourced"}
                                   </Badge>
                                 )}
+                                {item.ownershipType === "STAFF" && (
+                                  <Badge variant="bl">
+                                    Staff: {item.ownerStaffName || "Staff-owned"}
+                                  </Badge>
+                                )}
                               </div>
                               {item.bodyName && (
                                 <div style={{ fontSize: "10px", color: "var(--tx3)", marginTop: "1px" }}>
@@ -447,7 +452,11 @@ export default function Screen13EquipmentList() {
                               )}
                             </td>
                             <td>
-                              <Badge variant={getStatusBadgeVariant(item.status)}>{item.status}</Badge>
+                              {item.status === "AVAILABLE" && item.inUseToday ? (
+                                <Badge variant="bl">IN_USE</Badge>
+                              ) : (
+                                <Badge variant={getStatusBadgeVariant(item.status)}>{item.status}</Badge>
+                              )}
                             </td>
                             <td>{item.respPerson || <span style={{ color: "var(--tx3)" }}>—</span>}</td>
                           </tr>
@@ -481,7 +490,7 @@ export default function Screen13EquipmentList() {
           <div className="sf" style={{ width: "100%", maxWidth: "600px", background: "var(--s1)" }}>
             <div className="tb">
               <span style={{ fontWeight: 600, color: "var(--tx)" }}>Import Equipment from CSV</span>
-              <button className="btn" style={{ padding: "4px 8px" }} onClick={() => setShowCsvModal(false)}>✕</button>
+              <button className="btn" style={{ padding: "4px 8px" }} onClick={() => setShowCsvModal(false)}><X size={13} /></button>
             </div>
             <form onSubmit={handleImportCsv} style={{ padding: "20px" }}>
               <p style={{ color: "var(--tx2)", fontSize: "11.5px", marginBottom: "12px", lineHeight: "1.5" }}>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { ClipboardList, FileText, Banknote, Check, AlertTriangle, BarChart3, Circle, ArrowRight, ArrowLeft, ArrowUpRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -507,7 +508,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
                       </div>
                     </div>
                     <Link href={`/warehouse/check?inquiryId=${inq.id}`} className="btn btn-primary text-[11px] py-1.5 px-3">
-                      Run Audit ↗
+                      Run Audit <ArrowUpRight size={12} />
                     </Link>
                   </div>
                 ))
@@ -533,7 +534,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
               </svg>
               <div className="text-[16px] font-medium text-tx2 mb-1">Inquiry not found</div>
               <div className="text-[12px] text-tx3">{error || "Provide a valid inquiryId parameter."}</div>
-              <Link href="/calendar" className="btn mt-4 inline-block">← Back to Calendar</Link>
+              <Link href="/calendar" className="btn mt-4 inline-flex items-center gap-1.5"><ArrowLeft size={13} /> Back to Calendar</Link>
             </div>
           </div>
         </ScreenFrame>
@@ -545,18 +546,12 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
 
   // Filter quotation rows into Green (Available Stock), Amber (Conflicts / Vendor Fallback), and Staff-owned
   // Staff rows: quotation row whose matched equipment is owned by a staff member
-  const staffEquipRows = mappedQuotationRows.filter((r) => {
-    const matchedEq = r.booking?.equipmentId
-      ? data?.equipment?.find((eq: any) => eq.id === r.booking?.equipmentId)
-      : data?.equipment?.find((eq: any) => {
-          const name = eq.productName?.toLowerCase();
-          return name && r.row.equip?.toLowerCase().includes(name.split(" ")[0]);
-        });
-    return matchedEq?.ownershipType === "STAFF";
-  });
-  const staffEquipRowNos = new Set(staffEquipRows.map((r) => r.row.no));
-  const greenRows = mappedQuotationRows.filter((r) => !staffEquipRowNos.has(r.row.no) && (r.hasAvailableStock || (r.booking && !r.booking.vendorId)));
-  const amberRows = mappedQuotationRows.filter((r) => !staffEquipRowNos.has(r.row.no) && !r.hasAvailableStock && (!r.booking || r.booking.vendorId));
+  // Staff-owned equipment is treated like any other in-house item — it books, hands
+  // out, and returns through the normal green-row flow. Its rental is auto-credited
+  // to the owner on the booking (see equipment-bookings POST) and surfaces in the
+  // owner's Staff Profile. No separate staff section.
+  const greenRows = mappedQuotationRows.filter((r) => r.hasAvailableStock || (r.booking && !r.booking.vendorId));
+  const amberRows = mappedQuotationRows.filter((r) => !r.hasAvailableStock && (!r.booking || r.booking.vendorId));
 
   const wrapInFrame = (content: React.ReactNode) => {
     if (embedded) return <>{content}</>;
@@ -643,30 +638,30 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             {!embedded && (
               <Link href={inquiryId ? `/inquiries/${inquiryId}` : "/inquiries"} className="btn">
-                ← Back to inquiry
+                <ArrowLeft size={13} /> Back to inquiry
               </Link>
             )}
             {data?.quotation && (
               <Link href={`/quotations/${data.quotation.id}/pdf`} className="btn">
-                📋 Quotation
+                <ClipboardList size={13} /> Quotation
               </Link>
             )}
             {invoice && (
               <Link href={`/invoices/${invoice.id}`} className="btn">
-                📄 Invoice
+                <FileText size={13} /> Invoice
               </Link>
             )}
             <Link
               href={`/staff/assign?inquiryId=${inquiryId}`}
               className="btn btn-warning"
             >
-              → Assign Positions
+              <ArrowRight size={13} /> Assign Positions
             </Link>
             <Link
               href={`/staff/payments?inquiryId=${inquiryId}`}
               className="btn"
             >
-              💵 Staff Payments
+              <Banknote size={13} /> Staff Payments
             </Link>
             <button
               type="button"
@@ -674,7 +669,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
               onClick={handleBulkConfirmHandovers}
               disabled={bulkConfirming || data.bookings.filter(b => b.status === "BOOKED").length === 0}
             >
-              {bulkConfirming ? "Confirming..." : "✓ Bulk Confirm Handover (Set OUT)"}
+              {bulkConfirming ? "Confirming..." : <><Check size={13} strokeWidth={3} /> Bulk Confirm Handover (Set OUT)</>}
             </button>
           </div>
         }
@@ -759,7 +754,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
 
             {/* LED Checklist Card */}
             <div className="card">
-              <div className="card-t">📋 LED Required Checklist</div>
+              <div className="card-t"><ClipboardList size={13} /> LED Required Checklist</div>
               <table className="tbl text-[11px]">
                 <thead>
                   <tr>
@@ -916,8 +911,8 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
 
                   {shortfallSqft > 0 && (
                     <div>
-                      <div className="text-[11px] font-semibold text-am" style={{ marginBottom: "6px" }}>
-                        ⚠️ Section 2 — Vendor needed (Shortfall: {shortfallSqft} sq.ft / {shortfallCabinets} cabinets)
+                      <div className="text-[11px] font-semibold text-am inline-flex items-center gap-1.5" style={{ marginBottom: "6px" }}>
+                        <AlertTriangle size={12} /> Section 2 — Vendor needed (Shortfall: {shortfallSqft} sq.ft / {shortfallCabinets} cabinets)
                       </div>
                       <table className="tbl text-[11.5px]">
                         <thead>
@@ -1027,7 +1022,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
 
                 <div style={{ flex: 0.8, minWidth: "220px" }}>
                   <div className="card" style={{ background: "var(--alt2)", padding: "12px", border: "1px solid var(--b1)", height: "100%" }}>
-                    <div className="text-[11px] font-bold text-bl uppercase tracking-wider" style={{ marginBottom: "10px" }}>📊 Live P&L Preview (Internal Only)</div>
+                    <div className="text-[11px] font-bold text-bl uppercase tracking-wider inline-flex items-center gap-1.5" style={{ marginBottom: "10px" }}><BarChart3 size={12} /> Live P&L Preview (Internal Only)</div>
                     {(() => {
                       const ledRow = data.quotation?.equipment?.find((r: any) => r.equip.includes("LED") || r.equip.toLowerCase() === "led screen");
                       const revenue = ledRow ? ledRow.amount : 0;
@@ -1072,8 +1067,8 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
         {/* GREEN LIST: BK STOCK AVAILABLE */}
         <div className="card" style={{ borderLeft: "5px solid var(--gr)", marginBottom: "25px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-            <h4 style={{ margin: 0, color: "var(--gr)", fontWeight: 600, fontSize: "14px" }}>
-              🟢 BK Media Stock Available ({greenRows.length})
+            <h4 style={{ margin: 0, color: "var(--gr)", fontWeight: 600, fontSize: "14px", display: "inline-flex", alignItems: "center", gap: "7px" }}>
+              <Circle size={11} fill="var(--gr)" stroke="var(--gr)" /> BK Media Stock Available ({greenRows.length})
             </h4>
             <span style={{ fontSize: "11px", color: "var(--tx3)" }}>BK owned equipment with no calendar overlaps</span>
           </div>
@@ -1193,7 +1188,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
                                 onClick={() => handleReturnItem(booking.id)}
                                 disabled={handoverLoading[booking.id]}
                               >
-                                {handoverLoading[booking.id] ? "Returning..." : "✓ Return Item"}
+                                {handoverLoading[booking.id] ? "Returning..." : <><Check size={12} strokeWidth={3} /> Return Item</>}
                               </button>
                             )}
                           </div>
@@ -1227,8 +1222,8 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
         {/* AMBER LIST: CONFLICTS / VENDOR FALLBACK */}
         <div className="card" style={{ borderLeft: "5px solid var(--am)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-            <h4 style={{ margin: 0, color: "var(--am)", fontWeight: 600, fontSize: "14px" }}>
-              🟡 Rental Vendor Fallback Required ({amberRows.length})
+            <h4 style={{ margin: 0, color: "var(--am)", fontWeight: 600, fontSize: "14px", display: "inline-flex", alignItems: "center", gap: "7px" }}>
+              <Circle size={11} fill="var(--am)" stroke="var(--am)" /> Rental Vendor Fallback Required ({amberRows.length})
             </h4>
             <span style={{ fontSize: "11px", color: "var(--tx3)" }}>Items with calendar conflicts or not owned by BK Media</span>
           </div>
@@ -1270,8 +1265,8 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
                       <td>
                         <strong style={{ color: "var(--tx)" }}>{row.equip}</strong>
                         {row.position && <div style={{ fontSize: "10px", color: "var(--tx3)", marginTop: "2px" }}>Pos: {row.position}</div>}
-                        <div style={{ fontSize: "10px", color: "var(--rd)", marginTop: "2px", fontWeight: 500 }}>
-                          ⚠️ Stock Unavailable (Out / Booked)
+                        <div style={{ fontSize: "10px", color: "var(--rd)", marginTop: "2px", fontWeight: 500, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <AlertTriangle size={11} /> Stock Unavailable (Out / Booked)
                         </div>
                       </td>
                       <td>
@@ -1387,114 +1382,6 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
         </div>
       </ScreenFrame>
 
-      {/* STAFF EQUIPMENT SECTION */}
-      {staffEquipRows.length > 0 && (
-        <div style={{ padding: "0 20px 20px" }}>
-          <div style={{ background: "var(--sem-bl-bg)", border: "1px solid var(--sem-bl-bdr)", borderRadius: "10px", overflow: "hidden" }}>
-            <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--sem-bl-bdr)", display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "16px" }}>🔵</span>
-              <span style={{ fontWeight: 600, fontSize: "13px", color: "var(--sem-bl-tx)" }}>
-                Staff-Owned Equipment ({staffEquipRows.length})
-              </span>
-              <span style={{ fontSize: "11px", color: "var(--tx3)", marginLeft: "4px" }}>
-                — Equipment owned by assigned staff. Enter rental rate per day to record equipment cost.
-              </span>
-            </div>
-            <table className="tbl" style={{ margin: 0 }}>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Equipment</th>
-                  <th>Owner (Staff)</th>
-                  <th>Days</th>
-                  <th>Rate / Day (₹)</th>
-                  <th>Total Cost</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {staffEquipRows.map(({ row, booking }) => {
-                  const matchedEq = booking?.equipmentId
-                    ? data?.equipment?.find((eq: any) => eq.id === booking.equipmentId)
-                    : data?.equipment?.find((eq: any) => eq.productName?.toLowerCase().includes(row.equip?.toLowerCase().split(" ")[0]));
-                  const ownerStaffId = matchedEq?.ownerStaffId;
-                  const ownerStaffName = matchedEq?.ownerStaffName || "Staff";
-                  // Find the staff assignment for this staff member
-                  const assignment = data?.staffAssignments?.find((a: any) => a.staffId === ownerStaffId);
-                  const savedRate = assignment?.equipmentRatePerDay || matchedEq?.defaultRate || 0;
-                  const days = row.days || eventDays;
-                  const rateInputId = `staff-eq-rate-${row.no}`;
-
-                  return (
-                    <tr key={row.no}>
-                      <td style={{ fontWeight: 600 }}>{row.no}</td>
-                      <td>
-                        <div style={{ fontWeight: 500, fontSize: "12px" }}>{row.equip}</div>
-                        <div style={{ fontSize: "10px", color: "var(--tx3)" }}>{row.position}</div>
-                      </td>
-                      <td>
-                        <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--sem-bl-tx)" }}>
-                          {ownerStaffName}
-                        </span>
-                        {!assignment && (
-                          <div style={{ fontSize: "10px", color: "var(--rd)", marginTop: "2px" }}>
-                            Not yet assigned to this event
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ fontSize: "12px" }}>{days}</td>
-                      <td>
-                        <input
-                          id={rateInputId}
-                          className="finp"
-                          type="number"
-                          min="0"
-                          defaultValue={savedRate}
-                          style={{ width: "90px", padding: "3px 6px", fontSize: "12px" }}
-                          placeholder="0"
-                        />
-                      </td>
-                      <td style={{ fontSize: "12px", fontWeight: 500 }}>
-                        ₹{(savedRate * days).toLocaleString("en-IN")}
-                      </td>
-                      <td>
-                        {assignment ? (
-                          <button
-                            type="button"
-                            className="btn btn-primary"
-                            style={{ padding: "4px 10px", fontSize: "11px" }}
-                            onClick={async () => {
-                              const input = document.getElementById(rateInputId) as HTMLInputElement;
-                              const rate = parseFloat(input?.value || "0") || 0;
-                              try {
-                                await api.updateStaffAssignment(assignment.id, {
-                                  withEquipment: true,
-                                  equipmentRatePerDay: rate,
-                                });
-                                setToastMessage(`Equipment rate saved for ${ownerStaffName}!`);
-                                setShowToast(true);
-                                setTimeout(() => setShowToast(false), 1500);
-                                const updatedWh = await api.fetchWarehouseCheck(inquiryId!);
-                                setData(updatedWh);
-                              } catch (err: any) {
-                                toast.error(err.message || "Failed to save equipment rate");
-                              }
-                            }}
-                          >
-                            Save Rate
-                          </button>
-                        ) : (
-                          <span style={{ fontSize: "10px", color: "var(--tx3)" }}>Assign staff first</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
       {showToast && (
         <div
@@ -1506,7 +1393,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
             padding: "12px 16px",
           }}
         >
-          <span>✓</span>
+          <Check size={15} strokeWidth={3} />
           <span>{toastMessage}</span>
         </div>
       )}

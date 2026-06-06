@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { Check, X, Info, AlertTriangle, type LucideIcon } from "lucide-react";
 
 type ToastKind = "success" | "error" | "info" | "warning";
 
@@ -26,11 +27,11 @@ const KIND_CLASS: Record<ToastKind, string> = {
   warning: "bdg-am",
 };
 
-const KIND_ICON: Record<ToastKind, string> = {
-  success: "✓",
-  error: "✕",
-  info: "i",
-  warning: "!",
+const KIND_ICON: Record<ToastKind, LucideIcon> = {
+  success: Check,
+  error: X,
+  info: Info,
+  warning: AlertTriangle,
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -66,7 +67,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         role="region"
         aria-label="Notifications"
       >
-        {toasts.map((t) => (
+        {toasts.map((t) => {
+          const Icon = KIND_ICON[t.kind];
+          return (
           <div
             key={t.id}
             role={t.kind === "error" ? "alert" : "status"}
@@ -75,7 +78,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             style={{ animation: "toast-in 0.18s ease" }}
           >
             <span className={`badge ${KIND_CLASS[t.kind]} shrink-0`} aria-hidden="true">
-              {KIND_ICON[t.kind]}
+              <Icon size={13} strokeWidth={3} />
             </span>
             <span className="text-[12.5px] text-tx leading-snug flex-1">{t.message}</span>
             <button
@@ -84,10 +87,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               aria-label="Dismiss notification"
               className="text-tx3 hover:text-tx text-[14px] leading-none shrink-0"
             >
-              ×
+              <X size={14} />
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );

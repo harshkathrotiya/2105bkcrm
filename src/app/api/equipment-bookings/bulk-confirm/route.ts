@@ -24,6 +24,9 @@ export async function POST(request: NextRequest) {
 
     const nowStr = new Date().toISOString();
 
+    // Only the booking lifecycle is updated (→ OUT). Equipment.status is intentionally
+    // left untouched — availability is derived from bookings + date range, so items are
+    // never permanently stuck as "in use". See [id]/confirm/route.ts.
     await db.$transaction(async (tx) => {
       for (const id of bookingIds) {
         const booking = await tx.equipmentBooking.findUnique({ where: { id } });
@@ -33,30 +36,6 @@ export async function POST(request: NextRequest) {
           where: { id },
           data: { status: 'OUT', confirmed_by_id: 'system', confirmed_at: nowStr }
         });
-
-        if (booking.equipment_id) {
-          await tx.equipment.update({
-            where: { id: booking.equipment_id },
-            data: { status: 'IN_USE' }
-          });
-        }
-
-        if (booking.kit_id) {
-          await tx.equipment.updateMany({
-            where: { kit_id: booking.kit_id },
-            data: { status: 'IN_USE' }
-          });
-          const kit = await tx.kit.findUnique({
-            where: { id: booking.kit_id },
-            select: { main_body_id: true }
-          });
-          if (kit?.main_body_id) {
-            await tx.equipment.update({
-              where: { id: kit.main_body_id },
-              data: { status: 'IN_USE' }
-            });
-          }
-        }
       }
     });
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Check, Printer, ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -88,7 +89,7 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
         <div className="text-center py-12 text-tx3">
           {error || "Could not retrieve client requirements."}
           <div className="mt-4">
-            <button className="btn" onClick={() => router.back()}>← Go Back</button>
+            <button className="btn" onClick={() => router.back()}><ArrowLeft size={13} /> Go Back</button>
           </div>
         </div>
       </ScreenFrame>
@@ -111,10 +112,10 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
         }
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
-            <button className="btn" onClick={() => window.print()}>⎙ Print / Save PDF</button>
+            <button className="btn" onClick={() => window.print()}><Printer size={13} /> Print / Save PDF</button>
             {canEdit && (
               <button className="btn btn-success" onClick={handleSave} disabled={saving}>
-                {saving ? "Saving..." : "✓ Save Requirements"}
+                {saving ? "Saving..." : <><Check size={13} strokeWidth={3} /> Save Requirements</>}
               </button>
             )}
             <Link href={`/inquiries`} className="btn">Back to List</Link>
@@ -216,7 +217,7 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
             className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-[13px] font-medium shadow-lg"
             style={{ background: "var(--sem-gr-bg)", border: "1px solid var(--sem-gr-bdr)", color: "var(--sem-gr-tx)" }}
           >
-            <span>✓</span>
+            <Check size={15} strokeWidth={3} />
             <span>Client requirements updated successfully!</span>
           </div>
         )}

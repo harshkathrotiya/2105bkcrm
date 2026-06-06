@@ -338,7 +338,7 @@ export default function Screen04NewInquiry() {
                 onClick={handleSave}
                 disabled={!canSave || saving}
               >
-                {saving ? "Saving..." : editInquiry ? "Update inquiry ↗" : "Save inquiry ↗"}
+                {saving ? "Saving..." : editInquiry ? "Update inquiry" : "Save inquiry"}
               </button>
             </>
           ) : (

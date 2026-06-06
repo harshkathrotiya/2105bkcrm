@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, AlertTriangle, ArrowUpRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -85,7 +86,7 @@ export default function Screen08Invoice({ invoiceId }: Props) {
         actions={
           <>
             {statusBadge}
-            <button className="btn">WhatsApp ↗</button>
+            <button className="btn">WhatsApp <ArrowUpRight size={13} /></button>
             <button className="btn btn-primary" onClick={() => window.print()}>Download PDF</button>
           </>
         }
@@ -103,7 +104,7 @@ export default function Screen08Invoice({ invoiceId }: Props) {
             color: "var(--acc)"
           }}
         >
-          <span style={{ marginRight: "6px" }}>⚠</span>
+          <AlertTriangle size={14} style={{ marginRight: "6px", flexShrink: 0 }} />
           {isLed ? (
             <span>LED invoice — 1 line item: LED screen services. Individual item rates and days are not shown on the invoice.</span>
           ) : (
@@ -393,8 +394,8 @@ export default function Screen08Invoice({ invoiceId }: Props) {
                   disabled={invoice.balanceReceived}
                 >
                   {invoice.balanceReceived
-                    ? "✓ Balance received"
-                    : "✓ Mark balance received ↗"}
+                    ? <><Check size={13} strokeWidth={3} /> Balance received</>
+                    : <><Check size={13} strokeWidth={3} /> Mark balance received</>}
                 </button>
               )}
             </div>
@@ -447,7 +448,7 @@ export default function Screen08Invoice({ invoiceId }: Props) {
             <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
               <button className="btn" onClick={() => setShowConfirm(false)}>Cancel</button>
               <button className="btn btn-success" onClick={handleMarkReceived}>
-                ✓ Confirm received
+                <Check size={13} strokeWidth={3} /> Confirm received
               </button>
             </div>
           </div>

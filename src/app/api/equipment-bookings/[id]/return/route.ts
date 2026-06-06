@@ -31,35 +31,13 @@ export async function PUT(
       return Response.json({ error: "Booking must be in BOOKED or OUT status to be returned" }, { status: 409 });
     }
 
-    await db.$transaction(async (tx) => {
-      await tx.equipmentBooking.update({
-        where: { id: bookingId },
-        data: { status: 'RETURNED' }
-      });
-
-      if (booking.equipment_id) {
-        await tx.equipment.update({
-          where: { id: booking.equipment_id },
-          data: { status: 'AVAILABLE' }
-        });
-      }
-
-      if (booking.kit_id) {
-        await tx.equipment.updateMany({
-          where: { kit_id: booking.kit_id },
-          data: { status: 'AVAILABLE' }
-        });
-        const kit = await tx.kit.findUnique({
-          where: { id: booking.kit_id },
-          select: { main_body_id: true }
-        });
-        if (kit?.main_body_id) {
-          await tx.equipment.update({
-            where: { id: kit.main_body_id },
-            data: { status: 'AVAILABLE' }
-          });
-        }
-      }
+    // Returning only closes the booking. Equipment.status is left untouched — we must
+    // NOT force it back to AVAILABLE, since that would wrongly clear a genuine
+    // MAINTENANCE / SOLD / RETIRED state. Availability is derived from the booking
+    // lifecycle + date range. See [id]/confirm/route.ts.
+    await db.equipmentBooking.update({
+      where: { id: bookingId },
+      data: { status: 'RETURNED' }
     });
 
     const updatedBooking = await db.equipmentBooking.findUnique({

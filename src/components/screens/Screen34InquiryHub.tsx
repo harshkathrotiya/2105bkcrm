@@ -31,6 +31,8 @@ import { useCurrentUser } from "@/lib/use-current-user";
 import {
   FileText, Receipt, Users, Building2, Wallet, CalendarDays, Pencil,
   ArrowRight, CheckCircle2, AlertCircle, ChevronRight, Trash2,
+  ClipboardList, BarChart3, Banknote, X, Check,
+  ArrowLeft, ArrowUpRight, RotateCw, Undo2,
 } from "lucide-react";
 
 const fmt = (n: number) => (n ?? 0).toLocaleString("en-IN");
@@ -761,7 +763,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
     return (
       <div style={{ padding: 40, textAlign: "center", color: "var(--tx3)" }}>
         <div style={{ fontSize: 14, marginBottom: 12 }}>Inquiry not found.</div>
-        <Link href="/inquiries" className="btn btn-primary">← Back to inquiries</Link>
+        <Link href="/inquiries" className="btn btn-primary"><ArrowLeft size={13} /> Back to inquiries</Link>
       </div>
     );
   }
@@ -773,16 +775,17 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
     return true;
   })();
 
-  const nextLabel = currentStepIndex < STEP_KEYS.length - 1
-    ? `Next: ${STEP_LABELS[STEP_KEYS[currentStepIndex + 1]]} →`
-    : "Done";
+  const isLastStep = currentStepIndex >= STEP_KEYS.length - 1;
+  const nextLabel = isLastStep
+    ? "Done"
+    : `Next: ${STEP_LABELS[STEP_KEYS[currentStepIndex + 1]]}`;
 
   const bottomNav = () => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 32, paddingTop: 20, borderTop: "1px solid var(--b1)" }}>
       <div>
         {currentStepIndex > 0 && (
           <button className="btn" onClick={goPrev} style={{ fontSize: 12 }}>
-            ← Previous
+            <ArrowLeft size={13} /> Previous
           </button>
         )}
       </div>
@@ -797,7 +800,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
             disabled={!canGoNext}
             style={{ fontSize: 12, opacity: canGoNext ? 1 : 0.45 }}
           >
-            {nextLabel}
+            {nextLabel} <ArrowRight size={13} />
           </button>
         ) : (
           <Link href="/inquiries" className="btn btn-success" style={{ fontSize: 12 }}>
@@ -979,26 +982,26 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginTop: 8 }}>
                 <Link href={`/inquiries/${inquiry.id}/requirements`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span>📋</span>
+                    <ClipboardList size={14} />
                     <span>Client Requirements Roster</span>
                   </span>
-                  <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                  <ArrowRight size={11} style={{ color: "var(--tx3)" }} />
                 </Link>
                 {can("reports.view") && (
                   <>
                     <Link href={`/inquiries/${inquiry.id}/pl`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>📊</span>
+                        <BarChart3 size={14} />
                         <span>Profit & Loss Analysis</span>
                       </span>
-                      <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                      <ArrowRight size={11} style={{ color: "var(--tx3)" }} />
                     </Link>
                     <Link href={`/inquiries/${inquiry.id}/expense`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>💸</span>
+                        <Banknote size={14} />
                         <span>Expense Report</span>
                       </span>
-                      <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                      <ArrowRight size={11} style={{ color: "var(--tx3)" }} />
                     </Link>
                   </>
                 )}
@@ -1140,7 +1143,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                           style={{ width: 150 }}
                         />
                         <button className="btn btn-primary text-[10px]" onClick={handleAddPosition}>Add</button>
-                        <button className="btn text-[10px]" onClick={() => { setAddingPosition(false); setNewPosition(""); }}>✕</button>
+                        <button className="btn text-[10px]" onClick={() => { setAddingPosition(false); setNewPosition(""); }}><X size={11} /></button>
                       </div>
                     ) : (
                       <button className="btn ml-auto text-[10px]" onClick={() => setAddingPosition(true)}>+ Add position</button>
@@ -1180,7 +1183,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                                       }}
                                     />
                                     <button className="btn btn-primary text-[9px]" onClick={handleEditPosition}>Save</button>
-                                    <button className="btn text-[9px]" onClick={() => setEditingPosition(null)}>✕</button>
+                                    <button className="btn text-[9px]" onClick={() => setEditingPosition(null)}><X size={10} /></button>
                                   </div>
                                 ) : (
                                   <div ref={showPosDropdown === row.no ? posDropdownRef : undefined} style={{ position: "relative" }}>
@@ -1290,7 +1293,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                                   onClick={() => removeRow(row.no)}
                                   disabled={rows.length <= 1}
                                 >
-                                  ✕
+                                  <X size={11} />
                                 </button>
                               </td>
                             </tr>
@@ -1398,7 +1401,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                   disabled={!inquiry || saving}
                   style={{ fontSize: 13 }}
                 >
-                  {saving ? "Saving…" : existingQuotation ? "Update quotation ↗" : "Save quotation ↗"}
+                  {saving ? "Saving…" : existingQuotation ? "Update quotation" : "Save quotation"}
                 </button>
               ) : (
                 <span className="text-[11px] text-tx3">View only — you don&apos;t have {existingQuotation ? "edit" : "create"} access.</span>
@@ -1480,7 +1483,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                 {inquiry.notes && <Row k="Notes" v={inquiry.notes} />}
                 <div style={{ marginTop: 8 }}>
                   <button className="btn text-[11px]" onClick={() => setTab("overview")}>
-                    ✎ Edit inquiry
+                    <Pencil size={11} /> Edit inquiry
                   </button>
                 </div>
               </div>
@@ -1501,9 +1504,12 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                     <div style={{ margin: "10px 0 6px", fontSize: 10, fontWeight: 700, color: "var(--tx3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Line items</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                       {quotation.equipment.map((row) => (
-                        <div key={row.no} style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, padding: "3px 0", borderBottom: "1px solid var(--b1)" }}>
-                          <span style={{ color: "var(--tx2)" }}>{row.no}. {row.position}</span>
-                          <span style={{ color: "var(--tx3)", fontFamily: "var(--font-mono)" }}>{row.days}d</span>
+                        <div key={row.no} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", fontSize: 11.5, padding: "3px 0", borderBottom: "1px solid var(--b1)" }}>
+                          <span style={{ color: "var(--tx2)" }}>
+                            {row.no}. {row.position}
+                            {row.equip ? <span style={{ color: "var(--tx3)" }}> — {row.equip}</span> : null}
+                          </span>
+                          <span style={{ color: "var(--tx3)", fontFamily: "var(--font-mono)", whiteSpace: "nowrap", paddingLeft: 8 }}>{row.days}d</span>
                         </div>
                       ))}
                     </div>
@@ -1517,8 +1523,8 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                       <span>Total</span><span className="font-mono text-bl">₹{fmt(quotation.total)}</span>
                     </div>
                     <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-                      <button className="btn text-[11px]" onClick={() => setTab("quotation")}>✎ Edit</button>
-                      <button className="btn text-[11px]" onClick={() => setShowPdfModal(true)}>📄 View PDF</button>
+                      <button className="btn text-[11px]" onClick={() => setTab("quotation")}><Pencil size={11} /> Edit</button>
+                      <button className="btn text-[11px]" onClick={() => setShowPdfModal(true)}><FileText size={11} /> View PDF</button>
                     </div>
                   </>
                 )}
@@ -1549,7 +1555,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                     </table>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 12, fontWeight: 600 }}>Total: <span className="font-mono text-bl">₹{fmt(crewCost)}</span></span>
-                      <button className="btn text-[11px]" onClick={() => setTab("crew")}>✎ Manage</button>
+                      <button className="btn text-[11px]" onClick={() => setTab("crew")}><Pencil size={11} /> Manage</button>
                     </div>
                   </>
                 )}
@@ -1562,7 +1568,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                   <div style={{ fontSize: 12, color: "var(--tx3)", padding: "6px 0 8px" }}>
                     Equipment bookings and dispatch logistics.
                   </div>
-                  <button className="btn text-[11px]" onClick={() => setTab("warehouse")}>Open warehouse →</button>
+                  <button className="btn text-[11px]" onClick={() => setTab("warehouse")}>Open warehouse <ArrowRight size={11} /></button>
                 </div>
                 <div className="card" style={{ margin: 0 }}>
                   <div className="card-t">⑥ Invoice</div>
@@ -1570,8 +1576,8 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                     <>
                       <Row k="Invoice no." v={invoice.invoiceNo} />
                       <Row k="Status" v={invoice.status} />
-                      <Row k="Advance" v={`₹${fmt(invoice.advance)} ${invoice.advanceReceived ? "✓ received" : "pending"}`} />
-                      <Row k="Balance" v={`₹${fmt(invoice.balance)} ${invoice.balanceReceived ? "✓ received" : "pending"}`} />
+                      <Row k="Advance" v={`₹${fmt(invoice.advance)} ${invoice.advanceReceived ? "received" : "pending"}`} />
+                      <Row k="Balance" v={`₹${fmt(invoice.balance)} ${invoice.balanceReceived ? "received" : "pending"}`} />
                       <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
                         <Link href={`/invoices/${invoice.id}`} className="btn text-[11px]">View invoice</Link>
                         <Link href={`/invoices/${invoice.id}/payment`} className="btn btn-primary text-[11px]">Record payment</Link>
@@ -1590,26 +1596,26 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginTop: 8 }}>
                 <Link href={`/inquiries/${inquiry.id}/requirements`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span>📋</span>
+                    <ClipboardList size={14} />
                     <span>Client Requirements Roster</span>
                   </span>
-                  <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                  <ArrowRight size={11} style={{ color: "var(--tx3)" }} />
                 </Link>
                 {can("reports.view") && (
                   <>
                     <Link href={`/inquiries/${inquiry.id}/pl`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>📊</span>
+                        <BarChart3 size={14} />
                         <span>Profit & Loss Analysis</span>
                       </span>
-                      <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                      <ArrowRight size={11} style={{ color: "var(--tx3)" }} />
                     </Link>
                     <Link href={`/inquiries/${inquiry.id}/expense`} className="btn flex items-center justify-between" style={{ padding: "10px 14px", height: "auto" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>💸</span>
+                        <Banknote size={14} />
                         <span>Expense Report</span>
                       </span>
-                      <span style={{ fontSize: 10, color: "var(--tx3)" }}>→</span>
+                      <ArrowRight size={11} style={{ color: "var(--tx3)" }} />
                     </Link>
                   </>
                 )}
@@ -1628,7 +1634,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                 /* Already approved — show status + revert option */
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                    <Badge variant="gr">✓ Approved</Badge>
+                    <Badge variant="gr">Approved</Badge>
                     <span style={{ fontSize: 12, color: "var(--tx3)" }}>
                       {quotation.approvedAt ? `Approved on ${quotation.approvedAt}` : "Approved"}
                       {invoice ? ` · Invoice ${invoice.invoiceNo} generated` : ""}
@@ -1644,7 +1650,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                         Creates a new revision draft you can edit. The existing invoice stays.
                       </div>
                       <button className="btn text-[11px]" onClick={() => setTab("quotation")}>
-                        ← Go to Quotation · Create revision
+                        <ArrowLeft size={11} /> Go to Quotation · Create revision
                       </button>
                     </div>
 
@@ -1660,7 +1666,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                         onClick={doRevert}
                         disabled={reverting || (invoice?.advanceReceived || invoice?.balanceReceived) ? true : false}
                       >
-                        {reverting ? "Reverting…" : "↩ Revert to Draft"}
+                        {reverting ? "Reverting…" : <><Undo2 size={11} /> Revert to Draft</>}
                       </button>
                       {(invoice?.advanceReceived || invoice?.balanceReceived) && (
                         <div style={{ fontSize: 10, color: "var(--sem-rd-tx)", marginTop: 6 }}>
@@ -1673,7 +1679,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                   {invoice && (
                     <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
                       <Link href={`/invoices/${invoice.id}`} className="btn btn-primary text-[12px]">
-                        <Receipt size={13} /> View invoice →
+                        <Receipt size={13} /> View invoice <ArrowRight size={13} />
                       </Link>
                     </div>
                   )}
@@ -1715,7 +1721,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button className="btn btn-success" onClick={doApprove} disabled={approving}>
-                          {approving ? "Approving…" : "✓ Confirm approval"}
+                          {approving ? "Approving…" : <><Check size={13} strokeWidth={3} /> Confirm approval</>}
                         </button>
                         <button className="btn" onClick={() => setShowApprove(false)}>Cancel</button>
                       </div>
@@ -1742,7 +1748,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                 {quotation?.status === "Approved" && (
                   <div style={{ textAlign: "center", padding: "0 0 16px" }}>
                     <button className="btn text-[12px]" onClick={() => router.refresh()}>
-                      ↻ Refresh
+                      <RotateCw size={12} /> Refresh
                     </button>
                   </div>
                 )}

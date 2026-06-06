@@ -242,6 +242,7 @@ model Staff {
   assignments            StaffAssignment[]
   payments               StaffPayment[]
   owned_equipment        Equipment[]       @relation("StaffOwnedEquipment")
+  equipment_rentals      EquipmentBooking[] @relation("StaffEquipmentRentals")
 
   @@map("staff")
 }
@@ -313,10 +314,19 @@ model EquipmentBooking {
   confirmed_by_id     String?
   confirmed_at        String?
 
+  // Staff-owned equipment rental: rental is credited to the equipment OWNER,
+  // regardless of which staff member uses the equipment at the event.
+  // owner_staff_id snapshots the owner at the time rental is recorded.
+  rental_owner_staff_id   Int?
+  rental_owner_staff      Staff? @relation("StaffEquipmentRentals", fields: [rental_owner_staff_id], references: [id], onDelete: SetNull)
+  rental_rate_per_day     Float?
+  total_rental            Float?
+
   @@index([inquiry_id])
   @@index([booked_from, booked_to])
   @@index([equipment_id])
   @@index([kit_id])
+  @@index([rental_owner_staff_id])
   @@map("equipment_bookings")
 }
 

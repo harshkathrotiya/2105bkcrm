@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AlertTriangle, X, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -355,7 +356,7 @@ export default function Screen16KitList() {
                           </td>
                           <td style={{ textAlign: "right" }}>
                             <Link href={`/kits/${kit.id}`} className="btn" onClick={(e) => e.stopPropagation()}>
-                              Details →
+                              Details <ArrowRight size={12} />
                             </Link>
                           </td>
                         </tr>
@@ -378,7 +379,7 @@ export default function Screen16KitList() {
                       disabled={page <= 1}
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                     >
-                      ‹ Prev
+                      <ChevronLeft size={13} /> Prev
                     </button>
                     {Array.from({ length: totalPages }, (_, i) => (
                       <button
@@ -395,7 +396,7 @@ export default function Screen16KitList() {
                       disabled={page >= totalPages}
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     >
-                      Next ›
+                      Next <ChevronRight size={13} />
                     </button>
                   </div>
                 </div>
@@ -418,7 +419,7 @@ export default function Screen16KitList() {
               <button className="btn" style={{ padding: "4px 8px" }} type="button" onClick={() => {
                 setShowCreateModal(false);
                 setModalEquipment([{ id: "", qty: 1 }]);
-              }}>✕</button>
+              }}><X size={13} /></button>
             </div>
             <form onSubmit={handleCreateKit} style={{ padding: "20px", maxHeight: "80vh", overflowY: "auto" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "20px" }}>
@@ -523,8 +524,8 @@ export default function Screen16KitList() {
                               </button>
                             </div>
                             {err && (
-                              <div style={{ color: "var(--rd)", fontSize: "10.5px" }}>
-                                ⚠️ {err}
+                              <div style={{ color: "var(--rd)", fontSize: "10.5px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                <AlertTriangle size={11} /> {err}
                               </div>
                             )}
                           </div>

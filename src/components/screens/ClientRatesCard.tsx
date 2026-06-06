@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 import * as api from "@/lib/api";
 import type { Equipment } from "@/lib/types";
 import { useToast } from "../ui/Toast";
@@ -164,7 +165,7 @@ export default function ClientRatesCard({ clientId }: { clientId: string }) {
                           onClick={() => clearRate(eq)}
                           title="Revert to default rate"
                         >
-                          ✕
+                          <X size={11} />
                         </button>
                       )}
                     </td>

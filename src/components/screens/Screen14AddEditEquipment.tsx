@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Check, Circle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
@@ -746,24 +746,24 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
               <div className="card-t">Validation Checks</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "11.5px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", color: validations.productName ? "var(--gr)" : "var(--tx3)" }}>
-                  <span>{validations.productName ? "✓" : "○"}</span>
+                  <span>{validations.productName ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />}</span>
                   <span>Product Name (min 2 chars)</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", color: validations.category ? "var(--gr)" : "var(--tx3)" }}>
-                  <span>{validations.category ? "✓" : "○"}</span>
+                  <span>{validations.category ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />}</span>
                   <span>Valid Category Selected</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", color: validations.quantity ? "var(--gr)" : "var(--tx3)" }}>
-                  <span>{validations.quantity ? "✓" : "○"}</span>
+                  <span>{validations.quantity ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />}</span>
                   <span>Quantity (minimum 1)</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", color: validations.purchasePrice ? "var(--gr)" : "var(--tx3)" }}>
-                  <span>{validations.purchasePrice ? "✓" : "○"}</span>
+                  <span>{validations.purchasePrice ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />}</span>
                   <span>Purchase Price (non-negative)</span>
                 </div>
                 {form.ownershipType === "VENDOR" && (
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", color: validations.vendorSelected ? "var(--gr)" : "var(--tx3)" }}>
-                    <span>{validations.vendorSelected ? "✓" : "○"}</span>
+                    <span>{validations.vendorSelected ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />}</span>
                     <span>Vendor Selection (Required)</span>
                   </div>
                 )}
@@ -806,7 +806,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
             color: "var(--sem-gr-tx)",
           }}
         >
-          <span>✓</span>
+          <Check size={15} strokeWidth={3} />
           <span>{toastMessage}</span>
         </div>
       )}

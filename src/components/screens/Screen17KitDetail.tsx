@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AlertTriangle, X, ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -265,7 +266,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
 
   if (kitsLoading && !activeKit) {
     return (
-      <ScreenFrame breadcrumb="Kit Details" actions={<Link href="/kits" className="btn">‹ Back to Kits</Link>}>
+      <ScreenFrame breadcrumb="Kit Details" actions={<Link href="/kits" className="btn"><ArrowLeft size={13} /> Back to Kits</Link>}>
         <div style={{ padding: "20px" }}>
           <LoadingSkeleton rows={6} />
         </div>
@@ -277,9 +278,9 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
     return (
       <>
         <SectionHeader title={<>Kit <strong>Details</strong></>} />
-        <ScreenFrame breadcrumb="Kit not found" actions={<Link href="/kits" className="btn">‹ Back to Kits List</Link>}>
+        <ScreenFrame breadcrumb="Kit not found" actions={<Link href="/kits" className="btn"><ArrowLeft size={13} /> Back to Kits List</Link>}>
           <div className="card" style={{ padding: "40px", textAlign: "center", color: "var(--tx3)" }}>
-            <div style={{ fontSize: "48px", marginBottom: "15px", opacity: 0.3 }}>⚠️</div>
+            <div style={{ marginBottom: "15px", opacity: 0.3, display: "flex", justifyContent: "center" }}><AlertTriangle size={48} /></div>
             <div style={{ fontSize: "14px", fontWeight: 500 }}>We couldn&apos;t find a kit with ID {kitId}.</div>
             <div style={{ marginTop: "15px" }}>
               <Link href="/kits" className="btn btn-primary">Go to Kits Directory</Link>
@@ -348,7 +349,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href="/kits" className="btn">
-              ‹ Back to Kits
+              <ArrowLeft size={13} /> Back to Kits
             </Link>
             {canDeleteKit && (
               <button
@@ -356,7 +357,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                 className="btn text-rd"
                 onClick={handleDeleteKit}
               >
-                ✕ Delete Kit
+                <X size={13} /> Delete Kit
               </button>
             )}
           </div>
@@ -432,8 +433,8 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
               })()
             ) : (
               <div>
-                <div style={{ color: "var(--am)", fontSize: "12px", marginBottom: "12px", background: "var(--sem-am-bg)", border: "1px solid var(--sem-am-bdr)", borderRadius: "6px", padding: "8px" }}>
-                  ⚠️ Warning: No main body (e.g. Camera or Mixer) linked to this kit. A kit requires a main body to track correctly.
+                <div style={{ color: "var(--am)", fontSize: "12px", marginBottom: "12px", background: "var(--sem-am-bg)", border: "1px solid var(--sem-am-bdr)", borderRadius: "6px", padding: "8px", display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                  <AlertTriangle size={13} style={{ flexShrink: 0, marginTop: "1px" }} /> Warning: No main body (e.g. Camera or Mixer) linked to this kit. A kit requires a main body to track correctly.
                 </div>
                 <fieldset disabled={!canEditKit} style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
                   <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
@@ -475,8 +476,8 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                     </button>
                   </div>
                   {selectedMainBodyQtyError && (
-                    <div style={{ color: "var(--rd)", fontSize: "11px" }}>
-                      ⚠️ {selectedMainBodyQtyError}
+                    <div style={{ color: "var(--rd)", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <AlertTriangle size={11} /> {selectedMainBodyQtyError}
                     </div>
                   )}
                 </fieldset>
@@ -577,8 +578,8 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                 </button>
               </div>
               {accessoryQtyError && (
-                <div style={{ color: "var(--rd)", fontSize: "11px", marginTop: "6px" }}>
-                  ⚠️ {accessoryQtyError}
+                <div style={{ color: "var(--rd)", fontSize: "11px", marginTop: "6px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                  <AlertTriangle size={11} /> {accessoryQtyError}
                 </div>
               )}
               </fieldset>

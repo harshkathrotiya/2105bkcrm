@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Check, Circle, ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import { TextField, TextAreaField, SelectField } from "../ui/Field";
@@ -232,7 +233,7 @@ export default function Screen02EditClient({
                 deleted.
               </div>
               <Link href="/clients" className="btn mt-4 inline-block">
-                ← Back to clients
+                <ArrowLeft size={13} /> Back to clients
               </Link>
             </div>
           </div>
@@ -284,7 +285,7 @@ export default function Screen02EditClient({
                 onClick={handleSave}
                 disabled={!allRequired || saving}
               >
-                {saving ? "Updating..." : "Update client ↗"}
+                {saving ? "Updating..." : "Update client"}
               </button>
             ) : (
               <span className="text-[11px] text-tx3">View only — you don&apos;t have edit access.</span>
@@ -537,21 +538,21 @@ export default function Screen02EditClient({
                     validations.name ? "text-gr" : "text-tx3"
                   }`}
                 >
-                  {validations.name ? "✓" : "○"} Client name
+                  {validations.name ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Client name
                 </div>
                 <div
                   className={`flex items-center gap-[6px] ${
                     validations.mobile ? "text-gr" : "text-tx3"
                   }`}
                 >
-                  {validations.mobile ? "✓" : "○"} Mobile (10 digits)
+                  {validations.mobile ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Mobile (10 digits)
                 </div>
                 <div
                   className={`flex items-center gap-[6px] ${
                     validations.contact ? "text-gr" : "text-tx3"
                   }`}
                 >
-                  {validations.contact ? "✓" : "○"} Contact person
+                  {validations.contact ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Contact person
                 </div>
                 <div
                   className={`flex items-center gap-[6px] ${
@@ -561,8 +562,8 @@ export default function Screen02EditClient({
                   }`}
                 >
                   {validations.city && validations.district && validations.state
-                    ? "✓"
-                    : "○"}{" "}
+                    ? <Check size={12} strokeWidth={3} />
+                    : <Circle size={12} />}{" "}
                   City / District / State
                 </div>
                 <div
@@ -574,7 +575,7 @@ export default function Screen02EditClient({
                       : "text-tx3"
                   }`}
                 >
-                  {validations.email ? "✓" : "○"} Email
+                  {validations.email ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Email
                   {form.email && !validations.email
                     ? " (invalid format)"
                     : " (optional)"}
@@ -588,7 +589,7 @@ export default function Screen02EditClient({
                       : "text-tx3"
                   }`}
                 >
-                  {validations.gst ? "✓" : "○"} GST
+                  {validations.gst ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} GST
                   {form.gst && !validations.gst
                     ? " (invalid format)"
                     : " (optional)"}
@@ -602,7 +603,7 @@ export default function Screen02EditClient({
                       : "text-tx3"
                   }`}
                 >
-                  {validations.pan ? "✓" : "○"} PAN
+                  {validations.pan ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} PAN
                   {form.pan && !validations.pan
                     ? " (invalid format)"
                     : " (optional)"}
@@ -734,7 +735,7 @@ export default function Screen02EditClient({
             color: "var(--sem-gr-tx)",
           }}
         >
-          <span>✓</span>
+          <Check size={15} strokeWidth={3} />
           <span>{toastMessage}</span>
         </div>
       )}

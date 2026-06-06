@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AlertTriangle, ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -55,14 +56,14 @@ export default function Screen27ExpenseReport({ inquiryId }: Props) {
         <div className="text-center py-12 text-tx3">
           {error || "Could not generate expense report details."}
           <div className="mt-4">
-            <button className="btn" onClick={() => router.back()}>← Go Back</button>
+            <button className="btn" onClick={() => router.back()}><ArrowLeft size={13} /> Go Back</button>
           </div>
         </div>
       </ScreenFrame>
     );
   }
 
-  const { inquiry, staffAssignments, vendorBookings, totalStaffCost, totalVendorCost, totalExpense } = data;
+  const { inquiry, staffAssignments, vendorBookings, equipmentRentals = [], totalStaffCost, totalVendorCost, totalRentalCost = 0, totalExpense } = data;
 
   return (
     <>
@@ -132,7 +133,7 @@ export default function Screen27ExpenseReport({ inquiryId }: Props) {
                       <tr key={a.id}>
                         <td>
                           <strong className="text-tx">{a.staffName}</strong>
-                          {a.isDuplicate && <span style={{ color: "var(--acc)", fontSize: "9px", marginLeft: "6px" }} title="Duplicate position assignment (unbilled)">⚠ Dup</span>}
+                          {a.isDuplicate && <span style={{ color: "var(--acc)", fontSize: "9px", marginLeft: "6px", display: "inline-flex", alignItems: "center", gap: "3px" }} title="Duplicate position assignment (unbilled)"><AlertTriangle size={9} /> Dup</span>}
                         </td>
                         <td>{a.role}</td>
                         <td>
@@ -174,6 +175,34 @@ export default function Screen27ExpenseReport({ inquiryId }: Props) {
                         </td>
                         <td>{b.itemName}</td>
                         <td className="tr font-mono">₹{fmt(b.costPerDay)}/d</td>
+                        <td className="tr font-mono text-tx font-medium">₹{fmt(b.totalCost)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className="card">
+              <div className="card-t">Staff Equipment Rental — paid to owner (Total: ₹{fmt(totalRentalCost)})</div>
+              {equipmentRentals.length === 0 ? (
+                <div className="text-center py-6 text-tx3 italic">No staff-owned equipment rental recorded.</div>
+              ) : (
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th>Owner</th>
+                      <th>Equipment</th>
+                      <th className="tr">Rate</th>
+                      <th className="tr">Total Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {equipmentRentals.map((b: any) => (
+                      <tr key={b.id}>
+                        <td><strong className="text-tx">{b.ownerName}</strong></td>
+                        <td>{b.itemName}</td>
+                        <td className="tr font-mono">₹{fmt(b.ratePerDay)}/d</td>
                         <td className="tr font-mono text-tx font-medium">₹{fmt(b.totalCost)}</td>
                       </tr>
                     ))}

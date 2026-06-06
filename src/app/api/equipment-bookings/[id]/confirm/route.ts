@@ -30,35 +30,13 @@ export async function PUT(
 
     const nowStr = new Date().toISOString();
 
-    await db.$transaction(async (tx) => {
-      await tx.equipmentBooking.update({
-        where: { id: bookingId },
-        data: { status: 'OUT', confirmed_by_id: 'system', confirmed_at: nowStr }
-      });
-
-      if (booking.equipment_id) {
-        await tx.equipment.update({
-          where: { id: booking.equipment_id },
-          data: { status: 'IN_USE' }
-        });
-      }
-
-      if (booking.kit_id) {
-        await tx.equipment.updateMany({
-          where: { kit_id: booking.kit_id },
-          data: { status: 'IN_USE' }
-        });
-        const kit = await tx.kit.findUnique({
-          where: { id: booking.kit_id },
-          select: { main_body_id: true }
-        });
-        if (kit?.main_body_id) {
-          await tx.equipment.update({
-            where: { id: kit.main_body_id },
-            data: { status: 'IN_USE' }
-          });
-        }
-      }
+    // Availability is derived from the booking lifecycle + date range, NOT from a
+    // permanent equipment.status flag. Confirming a booking only marks the booking
+    // as OUT; the equipment's status column (AVAILABLE / MAINTENANCE / SOLD / …) is
+    // left untouched so an item is never permanently stuck as "in use".
+    await db.equipmentBooking.update({
+      where: { id: bookingId },
+      data: { status: 'OUT', confirmed_by_id: 'system', confirmed_at: nowStr }
     });
 
     const updatedBooking = await db.equipmentBooking.findUnique({

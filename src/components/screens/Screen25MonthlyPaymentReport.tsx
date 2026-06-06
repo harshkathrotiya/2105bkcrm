@@ -692,7 +692,7 @@ export default function Screen25MonthlyPaymentReport() {
                   className="btn btn-success"
                   disabled={processingPayment}
                 >
-                  {processingPayment ? "Processing..." : "Confirm Payout ↗"}
+                  {processingPayment ? "Processing..." : "Confirm Payout"}
                 </button>
               )}
             </div>

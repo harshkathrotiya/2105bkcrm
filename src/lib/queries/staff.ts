@@ -304,7 +304,72 @@ export async function getStaffYtdSummary(staffId: number) {
   const totalEarnedWithMonthly = totalEarned + paidMonthly;
   const pending = Math.max(0, totalEarnedWithMonthly - paid);
 
-  return { eventsWorked, totalDays, totalEarned: totalEarnedWithMonthly, paid, pending };
+  // Equipment rental earned this FY for gear THIS staff member owns, regardless of
+  // who used it at the event. Rental is recorded on the equipment booking.
+  const rentalBookings = await db.equipmentBooking.findMany({
+    where: {
+      rental_owner_staff_id: staffId,
+      booked_from: { gte: fyStart, lte: fyEnd },
+    },
+  });
+  const rentalEarned = rentalBookings.reduce((s: number, b: any) => s + (b.total_rental || 0), 0);
+  const rentalPayments = await db.staffPayment.aggregate({
+    _sum: { amount: true },
+    where: {
+      staff_id: staffId,
+      payment_type: "EQUIPMENT_RENTAL",
+      paid_at: { gte: fyStart, lte: fyEnd },
+    },
+  });
+  const rentalPaid = rentalPayments._sum.amount || 0;
+  const rentalPending = Math.max(0, rentalEarned - rentalPaid);
+
+  return {
+    eventsWorked,
+    totalDays,
+    totalEarned: totalEarnedWithMonthly,
+    paid,
+    pending,
+    // Equipment rental shown as a distinct stream (not mixed into salary/event pay)
+    rentalEarned,
+    rentalPaid,
+    rentalPending,
+  };
+}
+
+// Per-event equipment rental owed to a staff member as the OWNER of the gear,
+// across all events (newest first). Used for the owner's rental statement.
+export interface StaffRentalItem {
+  bookingId: number;
+  inquiryId: string;
+  eventName: string;
+  startDate: string;
+  endDate: string;
+  equipmentName: string;
+  ratePerDay: number;
+  totalRental: number;
+}
+
+export async function getStaffEquipmentRentals(staffId: number): Promise<StaffRentalItem[]> {
+  const bookings = await db.equipmentBooking.findMany({
+    where: { rental_owner_staff_id: staffId, total_rental: { gt: 0 } },
+    include: {
+      equipment: true,
+      inquiry: { include: { client: true } },
+    },
+    orderBy: { booked_from: "desc" },
+  });
+
+  return bookings.map((b: any) => ({
+    bookingId: b.id,
+    inquiryId: b.inquiry_id,
+    eventName: `${b.inquiry?.client?.name ?? "Unknown"} - ${b.inquiry?.event_type ?? ""}`.trim(),
+    startDate: b.booked_from,
+    endDate: b.booked_to,
+    equipmentName: b.equipment?.product_name ?? "Equipment",
+    ratePerDay: b.rental_rate_per_day || 0,
+    totalRental: b.total_rental || 0,
+  }));
 }
 
 export async function getStaffAssignments(inquiryId: string) {

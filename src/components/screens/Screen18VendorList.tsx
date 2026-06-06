@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { X, Check } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -589,7 +590,7 @@ export default function Screen18VendorList() {
                 style={{ padding: "2px 6px", fontSize: "11px" }}
                 onClick={() => setSelectedVendorId(null)}
               >
-                ✕ Close
+                <X size={12} /> Close
               </button>
             </div>
 
@@ -1049,7 +1050,7 @@ export default function Screen18VendorList() {
             color: "var(--sem-gr-tx)",
           }}
         >
-          <span>✓</span>
+          <Check size={15} strokeWidth={3} />
           <span>{toast.msg}</span>
         </div>
       )}

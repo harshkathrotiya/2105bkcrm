@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -55,14 +56,14 @@ export default function Screen28PLReport({ inquiryId }: Props) {
         <div className="text-center py-12 text-tx3">
           {error || "Could not generate P&L report details."}
           <div className="mt-4">
-            <button className="btn" onClick={() => router.back()}>← Go Back</button>
+            <button className="btn" onClick={() => router.back()}><ArrowLeft size={13} /> Go Back</button>
           </div>
         </div>
       </ScreenFrame>
     );
   }
 
-  const { inquiry, quotation, revenue, subtotalRevenue, cgst, sgst, totalStaffCost, totalVendorCost, totalExpense, netProfit, profitMargin } = data;
+  const { inquiry, quotation, revenue, subtotalRevenue, cgst, sgst, totalStaffCost, totalVendorCost, totalRentalCost = 0, totalExpense, netProfit, profitMargin } = data;
 
   const isProfitable = netProfit >= 0;
 
@@ -174,6 +175,12 @@ export default function Screen28PLReport({ inquiryId }: Props) {
                   <span className="text-tx2">Equipment Vendor Outsourcing</span>
                   <span className="font-mono text-tx font-medium">₹{fmt(totalVendorCost)}</span>
                 </div>
+                {totalRentalCost > 0 && (
+                  <div className="row-item">
+                    <span className="text-tx2">Staff Equipment Rental (owner-paid)</span>
+                    <span className="font-mono text-tx font-medium">₹{fmt(totalRentalCost)}</span>
+                  </div>
+                )}
                 <div className="divider" style={{ margin: "4px 0" }}></div>
                 <div className="row-item">
                   <span className="text-tx font-medium">Total Operational Outflow</span>

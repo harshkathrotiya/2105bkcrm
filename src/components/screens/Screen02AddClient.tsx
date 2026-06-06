@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { Check, Circle } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import { TextField, TextAreaField, SelectField } from "../ui/Field";
@@ -141,7 +142,7 @@ export default function Screen02AddClient() {
                 onClick={handleSave}
                 disabled={!allRequired || saving}
               >
-                {saving ? "Saving..." : "Save client ↗"}
+                {saving ? "Saving..." : "Save client"}
               </button>
             </>
           ) : (
@@ -381,21 +382,21 @@ export default function Screen02AddClient() {
                     validations.name ? "text-gr" : "text-tx3"
                   }`}
                 >
-                  {validations.name ? "✓" : "○"} Client name
+                  {validations.name ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Client name
                 </div>
                 <div
                   className={`flex items-center gap-[6px] ${
                     validations.mobile ? "text-gr" : "text-tx3"
                   }`}
                 >
-                  {validations.mobile ? "✓" : "○"} Mobile (10 digits)
+                  {validations.mobile ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Mobile (10 digits)
                 </div>
                 <div
                   className={`flex items-center gap-[6px] ${
                     validations.contact ? "text-gr" : "text-tx3"
                   }`}
                 >
-                  {validations.contact ? "✓" : "○"} Contact person
+                  {validations.contact ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Contact person
                 </div>
                 <div
                   className={`flex items-center gap-[6px] ${
@@ -405,8 +406,8 @@ export default function Screen02AddClient() {
                   }`}
                 >
                   {validations.city && validations.district && validations.state
-                    ? "✓"
-                    : "○"}{" "}
+                    ? <Check size={12} strokeWidth={3} />
+                    : <Circle size={12} />}{" "}
                   City / District / State
                 </div>
                 <div
@@ -414,21 +415,21 @@ export default function Screen02AddClient() {
                     validations.email ? "text-gr" : form.email ? "text-rd" : "text-tx3"
                   }`}
                 >
-                  {validations.email ? "✓" : "○"} Email{form.email && !validations.email ? " (invalid format)" : " (optional)"}
+                  {validations.email ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Email{form.email && !validations.email ? " (invalid format)" : " (optional)"}
                 </div>
                 <div
                   className={`flex items-center gap-[6px] ${
                     validations.gst ? "text-gr" : form.gst ? "text-rd" : "text-tx3"
                   }`}
                 >
-                  {validations.gst ? "✓" : "○"} GST{form.gst && !validations.gst ? " (invalid format)" : " (optional)"}
+                  {validations.gst ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} GST{form.gst && !validations.gst ? " (invalid format)" : " (optional)"}
                 </div>
                 <div
                   className={`flex items-center gap-[6px] ${
                     validations.pan ? "text-gr" : form.pan ? "text-rd" : "text-tx3"
                   }`}
                 >
-                  {validations.pan ? "✓" : "○"} PAN{form.pan && !validations.pan ? " (invalid format)" : " (optional)"}
+                  {validations.pan ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} PAN{form.pan && !validations.pan ? " (invalid format)" : " (optional)"}
                 </div>
               </div>
             </div>
@@ -442,7 +443,7 @@ export default function Screen02AddClient() {
           className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-[13px] font-medium shadow-lg"
           style={{ background: "var(--sem-gr-bg)", border: "1px solid var(--sem-gr-bdr)", color: "var(--sem-gr-tx)" }}
         >
-          <span>✓</span>
+          <Check size={15} strokeWidth={3} />
           <span>Client saved successfully!</span>
         </div>
       )}

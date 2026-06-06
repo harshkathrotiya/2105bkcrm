@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Check, Circle } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -250,7 +251,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
                 className={`btn btn-success ${!allRequiredValid || saving ? "opacity-50" : ""}`}
                 disabled={!allRequiredValid || saving}
               >
-                {saving ? "Saving..." : (isEditMode ? "Save Changes ↗" : "Save Staff ↗")}
+                {saving ? "Saving..." : (isEditMode ? "Save Changes" : "Save Staff")}
               </button>
             )}
           </div>
@@ -468,7 +469,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
                       onChange={(e) => handleFileUpload("aadharFront", e.target.files?.[0])}
                     />
                     {form.aadharFront ? (
-                      <span className="approval-upload-title" style={{ color: "var(--gr)" }}>✓ Front Image Loaded</span>
+                      <span className="approval-upload-title" style={{ color: "var(--gr)", display: "inline-flex", alignItems: "center", gap: "5px" }}><Check size={13} strokeWidth={3} /> Front Image Loaded</span>
                     ) : (
                       <>
                         <span className="approval-upload-title">+ Upload Front</span>
@@ -487,7 +488,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
                       onChange={(e) => handleFileUpload("aadharBack", e.target.files?.[0])}
                     />
                     {form.aadharBack ? (
-                      <span className="approval-upload-title" style={{ color: "var(--gr)" }}>✓ Back Image Loaded</span>
+                      <span className="approval-upload-title" style={{ color: "var(--gr)", display: "inline-flex", alignItems: "center", gap: "5px" }}><Check size={13} strokeWidth={3} /> Back Image Loaded</span>
                     ) : (
                       <>
                         <span className="approval-upload-title">+ Upload Back</span>
@@ -567,22 +568,22 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
               <div className="card-t">Validation Checklist</div>
               <div className="flex flex-col gap-[6px] text-[11.5px]">
                 <div className={`flex items-center gap-[6px] ${validations.name ? "text-gr" : "text-tx3"}`}>
-                  {validations.name ? "✓" : "○"} Full Name (min 2 characters)
+                  {validations.name ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Full Name (min 2 characters)
                 </div>
                 <div className={`flex items-center gap-[6px] ${validations.phone ? "text-gr" : "text-tx3"}`}>
-                  {validations.phone ? "✓" : "○"} Phone (10 digits)
+                  {validations.phone ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Phone (10 digits)
                 </div>
                 <div className={`flex items-center gap-[6px] ${validations.role ? "text-gr" : "text-tx3"}`}>
-                  {validations.role ? "✓" : "○"} Role Selected
+                  {validations.role ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Role Selected
                 </div>
                 <div className={`flex items-center gap-[6px] ${validations.staffType ? "text-gr" : "text-tx3"}`}>
-                  {validations.staffType ? "✓" : "○"} Staff Type Selected
+                  {validations.staffType ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Staff Type Selected
                 </div>
                 <div className={`flex items-center gap-[6px] ${validations.rate ? "text-gr" : "text-tx3"}`}>
-                  {validations.rate ? "✓" : "○"} Payment Rate Valid (must be &gt; 0)
+                  {validations.rate ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Payment Rate Valid (must be &gt; 0)
                 </div>
                 <div className={`flex items-center gap-[6px] ${validations.aadhar ? "text-gr" : "text-tx3"}`}>
-                  {validations.aadhar ? "✓" : "○"} Aadhar Number (empty or exactly 12 digits)
+                  {validations.aadhar ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />} Aadhar Number (empty or exactly 12 digits)
                 </div>
               </div>
             </div>
@@ -600,7 +601,7 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
             color: "var(--sem-gr-tx)",
           }}
         >
-          <span>✓</span>
+          <Check size={15} strokeWidth={3} />
           <span>{toastMessage}</span>
         </div>
       )}

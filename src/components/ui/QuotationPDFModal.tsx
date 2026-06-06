@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Badge from "./Badge";
 import { useQuotations, useInquiries } from "@/lib/store";
-import { X, Download } from "lucide-react";
+import { X, Download, AlertTriangle } from "lucide-react";
 
 const equipmentDescriptions: Record<string, string> = {
   FS6: "Sony FS6 professional video camera",
@@ -132,9 +132,9 @@ export default function QuotationPDFModal({ quotationId, onClose }: Props) {
               <div style={{
                 display: "flex", alignItems: "center", padding: "8px 12px",
                 background: "var(--sem-notif-bg)", border: "1px solid var(--sem-notif-bdr)",
-                color: "var(--acc)", borderRadius: 7, fontSize: 11, marginBottom: 16,
+                color: "var(--acc)", borderRadius: 7, fontSize: 11, marginBottom: 16, gap: 8,
               }}>
-                ⚠ Internal: Client ને item rates show નહીં થાય — Position + Equipment + Days only
+                <AlertTriangle size={14} style={{ flexShrink: 0 }} /> Internal: Client ને item rates show નહીં થાય — Position + Equipment + Days only
               </div>
 
               <div className="pdf-frame" id="quotation-pdf-content">

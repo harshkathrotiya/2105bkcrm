@@ -39,13 +39,32 @@ export async function POST(request: NextRequest) {
 
     const { inquiryId, equipmentId, kitId, position, bookedFrom, bookedTo, vendorId, vendorCostPerDay } = body;
 
+    const start = new Date(bookedFrom);
+    const end = new Date(bookedTo);
+    const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
     // Calculate total vendor cost
     let totalVendorCost = null;
     if (vendorId && vendorCostPerDay !== undefined && vendorCostPerDay !== null) {
-      const start = new Date(bookedFrom);
-      const end = new Date(bookedTo);
-      const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
       totalVendorCost = parseFloat(vendorCostPerDay) * days;
+    }
+
+    // Staff-owned equipment is treated like any other item, except its rental is
+    // ALWAYS credited to the equipment OWNER (regardless of who uses it). When such
+    // an item is booked, auto-record the rental from the equipment's default rate.
+    let rentalOwnerStaffId: number | null = null;
+    let rentalRatePerDay: number | null = null;
+    let totalRental: number | null = null;
+    if (equipmentId) {
+      const eq = await db.equipment.findUnique({
+        where: { id: parseInt(equipmentId, 10) },
+        select: { ownership_type: true, owner_staff_id: true, default_rate: true },
+      });
+      if (eq?.ownership_type === "STAFF" && eq.owner_staff_id && (eq.default_rate ?? 0) > 0) {
+        rentalOwnerStaffId = eq.owner_staff_id;
+        rentalRatePerDay = eq.default_rate as number;
+        totalRental = rentalRatePerDay * days;
+      }
     }
 
     let newBooking;
@@ -69,6 +88,9 @@ export async function POST(request: NextRequest) {
           vendor_id: vendorId ? parseInt(vendorId, 10) : null,
           vendor_cost_per_day: vendorCostPerDay ? parseFloat(vendorCostPerDay) : null,
           total_vendor_cost: totalVendorCost,
+          rental_owner_staff_id: rentalOwnerStaffId,
+          rental_rate_per_day: rentalRatePerDay,
+          total_rental: totalRental,
         }
       });
     });

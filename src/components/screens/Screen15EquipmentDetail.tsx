@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Pencil, Check, Settings, ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
@@ -138,7 +139,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                 {error || "The equipment you are looking for does not exist."}
               </div>
               <Link href="/equipment" className="btn mt-4 inline-block">
-                ← Back to equipment list
+                <ArrowLeft size={13} /> Back to equipment list
               </Link>
             </div>
           </div>
@@ -165,11 +166,11 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href="/equipment" className="btn">
-              ← Back to List
+              <ArrowLeft size={13} /> Back to List
             </Link>
             {canEdit && (
               <Link href={`/equipment/${item.id}/edit`} className="btn btn-primary">
-                ✎ Edit Equipment
+                <Pencil size={13} /> Edit Equipment
               </Link>
             )}
           </div>
@@ -184,9 +185,13 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
               <Badge variant={getCategoryBadgeVariant(item.category)}>
                 {item.category.replace(/_/g, " ")}
               </Badge>
-              <Badge variant={getStatusBadgeVariant(item.status)}>
-                {item.status}
-              </Badge>
+              {item.status === "AVAILABLE" && item.inUseToday ? (
+                <Badge variant="bl">IN_USE</Badge>
+              ) : (
+                <Badge variant={getStatusBadgeVariant(item.status)}>
+                  {item.status}
+                </Badge>
+              )}
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
@@ -373,7 +378,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                       onClick={() => handleReturn(activeBooking.id)}
                       disabled={returningId === activeBooking.id}
                     >
-                      {returningId === activeBooking.id ? "Returning..." : "✓ Mark as Returned"}
+                      {returningId === activeBooking.id ? "Returning..." : <><Check size={13} strokeWidth={3} /> Mark as Returned</>}
                     </button>
                   )}
                 </div>
@@ -384,7 +389,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                   color: "var(--sem-gr-tx)",
                   padding: "12px", borderRadius: "8px", fontSize: "12px", textAlign: "center"
                 }}>
-                  <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "4px" }}>✓ Available</div>
+                  <div style={{ fontWeight: 600, fontSize: "13px", marginBottom: "4px", display: "inline-flex", alignItems: "center", gap: "5px" }}><Check size={13} strokeWidth={3} /> Available</div>
                   <span style={{ color: "var(--tx2)", fontSize: "11.5px" }}>This item is currently in the warehouse and ready for booking.</span>
                 </div>
               )}
@@ -431,8 +436,8 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                       <td>
                         <div style={{ fontWeight: 500, color: "var(--tx)" }}>{booking.eventName || booking.eventType}</div>
                         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "2px" }}>
-                          <Link href={`/warehouse/check?inquiryId=${booking.inquiryId}`} className="text-[10px] text-tx3 hover:underline">
-                            Warehouse ⚙
+                          <Link href={`/warehouse/check?inquiryId=${booking.inquiryId}`} className="text-[10px] text-tx3 hover:underline inline-flex items-center gap-1">
+                            Warehouse <Settings size={10} />
                           </Link>
                           {quote && (
                             <Link href={`/quotations/${quote.id}/pdf`} className="text-[10px] text-tx3 hover:underline">
