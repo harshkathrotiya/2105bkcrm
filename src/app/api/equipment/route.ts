@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
     // Category is now user-extensible (managed via OptionList); require non-empty, capped length
     v.required("category").maxLength("category", 50);
     if (body.quantity !== undefined) v.positiveInteger("quantity");
+    if (body.quantityUnit !== undefined) v.oneOf("quantityUnit", ["pieces", "pair", "metre"]);
     if (body.serialNumber) v.maxLength("serialNumber", 100, "serial number");
     if (body.bodyName) v.maxLength("bodyName", 100, "body name");
     if (body.respPerson) v.maxLength("respPerson", 100, "responsible person");
@@ -70,6 +71,7 @@ export async function POST(request: NextRequest) {
       productName: body.productName.trim(),
       category: body.category,
       quantity: parseInt(body.quantity ?? "1", 10),
+      quantityUnit: body.quantityUnit || "pieces",
       serialNumber: body.serialNumber?.trim() || null,
       bodyName: body.bodyName?.trim() || null,
       kitId: body.kitId ? parseInt(body.kitId, 10) : null,

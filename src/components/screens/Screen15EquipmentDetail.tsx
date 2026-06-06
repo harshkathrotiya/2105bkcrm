@@ -213,7 +213,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
               </div>
               <div className="row-item">
                 <span className="text-[11px] text-tx3">Quantity in stock</span>
-                <span className="text-[12px] font-medium">{item.quantity} unit(s)</span>
+                <span className="text-[12px] font-medium">{item.quantity} {item.quantityUnit || "pieces"}</span>
               </div>
               <div className="row-item">
                 <span className="text-[11px] text-tx3">Responsible Person</span>

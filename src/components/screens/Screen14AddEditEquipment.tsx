@@ -50,6 +50,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
     vendorId: "" as string | number,
     ownerStaffId: "" as string | number,
     defaultRate: "" as string | number,
+    quantityUnit: "pieces" as "pieces" | "pair" | "metre",
   });
 
   const [vendors, setVendors] = useState<any[]>([]);
@@ -167,6 +168,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
             vendorId: data.vendorId !== null && data.vendorId !== undefined ? data.vendorId : "",
             ownerStaffId: data.ownerStaffId !== null && data.ownerStaffId !== undefined ? data.ownerStaffId : "",
             defaultRate: data.defaultRate !== null && data.defaultRate !== undefined ? data.defaultRate : "",
+            quantityUnit: data.quantityUnit || "pieces",
           });
         }
       } catch (err: any) {
@@ -532,14 +534,27 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
 
                 <div className="field">
                   <div className="flbl">Quantity *</div>
-                  <input
-                    type="number"
-                    className="finp"
-                    min="1"
-                    value={form.quantity}
-                    onChange={(e) => update("quantity", Math.max(1, parseInt(e.target.value) || 1))}
-                    required
-                  />
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <input
+                      type="number"
+                      className="finp"
+                      style={{ flex: 1 }}
+                      min="1"
+                      value={form.quantity}
+                      onChange={(e) => update("quantity", Math.max(1, parseInt(e.target.value) || 1))}
+                      required
+                    />
+                    <select
+                      className="fsel"
+                      style={{ width: "100px" }}
+                      value={form.quantityUnit}
+                      onChange={(e) => update("quantityUnit", e.target.value as "pieces" | "pair" | "metre")}
+                    >
+                      <option value="pieces">pcs</option>
+                      <option value="pair">pair</option>
+                      <option value="metre">mtr</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="field">
@@ -760,7 +775,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
               <div style={{ fontSize: "11.5px", lineHeight: "1.6" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                   <span style={{ color: "var(--tx3)" }}>Quantity:</span>
-                  <span style={{ fontWeight: 500 }}>{form.quantity} unit(s)</span>
+                  <span style={{ fontWeight: 500 }}>{form.quantity} {form.quantityUnit}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                   <span style={{ color: "var(--tx3)" }}>Price per unit:</span>

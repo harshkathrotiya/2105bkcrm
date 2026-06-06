@@ -171,6 +171,7 @@ model Equipment {
   product_name   String
   category       String
   quantity       Int                @default(1)
+  quantity_unit  String             @default("pieces") // "pieces" | "pair" | "metre"
   serial_number  String?
   body_name      String?
   department     String             @default("VIDEO") // "VIDEO" | "LED"

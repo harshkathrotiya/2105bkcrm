@@ -1,392 +1,621 @@
 /**
- * prisma/seed.ts — Full demo seed for BK CRM on Supabase PostgreSQL
+ * prisma/seed.ts — Real data seed for BK CRM
  * Run: npx tsx prisma/seed.ts
  */
 import { PrismaClient } from "@prisma/client";
 import pg from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
 import path from "node:path";
 import { config as loadEnv } from "dotenv";
 
 loadEnv({ path: path.resolve(__dirname, "../.env") });
-
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 const pool = new pg.Pool({
   connectionString: process.env.DIRECT_URL!,
-  ssl: process.env.DIRECT_URL?.includes("sslmode=require")
-    ? { rejectUnauthorized: false }
-    : undefined,
+  ssl: process.env.DIRECT_URL?.includes("sslmode=require") ? { rejectUnauthorized: false } : undefined,
 });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter } as any);
 
+const NOW = new Date().toISOString();
+
 // ── helpers ──────────────────────────────────────────────────────────────────
-const now = new Date();
-const y = now.getFullYear();
-const m = String(now.getMonth() + 1).padStart(2, "0");
-const d = (day: number) => `${y}-${m}-${String(day).padStart(2, "0")}`;
-const prevM = String(now.getMonth()).padStart(2, "0") || "12";
-const prevY = now.getMonth() === 0 ? y - 1 : y;
-const dp = (day: number) => `${prevY}-${prevM}-${String(day).padStart(2, "0")}`;
+function parseQty(raw: string | number): { quantity: number; quantity_unit: string } {
+  const s = String(raw || "1").trim();
+  if (/pair/i.test(s)) return { quantity: parseInt(s) || 1, quantity_unit: "pair" };
+  if (/mtr|metre|meter/i.test(s)) return { quantity: parseInt(s) || 1, quantity_unit: "metre" };
+  const n = parseInt(s);
+  return { quantity: isNaN(n) || n < 1 ? 1 : n, quantity_unit: "pieces" };
+}
+
+// bill_number="Sold" was used in the spreadsheet to mark sold items
+function isSold(billNumber?: string): boolean {
+  return String(billNumber || "").toLowerCase() === "sold";
+}
+
+function parseDate(d?: string): string | null {
+  if (!d) return null;
+  // Handle dd/mm/yyyy
+  const parts = d.trim().split("/");
+  if (parts.length === 3 && parts[2].length === 4) {
+    return `${parts[2]}-${parts[1].padStart(2,"0")}-${parts[0].padStart(2,"0")}`;
+  }
+  return d || null;
+}
 
 async function main() {
-  console.log("🌱 Seeding BK CRM database...");
+  console.log("🌱 Seeding BK CRM — real data...\n");
 
-  // ── 1. CLIENTS ─────────────────────────────────────────────────────────────
-  console.log("  → clients");
-  await prisma.client.deleteMany();
-
-  const clients = await prisma.client.createMany({
-    data: [
-      { id: "client-1", initials: "AG", bg: "#EEEDFE", fg: "#3C3489", name: "Adani Group",       contact: "Vikram Shah",   mobile: "9825011111", email: "vikram@adani.com",        gst: "24AAACA1234R1ZX", pan: "AAACA1234R", address_line: "Shantipura, SG Highway", city: "Ahmedabad",   district: "Ahmedabad",   state: "Gujarat", pin: "380015", status: "Active",   created_at: d(1) },
-      { id: "client-2", initials: "TP", bg: "#E1F5EE", fg: "#085041", name: "Torrent Pharma",    contact: "Priya Mehta",   mobile: "9825022222", email: "priya@torrentpharma.com", gst: "24BBBBB5678R1ZX", pan: "BBBBB5678R", address_line: "Ashram Road",            city: "Ahmedabad",   district: "Ahmedabad",   state: "Gujarat", pin: "380009", status: "Active",   created_at: d(2) },
-      { id: "client-3", initials: "PF", bg: "#FAECE7", fg: "#712B13", name: "Patel Family",      contact: "Rajesh Patel",  mobile: "9825033333", email: "rajesh@email.com",        gst: "",                pan: "",           address_line: "Gorwa",                  city: "Vadodara",    district: "Vadodara",    state: "Gujarat", pin: "390016", status: "Active",   created_at: d(3) },
-      { id: "client-4", initials: "DT", bg: "#E6F1FB", fg: "#0C447C", name: "Dholera Trust",     contact: "Swami Mahraj",  mobile: "9825044444", email: "swami@dholeratrust.org",  gst: "24CCCCC9012R1ZX", pan: "CCCCC9012R", address_line: "Dholera",                city: "Dholera",     district: "Ahmedabad",   state: "Gujarat", pin: "382455", status: "Active",   created_at: d(4) },
-      { id: "client-5", initials: "GC", bg: "#FAEEDA", fg: "#633806", name: "GIFT City Corp",    contact: "Amit Kumar",    mobile: "9825055555", email: "amit@giftcity.in",        gst: "",                pan: "",           address_line: "GIFT City",              city: "Gandhinagar", district: "Gandhinagar", state: "Gujarat", pin: "382355", status: "Inactive", created_at: d(5) },
-      { id: "client-6", initials: "RG", bg: "#F1EFE8", fg: "#444441", name: "Reliance Group",    contact: "Suresh Ambani", mobile: "9825066666", email: "suresh@reliance.com",     gst: "27AAAAA1234R1ZX", pan: "AAAAA1234R", address_line: "Nariman Point",          city: "Mumbai",      district: "Mumbai",      state: "Maharashtra", pin: "400021", status: "Active", created_at: d(6) },
-      { id: "client-7", initials: "TM", bg: "#FCEBEB", fg: "#791F1F", name: "Tata Motors",       contact: "Ratan Tata Jr", mobile: "9825077777", email: "ratan@tatamotors.com",    gst: "27BBBBB5678R1ZX", pan: "BBBBB5678R", address_line: "Bombay House",           city: "Mumbai",      district: "Mumbai",      state: "Maharashtra", pin: "400001", status: "Active", created_at: d(7) },
-      { id: "client-8", initials: "IS", bg: "#FBEAF0", fg: "#72243E", name: "ISRO Ahmedabad",    contact: "Dr. Mehta",     mobile: "9825088888", email: "mehta@isro.gov.in",       gst: "",                pan: "",           address_line: "Jodhpur Tekra",          city: "Ahmedabad",   district: "Ahmedabad",   state: "Gujarat", pin: "380015", status: "Active", created_at: d(8) },
-    ],
-  });
-  console.log(`     ✓ ${clients.count} clients`);
-
-  // ── 2. INQUIRIES ───────────────────────────────────────────────────────────
-  console.log("  → inquiries");
-  await prisma.inquiry.deleteMany();
-
-  await prisma.inquiry.createMany({
-    data: [
-      { id: "inq-1", client_id: "client-1", event_type: "Corporate Event",  start_date: d(10), end_date: d(12), start_time: "09:00 AM", end_time: "09:00 PM", venue: "Grand Bhagwati, Ahmedabad",    notes: "Annual conference with product launch",  status: "Confirmed", created_at: d(9)  },
-      { id: "inq-2", client_id: "client-2", event_type: "Product Launch",   start_date: d(14), end_date: d(15), start_time: "04:00 PM", end_time: "10:00 PM", venue: "Torrent House, Ahmedabad",     notes: "New drug launch event",                  status: "Quoted",    created_at: d(9)  },
-      { id: "inq-3", client_id: "client-3", event_type: "Wedding",          start_date: d(21), end_date: d(22), start_time: "06:00 AM", end_time: "11:00 PM", venue: "Patel Farm, Vadodara",         notes: "Full day coverage needed",               status: "New",       created_at: d(10) },
-      { id: "inq-4", client_id: "client-4", event_type: "Dholera Mahotsav", start_date: dp(15), end_date: dp(20), start_time: "08:00 AM", end_time: "10:00 PM", venue: "Dholera Grounds",            notes: "Annual Festival - 6 days",               status: "Confirmed", created_at: dp(10) },
-      { id: "inq-5", client_id: "client-6", event_type: "AGM",              start_date: d(25), end_date: d(25), start_time: "10:00 AM", end_time: "06:00 PM", venue: "Reliance HQ, Mumbai",          notes: "Annual General Meeting",                 status: "Quoted",    created_at: d(12) },
-      { id: "inq-6", client_id: "client-7", event_type: "Press Conference", start_date: d(18), end_date: d(18), start_time: "11:00 AM", end_time: "02:00 PM", venue: "Tata Motors Showroom, Mumbai", notes: "New EV launch press conference",         status: "New",       created_at: d(13) },
-      { id: "inq-7", client_id: "client-8", event_type: "Award Ceremony",   start_date: d(28), end_date: d(28), start_time: "05:00 PM", end_time: "09:00 PM", venue: "ISRO SAC, Ahmedabad",          notes: "Annual awards night",                    status: "New",       created_at: d(14) },
-      { id: "inq-8", client_id: "client-5", event_type: "Seminar",          start_date: dp(5),  end_date: dp(6),  start_time: "09:00 AM", end_time: "05:00 PM", venue: "GIFT City Convention Centre", notes: "Investment seminar",                     status: "Cancelled", created_at: dp(1) },
-    ],
-  });
-  console.log("     ✓ 8 inquiries");
-
-  // ── 3. QUOTATIONS ──────────────────────────────────────────────────────────
-  console.log("  → quotations");
-  await prisma.quotation.deleteMany();
-
-  const eq1 = JSON.stringify([
-    { no: 1, position: "Center Tally",       equip: "FS6",            rate: 20000, days: 3, amount: 60000 },
-    { no: 2, position: "Center Semi Wide",   equip: "FS6",            rate: 20000, days: 3, amount: 60000 },
-    { no: 3, position: "Wireless 1",         equip: "FX3 + Wireless", rate: 10000, days: 3, amount: 30000 },
-    { no: 4, position: "Photo 1",            equip: "DSLR",           rate:  8000, days: 3, amount: 24000 },
-    { no: 5, position: "Video Crane 32 Ft",  equip: "Crane 32 Feet",  rate: 15000, days: 3, amount: 45000 },
-  ]);
-  const eq2 = JSON.stringify([
-    { no: 1, position: "Main Camera",        equip: "FX6",            rate: 20000, days: 2, amount: 40000 },
-    { no: 2, position: "Drone",              equip: "DJI Mavic 3",    rate: 12000, days: 2, amount: 24000 },
-    { no: 3, position: "LED Wall",           equip: "LED Panel 10x6", rate: 25000, days: 2, amount: 50000 },
-  ]);
-  const eq3 = JSON.stringify([
-    { no: 1, position: "Main Camera",        equip: "FX6",            rate: 20000, days: 1, amount: 20000 },
-    { no: 2, position: "Backup Camera",      equip: "FX3",            rate: 10000, days: 1, amount: 10000 },
-    { no: 3, position: "Audio",              equip: "Zoom H6",        rate:  5000, days: 1, amount:  5000 },
-  ]);
-
-  await prisma.quotation.createMany({
-    data: [
-      { id: "quote-1", inquiry_id: "inq-1", client_name: "Adani Group",    event_name: "Annual Conference",  quote_no: `BKM/${y}/${m}/01`, start_date: d(10), end_date: d(12), days: 3, venue: "Grand Bhagwati, Ahmedabad",    status: "Approved", equipment: eq1, subtotal: 219000, cgst: 19710, sgst: 19710, total: 258420, created_at: d(9),  sent_at: d(9),  approved_at: d(10) },
-      { id: "quote-2", inquiry_id: "inq-2", client_name: "Torrent Pharma", event_name: "Drug Launch Event",  quote_no: `BKM/${y}/${m}/02`, start_date: d(14), end_date: d(15), days: 2, venue: "Torrent House, Ahmedabad",     status: "Sent",     equipment: eq2, subtotal: 114000, cgst: 10260, sgst: 10260, total: 134520, created_at: d(10), sent_at: d(11), approved_at: null },
-      { id: "quote-3", inquiry_id: "inq-5", client_name: "Reliance Group", event_name: "AGM Coverage",       quote_no: `BKM/${y}/${m}/03`, start_date: d(25), end_date: d(25), days: 1, venue: "Reliance HQ, Mumbai",          status: "Draft",    equipment: eq3, subtotal:  35000, cgst:  3150, sgst:  3150, total:  41300, created_at: d(13), sent_at: null,  approved_at: null },
-    ],
-  });
-  console.log("     ✓ 3 quotations");
-
-  // ── 4. INVOICES ────────────────────────────────────────────────────────────
-  console.log("  → invoices");
-  await prisma.invoice.deleteMany();
-
-  await prisma.invoice.createMany({
-    data: [
-      { id: "inv-1", quotation_id: "quote-1", invoice_no: `BKM-INV-${y}/${m}/01`, client_name: "Adani Group",    event_name: "Annual Conference", start_date: d(10), end_date: d(12), venue: "Grand Bhagwati, Ahmedabad",    videography_amount: 180000, photography_amount: 39000, advance: 129210, balance: 129210, status: "Partial paid", advance_received: 1, advance_received_at: d(11), advance_ref: "UPI123456",   advance_method: "UPI",          balance_received: 0, balance_received_at: null, balance_ref: "",          balance_method: "",             hdd_delivered: 0, created_at: d(13), due_date: d(20) },
-      { id: "inv-2", quotation_id: "quote-2", invoice_no: `BKM-INV-${y}/${m}/02`, client_name: "Torrent Pharma", event_name: "Drug Launch Event",  start_date: d(14), end_date: d(15), venue: "Torrent House, Ahmedabad",     videography_amount:  90000, photography_amount: 24000, advance:  57240, balance:  57240, status: "Unpaid",       advance_received: 0, advance_received_at: null,  advance_ref: "",            advance_method: "",             balance_received: 0, balance_received_at: null, balance_ref: "",          balance_method: "",             hdd_delivered: 0, created_at: d(14), due_date: d(21) },
-      { id: "inv-3", quotation_id: "quote-1", invoice_no: `BKM-INV-${y}/${m}/03`, client_name: "Adani Group",    event_name: "Annual Conference", start_date: d(10), end_date: d(12), venue: "Grand Bhagwati, Ahmedabad",    videography_amount:  78420, photography_amount:      0, advance:  78420, balance:      0, status: "Paid",         advance_received: 1, advance_received_at: d(13), advance_ref: "NEFT987654",  advance_method: "Bank Transfer", balance_received: 1, balance_received_at: d(15), balance_ref: "NEFT111222", balance_method: "Bank Transfer", hdd_delivered: 1, created_at: d(15), due_date: d(22) },
-    ],
-  });
-  console.log("     ✓ 3 invoices");
-
-  // ── 5. CALENDAR EVENTS ─────────────────────────────────────────────────────
-  console.log("  → calendar events");
-  await prisma.calendarEvent.deleteMany();
-
-  const calMonth = now.getMonth() + 1;
-  const calYear  = now.getFullYear();
-  await prisma.calendarEvent.createMany({
-    data: [
-      { id: "cal-1",  date: 10, month: calMonth, year: calYear, label: "Adani Meet",      type: "confirmed" },
-      { id: "cal-2",  date: 11, month: calMonth, year: calYear, label: "↔ Adani",         type: "confirmed" },
-      { id: "cal-3",  date: 12, month: calMonth, year: calYear, label: "↔ Adani",         type: "confirmed" },
-      { id: "cal-4",  date: 14, month: calMonth, year: calYear, label: "Torrent Launch",  type: "quotation" },
-      { id: "cal-5",  date: 15, month: calMonth, year: calYear, label: "↔ Torrent",       type: "quotation" },
-      { id: "cal-6",  date: 21, month: calMonth, year: calYear, label: "Patel Wedding",   type: "inquiry"   },
-      { id: "cal-7",  date: 22, month: calMonth, year: calYear, label: "↔ Patel",         type: "inquiry"   },
-      { id: "cal-8",  date: 25, month: calMonth, year: calYear, label: "Reliance AGM",    type: "quotation" },
-      { id: "cal-9",  date: 18, month: calMonth, year: calYear, label: "Tata Press",      type: "inquiry"   },
-      { id: "cal-10", date: 28, month: calMonth, year: calYear, label: "ISRO Awards",     type: "inquiry"   },
-    ],
-  });
-  console.log("     ✓ 10 calendar events");
-
-  // ── 6. VENDORS ─────────────────────────────────────────────────────────────
-  console.log("  → vendors");
-  await prisma.vendor.deleteMany();
-
-  await prisma.vendor.createMany({
-    data: [
-      { name: "Apex Rental Services",   phone: "9925012345", email: "info@apexrentals.com",    specialization: "Crane, Heavy Equipment", city: "Ahmedabad",   gst_number: "24APEXR1234R1ZX",  notes: "Prefers bank transfer.",          is_active: 1, created_at: d(1) },
-      { name: "Shreeji Camera Rental",  phone: "9876543210", email: "rent@shreejicamera.com",  specialization: "Drone, Camera, Lenses",  city: "Vadodara",    gst_number: null,                notes: "Contact: Jignesh Bhai.",          is_active: 1, created_at: d(1) },
-      { name: "Falcon Drones & FPV",    phone: "9123456789", email: "fly@falcondrones.com",    specialization: "Drone, FPV",             city: "Ahmedabad",   gst_number: "24FALCON9876A1Z",   notes: "Requires 1 day advance booking.", is_active: 1, created_at: d(1) },
-      { name: "Audio Masters Rental",   phone: "9898098980", email: "audio@masters.com",       specialization: "Audio Mixer, Mics",      city: "Gandhinagar", gst_number: null,                notes: "High quality wireless mics.",     is_active: 1, created_at: d(1) },
-      { name: "Vasu Video Solutions",   phone: "9090990909", email: "vasuvideo@gmail.com",     specialization: "Video Mixer, Switchers", city: "Ahmedabad",   gst_number: null,                notes: "Reliable production switcher.",   is_active: 1, created_at: d(1) },
-      { name: "Bright LED Rentals",     phone: "9712345678", email: "led@brightrentals.com",   specialization: "LED Wall, Panels",       city: "Surat",       gst_number: "24BRIGHT1234R1ZX",  notes: "Large LED walls available.",      is_active: 1, created_at: d(2) },
-      { name: "SoundWave Audio",        phone: "9898765432", email: "sound@soundwave.in",      specialization: "PA System, Speakers",    city: "Ahmedabad",   gst_number: null,                notes: "Good for outdoor events.",        is_active: 0, created_at: d(2) },
-    ],
-  });
-  console.log("     ✓ 7 vendors");
-
-  // ── 7. KITS ────────────────────────────────────────────────────────────────
-  console.log("  → kits");
-  await prisma.equipment.deleteMany();
-  await prisma.kit.deleteMany();
-
-  const kitNames = [
-    "Sony FX6 Kit", "Sony FX3 Kit", "Sony Alpha 7S III Kit", "Sony Alpha 7 IV Kit",
-    "Sony ILCE 7M5 Kit", "Z150-01 Kit", "Z150-02 Kit", "Z150-03 Kit", "Z150-05 Kit",
-    "Hollyland Mars 4K Kit-01", "Hollyland Mars 4K Kit-02", "Hollyland Mars 4K Kit-03",
-    "Accsoon Master 4K Kit", "Live-U Solo HD Kit", "Eartec Talkback Kit", "Tally System Kit",
-  ];
-
-  const kitMap: Record<string, number> = {};
-  for (const name of kitNames) {
-    const kit = await prisma.kit.create({ data: { name, description: `BK Media standard ${name}.`, created_at: d(1) } });
-    kitMap[name] = kit.id;
-  }
-  console.log(`     ✓ ${kitNames.length} kits`);
-
-  // ── 8. EQUIPMENT ───────────────────────────────────────────────────────────
-  console.log("  → equipment (cameras, mixers, recorders, audio, wireless, UPS)");
-
-  // Cameras
-  const cameras = [
-    { product_name: "Sony FX6",          category: "CAMERA", quantity: 1, serial_number: "7000701",    body_name: "Sony FX6",          kit_id: kitMap["Sony FX6 Kit"],          resp_person: "Vikram", purchase_price: 450000 },
-    { product_name: "Sony FX3",          category: "CAMERA", quantity: 1, serial_number: "1002576",    body_name: "Sony FX3",          kit_id: kitMap["Sony FX3 Kit"],          resp_person: "Priya",  purchase_price: 340000 },
-    { product_name: "Sony Alpha 7S III", category: "CAMERA", quantity: 1, serial_number: "5781062",    body_name: "Sony Alpha 7S III", kit_id: kitMap["Sony Alpha 7S III Kit"], resp_person: "Rohan",  purchase_price: 250000 },
-    { product_name: "Sony Alpha 7 IV",   category: "CAMERA", quantity: 1, serial_number: "8468677",    body_name: "Sony Alpha 7 IV",   kit_id: kitMap["Sony Alpha 7 IV Kit"],   resp_person: "Rahul",  purchase_price: 200000 },
-    { product_name: "Sony ILCE 7M5",     category: "CAMERA", quantity: 1, serial_number: "2027594",    body_name: "Sony ILCE 7M5",     kit_id: kitMap["Sony ILCE 7M5 Kit"],     resp_person: "Manish", purchase_price: 194915 },
-    { product_name: "Sony Z150-01",      category: "CAMERA", quantity: 1, serial_number: "7003244",    body_name: "Sony Z150-01",      kit_id: kitMap["Z150-01 Kit"],           resp_person: "Sanjay", purchase_price: 285000 },
-    { product_name: "Sony Z150-02",      category: "CAMERA", quantity: 1, serial_number: "7003683",    body_name: "Sony Z150-02",      kit_id: kitMap["Z150-02 Kit"],           resp_person: "Jayesh", purchase_price: 285000 },
-    { product_name: "Sony Z150-03",      category: "CAMERA", quantity: 1, serial_number: "7001810",    body_name: "Sony Z150-03",      kit_id: kitMap["Z150-03 Kit"],           resp_person: "Sanjay", purchase_price: 285000 },
-    { product_name: "Sony Z150-05",      category: "CAMERA", quantity: 1, serial_number: "7004593",    body_name: "Sony Z150-05",      kit_id: kitMap["Z150-05 Kit"],           resp_person: "Jayesh", purchase_price: 285000 },
-    { product_name: "Sony Z150-04",      category: "CAMERA", quantity: 1, serial_number: "7004123",    body_name: "Sony Z150-04",      kit_id: null,                            resp_person: "Sanjay", purchase_price: 285000 },
-  ];
-
-  for (const cam of cameras) {
-    const eq = await prisma.equipment.create({ data: { ...cam, status: "AVAILABLE", created_at: d(1) } });
-    if (cam.kit_id) {
-      await prisma.kit.update({ where: { id: cam.kit_id }, data: { main_body_id: eq.id } });
-    }
-  }
-
-  // Video Mixers
-  await prisma.equipment.createMany({ data: [
-    { product_name: "BM Videohub 20x20 12G", category: "VIDEO_MIXER",    quantity: 1, serial_number: "VH-2020-01", resp_person: "Amit",   purchase_price: 247800, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Stream Deck 01",        category: "VIDEO_MIXER",    quantity: 1, serial_number: "SD-01",      resp_person: "Vikram", purchase_price:  21590, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Stream Deck 02",        category: "VIDEO_MIXER",    quantity: 1, serial_number: "SD-02",      resp_person: "Vikram", purchase_price:  21590, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "BM ATEM Mini",          category: "VIDEO_MIXER",    quantity: 1, serial_number: "AM-01",      resp_person: "Amit",   purchase_price:  30000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "BM ATEM Extreme",       category: "VIDEO_MIXER",    quantity: 1, serial_number: "AE-01",      resp_person: "Amit",   purchase_price:  80000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Roland V-1HD Mixer",    category: "VIDEO_MIXER",    quantity: 1, serial_number: "RM-01",      resp_person: "Amit",   purchase_price:  75000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Feelworld Live Mixer",  category: "VIDEO_MIXER",    quantity: 1, serial_number: "FM-01",      resp_person: "Vikram", purchase_price:  45000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "DevMixer 4K",           category: "VIDEO_MIXER",    quantity: 1, serial_number: "DM-01",      resp_person: "Manish", purchase_price: 120000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Atomos Shogun 7",       category: "VIDEO_RECORDER", quantity: 1, serial_number: "AS-01",      resp_person: "Rohan",  purchase_price: 110000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Atomos Ninja V",        category: "VIDEO_RECORDER", quantity: 1, serial_number: "AN-01",      resp_person: "Rohan",  purchase_price:  65000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "BM HyperDeck Studio",   category: "VIDEO_RECORDER", quantity: 1, serial_number: "HS-01",      resp_person: "Amit",   purchase_price:  95000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "BM Video Assist 7\"",   category: "VIDEO_RECORDER", quantity: 1, serial_number: "VA-07",      resp_person: "Amit",   purchase_price:  85000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "BM Video Assist 5\"",   category: "VIDEO_RECORDER", quantity: 1, serial_number: "VA-05",      resp_person: "Vikram", purchase_price:  55000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "BM HyperDeck Shuttle",  category: "VIDEO_RECORDER", quantity: 1, serial_number: "HS-02",      resp_person: "Manish", purchase_price:  35000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Zoom H6",               category: "AUDIO_MIXER",    quantity: 1, serial_number: "ZH-01",      resp_person: "Vikram", purchase_price:  32000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Rodecaster Pro II",     category: "AUDIO_MIXER",    quantity: 1, serial_number: "RP-01",      resp_person: "Vikram", purchase_price:  65000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Yamaha MG10XU",         category: "AUDIO_MIXER",    quantity: 1, serial_number: "YM-01",      resp_person: "Vikram", purchase_price:  20000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Zoom F8n Pro",          category: "AUDIO_MIXER",    quantity: 1, serial_number: "ZF-01",      resp_person: "Manish", purchase_price:  95000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "APC Easy UPS 1KVA",     category: "UPS",            quantity: 1, serial_number: "UP-01",      resp_person: "Vikram", purchase_price:  12000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "APC Easy UPS 2KVA",     category: "UPS",            quantity: 1, serial_number: "UP-02",      resp_person: "Vikram", purchase_price:  22000, status: "AVAILABLE", created_at: d(1) },
-    { product_name: "Microtek UPS 1KVA",     category: "UPS",            quantity: 1, serial_number: "UP-03",      resp_person: "Vikram", purchase_price:   8000, status: "AVAILABLE", created_at: d(1) },
-  ]});
-
-  // Wireless TX
-  const wirelessItems = [
-    { product_name: "Mars 4K-01",         serial_number: "0023050T-R",   body_name: "Mars 4K-01",        kit_id: kitMap["Hollyland Mars 4K Kit-01"], purchase_price: 45000 },
-    { product_name: "Mars 4K-02",         serial_number: "0023470T-R",   body_name: "Mars 4K-02",        kit_id: kitMap["Hollyland Mars 4K Kit-02"], purchase_price: 45000 },
-    { product_name: "Mars 4K-03",         serial_number: "0023471T-R",   body_name: "Mars 4K-03",        kit_id: kitMap["Hollyland Mars 4K Kit-03"], purchase_price: 45000 },
-    { product_name: "Accsoon Master 4K",  serial_number: "WIT07-0905",   body_name: "Accsoon Master 4K", kit_id: kitMap["Accsoon Master 4K Kit"],    purchase_price: 38000 },
-    { product_name: "Live-U Solo HD",     serial_number: "202120-23099", body_name: "Live-U Solo HD",    kit_id: kitMap["Live-U Solo HD Kit"],       purchase_price: 150000 },
-    { product_name: "Hollyland Cosmo C1", serial_number: "CC-01",        body_name: null,                kit_id: null,                               purchase_price: 75000 },
-    { product_name: "Teradek Bolt 4K",    serial_number: "TB-01",        body_name: null,                kit_id: null,                               purchase_price: 220000 },
-  ];
-  for (const w of wirelessItems) {
-    const eq = await prisma.equipment.create({ data: { ...w, category: "WIRELESS_TX", quantity: 1, resp_person: "Rahul", status: "AVAILABLE", created_at: d(1) } });
-    if (w.kit_id) await prisma.kit.update({ where: { id: w.kit_id }, data: { main_body_id: eq.id } });
-  }
-
-  // Accessories (key ones)
-  const accessories = [
-    { product_name: "Sony 200-600mm G 01",       serial_number: "1938001",    kit_id: null,                            purchase_price: 150000 },
-    { product_name: "Sony 200-600mm G 02",       serial_number: "1916007",    kit_id: null,                            purchase_price: 150000 },
-    { product_name: "Sony 400-800mm G",          serial_number: "1814652",    kit_id: null,                            purchase_price: 270000 },
-    { product_name: "24-70mm 2.8 GM Lens",       serial_number: "GM-2470",    kit_id: kitMap["Sony Alpha 7S III Kit"], purchase_price: 180000 },
-    { product_name: "70-200mm 2.8 Lens",         serial_number: "S70200",     kit_id: kitMap["Sony Alpha 7S III Kit"], purchase_price: 220000 },
-    { product_name: "Sigma 35mm Lens",           serial_number: "SG-35",      kit_id: kitMap["Sony Alpha 7S III Kit"], purchase_price:  65000 },
-    { product_name: "24-105mm G Lens",           serial_number: "G24105",     kit_id: kitMap["Sony Alpha 7 IV Kit"],   purchase_price:  90000 },
-    { product_name: "85mm 1.8 Lens",             serial_number: "S85",        kit_id: kitMap["Sony Alpha 7 IV Kit"],   purchase_price:  42000 },
-    { product_name: "GODOX V860 Flash",          serial_number: "GX-860",     kit_id: kitMap["Sony Alpha 7 IV Kit"],   purchase_price:  15000 },
-    { product_name: "Sony 24-240mm Lens",        serial_number: "24240-01",   kit_id: kitMap["Sony ILCE 7M5 Kit"],     purchase_price:  61017 },
-    { product_name: "Eartec 5 Pair (Main Body)", serial_number: "ET-01",      kit_id: kitMap["Eartec Talkback Kit"],   purchase_price: 120000 },
-    { product_name: "Hollyland Tally 8 Pair",    serial_number: "HT-01",      kit_id: kitMap["Tally System Kit"],      purchase_price:  85000 },
-    { product_name: "Belden 4694R 12G SDI Cable",serial_number: "BC-12G-01",  kit_id: null,                            purchase_price:  22400 },
-    { product_name: "SDI to HDMI 3G #1",         serial_number: "SH-01",      kit_id: null,                            purchase_price:   7000 },
-    { product_name: "SDI to HDMI 3G #2",         serial_number: "SH-02",      kit_id: null,                            purchase_price:   7000 },
-    { product_name: "SDI to HDMI 3G #3",         serial_number: "SH-03",      kit_id: null,                            purchase_price:   7000 },
-    { product_name: "BAOFENG Walkie Talkie #1",  serial_number: "BF-01",      kit_id: null,                            purchase_price:   1000 },
-    { product_name: "BAOFENG Walkie Talkie #2",  serial_number: "BF-02",      kit_id: null,                            purchase_price:   1000 },
-    { product_name: "BAOFENG Walkie Talkie #3",  serial_number: "BF-03",      kit_id: null,                            purchase_price:   1000 },
-    { product_name: "BAOFENG Walkie Talkie #4",  serial_number: "BF-04",      kit_id: null,                            purchase_price:   1000 },
-    { product_name: "Micro Converter BiDirect #1",serial_number: "MC12-01",   kit_id: null,                            purchase_price:  20060 },
-    { product_name: "Micro Converter BiDirect #2",serial_number: "MC12-02",   kit_id: null,                            purchase_price:  20060 },
-    { product_name: "Micro Converter BiDirect #3",serial_number: "MC12-03",   kit_id: null,                            purchase_price:  20060 },
-    { product_name: "USB to SATA Adapter #1",    serial_number: "US-01",      kit_id: null,                            purchase_price:   2537 },
-    { product_name: "USB to SATA Adapter #2",    serial_number: "US-02",      kit_id: null,                            purchase_price:   2537 },
-  ];
-
-  for (const acc of accessories) {
-    const eq = await prisma.equipment.create({ data: { ...acc, category: "ACCESSORY", quantity: 1, resp_person: "Vikram", status: "AVAILABLE", created_at: d(1) } });
-    if (acc.product_name === "Eartec 5 Pair (Main Body)") await prisma.kit.update({ where: { id: kitMap["Eartec Talkback Kit"] }, data: { main_body_id: eq.id } });
-    if (acc.product_name === "Hollyland Tally 8 Pair")    await prisma.kit.update({ where: { id: kitMap["Tally System Kit"] },    data: { main_body_id: eq.id } });
-  }
-  console.log("     ✓ equipment seeded");
-
-  // ── 9. STAFF ───────────────────────────────────────────────────────────────
-  console.log("  → staff");
+  // ── CLEAR (reverse dependency order) ────────────────────────────────────────
+  console.log("  → clearing existing data");
+  await prisma.clientEquipmentRate.deleteMany();
+  await prisma.ledDispatchBox.deleteMany();
+  await prisma.equipmentBooking.deleteMany();
   await prisma.staffPayment.deleteMany();
   await prisma.staffAssignment.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.quotation.deleteMany();
+  await prisma.inquiry.deleteMany();
+  await prisma.client.deleteMany();
+  await prisma.equipment.deleteMany();
+  await prisma.kit.deleteMany();
   await prisma.staff.deleteMany();
+  await prisma.vendor.deleteMany();
+  await prisma.calendarEvent.deleteMany();
+  await prisma.rolePermission.deleteMany();
+  await prisma.optionList.deleteMany();
+  await prisma.user.deleteMany();
+  console.log("     ✓ cleared\n");
 
-  const staffList = [
-    { name: "Rishi Kumar",  phone: "9825011111", role: "Videographer",    staff_type: "INHOUSE",   payment_type: "PER_DAY", rate_per_day: 1500, monthly_salary: null,  with_equipment: 0, equipment_desc: null,       aadhar_number: "452187342190", aadhar_front: "mock_front.jpg", aadhar_back: "mock_back.jpg", is_active: 1, created_at: d(1) },
-    { name: "Dev Vora",     phone: "9825022222", role: "Videographer",    staff_type: "INHOUSE",   payment_type: "PER_DAY", rate_per_day: 1500, monthly_salary: null,  with_equipment: 0, equipment_desc: null,       aadhar_number: "123456789012", aadhar_front: null,             aadhar_back: null,            is_active: 1, created_at: d(1) },
-    { name: "Mehul Shah",   phone: "9825033333", role: "Photographer",    staff_type: "INHOUSE",   payment_type: "MONTHLY", rate_per_day: null, monthly_salary: 45000, with_equipment: 0, equipment_desc: null,       aadhar_number: "223456789012", aadhar_front: null,             aadhar_back: null,            is_active: 1, created_at: d(1) },
-    { name: "Hetal Patel",  phone: "9825044444", role: "LED operator",    staff_type: "INHOUSE",   payment_type: "PER_DAY", rate_per_day: 1200, monthly_salary: null,  with_equipment: 0, equipment_desc: null,       aadhar_number: "323456789012", aadhar_front: null,             aadhar_back: null,            is_active: 1, created_at: d(1) },
-    { name: "Jignesh Rao",  phone: "9825055555", role: "Crane operator",  staff_type: "EXTERNAL",  payment_type: "PER_DAY", rate_per_day: 2500, monthly_salary: null,  with_equipment: 1, equipment_desc: "Crane 32ft", aadhar_number: "423456789012", aadhar_front: null,             aadhar_back: null,            is_active: 1, created_at: d(1) },
-    { name: "Karan Patel",  phone: "9825066666", role: "Drone operator",  staff_type: "EXTERNAL",  payment_type: "PER_DAY", rate_per_day: 3000, monthly_salary: null,  with_equipment: 1, equipment_desc: "DJI Drone",  aadhar_number: "523456789012", aadhar_front: null,             aadhar_back: null,            is_active: 1, created_at: d(1) },
-    { name: "Priya Joshi",  phone: "9825077777", role: "Editor",          staff_type: "INHOUSE",   payment_type: "MONTHLY", rate_per_day: null, monthly_salary: 35000, with_equipment: 0, equipment_desc: null,       aadhar_number: "623456789012", aadhar_front: null,             aadhar_back: null,            is_active: 1, created_at: d(1) },
-    { name: "Nirav Parmar", phone: "9825088888", role: "Videographer",    staff_type: "INHOUSE",   payment_type: "PER_DAY", rate_per_day: 1200, monthly_salary: null,  with_equipment: 0, equipment_desc: null,       aadhar_number: "723456789012", aadhar_front: null,             aadhar_back: null,            is_active: 1, created_at: d(1) },
-    { name: "Smit Mehta",   phone: "9825099999", role: "Photo editor",    staff_type: "INHOUSE",   payment_type: "MONTHLY", rate_per_day: null, monthly_salary: 28000, with_equipment: 0, equipment_desc: null,       aadhar_number: "823456789012", aadhar_front: null,             aadhar_back: null,            is_active: 1, created_at: d(1) },
-    { name: "Arjun Singh",  phone: "9825100001", role: "Audio operator",  staff_type: "EXTERNAL",  payment_type: "PER_DAY", rate_per_day: 1800, monthly_salary: null,  with_equipment: 0, equipment_desc: null,       aadhar_number: "923456789012", aadhar_front: null,             aadhar_back: null,            is_active: 1, created_at: d(1) },
-    { name: "Pooja Desai",  phone: "9825100002", role: "Photographer",    staff_type: "EXTERNAL",  payment_type: "PER_DAY", rate_per_day: 2000, monthly_salary: null,  with_equipment: 0, equipment_desc: null,       aadhar_number: "113456789012", aadhar_front: null,             aadhar_back: null,            is_active: 1, created_at: d(1) },
-    { name: "Raj Trivedi",  phone: "9825100003", role: "Videographer",    staff_type: "INHOUSE",   payment_type: "MONTHLY", rate_per_day: null, monthly_salary: 40000, with_equipment: 0, equipment_desc: null,       aadhar_number: "213456789012", aadhar_front: null,             aadhar_back: null,            is_active: 0, created_at: d(1) },
+  // ── 1. USERS ─────────────────────────────────────────────────────────────────
+  console.log("  → users");
+  const adminHash = await bcrypt.hash("admin", 12);
+  await prisma.user.create({
+    data: { username: "admin", name: "Admin", password: adminHash, role: "Admin", is_active: 1, created_at: NOW },
+  });
+  console.log("     ✓ 1 user (admin/admin)\n");
+
+  // ── 2. ROLE PERMISSIONS ───────────────────────────────────────────────────────
+  console.log("  → role permissions");
+  const ALL_PERMS = [
+    "dashboard.view",
+    "clients.view","clients.create","clients.edit","clients.delete",
+    "inquiries.view","inquiries.create","inquiries.edit",
+    "quotations.view","quotations.create","quotations.edit",
+    "invoices.view","invoices.edit",
+    "calendar.view",
+    "equipment.view","equipment.create","equipment.edit","equipment.delete",
+    "kits.view","kits.edit",
+    "vendors.view","vendors.edit",
+    "staff.view","staff.create","staff.edit","staff.payments",
+    "warehouse.view",
+    "reports.view",
+    "settings.users",
+  ];
+  const MANAGER_PERMS = ALL_PERMS.filter(p => p !== "settings.users");
+  const OPERATOR_PERMS = ALL_PERMS.filter(p => p.endsWith(".view"));
+
+  const rpData: any[] = [];
+  for (const p of ALL_PERMS)     rpData.push({ role: "Admin",    permission: p });
+  for (const p of MANAGER_PERMS) rpData.push({ role: "Manager",  permission: p });
+  for (const p of OPERATOR_PERMS)rpData.push({ role: "Operator", permission: p });
+  await prisma.rolePermission.createMany({ data: rpData });
+  console.log(`     ✓ ${rpData.length} role-permission rows\n`);
+
+  // ── 3. OPTION LISTS ───────────────────────────────────────────────────────────
+  console.log("  → option lists");
+  const staffRoles = ["Videographer","Photographer","Mixer Operator","Editor","FPV Operator","Drone Operator","Crane Operator","LED Operator","Audio Operator","Photo Editor","Graphics Designer","Other"];
+  const quotPositions = [
+    { value:"Center Tally",       meta_equip:"",              meta_rate:0 },
+    { value:"Center Full Wide",   meta_equip:"",              meta_rate:0 },
+    { value:"Center Semi Wide",   meta_equip:"",              meta_rate:0 },
+    { value:"Wireless 1",         meta_equip:"",              meta_rate:0 },
+    { value:"Wireless 2",         meta_equip:"",              meta_rate:0 },
+    { value:"Wireless 3",         meta_equip:"",              meta_rate:0 },
+    { value:"Wireless 4",         meta_equip:"",              meta_rate:0 },
+    { value:"Photo 1",            meta_equip:"",              meta_rate:0 },
+    { value:"Photo 2",            meta_equip:"",              meta_rate:0 },
+    { value:"Photo 3",            meta_equip:"",              meta_rate:0 },
+    { value:"Photo 4",            meta_equip:"",              meta_rate:0 },
+    { value:"Drone",              meta_equip:"",              meta_rate:0 },
+    { value:"Video Crane 32ft",   meta_equip:"Crane 32 Feet", meta_rate:0 },
+    { value:"Editor",             meta_equip:"",              meta_rate:0 },
+    { value:"FPV",                meta_equip:"",              meta_rate:0 },
+    { value:"LED Operator",       meta_equip:"",              meta_rate:0 },
+    { value:"Audio Operator",     meta_equip:"",              meta_rate:0 },
+    { value:"Graphics Designer",  meta_equip:"",              meta_rate:0 },
+  ];
+  const olData: any[] = [];
+  staffRoles.forEach((v,i)  => olData.push({ type:"STAFF_ROLE",        value:v, sort_order:i, is_active:1, created_at:NOW }));
+  quotPositions.forEach((p,i)=> olData.push({ type:"QUOTATION_POSITION",value:p.value, meta_equip:p.meta_equip||null, meta_rate:p.meta_rate||null, sort_order:i, is_active:1, created_at:NOW }));
+  await prisma.optionList.createMany({ data: olData });
+  console.log(`     ✓ ${olData.length} option list entries\n`);
+
+  // ── 4. CLIENTS ────────────────────────────────────────────────────────────────
+  console.log("  → clients");
+  await prisma.client.createMany({ data: [
+    { id:"c-VDL",  initials:"VDL",  name:"Vadtal",          contact:"Gunsagar Swami",   mobile:"9624030632", email:"",  gst:"", pan:"", address_line:"Shree Swaminarayan Mandir, Narsanda - Vadtal Rd, Vadtal, Gujarat 387375", city:"Vadtal",   district:"Kheda",    state:"Gujarat", pin:"387375", status:"Active", created_at:NOW },
+    { id:"c-SLG",  initials:"SLG",  name:"Salangpur",       contact:"Nilkanth bhagat",  mobile:"8630520428", email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-DHLR", initials:"DHLR", name:"Dholera",         contact:"Yuvrajbhai",       mobile:"9979854490", email:"",  gst:"", pan:"", address_line:"", city:"Dholera", district:"Ahmedabad", state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-SRD",  initials:"SRD",  name:"Sardhar",         contact:"Sant Swami",       mobile:"9099999648", email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-GDD",  initials:"GDD",  name:"Gadhda",          contact:"Harijivan Swami",  mobile:"",           email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-SMV",  initials:"SMV",  name:"Samved",          contact:"Kapilbhai",        mobile:"9925173767", email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-KLP",  initials:"KLP",  name:"Kalupur",         contact:"",                 mobile:"",           email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-JTP",  initials:"JTP",  name:"Jetalpur",        contact:"Janmangal Swami",  mobile:"",           email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-SJV",  initials:"SJV",  name:"Shreeji Visuals", contact:"Dilipbhai",        mobile:"8758402560", email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-GB",   initials:"GB",   name:"Giribapu",        contact:"Priteshbhai",      mobile:"8238249999", email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-LYD",  initials:"LYD",  name:"Loyadham",        contact:"Sneh Swami",       mobile:"9724041003", email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-HNG",  initials:"HNG",  name:"Harinagar - Pij", contact:"PD Swami",         mobile:"9824610582", email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-VRSD", initials:"VRSD", name:"Virsad",          contact:"Gyan Swami",       mobile:"",           email:"",  gst:"", pan:"", address_line:"", city:"",        district:"",         state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-BKK",  initials:"BKK",  name:"BK Media",        contact:"Kaushikbhai",      mobile:"7046483595", email:"",  gst:"", pan:"", address_line:"", city:"Vadodara",district:"Vadodara",  state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-BKM",  initials:"BKM",  name:"BK Media",        contact:"Manishbhai",       mobile:"9904844580", email:"",  gst:"", pan:"", address_line:"", city:"Vadodara",district:"Vadodara",  state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-BKJ",  initials:"BKJ",  name:"BK Media",        contact:"Jayeshbhai",       mobile:"8238432128", email:"",  gst:"", pan:"", address_line:"", city:"Vadodara",district:"Vadodara",  state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+    { id:"c-BKS",  initials:"BKS",  name:"BK Media",        contact:"Smitbhai",         mobile:"9033549001", email:"",  gst:"", pan:"", address_line:"", city:"Vadodara",district:"Vadodara",  state:"Gujarat", pin:"",       status:"Active", created_at:NOW },
+  ]});
+  console.log("     ✓ 17 clients\n");
+
+  // ── 5. VENDORS ────────────────────────────────────────────────────────────────
+  console.log("  → vendors");
+  const v1 = await prisma.vendor.create({ data: { name:"Shreeji Film", phone:"9876543210", email:"bhavesh@gmail.com", gst_number:"27AADCB2230M1Z2", city:"Botad", notes:"Contact: Bhaveshbhai", is_active:1, created_at:NOW } });
+  const v2 = await prisma.vendor.create({ data: { name:"Devsibhai",    phone:"",           email:null,               gst_number:null,               city:"",      notes:"",                    is_active:1, created_at:NOW } });
+  const v3 = await prisma.vendor.create({ data: { name:"Dilipbhai",    phone:"",           email:null,               gst_number:null,               city:"",      notes:"Also client: Shreeji Visuals (SJV)", is_active:1, created_at:NOW } });
+  console.log(`     ✓ 3 vendors (ids: ${v1.id}, ${v2.id}, ${v3.id})\n`);
+
+  // ── 6. KITS (from body_name groups in equipment CSV) ──────────────────────────
+  console.log("  → kits");
+  // Each unique body_name that has multiple items under it becomes a kit
+  const kitDefs = [
+    "Sony FX6",
+    "Sony FX3",
+    "Sony FX7",
+    "SONY Z150-01","SONY Z150-02","SONY Z150-03","SONY Z150-05",
+    "SONY Alpha 7S III",
+    "Sony Alpha 7 IV",
+    "Sony ILCE 7M5",
+    "Sony PXW X70",
+    "Dji Ronin RS 4 Pro",
+    "Blackmagic ATEM Switcher 8 Channel HD",
+    "Blackmagic ATEM Switcher 8 Channel 4K 01",
+    "Blackmagic ATEM 2 M/E Constellation 4K - 20 Ch.",
+    "Blackmagic ATEM 2 M/E Constellation HD - 20 Ch.",
+    "Blackmagic ATEM 1 M/E Advanced Pannel - 20",
+    "Blackmagic ATEM 1 M/E Advanced Pannel - 10Ch.",
+    "Blackmagic ATEM 1 M/E Constellation 4K - 10 Ch.",
+    "Blackmagic ATEM MIni 4 Channel HDMI",
+    "Blackmagic ATEM Switcher 8 Channel 4K-02",
+    "Blackmagic Hyperdcek Recorder 4K Pro- 01",
+    "Blackmagic Hyperdcek Recorder 4K Pro- 02",
+    "Blackmagic Hyperdcek Recorder 4K Pro- 03 & 04",
+    "Blackmagic Hyperdcek Recorder HD Pro",
+    "Black Magic Hyperdcek Recorder 4K Pro",
+    "Blackmagic Recorder HD",
+    "Blackmagic Video Assist",
+    "Blackmagic Smart Scop Duo",
+    "Blackmagic Smart View 4K",
+    "Blackmagic Videohub 20x20 12G",
+    "IP Converter SFP",
+    "Bidirectional 12G wPSU",
+    "Bidirectional 12G",
+    "Mini Converter SDI Distribution",
+    "Blackmagic SDI to HDMI 12G Micro Converter",
+    "Blackmagic HDMI to SDI 12G Micro Converter",
+    "Blackmagic HDMI to SDI 3G Micro Converter",
+    "BiDirectional SDI/HDMI 12G",
+    "BiDirectional SDI/HDMI 3G",
+    "Blackmagic Optical Fiber 12G SDI - 15 Pair",
+    "Blackmagic Optical Fiber 3G SDI - 3 Pair",
+    "YAMAHA MG 06 - 01","YAMAHA MG 06 - 02","YAMAHA MG 06 - 03",
+    "Hollyland Mars 4K - 01","Hollyland Mars 4K - 02","Hollyland Mars 4K - 03",
+    "Accsoon Master 4K",
+    "Hollyland Wirelass Tally System 8 Pair",
+    "Live-U SOLO HD",
+    "Dejero GOBOX HD",
+    "Eartec Talkbck 5 Pair",
+    "Talkback",
+    "HYUNDAI HEADSET WIRELSS INTERCOM- WT13",
+    "BAOFENG","BAOFENG Walky Talky",
+    "DELL Monitor 27' 4K","HP Monitor 24' HD",
+    "Syrotech Media Converter","DBC Media Converter",
+    "D-Link Switch",
+    "MT-ViKI 8 Port SDI Spiter HD",
+    "Nova Link 4K HDMI Fiber Optic Converter",
+    "Fly Video SDI HD Video Fiber Optic Converter",
+    "Nova link 8 Port HDMI Spliter HD",
+    "AV Matrix Spliter & Converter",
+    "APC Backup UPS","Online UPS",
+    "E-Image Camera Tripod","Wirelass Tripod","Tripod Studio Assist",
+    "Jio Air Fiber",
+    "Power bank","Source PC","Power Pannel",
+    "SDI Snake Cable",
+    "Digitek LED",
+    "GODOX V860",
+    "SONY Alpha 7S III",  // duplicate guard handled below
+  ];
+  // Deduplicate
+  const uniqueKitNames = [...new Set(kitDefs)];
+
+  const kitMap: Record<string,number> = {};
+  for (const name of uniqueKitNames) {
+    const k = await prisma.kit.create({ data: { name, department:"VIDEO", created_at:NOW } });
+    kitMap[name] = k.id;
+  }
+  console.log(`     ✓ ${uniqueKitNames.length} kits\n`);
+
+  // ── 7. EQUIPMENT ──────────────────────────────────────────────────────────────
+  console.log("  → equipment");
+
+  // Each row: [product_name, category, qty_raw, serial, body_name, resp_person, purchase_date, purchase_from, bill_number, purchase_price, notes]
+  // bill_number="Sold" → status SOLD
+  type ERow = {
+    product_name: string; category: string; qty_raw?: string|number;
+    serial?: string; body_name?: string; resp_person?: string;
+    purchase_date?: string; purchase_from?: string; bill_number?: string;
+    purchase_price?: number | null; notes?: string;
+  };
+
+  const equipRows: ERow[] = [
+    // ── FX6 group ──
+    { product_name:"Sony FX6",                    category:"CAMERA",          qty_raw:1, serial:"",           body_name:"Sony FX6",          resp_person:"Keyur",        purchase_date:"15/01/2024", purchase_from:"Sony India",            bill_number:"INV-2024-001", purchase_price:350000 },
+    { product_name:"Sony Charger",                category:"ACCESSORY",       qty_raw:1, serial:"180978-11",  body_name:"Sony FX6",          resp_person:"Keyur" },
+    { product_name:"Sony BP-U35",                 category:"ACCESSORY",       qty_raw:1, serial:"20240811",   body_name:"Sony FX6",          resp_person:"Keyur",        purchase_from:"Ghanshyam Photo" },
+    { product_name:"Welborn",                     category:"ACCESSORY",       qty_raw:1, serial:"41154610",   body_name:"Sony FX6",          resp_person:"Keyur",        purchase_from:"Ghanshyam Photo" },
+    { product_name:"Lexar Type A Card",           category:"STORAGE",         qty_raw:1,                      body_name:"Sony FX6",          resp_person:"Keyur",        purchase_from:"Ghanshyam Photo" },
+    { product_name:"Digitek Accessory",           category:"ACCESSORY",       qty_raw:1,                      body_name:"Sony FX6",          resp_person:"Keyur",        purchase_from:"Ghanshyam Photo" },
+    // ── Lenses (standalone) ──
+    { product_name:"Sony 200-600mm G 01",         category:"LENS",            qty_raw:1, serial:"1938001",    body_name:undefined,           resp_person:"Keyur",        purchase_from:"Ghanshyam Photo", purchase_price:150000 },
+    { product_name:"Sony 200-600mm G 02",         category:"LENS",            qty_raw:1, serial:"1916007",    body_name:undefined,           resp_person:"Keyur",        purchase_from:"Ghanshyam Photo", purchase_price:150000 },
+    { product_name:"Sony 400-800mm G",            category:"LENS",            qty_raw:1, serial:"1814652",    body_name:undefined,           resp_person:"Keyur",                                           purchase_price:270000 },
+    // ── FX3 group ──
+    { product_name:"Sony FX3",                    category:"CAMERA",          qty_raw:1, serial:"1002576",    body_name:"Sony FX3",          resp_person:"Keyur",                                           purchase_price:340000 },
+    { product_name:"Lexar Card 800Mbps 160GB (FX3)",category:"STORAGE",       qty_raw:2,                      body_name:"Sony FX3",          resp_person:"Keyur",        purchase_from:"Ghanshyam Photo", purchase_price:24000 },
+    { product_name:"SONY NP-FZ100 (FX3)",         category:"ACCESSORY",       qty_raw:3,                      body_name:"Sony FX3",          resp_person:"Keyur",        purchase_from:"Ghanshyam Photo", purchase_price:18000 },
+    { product_name:"SONY Charger (FX3)",          category:"ACCESSORY",       qty_raw:1, serial:"3374091",    body_name:"Sony FX3",          resp_person:"Keyur",                                           purchase_price:13000 },
+    { product_name:"Digitek (FX3)",               category:"ACCESSORY",       qty_raw:1,                      body_name:"Sony FX3",          resp_person:"Keyur",        purchase_from:"Ghanshyam Photo", bill_number:"Sold", purchase_price:900 },
+    // ── FX7 group (SOLD) ──
+    { product_name:"Sony FX7",                    category:"CAMERA",          qty_raw:1, serial:"30504",      body_name:"Sony FX7",          resp_person:"Keyur",        bill_number:"Sold", purchase_price:0 },
+    { product_name:"Sony PZ 28-135",              category:"LENS",            qty_raw:1, serial:"5117848",    body_name:"Sony FX7",          resp_person:"Keyur",        bill_number:"Sold", purchase_price:0 },
+    { product_name:"SONY BC-U1A",                 category:"ACCESSORY",       qty_raw:1, serial:"19042001992",body_name:"Sony FX7",          resp_person:"Keyur",        bill_number:"Sold", purchase_price:0 },
+    { product_name:"Welborn (FX7)",               category:"ACCESSORY",       qty_raw:2, serial:"41154610",   body_name:"Sony FX7",          resp_person:"Keyur" },
+    // ── Z150-01 group ──
+    { product_name:"SONY Z150-01",                category:"CAMERA",          qty_raw:1, serial:"7003244",    body_name:"SONY Z150-01",      resp_person:"Vishal",                                          purchase_price:285000 },
+    { product_name:"Lexar Card 90Mbps 64GB (Z150-01)",category:"STORAGE",     qty_raw:1,                      body_name:"SONY Z150-01",      resp_person:"Vishal" },
+    { product_name:"SONY NP-F770 (Z150-01)",      category:"ACCESSORY",       qty_raw:1, serial:"41163929",   body_name:"SONY Z150-01",      resp_person:"Vishal",                                          purchase_price:2000 },
+    { product_name:"Welborn (Z150-01)",           category:"ACCESSORY",       qty_raw:1, serial:"41154610",   body_name:"SONY Z150-01",      resp_person:"Vishal",                                          purchase_price:1000 },
+    { product_name:"SONY BC-L1 (Z150-01)",        category:"ACCESSORY",       qty_raw:1,                      body_name:"SONY Z150-01",      resp_person:"Vishal" },
+    // ── Z150-02 group ──
+    { product_name:"SONY Z150-02",                category:"CAMERA",          qty_raw:1, serial:"7003683",    body_name:"SONY Z150-02",      resp_person:"Bhano",                                           purchase_price:285000 },
+    { product_name:"Lexar Card 90Mbps 64GB (Z150-02)",category:"STORAGE",     qty_raw:1,                      body_name:"SONY Z150-02",      resp_person:"Bhano" },
+    { product_name:"SONY NP-F770 (Z150-02)",      category:"ACCESSORY",       qty_raw:1,                      body_name:"SONY Z150-02",      resp_person:"Bhano" },
+    { product_name:"DigiTek NP-F950",             category:"ACCESSORY",       qty_raw:1, serial:"41211966",   body_name:"SONY Z150-02",      resp_person:"Bhano" },
+    { product_name:"DigiTek BC-L1",               category:"ACCESSORY",       qty_raw:1,                      body_name:"SONY Z150-02",      resp_person:"Bhano" },
+    // ── Z150-03 group ──
+    { product_name:"SONY Z150-03",                category:"CAMERA",          qty_raw:1, serial:"7001810",    body_name:"SONY Z150-03",      resp_person:"Mayur",                                           purchase_price:285000 },
+    { product_name:"Lexar Card 90Mbps 64GB (Z150-03)",category:"STORAGE",     qty_raw:1,                      body_name:"SONY Z150-03",      resp_person:"Mayur" },
+    { product_name:"SONY NP-F770 (Z150-03)",      category:"ACCESSORY",       qty_raw:1, serial:"R-41022780", body_name:"SONY Z150-03",      resp_person:"Mayur" },
+    { product_name:"Welborn (Z150-03)",           category:"ACCESSORY",       qty_raw:1, serial:"R-41271284", body_name:"SONY Z150-03",      resp_person:"Mayur" },
+    { product_name:"SONY BC-L1 (Z150-03)",        category:"ACCESSORY",       qty_raw:1,                      body_name:"SONY Z150-03",      resp_person:"Mayur" },
+    // ── Z150-05 group ──
+    { product_name:"SONY Z150-05",                category:"CAMERA",          qty_raw:1, serial:"7004593",    body_name:"SONY Z150-05",      resp_person:"Vishal",                                          purchase_price:285000 },
+    { product_name:"Lexar Card 90Mbps 64GB (Z150-05)",category:"STORAGE",     qty_raw:1,                      body_name:"SONY Z150-05",      resp_person:"Vishal" },
+    { product_name:"SONY NP-F770 (Z150-05)",      category:"ACCESSORY",       qty_raw:1, serial:"R-41163929", body_name:"SONY Z150-05",      resp_person:"Vishal" },
+    { product_name:"Osaka (Z150-05)",             category:"ACCESSORY",       qty_raw:1,                      body_name:"SONY Z150-05",      resp_person:"Vishal" },
+    { product_name:"SONY BC-L1 (Z150-05)",        category:"ACCESSORY",       qty_raw:1,                      body_name:"SONY Z150-05",      resp_person:"Vishal" },
+    // ── ATEM Switchers ──
+    { product_name:"Blackmagic ATEM Switcher 8 Channel HD",      category:"VIDEO_MIXER", qty_raw:1, serial:"6112028",  body_name:"Blackmagic ATEM Switcher 8 Channel HD" },
+    { product_name:"Blackmagic ATEM Switcher 8 Channel 4K 01",   category:"VIDEO_MIXER", qty_raw:1, serial:"10690763", body_name:"Blackmagic ATEM Switcher 8 Channel 4K 01" },
+    { product_name:"Blackmagic ATEM 2 M/E Constellation 4K 20Ch",category:"VIDEO_MIXER", qty_raw:1, serial:"12856972", body_name:"Blackmagic ATEM 2 M/E Constellation 4K - 20 Ch." },
+    { product_name:"Blackmagic ATEM 2 M/E Constellation HD 20Ch",category:"VIDEO_MIXER", qty_raw:1, serial:"12804433", body_name:"Blackmagic ATEM 2 M/E Constellation HD - 20 Ch." },
+    { product_name:"Blackmagic ATEM 1 M/E Advanced Panel 20Ch",  category:"VIDEO_MIXER", qty_raw:1, serial:"12722973", body_name:"Blackmagic ATEM 1 M/E Advanced Pannel - 20" },
+    { product_name:"Blackmagic ATEM 1 M/E Advanced Panel 10Ch",  category:"VIDEO_MIXER", qty_raw:1, serial:"13642616", body_name:"Blackmagic ATEM 1 M/E Advanced Pannel - 10Ch." },
+    { product_name:"Blackmagic ATEM 1 M/E Constellation 4K 10Ch",category:"VIDEO_MIXER", qty_raw:1, serial:"13828574", body_name:"Blackmagic ATEM 1 M/E Constellation 4K - 10 Ch." },
+    { product_name:"Blackmagic ATEM Mini 4 Channel HDMI",         category:"VIDEO_MIXER", qty_raw:1, serial:"6316230",  body_name:"Blackmagic ATEM MIni 4 Channel HDMI" },
+    { product_name:"Adaptor (ATEM Mini)",                         category:"ACCESSORY",   qty_raw:1,                    body_name:"Blackmagic ATEM MIni 4 Channel HDMI" },
+    { product_name:"Blackmagic ATEM Switcher 8 Channel 4K-02",    category:"VIDEO_MIXER", qty_raw:1, serial:"6060590",  body_name:"Blackmagic ATEM Switcher 8 Channel 4K-02" },
+    // ── Hyperdeck Recorders ──
+    { product_name:"Blackmagic Hyperdeck 4K Pro 01",  category:"VIDEO_RECORDER", qty_raw:1, serial:"13584183", body_name:"Blackmagic Hyperdcek Recorder 4K Pro- 01" },
+    { product_name:"Blackmagic Hyperdeck 4K Pro 02",  category:"VIDEO_RECORDER", qty_raw:1, serial:"10981229", body_name:"Blackmagic Hyperdcek Recorder 4K Pro- 02" },
+    { product_name:"Blackmagic Hyperdeck 4K Pro 03",  category:"VIDEO_RECORDER", qty_raw:1, serial:"14344364", body_name:"Blackmagic Hyperdcek Recorder 4K Pro- 03 & 04" },
+    { product_name:"Blackmagic Hyperdeck 4K Pro 04",  category:"VIDEO_RECORDER", qty_raw:1, serial:"14344289", body_name:"Blackmagic Hyperdcek Recorder 4K Pro- 03 & 04" },
+    { product_name:"Blackmagic Hyperdeck HD Pro 01",  category:"VIDEO_RECORDER", qty_raw:1, serial:"14133554", body_name:"Blackmagic Hyperdcek Recorder HD Pro" },
+    { product_name:"Blackmagic Hyperdeck HD Pro 02",  category:"VIDEO_RECORDER", qty_raw:1, serial:"14133656", body_name:"Blackmagic Hyperdcek Recorder HD Pro" },
+    { product_name:"Blackmagic Recorder HD",          category:"VIDEO_RECORDER", qty_raw:1, serial:"4282141",  body_name:"Blackmagic Recorder HD" },
+    { product_name:"Lexar 200Mbps 64GB+128GB (HD)",   category:"STORAGE",        qty_raw:2,                    body_name:"Blackmagic Recorder HD" },
+    { product_name:"Samsung 1TB SSD",                 category:"STORAGE",        qty_raw:1, serial:"S74ZNX0X714569B", body_name:"Black Magic Hyperdcek Recorder 4K Pro" },
+    // ── Scopes & Monitors (Blackmagic) ──
+    { product_name:"Blackmagic Smart Scop Duo",   category:"MONITOR",       qty_raw:1, serial:"13293975", body_name:"Blackmagic Smart Scop Duo" },
+    { product_name:"Adaptor (Smart Scop Duo)",    category:"ACCESSORY",     qty_raw:1,                    body_name:"Blackmagic Smart Scop Duo" },
+    { product_name:"Blackmagic Smart View 4K",    category:"MONITOR",       qty_raw:1, serial:"13678881", body_name:"Blackmagic Smart View 4K" },
+    { product_name:"Blackmagic Video Assist",     category:"VIDEO_RECORDER",qty_raw:1, serial:"8313431",  body_name:"Blackmagic Video Assist" },
+    { product_name:"Adaptor (Video Assist)",      category:"ACCESSORY",     qty_raw:1,                    body_name:"Blackmagic Video Assist" },
+    { product_name:"ProGrade 250Mbps 128GB",      category:"STORAGE",       qty_raw:3,                    body_name:"Blackmagic Video Assist" },
+    // ── Audio Mixers ──
+    { product_name:"YAMAHA MG06 01", category:"AUDIO_MIXER", qty_raw:1, serial:"INGEL01103",  body_name:"YAMAHA MG 06 - 01" },
+    { product_name:"Adaptor (MG06-01)", category:"ACCESSORY", qty_raw:1, serial:"R-41030007", body_name:"YAMAHA MG 06 - 01" },
+    { product_name:"YAMAHA MG06 02", category:"AUDIO_MIXER", qty_raw:1, serial:"INGXY01032",  body_name:"YAMAHA MG 06 - 02" },
+    { product_name:"Adaptor (MG06-02)", category:"ACCESSORY", qty_raw:1, serial:"R-4103007",  body_name:"YAMAHA MG 06 - 02" },
+    { product_name:"YAMAHA MG06 03", category:"AUDIO_MIXER", qty_raw:1, serial:"INGDX01029",  body_name:"YAMAHA MG 06 - 03" },
+    { product_name:"Adaptor (MG06-03)", category:"ACCESSORY", qty_raw:1,                       body_name:"YAMAHA MG 06 - 03" },
+    { product_name:"Behringer Audio Splitter", category:"AUDIO_MIXER", qty_raw:1 },
+    // ── Wireless TX ──
+    { product_name:"Hollyland Mars 4K 01",   category:"WIRELESS_TX", qty_raw:1, serial:"0023050T-R", body_name:"Hollyland Mars 4K - 01" },
+    { product_name:"DiGitek (Mars4K-01)",    category:"ACCESSORY",   qty_raw:3,                       body_name:"Hollyland Mars 4K - 01" },
+    { product_name:"TYFY (Mars4K-01)",       category:"ACCESSORY",   qty_raw:1,                       body_name:"Hollyland Mars 4K - 01" },
+    { product_name:"Hollyland Mars 4K 02",   category:"WIRELESS_TX", qty_raw:1, serial:"0023470T-R", body_name:"Hollyland Mars 4K - 02" },
+    { product_name:"Adaptor (Mars4K-02)",    category:"ACCESSORY",   qty_raw:1,                       body_name:"Hollyland Mars 4K - 02" },
+    { product_name:"Digitek (Mars4K-02 x3)", category:"ACCESSORY",   qty_raw:3,                       body_name:"Hollyland Mars 4K - 02" },
+    { product_name:"Digitek (Mars4K-02 x1)", category:"ACCESSORY",   qty_raw:1,                       body_name:"Hollyland Mars 4K - 02" },
+    { product_name:"Hollyland Mars 4K 03",   category:"WIRELESS_TX", qty_raw:1, serial:"0023470T-R", body_name:"Hollyland Mars 4K - 03" },
+    { product_name:"Digitek (Mars4K-03)",    category:"ACCESSORY",   qty_raw:1,                       body_name:"Hollyland Mars 4K - 03" },
+    { product_name:"Hollyland Adaptor (Mars4K-03)", category:"ACCESSORY", qty_raw:1,                  body_name:"Hollyland Mars 4K - 03" },
+    { product_name:"INfitek TY FY Digitek", category:"ACCESSORY",   qty_raw:1,                        body_name:"Hollyland Mars 4K - 03" },
+    { product_name:"Accsoon Master 4K",      category:"WIRELESS_TX", qty_raw:1, serial:"WIT07-0905-BD0H WIT07-1103-BD0H", body_name:"Accsoon Master 4K" },
+    { product_name:"Welborn (Accsoon x3)",   category:"ACCESSORY",   qty_raw:3,                       body_name:"Accsoon Master 4K" },
+    { product_name:"Welborn (Accsoon x1)",   category:"ACCESSORY",   qty_raw:1,                       body_name:"Accsoon Master 4K" },
+    { product_name:"Adaptor (Accsoon)",      category:"ACCESSORY",   qty_raw:1,                       body_name:"Accsoon Master 4K" },
+    { product_name:"Accsoon Wireless Kit",   category:"WIRELESS_TX", qty_raw:1, notes:"3 batteries, 1 charger, 1 powercord" },
+    { product_name:"HDMI Wireless RX TX",    category:"WIRELESS_TX", qty_raw:2 },
+    // ── Streaming ──
+    { product_name:"Live-U SOLO HD",   category:"STREAMING_DEVICE", qty_raw:1, serial:"202120-23099", body_name:"Live-U SOLO HD" },
+    { product_name:"Live-U Accessory", category:"ACCESSORY",         qty_raw:1,                        body_name:"Live-U SOLO HD" },
+    { product_name:"Huawei SIM",       category:"ACCESSORY",         qty_raw:2,                        body_name:"Live-U SOLO HD" },
+    { product_name:"Live-U Solo 4K",   category:"STREAMING_DEVICE", qty_raw:1, serial:"3S2425-47387" },
+    { product_name:"Dejero GOBOX HD",  category:"STREAMING_DEVICE", qty_raw:1, serial:"4290654",      body_name:"Dejero GOBOX HD" },
+    { product_name:"Adaptor (Dejero)", category:"ACCESSORY",         qty_raw:1,                        body_name:"Dejero GOBOX HD" },
+    { product_name:"Blackmagic Web Presenter 4K", category:"STREAMING_DEVICE", qty_raw:1, serial:"13599218" },
+    // ── Tally ──
+    { product_name:"Hollyland Wireless Tally 8 Pair",  category:"TALLY_SYSTEM", qty_raw:1,               body_name:"Hollyland Wirelass Tally System 8 Pair" },
+    { product_name:"Hollyland Tally HUB",              category:"TALLY_SYSTEM", qty_raw:1, serial:"24R24522BLH", body_name:"Hollyland Wirelass Tally System 8 Pair" },
+    { product_name:"Hollyland Battery HUB 8",         category:"ACCESSORY",    qty_raw:1, serial:"24V245222X7", body_name:"Hollyland Wirelass Tally System 8 Pair" },
+    { product_name:"Hollyland Adapter (Tally)",        category:"ACCESSORY",    qty_raw:2,                body_name:"Hollyland Wirelass Tally System 8 Pair" },
+    // ── Intercom ──
+    { product_name:"Eartec Talkback 5 Pair",           category:"INTERCOM", qty_raw:1, body_name:"Eartec Talkbck 5 Pair" },
+    { product_name:"Eartec Battery HUB 5 Pair",        category:"INTERCOM", qty_raw:1, body_name:"Eartec Talkbck 5 Pair" },
+    { product_name:"EARTEC Talkback 8 Pair Kit",       category:"INTERCOM", qty_raw:1, notes:"13 batteries, 1 HUB, 1 charger", body_name:"Talkback" },
+    { product_name:"HYUNDAI Wireless Intercom WT13",   category:"INTERCOM", qty_raw:1, purchase_date:"10/10/2025", purchase_from:"Avis Visiontech Private Limited", purchase_price:211173, body_name:"HYUNDAI HEADSET WIRELSS INTERCOM- WT13", notes:"13 headsets, 13 batteries, 3 chargers, 2 adapters" },
+    { product_name:"BAOFENG Walkie Talkie (Set 1)",    category:"INTERCOM", qty_raw:6, body_name:"BAOFENG", purchase_price:6000 },
+    { product_name:"BAOFENG Walkie Talkie (Set 2)",    category:"INTERCOM", qty_raw:6, body_name:"BAOFENG Walky Talky" },
+    // ── Monitors ──
+    { product_name:"DELL Monitor 27 inch 4K (x2)",    category:"MONITOR", qty_raw:2, serial:"CN-0K6CXN-QDC00-47O-0ELB CN-0K6CXN-QDC00-47O-0FCB", body_name:"DELL Monitor 27' 4K" },
+    { product_name:"HP Monitor 24 inch HD (x2)",      category:"MONITOR", qty_raw:2, serial:"3CM4151866 3CM4151861", body_name:"HP Monitor 24' HD" },
+    { product_name:"HP Adaptor",                      category:"ACCESSORY", qty_raw:2, body_name:"HP Monitor 24' HD" },
+    { product_name:"DP to HDMI ERA Cable",            category:"ACCESSORY", qty_raw:2, body_name:"HP Monitor 24' HD" },
+    { product_name:"DELL Monitor 27 inch HD (x2)",    category:"MONITOR", qty_raw:2 },
+    // ── Converters ──
+    { product_name:"Syrotech Media Converter",        category:"CONVERTER", qty_raw:2, serial:"SY171223HD5303FXX2667 SY1801HD3503FXX2873", body_name:"Syrotech Media Converter" },
+    { product_name:"Adaptor (Syrotech)",              category:"ACCESSORY", qty_raw:2, body_name:"Syrotech Media Converter" },
+    { product_name:"DBC Media Converter",             category:"CONVERTER", qty_raw:1, serial:"FON24040124242", body_name:"DBC Media Converter" },
+    { product_name:"Adaptor (DBC)",                   category:"ACCESSORY", qty_raw:1, body_name:"DBC Media Converter" },
+    { product_name:"D-Link Switch",                   category:"NETWORK",   qty_raw:1, serial:"U8DW137000498", body_name:"D-Link Switch" },
+    { product_name:"Adaptor (D-Link)",                category:"ACCESSORY", qty_raw:1, body_name:"D-Link Switch" },
+    { product_name:"MT-ViKI 8 Port SDI Splitter HD",  category:"SPLITTER",  qty_raw:1, serial:"100001123849", body_name:"MT-ViKI 8 Port SDI Spiter HD" },
+    { product_name:"Adaptor (MT-ViKI)",               category:"ACCESSORY", qty_raw:1, body_name:"MT-ViKI 8 Port SDI Spiter HD" },
+    { product_name:"Nova Link 4K HDMI Fiber Optic Converter", category:"CONVERTER", qty_raw:"1 Pair", serial:"HL1102206007", body_name:"Nova Link 4K HDMI Fiber Optic Converter" },
+    { product_name:"Adaptor (Nova Link 4K)",          category:"ACCESSORY", qty_raw:2, body_name:"Nova Link 4K HDMI Fiber Optic Converter" },
+    { product_name:"Fly Video SDI HD Fiber Optic Converter",  category:"CONVERTER", qty_raw:"1 Pair", serial:"111904-2069", body_name:"Fly Video SDI HD Video Fiber Optic Converter" },
+    { product_name:"Adaptor (Fly Video SDI)",         category:"ACCESSORY", qty_raw:2, body_name:"Fly Video SDI HD Video Fiber Optic Converter" },
+    { product_name:"Nova link 8 Port HDMI Splitter",  category:"SPLITTER",  qty_raw:1, serial:"CAAEH05662", body_name:"Nova link 8 Port HDMI Spliter HD" },
+    { product_name:"Adaptor (Nova 8 Port)",           category:"ACCESSORY", qty_raw:1, body_name:"Nova link 8 Port HDMI Spliter HD" },
+    { product_name:"Black-i 4 Port HDMI Splitter",   category:"SPLITTER",  qty_raw:2 },
+    { product_name:"AV Matrix Splitter Converter",    category:"SPLITTER",  qty_raw:2, body_name:"AV Matrix Spliter & Converter" },
+    { product_name:"Adaptor (AV Matrix)",             category:"ACCESSORY", qty_raw:2, body_name:"AV Matrix Spliter & Converter" },
+    { product_name:"Blackmagic Videohub 20x20 12G",  category:"SPLITTER",  qty_raw:1, purchase_date:"01/11/2025", purchase_from:"ARTIZ DIGITAL SOLUTION", bill_number:"156", purchase_price:247800, body_name:"Blackmagic Videohub 20x20 12G" },
+    { product_name:"24 Port 2RU Rack Patti NB-B75",  category:"ACCESSORY", qty_raw:1, purchase_date:"11/11/2025", purchase_from:"ARTIZ DIGITAL SOLUTION", bill_number:"160", purchase_price:11092 },
+    { product_name:"24 Port 2RU Rack Patti (2nd)",   category:"ACCESSORY", qty_raw:1, purchase_date:"14/11/2025", purchase_from:"ARTIZ DIGITAL SOLUTION", purchase_price:8071 },
+    { product_name:"BlackMagic 2110 IP Converter 8x12G SFP", category:"CONVERTER", qty_raw:1, serial:"13663291", body_name:"IP Converter SFP" },
+    // ── Micro Converters ──
+    { product_name:"Blackmagic Optical Fiber 12G SDI (x15 Pair)", category:"CABLE",    qty_raw:"30 Pair", body_name:"Blackmagic Optical Fiber 12G SDI - 15 Pair" },
+    { product_name:"Adaptor (Fiber 12G x30)",                      category:"ACCESSORY",qty_raw:30, body_name:"Blackmagic Optical Fiber 12G SDI - 15 Pair" },
+    { product_name:"Blackmagic Optical Fiber 3G SDI (x3 Pair)",   category:"CABLE",    qty_raw:"6 Pair",  body_name:"Blackmagic Optical Fiber 3G SDI - 3 Pair" },
+    { product_name:"Blackmagic SDI to HDMI 12G Micro Converter",  category:"CONVERTER",qty_raw:3,  body_name:"Blackmagic SDI to HDMI 12G Micro Converter" },
+    { product_name:"Adaptor (SDI>HDMI 12G x3)",                   category:"ACCESSORY",qty_raw:3,  body_name:"Blackmagic SDI to HDMI 12G Micro Converter" },
+    { product_name:"Blackmagic HDMI to SDI 12G Micro Converter",  category:"CONVERTER",qty_raw:5,  body_name:"Blackmagic HDMI to SDI 12G Micro Converter" },
+    { product_name:"Adaptor (HDMI>SDI 12G x5)",                   category:"ACCESSORY",qty_raw:5,  body_name:"Blackmagic HDMI to SDI 12G Micro Converter" },
+    { product_name:"Blackmagic HDMI to SDI 3G Micro Converter",   category:"CONVERTER",qty_raw:4,  body_name:"Blackmagic HDMI to SDI 3G Micro Converter" },
+    { product_name:"Adaptor (HDMI>SDI 3G x4)",                    category:"ACCESSORY",qty_raw:4,  body_name:"Blackmagic HDMI to SDI 3G Micro Converter" },
+    { product_name:"Blackmagic SDI to HDMI 3G Micro Converter",   category:"CONVERTER",qty_raw:2 },
+    { product_name:"Blackmagic BiDirectional SDI/HDMI 12G (x3)",  category:"CONVERTER",qty_raw:3,  body_name:"BiDirectional SDI/HDMI 12G" },
+    { product_name:"Blackmagic BiDirectional SDI/HDMI 3G (x3)",   category:"CONVERTER",qty_raw:3,  body_name:"BiDirectional SDI/HDMI 3G" },
+    { product_name:"HDI/SDI to HDMI 3G (x5)",                     category:"CONVERTER",qty_raw:5,  serial:"13633772 13973231 13633834 13630891 13973297", purchase_date:"27/12/2025", purchase_from:"SHREENATHJI PRODUCTION", bill_number:"27/12/2025", purchase_price:35000 },
+    { product_name:"Bidirectional 12G (x3)",                      category:"CONVERTER",qty_raw:3,  serial:"14214148 14088676 14088649", body_name:"Bidirectional 12G", purchase_from:"bill 2025-26/140" },
+    { product_name:"Micro Converter BiDirect SDI/HDMI 12G PSU (x5)", category:"CONVERTER", qty_raw:5, serial:"14021130 14021154 14021132 14021138 14021146", purchase_date:"30/10/2025", purchase_from:"ARTIZ DIGITAL SOLUTION", bill_number:"147", purchase_price:100300, body_name:"Bidirectional 12G wPSU" },
+    { product_name:"Micro Converter BiDirect SDI/HDMI 12G wPSU (x11)",category:"CONVERTER",qty_raw:11, serial:"14214114 14214115 14214112 14214182 14214189 14214186 14213773 14213772 14213848 14214133 14214142", body_name:"Bidirectional 12G wPSU" },
+    { product_name:"Mini Converter SDI Distribution 01", category:"CONVERTER", qty_raw:1, serial:"13725874", purchase_from:"AVPL783/2025-26", body_name:"Mini Converter SDI Distribution" },
+    { product_name:"Mini Converter SDI Distribution 02", category:"CONVERTER", qty_raw:1, serial:"13725881", body_name:"Mini Converter SDI Distribution" },
+    // ── UPS ──
+    { product_name:"APC Backup UPS",  category:"UPS", qty_raw:1, serial:"B22245030522", body_name:"APC Backup UPS" },
+    { product_name:"Online UPS (x2)", category:"UPS", qty_raw:2, serial:"410042010E60888200681 410042010E60888200867", body_name:"Online UPS" },
+    // ── Tripods ──
+    { product_name:"E-Image Camera Tripod",    category:"TRIPOD", qty_raw:5, body_name:"E-Image Camera Tripod" },
+    { product_name:"Wireless Tripod",          category:"TRIPOD", qty_raw:3, body_name:"Wirelass Tripod" },
+    { product_name:"Studio Assist Tripod Leg", category:"TRIPOD", qty_raw:3, body_name:"Tripod Studio Assist" },
+    { product_name:"Studio Assist Tripod Head",category:"TRIPOD", qty_raw:4, body_name:"Tripod Studio Assist" },
+    // ── Internet ──
+    { product_name:"Jio Air Fiber",             category:"INTERNET_DEVICE", qty_raw:2, serial:"RTHHGHKA0082410 RTHHGHKA0066206", body_name:"Jio Air Fiber" },
+    { product_name:"Jio Adaptor",               category:"ACCESSORY",       qty_raw:2, body_name:"Jio Air Fiber" },
+    { product_name:"Jio Air Fiber (2nd hand)",  category:"INTERNET_DEVICE", qty_raw:1, serial:"JIDU6101 JIDU51641", purchase_from:"GP/15" },
+    { product_name:"Airtel Air Fiber (x2)",     category:"INTERNET_DEVICE", qty_raw:2, body_name:"Airtel Airfiber" },
+    // ── Controllers / PC ──
+    { product_name:"Stream Deck (x2)",    category:"CONTROLLER", qty_raw:2, purchase_date:"18/12/2025", purchase_from:"Apex (Amazon)", purchase_price:43180 },
+    { product_name:"Power Panel",         category:"ACCESSORY",  qty_raw:1, body_name:"Power Pannel" },
+    { product_name:"Source PC (x2)",      category:"ACCESSORY",  qty_raw:2, body_name:"Source PC" },
+    { product_name:"Keyboard Mouse 2 Pair",category:"ACCESSORY", qty_raw:2, body_name:"Source PC" },
+    { product_name:"Power Board (x5)",    category:"ACCESSORY",  qty_raw:5 },
+    { product_name:"Power Bank (x3)",     category:"ACCESSORY",  qty_raw:3, body_name:"Power bank" },
+    { product_name:"USB to C Cable (x18)",category:"CABLE",      qty_raw:18, body_name:"Power bank" },
+    { product_name:"DeckLink Card",       category:"ACCESSORY",  qty_raw:1, purchase_from:"Sardhar", purchase_price:70000 },
+    { product_name:"JBL Headphone",       category:"ACCESSORY",  qty_raw:1 },
+    { product_name:"DP to HDMI (x7)",     category:"ACCESSORY",  qty_raw:7 },
+    // ── Cables ──
+    { product_name:"4K@60Hz 1.5M HDMI 2.0 Cable (x5)", category:"CABLE", qty_raw:5, purchase_date:"24/12/2025", purchase_from:"SHREENATHJI PRODUCTION", bill_number:"2025-26/201", resp_person:"Harsh Bhuro" },
+    { product_name:"USB to SATA 3.0 (x2)",              category:"ACCESSORY", qty_raw:2, purchase_date:"26/12/2025", purchase_from:"apex infocom technology pvt ltd", purchase_price:5074, resp_person:"Smit" },
+    { product_name:"BELDEN 4694R 12G SDI Cable",        category:"CABLE", qty_raw:"80 Mtr", purchase_date:"30/10/2025", purchase_from:"SHREENATHJI PRODUCTION", bill_number:"2025-26/140", purchase_price:22400 },
+    { product_name:"NEUTRIK NBNC75BTU11 BNC Connector (x34)", category:"ACCESSORY", qty_raw:34, purchase_date:"30/10/2025", purchase_from:"SHREENATHJI PRODUCTION", bill_number:"2025-26/140", purchase_price:15300 },
+    { product_name:"4694RBUHD312D50 4K Belden BNC Connector (x6)", category:"ACCESSORY", qty_raw:6, purchase_date:"30/10/2025", purchase_from:"SHREENATHJI PRODUCTION", purchase_price:2700 },
+    { product_name:"Powercord (x9)",         category:"CABLE",  qty_raw:9,  purchase_price:142 },
+    { product_name:"CANARE SDI Video Cable (batch1)", category:"CABLE", qty_raw:28, purchase_date:"12/12/2025", purchase_from:"Systronics India Ltd", bill_number:"210326040076", purchase_price:872 },
+    { product_name:"CANARE SDI Video Cable (batch2)", category:"CABLE", qty_raw:28, purchase_date:"27/11/2025", purchase_from:"Systronics India Ltd", purchase_price:19824 },
+    { product_name:"SDI 12G Big",   category:"CABLE", qty_raw:8 },
+    { product_name:"SDI HD Big",    category:"CABLE", qty_raw:13 },
+    { product_name:"SDI HD 10M",    category:"CABLE", qty_raw:13 },
+    { product_name:"SDI 12G Small", category:"CABLE", qty_raw:37 },
+    { product_name:"SDI HD Small",  category:"CABLE", qty_raw:11 },
+    { product_name:"HDMI HD Big",   category:"CABLE", qty_raw:5 },
+    { product_name:"HDMI 12G Big",  category:"CABLE", qty_raw:5 },
+    { product_name:"HDMI 12G Small",category:"CABLE", qty_raw:25 },
+    { product_name:"HDMI HD Small", category:"CABLE", qty_raw:31 },
+    { product_name:"XLR-M to XLR-F 30M (x6)", category:"CABLE", qty_raw:6 },
+    { product_name:"XLR-M to XLR-F 50M (x3)", category:"CABLE", qty_raw:3 },
+    { product_name:"EP to Jack 15M (x2)",      category:"CABLE", qty_raw:2 },
+    { product_name:"EP to Jack 30",            category:"CABLE", qty_raw:1, bill_number:"210326010166" },
+    { product_name:"HDMI 4K Cable (x11)",      category:"CABLE", qty_raw:11 },
+    { product_name:"SDI Cable 4K Mota (x11)",  category:"CABLE", qty_raw:11 },
+    { product_name:"SDI Cable 4K 5mtr (x20)",  category:"CABLE", qty_raw:20 },
+    { product_name:"SDI Blue Cable Mota (x18)",category:"CABLE", qty_raw:18 },
+    { product_name:"SDI Snake Cable 5x1 12G (x4)", category:"CABLE", qty_raw:4, body_name:"SDI Snake Cable" },
+    { product_name:"SDI Small 12G (x12)",      category:"CABLE", qty_raw:12 },
+    // ── Sony Alpha 7S III group ──
+    { product_name:"SONY Alpha 7S III",          category:"CAMERA",    qty_raw:1, serial:"5781062",    body_name:"SONY Alpha 7S III", resp_person:"Keyur", purchase_date:"18/08/2025", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Lexar 900Mbps 160GB (x2)",   category:"STORAGE",   qty_raw:2,                      body_name:"SONY Alpha 7S III", resp_person:"Keyur", purchase_date:"18/08/2025", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Sony NP-FZ100 (7SIII x3)",   category:"ACCESSORY", qty_raw:3,                      body_name:"SONY Alpha 7S III", resp_person:"Keyur", purchase_date:"18/08/2025", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Sony BC-QZ1 (7SIII)",         category:"ACCESSORY", qty_raw:1, serial:"24085PA1002992", body_name:"SONY Alpha 7S III", resp_person:"Keyur", purchase_date:"18/08/2025", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Sony 24-70mm 2.8 GM",         category:"LENS",      qty_raw:1, serial:"2214539",    body_name:"SONY Alpha 7S III", resp_person:"Keyur", purchase_date:"18/08/2025", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Sony 16-35mm f4 ZEISS",       category:"LENS",      qty_raw:1, serial:"2026357",    body_name:"SONY Alpha 7S III", resp_person:"Keyur", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Sigma 35mm f2",               category:"LENS",      qty_raw:1, serial:"55212998",   body_name:"SONY Alpha 7S III", resp_person:"Keyur" },
+    { product_name:"Sony 50mm 1.8",               category:"LENS",      qty_raw:1, serial:"2232052",    body_name:"SONY Alpha 7S III", resp_person:"Keyur" },
+    { product_name:"Sony 70-200mm 2.8 GM",        category:"LENS",      qty_raw:1,                      body_name:"SONY Alpha 7S III", resp_person:"Keyur" },
+    { product_name:"Digitek LED Light",           category:"ACCESSORY", qty_raw:1,                      body_name:"Digitek LED",       resp_person:"Keyur", purchase_from:"Ghanshyam Photo" },
+    { product_name:"DigiTek NP-F750",             category:"ACCESSORY", qty_raw:1,                      body_name:"Digitek LED",       resp_person:"Keyur", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Lexar CF Type A Reader",      category:"ACCESSORY", qty_raw:1,                      body_name:"SONY Alpha 7S III", resp_person:"Keyur", purchase_from:"Ghanshyam Photo" },
+    // ── Sony Alpha 7 IV group ──
+    { product_name:"Sony Alpha 7 IV",             category:"CAMERA",    qty_raw:1, serial:"8468677",    body_name:"Sony Alpha 7 IV",   resp_person:"Anikesh", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Sony 24-105mm f4 G",          category:"LENS",      qty_raw:1, serial:"5925074",    body_name:"Sony Alpha 7 IV",   resp_person:"Anikesh", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Sony 85mm 1.8",               category:"LENS",      qty_raw:1,                      body_name:"Sony Alpha 7 IV",   resp_person:"Anikesh" },
+    { product_name:"GODOX V860",                  category:"ACCESSORY", qty_raw:1,                      body_name:"GODOX V860",        resp_person:"Anikesh", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Sony NP-FZ100 (7IV x2)",      category:"ACCESSORY", qty_raw:2,                      body_name:"Sony Alpha 7 IV",   resp_person:"Anikesh", purchase_from:"Ghanshyam Photo" },
+    { product_name:"Sony BC-QZ1 (7IV)",           category:"ACCESSORY", qty_raw:1, serial:"24045PA1008451", body_name:"Sony Alpha 7 IV", resp_person:"Anikesh", purchase_from:"Ghanshyam Photo" },
+    { product_name:"GODOX VB26 (x3)",             category:"ACCESSORY", qty_raw:3, serial:"24K27MZ",    body_name:"GODOX V860",        resp_person:"Anikesh", purchase_from:"Ghanshyam Photo" },
+    { product_name:"GODOX VC26",                  category:"ACCESSORY", qty_raw:1, serial:"2411A1815B",  body_name:"GODOX V860",        resp_person:"Anikesh", purchase_from:"Ghanshyam Photo" },
+    // ── DJI Ronin ──
+    { product_name:"DJI Ronin RS 4 Pro",          category:"GIMBAL",    qty_raw:1, serial:"729DN74009899T", body_name:"Dji Ronin RS 4 Pro", resp_person:"Keyur", purchase_date:"18/08/2025", purchase_from:"Ghanshyam Photo" },
+    // ── Sony PXW X70 ──
+    { product_name:"Sony PXW X70",                category:"CAMERA",    qty_raw:1, serial:"1633828",    body_name:"Sony PXW X70" },
+    { product_name:"Welborn Sony (X70)",          category:"ACCESSORY", qty_raw:2,                      body_name:"Sony PXW X70" },
+    { product_name:"APRAMATT (X70)",              category:"ACCESSORY", qty_raw:1,                      body_name:"Sony PXW X70" },
+    // ── Sony ILCE 7M5 group ──
+    { product_name:"Sony ILCE-7M5",              category:"CAMERA",    qty_raw:1, serial:"2027594",    body_name:"Sony ILCE 7M5", purchase_date:"09/04/2026", purchase_from:"Shree Ghanshyam Photo - Nilu bhagat", bill_number:"GP/15", purchase_price:194915 },
+    { product_name:"Sony CHARGER BC-ZD1 + 3x NP-FZ100 + Adapter", category:"ACCESSORY", qty_raw:1, body_name:"Sony ILCE 7M5", purchase_date:"09/04/2026", purchase_from:"Shree Ghanshyam Photo - Nilu bhagat", bill_number:"GP/15", purchase_price:20678 },
+    { product_name:"320GB CF Express Type A Lexar Card",           category:"STORAGE",   qty_raw:1, body_name:"Sony ILCE 7M5", purchase_date:"09/04/2026", purchase_from:"Shree Ghanshyam Photo - Nilu bhagat", bill_number:"GP/15", purchase_price:30508 },
+    { product_name:"SONY FE 24-240mm f3.5-5.6 OSS II",            category:"LENS",      qty_raw:1, serial:"2027594", body_name:"Sony ILCE 7M5", purchase_date:"09/04/2026", purchase_from:"Shree Ghanshyam Photo - Nilu bhagat", bill_number:"GP/15", purchase_price:61017 },
+    { product_name:"SONY 16-35 Z SAL Lens",                        category:"LENS",      qty_raw:1, serial:"2022113", body_name:"Sony ILCE 7M5", purchase_date:"09/04/2026", purchase_from:"Shree Ghanshyam Photo - Nilu bhagat", bill_number:"GP/15", purchase_price:66102 },
+    { product_name:"Godox V860 III Sony Flash",                    category:"ACCESSORY", qty_raw:1, serial:"90066100", body_name:"Sony ILCE 7M5", purchase_date:"09/04/2026", purchase_from:"Shree Ghanshyam Photo - Nilu bhagat", purchase_price:12712 },
+    // ── Lexar Card 800Mbps 160GB FX7 note ──
+    { product_name:"Lexar Card 800Mbps 160GB (FX7-era)", category:"STORAGE", qty_raw:2, body_name:"Sony FX7", resp_person:"Keyur", purchase_from:"Ghanshyam Photo" },
   ];
 
-  const staffIds: number[] = [];
-  for (const s of staffList) {
-    const st = await prisma.staff.create({ data: s });
-    staffIds.push(st.id);
+  let eqCount = 0;
+  for (const row of equipRows) {
+    const { quantity, quantity_unit } = parseQty(row.qty_raw);
+    const sold = isSold(row.bill_number);
+    // Find kit by body_name
+    const kitId = row.body_name && kitMap[row.body_name] ? kitMap[row.body_name] : null;
+    const eq = await prisma.equipment.create({
+      data: {
+        product_name: row.product_name,
+        category: row.category,
+        quantity,
+        quantity_unit,
+        serial_number: row.serial || null,
+        body_name: row.body_name || null,
+        kit_id: kitId,
+        resp_person: row.resp_person || null,
+        purchase_date: parseDate(row.purchase_date),
+        purchase_from: row.purchase_from || null,
+        bill_number: (row.bill_number && !sold) ? row.bill_number : null,
+        purchase_price: row.purchase_price ?? null,
+        status: sold ? "SOLD" : "AVAILABLE",
+        notes: row.notes || null,
+        ownership_type: "INHOUSE",
+        department: "VIDEO",
+        created_at: NOW,
+      }
+    });
+    // Set kit main_body if product_name matches body_name (this is the main body)
+    if (kitId && row.body_name && row.product_name.startsWith(row.body_name.split(" ").slice(0,3).join(" "))) {
+      await prisma.kit.update({ where:{id:kitId}, data:{ main_body_id: eq.id } }).catch(()=>{});
+    }
+    eqCount++;
   }
-  console.log(`     ✓ ${staffIds.length} staff`);
+  console.log(`     ✓ ${eqCount} equipment items\n`);
 
-  // ── 10. STAFF ASSIGNMENTS ──────────────────────────────────────────────────
-  console.log("  → staff assignments");
+  // ── 8. STAFF ───────────────────────────────────────────────────────────────────
+  console.log("  → staff");
+  // FREELANCER→EXTERNAL, department "Video"→"VIDEO", with_equipment "Yes"→1 "No"→0
+  // INHOUSE + with_equipment=1 = partner staff
+  const staffRows = [
+    { name:"Anikesh Kalubhai Lakhani", phone:"9712534023", role:"Photographer",     staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:"232679052848", is_active:1 },
+    { name:"Khunt Ravi",               phone:"9727548284", role:"Videographer",      staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:"832378411812", is_active:1 },
+    { name:"Dev Desai",                phone:"9512397123", role:"Photographer",     staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:"244174416350", is_active:1 },
+    { name:"Aryan Savaliya",           phone:"9106224189", role:"Videographer",      staff_type:"INHOUSE",  department:"VIDEO", with_equipment:0, aadhar_number:"551878722629", is_active:1 },
+    { name:"Gohil Akash V",            phone:"9375296396", role:"Videographer",      staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:"779624603621", is_active:1 },
+    { name:"Kachhadiya Prince",        phone:"7016371073", role:"Videographer",      staff_type:"INHOUSE",  department:"VIDEO", with_equipment:0, aadhar_number:"232635456944", is_active:1 },
+    { name:"Patel Harsh",              phone:"6353858904", role:"Mixer Operator",    staff_type:"INHOUSE",  department:"VIDEO", with_equipment:0, aadhar_number:"655827513850", is_active:1 },
+    { name:"Visavadiya Keyur N.",      phone:"9638775151", role:"Videographer",      staff_type:"INHOUSE",  department:"VIDEO", with_equipment:0, aadhar_number:"251150425579", is_active:1 },
+    { name:"Prince Vora",              phone:"9904943839", role:"Editor",            staff_type:"INHOUSE",  department:"VIDEO", with_equipment:0, aadhar_number:"255684103376", is_active:1 },
+    { name:"Vishal Muliya",            phone:"8460424437", role:"Mixer Operator",    staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    // Partner staff (INHOUSE + own equipment)
+    { name:"Keyur Dobariya",           phone:"7285066725", role:"Videographer",      staff_type:"INHOUSE",  department:"VIDEO", with_equipment:1, equipment_desc:"Z150 Camera", aadhar_number:null, is_active:1 },
+    { name:"Mayur Senjaliya",          phone:"8264673230", role:"Videographer",      staff_type:"INHOUSE",  department:"VIDEO", with_equipment:1, equipment_desc:"Z150 Camera", aadhar_number:null, is_active:1 },
+    { name:"Yug Ladola",               phone:"8140230832", role:"Videographer",      staff_type:"INHOUSE",  department:"VIDEO", with_equipment:1, equipment_desc:"Z150 Camera", aadhar_number:null, is_active:1 },
+    { name:"Avinash Savaliya",         phone:"7096419311", role:"Videographer",      staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Smit Parekh",              phone:"7359946955", role:"Videographer",      staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Divyesh Pedadiya",         phone:"9274378676", role:"FPV Operator",      staff_type:"INHOUSE",  department:"VIDEO", with_equipment:1, equipment_desc:"FPV Drone",   aadhar_number:null, is_active:1 },
+    { name:"Raj Gondaliya",            phone:"9624114920", role:"Drone Operator",    staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Paras Chavda",             phone:"9913112581", role:"Photographer",     staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Kevin Kapuriya",           phone:"9638637953", role:"Photographer",     staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Ashwinbhai Savaliya",      phone:"9825791591", role:"Videographer",      staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Nikunj Barvaliya",         phone:"9924142058", role:"Videographer",      staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Dev Parmar",               phone:"9904453721", role:"Videographer",      staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Parth Valani",             phone:"6353231004", role:"Editor",            staff_type:"INHOUSE",  department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Vikas Dangodara",          phone:"9016143438", role:"Mixer Operator",    staff_type:"INHOUSE",  department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Hetul Gandhi",             phone:"8799406477", role:"FPV Operator",      staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Mohit Golakiya",           phone:"7487933506", role:"Editor",            staff_type:"EXTERNAL", department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Rushit Vora",              phone:"9724783870", role:"Editor",            staff_type:"INHOUSE",  department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+    { name:"Dhruvik Shingala",         phone:"7228864796", role:"Graphics Designer", staff_type:"INHOUSE",  department:"VIDEO", with_equipment:0, aadhar_number:null,           is_active:1 },
+  ];
 
-  // staffIds index: 0=Rishi, 1=Dev, 2=Mehul, 3=Hetal, 4=Jignesh, 5=Karan, 6=Priya, 7=Nirav, 8=Smit, 9=Arjun, 10=Pooja
-  const [rishi, dev, , hetal, jignesh, karan, , nirav, , arjun, pooja] = staffIds;
+  let staffCount = 0;
+  for (const s of staffRows) {
+    await prisma.staff.create({
+      data: {
+        name: s.name, phone: s.phone, role: s.role,
+        staff_type: s.staff_type, department: s.department,
+        payment_type: "", // empty as requested
+        rate_per_day: null, monthly_salary: null, // empty as requested
+        with_equipment: s.with_equipment,
+        equipment_desc: (s as any).equipment_desc || null,
+        equipment_rate_per_day: null,
+        aadhar_number: s.aadhar_number || null,
+        aadhar_front: null, aadhar_back: null,
+        is_active: s.is_active, created_at: NOW,
+      }
+    });
+    staffCount++;
+  }
+  console.log(`     ✓ ${staffCount} staff\n`);
 
-  // inq-1 (Adani, 3 days) — Rishi on 2 positions (duplicate confirmed)
-  const a1 = await prisma.staffAssignment.create({ data: { staff_id: rishi,   inquiry_id: "inq-1", position_no: 1, position_name: "Center Tally",      days_assigned: 3, rate_per_day: 1500, total_amount: 4500,  is_duplicate: 1, confirmed_dup: 1, created_at: d(9) } });
-  const a2 = await prisma.staffAssignment.create({ data: { staff_id: rishi,   inquiry_id: "inq-1", position_no: 2, position_name: "Center Semi Wide",   days_assigned: 3, rate_per_day: 1500, total_amount: 4500,  is_duplicate: 1, confirmed_dup: 1, created_at: d(9) } });
-  const a3 = await prisma.staffAssignment.create({ data: { staff_id: dev,     inquiry_id: "inq-1", position_no: 3, position_name: "Wireless 1",         days_assigned: 3, rate_per_day: 1500, total_amount: 4500,  is_duplicate: 0, confirmed_dup: 0, created_at: d(9) } });
-  const a4 = await prisma.staffAssignment.create({ data: { staff_id: jignesh, inquiry_id: "inq-1", position_no: 4, position_name: "Video Crane 32ft",   days_assigned: 3, rate_per_day: 2500, total_amount: 7500,  is_duplicate: 0, confirmed_dup: 0, created_at: d(9) } });
-  const a5 = await prisma.staffAssignment.create({ data: { staff_id: karan,   inquiry_id: "inq-1", position_no: 5, position_name: "Drone",              days_assigned: 3, rate_per_day: 3000, total_amount: 9000,  is_duplicate: 0, confirmed_dup: 0, created_at: d(9) } });
-  const a6 = await prisma.staffAssignment.create({ data: { staff_id: pooja,   inquiry_id: "inq-1", position_no: 6, position_name: "Photo 1",            days_assigned: 3, rate_per_day: 2000, total_amount: 6000,  is_duplicate: 0, confirmed_dup: 0, created_at: d(9) } });
-
-  // inq-2 (Torrent, 2 days)
-  const a7  = await prisma.staffAssignment.create({ data: { staff_id: rishi,  inquiry_id: "inq-2", position_no: 1, position_name: "Main Camera",        days_assigned: 2, rate_per_day: 1500, total_amount: 3000,  is_duplicate: 0, confirmed_dup: 0, created_at: d(9) } });
-  const a8  = await prisma.staffAssignment.create({ data: { staff_id: nirav,  inquiry_id: "inq-2", position_no: 2, position_name: "Backup Camera",      days_assigned: 2, rate_per_day: 1200, total_amount: 2400,  is_duplicate: 0, confirmed_dup: 0, created_at: d(9) } });
-  const a9  = await prisma.staffAssignment.create({ data: { staff_id: arjun,  inquiry_id: "inq-2", position_no: 3, position_name: "Audio",              days_assigned: 2, rate_per_day: 1800, total_amount: 3600,  is_duplicate: 0, confirmed_dup: 0, created_at: d(9) } });
-
-  // inq-4 (Dholera Mahotsav, 6 days — previous month)
-  const a10 = await prisma.staffAssignment.create({ data: { staff_id: hetal,  inquiry_id: "inq-4", position_no: 1, position_name: "LED operator",       days_assigned: 6, rate_per_day: 1200, total_amount: 7200,  is_duplicate: 0, confirmed_dup: 0, created_at: dp(10) } });
-  const a11 = await prisma.staffAssignment.create({ data: { staff_id: jignesh,inquiry_id: "inq-4", position_no: 2, position_name: "Video Crane 32ft",   days_assigned: 6, rate_per_day: 2500, total_amount: 15000, is_duplicate: 0, confirmed_dup: 0, created_at: dp(10) } });
-  const a12 = await prisma.staffAssignment.create({ data: { staff_id: karan,  inquiry_id: "inq-4", position_no: 3, position_name: "Drone",              days_assigned: 5, rate_per_day: 3000, total_amount: 15000, is_duplicate: 0, confirmed_dup: 0, created_at: dp(10) } });
-  const a13 = await prisma.staffAssignment.create({ data: { staff_id: dev,    inquiry_id: "inq-4", position_no: 4, position_name: "Videographer",       days_assigned: 6, rate_per_day: 1500, total_amount: 9000,  is_duplicate: 0, confirmed_dup: 0, created_at: dp(10) } });
-
-  console.log("     ✓ 13 assignments");
-
-  // ── 11. STAFF PAYMENTS ─────────────────────────────────────────────────────
-  console.log("  → staff payments");
-
-  await prisma.staffPayment.createMany({ data: [
-    // Rishi — paid for inq-1 Center Tally (a1)
-    { staff_id: rishi,   assignment_id: a1.id,  inquiry_id: "inq-1", amount: 4500,  payment_type: "PER_EVENT",      payment_method: "UPI",          reference_no: "UPI123456",    month: null,          paid_at: d(12), paid_by_id: "system", notes: "Center Tally pay" },
-    // Dev — paid for inq-1 (a3) and inq-4 (a13)
-    { staff_id: dev,     assignment_id: a3.id,  inquiry_id: "inq-1", amount: 4500,  payment_type: "PER_EVENT",      payment_method: "CASH",         reference_no: null,           month: null,          paid_at: d(13), paid_by_id: "system", notes: "Adani Meet pay" },
-    { staff_id: dev,     assignment_id: a13.id, inquiry_id: "inq-4", amount: 9000,  payment_type: "PER_EVENT",      payment_method: "CASH",         reference_no: null,           month: null,          paid_at: dp(22), paid_by_id: "system", notes: "Dholera pay" },
-    // Jignesh — paid for inq-1 (a4), partial for inq-4 (a11)
-    { staff_id: jignesh, assignment_id: a4.id,  inquiry_id: "inq-1", amount: 7500,  payment_type: "PER_EVENT",      payment_method: "BANK_TRANSFER", reference_no: "TXN001",      month: null,          paid_at: d(13), paid_by_id: "system", notes: "Crane pay Adani" },
-    { staff_id: jignesh, assignment_id: a11.id, inquiry_id: "inq-4", amount: 10000, payment_type: "PER_EVENT",      payment_method: "BANK_TRANSFER", reference_no: "TXN002",      month: null,          paid_at: dp(22), paid_by_id: "system", notes: "Partial crane pay Dholera" },
-    // Karan — partial for inq-4 (a12)
-    { staff_id: karan,   assignment_id: a12.id, inquiry_id: "inq-4", amount: 9000,  payment_type: "PER_EVENT",      payment_method: "BANK_TRANSFER", reference_no: "TXN987654",   month: null,          paid_at: dp(22), paid_by_id: "system", notes: "Partial drone pay" },
-    // Pooja — paid for inq-1 (a6)
-    { staff_id: pooja,   assignment_id: a6.id,  inquiry_id: "inq-1", amount: 6000,  payment_type: "PER_EVENT",      payment_method: "UPI",          reference_no: "UPI999888",    month: null,          paid_at: d(13), paid_by_id: "system", notes: "Photo pay" },
-    // Rishi — paid for inq-2 (a7)
-    { staff_id: rishi,   assignment_id: a7.id,  inquiry_id: "inq-2", amount: 3000,  payment_type: "PER_EVENT",      payment_method: "UPI",          reference_no: "UPI555444",    month: null,          paid_at: d(16), paid_by_id: "system", notes: "Torrent pay" },
-    // Monthly salaries — Priya Joshi (staffIds[6]) and Smit Mehta (staffIds[8])
-    { staff_id: staffIds[6], assignment_id: null, inquiry_id: null, amount: 35000, payment_type: "MONTHLY_SALARY", payment_method: "BANK_TRANSFER", reference_no: `SALARY-${y}-${m}-PRIYA`, month: `${y}-${m}`, paid_at: d(1), paid_by_id: "system", notes: "Monthly salary" },
-    { staff_id: staffIds[8], assignment_id: null, inquiry_id: null, amount: 28000, payment_type: "MONTHLY_SALARY", payment_method: "BANK_TRANSFER", reference_no: `SALARY-${y}-${m}-SMIT`,  month: `${y}-${m}`, paid_at: d(1), paid_by_id: "system", notes: "Monthly salary" },
-    // Mehul Shah (staffIds[2]) — pending (no payment record)
-  ]});
-  console.log("     ✓ 10 staff payments");
-
-  // ── 12. EQUIPMENT BOOKINGS ─────────────────────────────────────────────────
-  console.log("  → equipment bookings");
-
-  // Get equipment IDs we need
-  const fx6    = await prisma.equipment.findFirst({ where: { product_name: "Sony FX6" } });
-  const fx3    = await prisma.equipment.findFirst({ where: { product_name: "Sony FX3" } });
-  const atem   = await prisma.equipment.findFirst({ where: { product_name: "BM ATEM Extreme" } });
-  const zoomH6 = await prisma.equipment.findFirst({ where: { product_name: "Zoom H6" } });
-  const mars1  = await prisma.equipment.findFirst({ where: { product_name: "Mars 4K-01" } });
-
-  const vendor1 = await prisma.vendor.findFirst({ where: { name: "Apex Rental Services" } });
-  const vendor2 = await prisma.vendor.findFirst({ where: { name: "Shreeji Camera Rental" } });
-
-  await prisma.equipmentBooking.createMany({ data: [
-    // inq-1 Adani — FX6 kit confirmed OUT
-    { inquiry_id: "inq-1", equipment_id: fx6?.id ?? null,  kit_id: kitMap["Sony FX6 Kit"],  position: "Center Tally",     booked_from: d(10), booked_to: d(12), status: "OUT",      vendor_id: null,          vendor_cost_per_day: null,  total_vendor_cost: null,  confirmed_by_id: "system", confirmed_at: d(10) },
-    // inq-1 Adani — FX3 kit booked
-    { inquiry_id: "inq-1", equipment_id: fx3?.id ?? null,  kit_id: kitMap["Sony FX3 Kit"],  position: "Center Semi Wide", booked_from: d(10), booked_to: d(12), status: "BOOKED",   vendor_id: null,          vendor_cost_per_day: null,  total_vendor_cost: null,  confirmed_by_id: null,     confirmed_at: null  },
-    // inq-1 Adani — ATEM Extreme booked
-    { inquiry_id: "inq-1", equipment_id: atem?.id ?? null, kit_id: null,                    position: "Video Mixer",      booked_from: d(10), booked_to: d(12), status: "BOOKED",   vendor_id: null,          vendor_cost_per_day: null,  total_vendor_cost: null,  confirmed_by_id: null,     confirmed_at: null  },
-    // inq-1 Adani — Crane from vendor (Apex Rental)
-    { inquiry_id: "inq-1", equipment_id: null,             kit_id: null,                    position: "Video Crane 32ft", booked_from: d(10), booked_to: d(12), status: "OUT",      vendor_id: vendor1?.id ?? null, vendor_cost_per_day: 8000, total_vendor_cost: 24000, confirmed_by_id: "system", confirmed_at: d(10) },
-    // inq-2 Torrent — FX6 kit booked
-    { inquiry_id: "inq-2", equipment_id: fx6?.id ?? null,  kit_id: kitMap["Sony FX6 Kit"],  position: "Main Camera",      booked_from: d(14), booked_to: d(15), status: "BOOKED",   vendor_id: null,          vendor_cost_per_day: null,  total_vendor_cost: null,  confirmed_by_id: null,     confirmed_at: null  },
-    // inq-2 Torrent — Zoom H6 booked
-    { inquiry_id: "inq-2", equipment_id: zoomH6?.id ?? null, kit_id: null,                  position: "Audio",            booked_from: d(14), booked_to: d(15), status: "BOOKED",   vendor_id: null,          vendor_cost_per_day: null,  total_vendor_cost: null,  confirmed_by_id: null,     confirmed_at: null  },
-    // inq-2 Torrent — Drone from vendor (Shreeji)
-    { inquiry_id: "inq-2", equipment_id: null,             kit_id: null,                    position: "Drone",            booked_from: d(14), booked_to: d(15), status: "BOOKED",   vendor_id: vendor2?.id ?? null, vendor_cost_per_day: 5000, total_vendor_cost: 10000, confirmed_by_id: null,     confirmed_at: null  },
-    // inq-4 Dholera — Mars 4K returned
-    { inquiry_id: "inq-4", equipment_id: mars1?.id ?? null, kit_id: kitMap["Hollyland Mars 4K Kit-01"], position: "Wireless 1", booked_from: dp(15), booked_to: dp(20), status: "RETURNED", vendor_id: null, vendor_cost_per_day: null, total_vendor_cost: null, confirmed_by_id: "system", confirmed_at: dp(15) },
-  ]});
-  console.log("     ✓ 8 equipment bookings");
-
-  console.log("\n✅ Seed complete!");
+  console.log("✅ Seed complete!");
+  console.log(`   • 1 user (admin/admin)`);
+  console.log(`   • ${rpData.length} role permissions`);
+  console.log(`   • ${olData.length} option list entries`);
+  console.log(`   • 17 clients`);
+  console.log(`   • 3 vendors`);
+  console.log(`   • ${uniqueKitNames.length} kits`);
+  console.log(`   • ${eqCount} equipment items`);
+  console.log(`   • ${staffCount} staff`);
 }
 
 main()
-  .catch((e) => { console.error("❌ Seed failed:", e); process.exit(1); })
+  .catch(e => { console.error("❌ Seed failed:", e); process.exit(1); })
   .finally(async () => { await prisma.$disconnect(); await pool.end(); });

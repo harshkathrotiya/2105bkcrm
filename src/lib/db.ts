@@ -18,11 +18,9 @@ const pool =
   globalForPrisma.prismaPool ??
   new pg.Pool({
     connectionString: process.env.DATABASE_URL || process.env.DIRECT_URL!,
-    // Vercel: 1 connection per serverless instance (platform pooler fans out).
-    // Local: 5 — enough headroom without overwhelming Neon's idle-connection
-    // reaper (which sends P1017 "connection terminated" when it closes a socket
-    // the pool thinks is still open).
-    max: isVercel ? 1 : 5,
+    // Vercel: 1 connection per serverless instance.
+    // Local: 2 — Aiven free tier caps total connections at ~25; keep headroom.
+    max: isVercel ? 1 : 2,
     // Release idle connections after 10 s so Neon doesn't close them first.
     idleTimeoutMillis: 10_000,
     // Give up acquiring a connection after 15 s rather than hanging forever.

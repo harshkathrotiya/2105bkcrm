@@ -35,6 +35,7 @@ export async function PATCH(
     if (body.productName !== undefined) v.minLength("productName", 2).maxLength("productName", 200);
     if (body.category !== undefined) v.maxLength("category", 50);
     if (body.quantity !== undefined) v.positiveInteger("quantity");
+    if (body.quantityUnit !== undefined) v.oneOf("quantityUnit", ["pieces", "pair", "metre"]);
     if (body.serialNumber !== undefined && body.serialNumber) v.maxLength("serialNumber", 100, "serial number");
     if (body.bodyName !== undefined && body.bodyName) v.maxLength("bodyName", 100, "body name");
     if (body.respPerson !== undefined && body.respPerson) v.maxLength("respPerson", 100, "responsible person");
@@ -55,6 +56,7 @@ export async function PATCH(
     const patch: any = { ...body };
     if (body.productName !== undefined) patch.productName = body.productName.trim();
     if (body.quantity !== undefined) patch.quantity = parseInt(body.quantity, 10);
+    if (body.quantityUnit !== undefined) patch.quantityUnit = body.quantityUnit;
     if (body.purchasePrice !== undefined) patch.purchasePrice = body.purchasePrice ? parseFloat(body.purchasePrice) : null;
     if (body.kitId !== undefined) patch.kitId = body.kitId ? parseInt(body.kitId, 10) : null;
     if (body.defaultRate !== undefined) patch.defaultRate = body.defaultRate !== null && body.defaultRate !== "" ? parseFloat(body.defaultRate) : null;

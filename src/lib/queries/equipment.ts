@@ -21,6 +21,7 @@ function mapEquipment(row: any): Equipment {
     productName: row.product_name,
     category: row.category,
     quantity: row.quantity,
+    quantityUnit: (row.quantity_unit as "pieces" | "pair" | "metre") || "pieces",
     serialNumber: row.serial_number,
     bodyName: row.body_name,
     kitId: row.kit_id,
@@ -166,6 +167,7 @@ export async function createEquipment(item: Omit<Equipment, "id" | "createdAt">)
       product_name: item.productName,
       category: item.category,
       quantity: item.quantity,
+      quantity_unit: item.quantityUnit || "pieces",
       serial_number: item.serialNumber ?? null,
       body_name: item.bodyName ?? null,
       kit_id: item.kitId ?? null,
@@ -202,6 +204,7 @@ export async function updateEquipment(id: number, patch: Partial<Omit<Equipment,
       product_name: merged.productName,
       category: merged.category,
       quantity: merged.quantity,
+      quantity_unit: merged.quantityUnit || "pieces",
       serial_number: merged.serialNumber ?? null,
       body_name: merged.bodyName ?? null,
       kit_id: merged.kitId ?? null,
@@ -279,21 +282,10 @@ export async function getEquipmentCategoryCounts(): Promise<Record<string, numbe
     select: { category: true },
   });
 
-  const counts: Record<string, number> = {
-    ALL: equipment.length,
-    CAMERA: 0,
-    VIDEO_MIXER: 0,
-    VIDEO_RECORDER: 0,
-    AUDIO_MIXER: 0,
-    WIRELESS_TX: 0,
-    UPS: 0,
-    ACCESSORY: 0,
-  };
+  const counts: Record<string, number> = { ALL: equipment.length };
 
   for (const eq of equipment) {
-    if (eq.category in counts) {
-      counts[eq.category] += 1;
-    }
+    counts[eq.category] = (counts[eq.category] || 0) + 1;
   }
 
   return counts;
