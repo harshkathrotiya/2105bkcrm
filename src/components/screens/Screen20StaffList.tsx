@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Network } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -153,6 +154,9 @@ export default function Screen20StaffList() {
         breadcrumbs={[{ label: "Staff" }]}
         actions={
           <div style={{ display: "flex", gap: "8px" }}>
+            <Link href="/staff/explorer" className="btn">
+              <Network size={13} /> Org Explorer
+            </Link>
             <button className="btn" onClick={handleExportCSV}>Export CSV</button>
             <button className="btn" onClick={handleExportPDF}>Export PDF</button>
             {canCreate && <Link href="/staff/new" className="btn btn-primary">+ Add Staff</Link>}
@@ -211,6 +215,20 @@ export default function Screen20StaffList() {
             <div style={{ height: "1px", background: "var(--b1)", margin: "4px 12px" }} />
 
             <div style={{ padding: "6px", display: "flex", flexDirection: "column", gap: "6px" }}>
+              <Link
+                href="/staff/explorer"
+                className="btn w-full justify-center"
+                style={{
+                  fontSize: "11px",
+                  padding: "6px 8px",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <Network size={12} /> Org Explorer
+              </Link>
               <Link
                 href="/staff/reports"
                 className="btn btn-primary w-full justify-center"

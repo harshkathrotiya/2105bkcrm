@@ -710,6 +710,47 @@ a:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-shadow); bord
   .app-content { padding: 12px 12px 56px; }
 }
 
+/* ===== STAFF ORG EXPLORER (React Flow) ===== */
+.org-flow-wrap .react-flow__controls {
+  box-shadow: var(--shadow);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--b1);
+}
+.org-flow-wrap .react-flow__controls-button {
+  background: var(--s1);
+  border-bottom: 1px solid var(--b1);
+  color: var(--tx2);
+  width: 28px;
+  height: 28px;
+  transition: background 0.15s ease;
+}
+.org-flow-wrap .react-flow__controls-button:hover {
+  background: var(--hover-bg);
+}
+.org-flow-wrap .react-flow__controls-button svg {
+  fill: var(--tx2);
+  max-width: 13px;
+  max-height: 13px;
+}
+.org-flow-wrap .react-flow__edge-path {
+  transition: stroke 0.2s ease, opacity 0.2s ease;
+}
+.org-flow-wrap .react-flow__node {
+  transition: opacity 0.25s ease;
+}
+.org-flow-wrap .react-flow__attribution {
+  display: none;
+}
+/* Animated dashed edge for staff currently on an event */
+.org-flow-wrap .react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 5;
+  animation: org-dash 0.6s linear infinite;
+}
+@keyframes org-dash {
+  to { stroke-dashoffset: -10; }
+}
+
 /* ===== PRINT STYLES ===== */
 @media print {
   /* Hide the web UI elements */
