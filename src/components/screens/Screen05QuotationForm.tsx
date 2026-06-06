@@ -17,33 +17,6 @@ import { useToast } from "../ui/Toast";
 import { useCurrentUser } from "@/lib/use-current-user";
 
 
-// ── Default position list per FRD appendix (fallback if API list not loaded) ──
-const DEFAULT_POSITION_MAP: Record<string, { equip: string; rate: number }> = {
-  "Center Tally":        { equip: "FS6",            rate: 20000 },
-  "Center Semi Wide":    { equip: "FS6",            rate: 20000 },
-  "Center Full Wide":    { equip: "Z150",           rate:  8000 },
-  "Left Side":           { equip: "FS6",            rate: 20000 },
-  "Right Side":          { equip: "FS6",            rate: 20000 },
-  "Wireless 1":          { equip: "FX3 + Wireless", rate: 10000 },
-  "Wireless 2":          { equip: "FX3 + Wireless", rate: 10000 },
-  "Wireless 3":          { equip: "FX3 + Wireless", rate: 10000 },
-  "Wireless 4":          { equip: "FX3 + Wireless", rate: 10000 },
-  "Photo 1":             { equip: "DSLR",           rate:  8000 },
-  "Photo 2":             { equip: "DSLR",           rate:  8000 },
-  "Photo 3":             { equip: "DSLR",           rate:  8000 },
-  "Photo 4":             { equip: "DSLR",           rate:  8000 },
-  "Source PC":           { equip: "PC",             rate:  5000 },
-  "Youtube Live":        { equip: "Live PC",        rate:  5000 },
-  "Editor":              { equip: "Video Editing System", rate:  5000 },
-  "Photo Editor":        { equip: "Photo Editing Laptop", rate:  5000 },
-  "Video Crane 32 Feet": { equip: "Crane 32 Feet",  rate: 15000 },
-  "Drone":               { equip: "Drone",          rate: 12000 },
-  "FPV":                 { equip: "FPV",            rate: 15000 },
-  "Installation & de-installation charges": { equip: "Service",  rate: 5000 },
-  "Content management operator":            { equip: "Operator", rate: 2000 },
-};
-
-const EQUIPMENT_LIST = Array.from(new Set(Object.values(DEFAULT_POSITION_MAP).map((m) => m.equip)));
 
 // Service labels and LED types used in auto-generated rows — not real DB equipment/kits
 // but must appear as valid selections in the Equipment/Kits dropdown.
@@ -72,10 +45,13 @@ export default function Screen05QuotationForm() {
   const { kits } = useKits();
   const { equipment: allEquipment } = useEquipment();
 
-  // ── Dynamic positions (user-managed) ────────────────────────────────────────
-  const [positionMap, setPositionMap] = useState<Record<string, { equip: string; rate: number }>>(DEFAULT_POSITION_MAP);
+  // ── Dynamic positions loaded from DB ────────────────────────────────────────
+  const [positionMap, setPositionMap] = useState<Record<string, { equip: string; rate: number }>>({});
+  const [positionsLoaded, setPositionsLoaded] = useState(false);
   const [addingPosition, setAddingPosition] = useState(false);
   const [newPosition, setNewPosition] = useState("");
+  const [newPositionEquip, setNewPositionEquip] = useState("");
+  const [newPositionRate, setNewPositionRate] = useState<number>(0);
 
   const positions = useMemo(() => Object.keys(positionMap), [positionMap]);
 
@@ -84,17 +60,14 @@ export default function Screen05QuotationForm() {
     api.fetchOptions("QUOTATION_POSITION")
       .then((opts) => {
         if (!active) return;
-        // Start from defaults so any entries missing from DB are still available
-        const map: Record<string, { equip: string; rate: number }> = { ...DEFAULT_POSITION_MAP };
+        const map: Record<string, { equip: string; rate: number }> = {};
         for (const o of opts) {
-          let eq = o.metaEquip || "";
-          if (eq === "Photo Editor") eq = "Photo Editing Laptop";
-          if (eq === "Editor") eq = "Video Editing System";
-          map[o.value] = { equip: eq, rate: o.metaRate || 0 };
+          map[o.value] = { equip: o.metaEquip || "", rate: o.metaRate || 0 };
         }
         setPositionMap(map);
+        setPositionsLoaded(true);
       })
-      .catch(() => { /* keep defaults */ });
+      .catch(() => { if (active) setPositionsLoaded(true); });
     return () => { active = false; };
   }, []);
 
@@ -102,9 +75,14 @@ export default function Screen05QuotationForm() {
     const value = newPosition.trim();
     if (!value) return;
     try {
-      await api.addOption("QUOTATION_POSITION", value);
-      setPositionMap((prev) => ({ ...prev, [value]: { equip: "", rate: 0 } }));
+      await api.addOption("QUOTATION_POSITION", value, {
+        equip: newPositionEquip.trim() || undefined,
+        rate: newPositionRate > 0 ? newPositionRate : undefined,
+      });
+      setPositionMap((prev) => ({ ...prev, [value]: { equip: newPositionEquip.trim(), rate: newPositionRate } }));
       setNewPosition("");
+      setNewPositionEquip("");
+      setNewPositionRate(0);
       setAddingPosition(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to add position");
@@ -154,8 +132,6 @@ export default function Screen05QuotationForm() {
       seen.add(o.value);
       return true;
     });
-    // Fallback to EQUIPMENT_LIST if DB not loaded yet
-    if (all.length === 0) return EQUIPMENT_LIST.map((e) => ({ value: e, label: e, group: "" }));
     return all;
   }, [kits, allEquipment]);
 
@@ -210,6 +186,11 @@ export default function Screen05QuotationForm() {
     [quotations, selectedInquiryId]
   );
 
+  const makePositionRow = (no: number, posName: string, days: number): QuotationRow => {
+    const meta = positionMap[posName] ?? { equip: "", rate: 0 };
+    return { no, position: posName, equip: meta.equip, rate: meta.rate, days, amount: meta.rate * days };
+  };
+
   const getDefaultRows = (inq: any, days: number): QuotationRow[] => {
     if (!inq) return [];
     const dept = inq.department || "VIDEO";
@@ -219,30 +200,9 @@ export default function Screen05QuotationForm() {
       const rate = rateSetting * area;
       const desc = `LED Screen ${inq.screenWidth || 0}x${inq.screenHeight || 0} ${inq.ledType || "P4"} (${inq.location || "INDOOR"})${inq.stageType ? ` at ${inq.stageType}` : ""}`;
       return [
-        {
-          no: 1,
-          position: desc,
-          equip: `${inq.ledType || "P4"} LED`,
-          rate: rate,
-          days: days,
-          amount: rate * days,
-        },
-        {
-          no: 2,
-          position: "Installation & de-installation charges",
-          equip: "Service",
-          rate: 5000,
-          days: 1,
-          amount: 5000,
-        },
-        {
-          no: 3,
-          position: "Content management operator",
-          equip: "Operator",
-          rate: 2000,
-          days: days,
-          amount: 2000 * days,
-        }
+        { no: 1, position: desc, equip: `${inq.ledType || "P4"} LED`, rate, days, amount: rate * days },
+        makePositionRow(2, "Installation & de-installation charges", 1),
+        makePositionRow(3, "Content management operator", days),
       ];
     } else if (dept === "MERGED") {
       const area = inq.screenWidth && inq.screenHeight ? inq.screenWidth * inq.screenHeight : 0;
@@ -250,53 +210,40 @@ export default function Screen05QuotationForm() {
       const rate = rateSetting * area;
       const desc = `LED Screen ${inq.screenWidth || 0}x${inq.screenHeight || 0} ${inq.ledType || "P4"} (${inq.location || "INDOOR"})${inq.stageType ? ` at ${inq.stageType}` : ""}`;
       return [
-        { no: 1, position: "Center Tally",        equip: "FS6",            rate: 20000, days, amount: 20000 * days },
-        { no: 2, position: "Center Semi Wide",     equip: "FS6",            rate: 20000, days, amount: 20000 * days },
-        { no: 3, position: "Wireless 1",           equip: "FX3 + Wireless", rate: 10000, days, amount: 10000 * days },
-        { no: 4, position: "Photo 1",              equip: "DSLR",           rate:  8000, days, amount:  8000 * days },
-        { no: 5, position: "Video Crane 32 Feet",  equip: "Crane 32 Feet",  rate: 15000, days, amount: 15000 * days },
-        {
-          no: 6,
-          position: desc,
-          equip: `${inq.ledType || "P4"} LED`,
-          rate: rate,
-          days: days,
-          amount: rate * days,
-        },
-        {
-          no: 7,
-          position: "Installation & de-installation charges",
-          equip: "Service",
-          rate: 5000,
-          days: 1,
-          amount: 5000,
-        },
-        {
-          no: 8,
-          position: "Content management operator",
-          equip: "Operator",
-          rate: 2000,
-          days: days,
-          amount: 2000 * days,
-        }
+        makePositionRow(1, "Center Tally", days),
+        makePositionRow(2, "Center Semi Wide", days),
+        makePositionRow(3, "Wireless 1", days),
+        makePositionRow(4, "Photo 1", days),
+        makePositionRow(5, "Video Crane 32 Feet", days),
+        { no: 6, position: desc, equip: `${inq.ledType || "P4"} LED`, rate, days, amount: rate * days },
+        makePositionRow(7, "Installation & de-installation charges", 1),
+        makePositionRow(8, "Content management operator", days),
       ];
     } else {
       return [
-        { no: 1, position: "Center Tally",        equip: "FS6",            rate: 20000, days: days, amount: 20000 * days },
-        { no: 2, position: "Center Semi Wide",     equip: "FS6",            rate: 20000, days: days, amount: 20000 * days },
-        { no: 3, position: "Wireless 1",           equip: "FX3 + Wireless", rate: 10000, days: days, amount: 10000 * days },
-        { no: 4, position: "Photo 1",              equip: "DSLR",           rate:  8000, days: days, amount:  8000 * days },
-        { no: 5, position: "Video Crane 32 Feet",  equip: "Crane 32 Feet",  rate: 15000, days: days, amount: 15000 * days },
+        makePositionRow(1, "Center Tally", days),
+        makePositionRow(2, "Center Semi Wide", days),
+        makePositionRow(3, "Wireless 1", days),
+        makePositionRow(4, "Photo 1", days),
+        makePositionRow(5, "Video Crane 32 Feet", days),
       ];
     }
   };
 
-  // Rows — auto-fill days from inquiry when inquiry changes
+  // Rows — start empty for new quotations; populated once positionMap loads from DB
   const [rows, setRows] = useState<QuotationRow[]>(() => {
     if (existingQuotation) return existingQuotation.equipment;
-    const inq = inquiries.find((i) => i.id === defaultInquiryId);
-    return getDefaultRows(inq, eventDays);
+    return [];
   });
+
+  // Once positionMap is loaded from DB, populate default rows for new quotations
+  useEffect(() => {
+    if (!positionsLoaded) return;
+    if (existingQuotation) return; // editing — keep existing rows
+    const inq = inquiries.find((i) => i.id === selectedInquiryId);
+    setRows(getDefaultRows(inq, eventDays));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [positionsLoaded]);
 
   const canWrite = existingQuotation ? can("quotations.edit") : can("quotations.create");
 
@@ -807,21 +754,37 @@ export default function Screen05QuotationForm() {
                   ● Live DB
                 </span>
                 {addingPosition ? (
-                  <div className="ml-auto" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <div className="ml-auto" style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                     <input
                       className="finp text-[10px]"
                       autoFocus
-                      placeholder="New position name"
+                      placeholder="Position name *"
                       value={newPosition}
                       onChange={(e) => setNewPosition(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") { e.preventDefault(); handleAddPosition(); }
-                        if (e.key === "Escape") { setAddingPosition(false); setNewPosition(""); }
+                        if (e.key === "Escape") { setAddingPosition(false); setNewPosition(""); setNewPositionEquip(""); setNewPositionRate(0); }
                       }}
-                      style={{ width: 150 }}
+                      style={{ width: 140 }}
+                    />
+                    <input
+                      className="finp text-[10px]"
+                      placeholder="Equipment (optional)"
+                      value={newPositionEquip}
+                      onChange={(e) => setNewPositionEquip(e.target.value)}
+                      style={{ width: 130 }}
+                    />
+                    <input
+                      className="finp text-[10px]"
+                      type="number"
+                      min={0}
+                      placeholder="Rate/day"
+                      value={newPositionRate || ""}
+                      onChange={(e) => setNewPositionRate(Number(e.target.value) || 0)}
+                      style={{ width: 80 }}
                     />
                     <button className="btn btn-primary text-[10px]" onClick={handleAddPosition}>Add</button>
-                    <button className="btn text-[10px]" onClick={() => { setAddingPosition(false); setNewPosition(""); }}>✕</button>
+                    <button className="btn text-[10px]" onClick={() => { setAddingPosition(false); setNewPosition(""); setNewPositionEquip(""); setNewPositionRate(0); }}>✕</button>
                   </div>
                 ) : (
                   <button className="btn ml-auto text-[10px]" onClick={() => setAddingPosition(true)}>+ Add position</button>
@@ -862,7 +825,7 @@ export default function Screen05QuotationForm() {
                                 value={row.position}
                                 onChange={(val) => updateRow(row.no, "position", val)}
                                 options={positions.map(p => ({ value: p, label: p }))}
-                                placeholder="Select position"
+                                placeholder={positionsLoaded ? "Select position" : "Loading positions…"}
                                 placement={placement}
                               />
                             )}
