@@ -214,6 +214,7 @@ export interface EquipmentFetchResult {
 export interface EquipmentSummary {
   totalValue: number;
   totalCount: number;
+  statusCounts: { inUse: number; available: number; maintenance: number };
   categories: Record<string, { count: number; value: number }>;
 }
 
@@ -239,6 +240,32 @@ export function fetchEquipment(params?: {
 
 export function fetchEquipmentItem(id: number): Promise<Equipment> {
   return request(`/api/equipment/${id}`);
+}
+
+export interface EquipmentHistoryItem {
+  id: number;
+  equipmentId: number | null;
+  equipmentName: string;
+  kitName: string | null;
+  position: string | null;
+  bookedFrom: string;
+  bookedTo: string;
+  status: string;
+  source: "IN_HOUSE" | "VENDOR" | "STAFF";
+  vendorName: string | null;
+  ownerStaffName: string | null;
+  inquiryId: string;
+  eventName: string | null;
+  eventType: string | null;
+  clientName: string | null;
+}
+
+export function fetchEquipmentHistory(params?: { search?: string; status?: string }): Promise<EquipmentHistoryItem[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.status) query.set("status", params.status);
+  const qs = query.toString();
+  return request(`/api/equipment/history${qs ? `?${qs}` : ""}`);
 }
 
 export function createEquipment(data: Omit<Equipment, "id" | "createdAt">): Promise<Equipment> {

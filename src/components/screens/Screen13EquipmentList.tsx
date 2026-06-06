@@ -40,14 +40,6 @@ export default function Screen13EquipmentList() {
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  const equipmentAssetsValue = assetSummary ? (
-    (assetSummary.categories?.VIDEO_MIXER?.value || 0) +
-    (assetSummary.categories?.VIDEO_RECORDER?.value || 0) +
-    (assetSummary.categories?.AUDIO_MIXER?.value || 0) +
-    (assetSummary.categories?.WIRELESS_TX?.value || 0) +
-    (assetSummary.categories?.UPS?.value || 0)
-  ) : 0;
-
   // Trigger query when filters or page changes
   useEffect(() => {
     refreshEquipment({
@@ -189,16 +181,6 @@ export default function Screen13EquipmentList() {
   };
 
   // Helper for status badge styling
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "AVAILABLE": return "gr";
-      case "IN_USE": return "bl";
-      case "MAINTENANCE": return "am";
-      case "SOLD": return "gy";
-      case "RETIRED": return "rd";
-      default: return "gy";
-    }
-  };
 
   // Safe division helper
   const getPercentage = (value: number) => {
@@ -234,16 +216,20 @@ export default function Screen13EquipmentList() {
               <div className="met-v">{assetSummary?.totalCount || 0}</div>
             </div>
             <div className="met">
+              <div className="met-l">In Use (today)</div>
+              <div className="met-v b">{assetSummary?.statusCounts?.inUse || 0}</div>
+            </div>
+            <div className="met">
+              <div className="met-l">Available</div>
+              <div className="met-v g">{assetSummary?.statusCounts?.available || 0}</div>
+            </div>
+            <div className="met">
+              <div className="met-l">Under Maintenance</div>
+              <div className="met-v a">{assetSummary?.statusCounts?.maintenance || 0}</div>
+            </div>
+            <div className="met">
               <div className="met-l">Total Asset Value</div>
               <div className="met-v g">₹{(assetSummary?.totalValue || 0).toLocaleString("en-IN")}</div>
-            </div>
-            <div className="met">
-              <div className="met-l">Camera Assets</div>
-              <div className="met-v b">₹{(assetSummary?.categories?.CAMERA?.value || 0).toLocaleString("en-IN")}</div>
-            </div>
-            <div className="met">
-              <div className="met-l">Equipment Assets</div>
-              <div className="met-v a">₹{equipmentAssetsValue.toLocaleString("en-IN")}</div>
             </div>
           </div>
         </div>
@@ -294,6 +280,9 @@ export default function Screen13EquipmentList() {
                 <Download size={13} /> Import CSV
               </button>
             )}
+            <Link href="/equipment/history" className="btn">
+              ▤ Usage History
+            </Link>
             <Link href="/reports/assets/pdf" className="btn">
               ▤ Asset Report (PDF)
             </Link>
@@ -396,14 +385,13 @@ export default function Screen13EquipmentList() {
                         <th style={{ width: "100px" }}>Body / Kit</th>
                         <th style={{ width: "90px" }}>Serial no.</th>
                         <th style={{ width: "100px", textAlign: "right" }}>Purchase price</th>
-                        <th style={{ width: "75px" }}>Status</th>
                         <th style={{ width: "70px" }}>Resp.</th>
                       </tr>
                     </thead>
                     <tbody>
                       {equipment.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="text-center py-6 text-tx3">
+                          <td colSpan={7} className="text-center py-6 text-tx3">
                             No equipment items matching filters
                           </td>
                         </tr>
@@ -449,13 +437,6 @@ export default function Screen13EquipmentList() {
                                 <span style={{ fontWeight: 500 }}>₹{item.purchasePrice.toLocaleString("en-IN")}</span>
                               ) : (
                                 <span style={{ color: "var(--tx3)", fontStyle: "italic" }}>Not entered</span>
-                              )}
-                            </td>
-                            <td>
-                              {item.status === "AVAILABLE" && item.inUseToday ? (
-                                <Badge variant="bl">IN_USE</Badge>
-                              ) : (
-                                <Badge variant={getStatusBadgeVariant(item.status)}>{item.status}</Badge>
                               )}
                             </td>
                             <td>{item.respPerson || <span style={{ color: "var(--tx3)" }}>—</span>}</td>

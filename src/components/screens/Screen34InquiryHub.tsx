@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Badge from "../ui/Badge";
@@ -101,7 +101,9 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
   };
   const [assignments, setAssignments] = useState<any[]>([]);
   const [approving, setApproving] = useState(false);
-  const [videoPercent, setVideoPercent] = useState(82);
+  // Video/Photo split for invoice generation (default 82% video). The approval
+  // UI no longer exposes this as an editable field — the default is used.
+  const videoPercent = 82;
   const [showApprove, setShowApprove] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(null);
@@ -113,7 +115,48 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
   const [editingPosition, setEditingPosition] = useState<string | null>(null); // the old value being renamed
   const [editPositionName, setEditPositionName] = useState("");
   const [showPosDropdown, setShowPosDropdown] = useState<number | null>(null); // row.no of open dropdown
+  const [posDropdownStyle, setPosDropdownStyle] = useState<React.CSSProperties>({});
+  const [activeTrigger, setActiveTrigger] = useState<HTMLDivElement | null>(null);
   const posDropdownRef = useRef<HTMLDivElement>(null);
+
+  const updatePosDropdownPosition = useCallback(() => {
+    if (!activeTrigger) return;
+    const rect = activeTrigger.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const useTop = spaceBelow < 220 && spaceAbove > spaceBelow;
+    if (useTop) {
+      setPosDropdownStyle({
+        position: "fixed",
+        bottom: window.innerHeight - rect.top + 3,
+        left: rect.left,
+        width: Math.max(200, rect.width),
+        zIndex: 9999
+      });
+    } else {
+      setPosDropdownStyle({
+        position: "fixed",
+        top: rect.bottom + 3,
+        left: rect.left,
+        width: Math.max(200, rect.width),
+        zIndex: 9999
+      });
+    }
+  }, [activeTrigger]);
+
+  useEffect(() => {
+    if (showPosDropdown === null) {
+      setActiveTrigger(null);
+      return;
+    }
+    updatePosDropdownPosition();
+    window.addEventListener("scroll", updatePosDropdownPosition, true);
+    window.addEventListener("resize", updatePosDropdownPosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosDropdownPosition, true);
+      window.removeEventListener("resize", updatePosDropdownPosition);
+    };
+  }, [showPosDropdown, updatePosDropdownPosition]);
   const justSavedRef = useRef(false);
   const ledConfigInitRef = useRef(false);
   const [clientRateMap, setClientRateMap] = useState<Record<number, number>>({});
@@ -643,7 +686,6 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
   };
 
   // ── Approve logic ────────────────────────────────────────────────────────────
-  const isLed = inquiry ? (inquiry.department === "LED" || inquiry.department === "MERGED") : false;
 
   const doApprove = async () => {
     if (!quotation || approving || !inquiry) return;
@@ -1150,7 +1192,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                     )}
                     <button className="btn text-[10px]" onClick={addRow}>+ Add row</button>
                   </div>
-                  <div className="overflow-x-auto" style={{ overflow: "visible" }}>
+                  <div className="tbl-scroll">
                     <table className="tbl" style={{ minWidth: 520 }}>
                       <thead>
                         <tr>
@@ -1190,7 +1232,16 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                                     <div
                                       className="fsel text-[10px]"
                                       style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", padding: "5px 8px", whiteSpace: "nowrap", overflow: "hidden" }}
-                                      onClick={() => setShowPosDropdown(showPosDropdown === row.no ? null : row.no)}
+                                      onClick={(e) => {
+                                        const isOpened = showPosDropdown === row.no;
+                                        if (isOpened) {
+                                          setShowPosDropdown(null);
+                                          setActiveTrigger(null);
+                                        } else {
+                                          setActiveTrigger(e.currentTarget);
+                                          setShowPosDropdown(row.no);
+                                        }
+                                      }}
                                     >
                                       <span style={{ color: row.position ? "var(--tx)" : "var(--tx3)", overflow: "hidden", textOverflow: "ellipsis" }}>
                                         {row.position || "Select position"}
@@ -1199,9 +1250,8 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                                     </div>
                                     {showPosDropdown === row.no && (
                                       <div style={{
-                                        position: "absolute", zIndex: 999,
-                                        top: "100%", left: 0, minWidth: 200, width: "max-content",
-                                        marginTop: 3, padding: 6,
+                                        ...posDropdownStyle,
+                                        padding: 6,
                                         background: "var(--s1)", border: "1px solid var(--b1)",
                                         borderRadius: 8, boxShadow: "var(--shadow-lg)",
                                         maxHeight: 220, overflowY: "auto",
@@ -1696,26 +1746,6 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                     </button>
                   ) : (
                     <div style={{ background: "var(--s2)", borderRadius: 8, padding: 14 }}>
-                      {!isLed && (
-                        <div className="field" style={{ marginBottom: 12 }}>
-                          <div className="flbl">Video / Photo split</div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <input
-                              type="number" className="finp" style={{ width: 80 }} min={0} max={100}
-                              value={videoPercent}
-                              onChange={(e) => setVideoPercent(Math.max(0, Math.min(100, Number(e.target.value))))}
-                            />
-                            <span className="text-[11px] text-tx3">
-                              % Video · {100 - videoPercent}% Photo
-                              {quotation.subtotal > 0 && (
-                                <span style={{ marginLeft: 8, color: "var(--tx2)" }}>
-                                  (₹{fmt(Math.round(quotation.subtotal * videoPercent / 100))} + ₹{fmt(Math.round(quotation.subtotal * (100 - videoPercent) / 100))})
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      )}
                       <div style={{ fontSize: 11.5, color: "var(--tx3)", marginBottom: 12 }}>
                         Invoice will be: <strong>₹{fmt(Math.round(quotation.total * 0.5))}</strong> advance + <strong>₹{fmt(quotation.total - Math.round(quotation.total * 0.5))}</strong> balance
                       </div>

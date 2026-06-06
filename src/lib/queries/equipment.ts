@@ -161,8 +161,15 @@ export async function getEquipmentDetailsById(id: number) {
     select: { id: true, name: true },
   });
 
+  // History includes bookings made directly for this item AND bookings of the kit
+  // this item belongs to (so kit-level usage shows in the item's history too).
   const bookings = await db.equipmentBooking.findMany({
-    where: { equipment_id: id },
+    where: {
+      OR: [
+        { equipment_id: id },
+        ...(item.kitId ? [{ kit_id: item.kitId }] : []),
+      ],
+    },
     include: {
       inquiry: {
         include: { client: true },
@@ -195,6 +202,79 @@ export async function getEquipmentDetailsById(id: number) {
       vendorName: b.vendor?.name,
     })),
   };
+}
+
+export interface EquipmentHistoryItem {
+  id: number;
+  equipmentId: number | null;
+  equipmentName: string;
+  kitName: string | null;
+  position: string | null;
+  bookedFrom: string;
+  bookedTo: string;
+  status: string;
+  source: "IN_HOUSE" | "VENDOR" | "STAFF";
+  vendorName: string | null;
+  ownerStaffName: string | null;
+  inquiryId: string;
+  eventName: string | null;
+  eventType: string | null;
+  clientName: string | null;
+}
+
+// Global usage history — every equipment booking across all items, newest first.
+// Optional filters: free-text search (equipment/event/client) and booking status.
+export async function getEquipmentHistory(filters: { search?: string; status?: string } = {}): Promise<EquipmentHistoryItem[]> {
+  const where: any = {};
+  if (filters.status) {
+    where.status = filters.status;
+  }
+
+  const bookings = await db.equipmentBooking.findMany({
+    where,
+    include: {
+      equipment: true,
+      kit: true,
+      vendor: true,
+      rental_owner_staff: true,
+      inquiry: { include: { client: true } },
+    },
+    orderBy: { booked_from: "desc" },
+  });
+
+  const mapped: EquipmentHistoryItem[] = bookings.map((b: any) => {
+    const source: "IN_HOUSE" | "VENDOR" | "STAFF" = b.vendor_id
+      ? "VENDOR"
+      : b.rental_owner_staff_id
+      ? "STAFF"
+      : "IN_HOUSE";
+    return {
+      id: b.id,
+      equipmentId: b.equipment_id,
+      equipmentName: b.equipment?.product_name || b.kit?.name || "Equipment",
+      kitName: b.kit?.name || null,
+      position: b.position,
+      bookedFrom: b.booked_from,
+      bookedTo: b.booked_to,
+      status: b.status,
+      source,
+      vendorName: b.vendor?.name || null,
+      ownerStaffName: b.rental_owner_staff?.name || null,
+      inquiryId: b.inquiry_id,
+      eventName: b.inquiry?.event_name || null,
+      eventType: b.inquiry?.event_type || null,
+      clientName: b.inquiry?.client?.name || null,
+    };
+  });
+
+  // Free-text search is applied in-memory (across equipment / event / client names)
+  // so a single box can match any of them.
+  const q = filters.search?.trim().toLowerCase();
+  if (!q) return mapped;
+  return mapped.filter((r) =>
+    [r.equipmentName, r.eventName, r.eventType, r.clientName, r.vendorName, r.ownerStaffName]
+      .some((v) => v?.toLowerCase().includes(q))
+  );
 }
 
 export async function getEquipmentByKitId(kitId: number): Promise<Equipment[]> {
@@ -290,9 +370,31 @@ export async function getAssetSummary() {
     where: { status: { notIn: ["RETIRED", "SOLD"] } },
   });
 
+  // Active bookings covering today → used to count "in use" (availability is
+  // date-based, not the stale status column). Matches getEquipment's inUseToday.
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const activeBookings = await db.equipmentBooking.findMany({
+    where: {
+      status: { not: "RETURNED" },
+      booked_from: { lte: todayStr },
+      booked_to: { gte: todayStr },
+    },
+    select: { equipment_id: true, kit_id: true },
+  });
+  const inUseEquipmentIds = new Set(
+    activeBookings.map((b) => b.equipment_id).filter((id): id is number => id != null)
+  );
+  const inUseKitIds = new Set(
+    activeBookings.map((b) => b.kit_id).filter((id): id is number => id != null)
+  );
+
   let totalValue = 0;
   let totalCount = 0;
-  
+
+  // Operational status counts. "In use" overlaps with the AVAILABLE status, so it
+  // is derived from bookings; "available" = AVAILABLE and not in use today.
+  const statusCounts = { inUse: 0, available: 0, maintenance: 0 };
+
   const categoryMap: Record<string, { count: number; value: number }> = {
     CAMERA: { count: 0, value: 0 },
     VIDEO_MIXER: { count: 0, value: 0 },
@@ -307,7 +409,16 @@ export async function getAssetSummary() {
     const val = (eq.purchase_price || 0) * eq.quantity;
     totalValue += val;
     totalCount += 1; // Or eq.quantity? The previous SQL did COUNT(*)
-    
+
+    const inUse = inUseEquipmentIds.has(eq.id) || (eq.kit_id != null && inUseKitIds.has(eq.kit_id));
+    if (eq.status === "MAINTENANCE") {
+      statusCounts.maintenance += 1;
+    } else if (inUse) {
+      statusCounts.inUse += 1;
+    } else if (eq.status === "AVAILABLE") {
+      statusCounts.available += 1;
+    }
+
     if (categoryMap[eq.category]) {
       categoryMap[eq.category].count += 1;
       categoryMap[eq.category].value += val;
@@ -317,6 +428,7 @@ export async function getAssetSummary() {
   return {
     totalValue,
     totalCount,
+    statusCounts,
     categories: categoryMap,
   };
 }

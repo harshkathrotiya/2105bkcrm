@@ -792,7 +792,7 @@ export default function Screen05QuotationForm() {
                 )}
                 <button className="btn text-[10px]" onClick={addRow}>+ Add row</button>
               </div>
-              <div className="overflow-x-auto" style={{ overflow: "visible" }}>
+              <div className="tbl-scroll">
                 <table className="tbl" style={{ minWidth: 520 }}>
                   <thead>
                     <tr>

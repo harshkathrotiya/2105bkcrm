@@ -185,13 +185,9 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
               <Badge variant={getCategoryBadgeVariant(item.category)}>
                 {item.category.replace(/_/g, " ")}
               </Badge>
-              {item.status === "AVAILABLE" && item.inUseToday ? (
-                <Badge variant="bl">IN_USE</Badge>
-              ) : (
-                <Badge variant={getStatusBadgeVariant(item.status)}>
-                  {item.status}
-                </Badge>
-              )}
+              <Badge variant={getStatusBadgeVariant(item.status)}>
+                {item.status}
+              </Badge>
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
