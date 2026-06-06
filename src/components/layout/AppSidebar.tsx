@@ -56,12 +56,13 @@ export default function AppSidebar() {
       {/* Brand — top of sidebar */}
       <Link href="/" className="app-sidebar-brand">
         <Image
-          src="/bkmlogo.jpeg"
+          src="/bkmlogo.jpeg?v=4"
           alt="BK Media"
           width={110}
           height={110}
           className="app-sidebar-brand-logo"
           priority
+          unoptimized
         />
       </Link>
       <nav className="app-sidebar-nav">
