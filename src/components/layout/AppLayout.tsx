@@ -20,9 +20,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <StoreProvider>
       <div className="app-layout">
-        <SiteHeader />
-        <div className="app-body">
-          <AppSidebar />
+        <AppSidebar />
+        <div className="app-main-col">
+          <SiteHeader />
           <main className="app-content">{children}</main>
         </div>
       </div>

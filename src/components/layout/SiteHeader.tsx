@@ -47,18 +47,6 @@ export default function SiteHeader() {
 
   return (
     <header className="site-hdr">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#111111" }}>
-            <span className="text-[10px] font-bold text-white">BK</span>
-          </div>
-          <div>
-            <div className="text-[13px] font-medium text-tx leading-tight">BK Media</div>
-            <div className="text-[9px] text-tx3 leading-tight -mt-[1px]">CRM · Video Department</div>
-          </div>
-        </div>
-      </div>
-
       {/* Global search — center */}
       <div className="hidden md:flex flex-1 justify-center px-4">
         <GlobalSearch />

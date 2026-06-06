@@ -180,13 +180,16 @@ a { color: inherit; text-decoration: none; }
 /* ===== APP LAYOUT ===== */
 .app-layout {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   min-height: 100vh;
 }
 
-.app-body {
+/* Right-hand column: header on top of the content, beside the full-height sidebar */
+.app-main-col {
   display: flex;
+  flex-direction: column;
   flex: 1;
+  min-width: 0;
 }
 
 /* ===== SITE HEADER ===== */
@@ -205,11 +208,27 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
-  height: calc(100vh - 47px);
+  height: 100vh;
   position: sticky;
-  top: 47px;
+  top: 0;
   overflow-y: auto;
   transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.app-sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+.app-sidebar-brand-logo {
+  width: 110px;
+  height: 110px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #fff;
 }
 
 .app-sidebar-nav {
@@ -698,6 +717,9 @@ a:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-shadow); bord
   .app-sidebar { width: 52px; }
   .app-nav-label { display: none; }
   .app-nav-item { justify-content: center; padding: 8px; }
+  /* Icon-rail: shrink the logo to fit the narrow rail */
+  .app-sidebar-brand { padding: 8px 4px; }
+  .app-sidebar-brand-logo { width: 40px; height: 40px; }
   .app-nav-icon { width: auto; font-size: 16px; }
   .two-col { grid-template-columns: 1fr; }
   .fgrid { grid-template-columns: 1fr; }
@@ -763,7 +785,7 @@ a:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-shadow); bord
   
   /* Reset layout structure for printing */
   .app-layout,
-  .app-body {
+  .app-main-col {
     display: block !important;
     min-height: 0 !important;
     background: #fff !important;

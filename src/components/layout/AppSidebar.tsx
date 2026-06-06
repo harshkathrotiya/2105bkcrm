@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -52,6 +53,17 @@ export default function AppSidebar() {
 
   return (
     <aside className="app-sidebar">
+      {/* Brand — top of sidebar */}
+      <Link href="/" className="app-sidebar-brand">
+        <Image
+          src="/bkmlogo.jpeg"
+          alt="BK Media"
+          width={110}
+          height={110}
+          className="app-sidebar-brand-logo"
+          priority
+        />
+      </Link>
       <nav className="app-sidebar-nav">
         {visibleItems.map((item) => {
           const Icon = ICON_MAP[item.iconName] ?? Users;
