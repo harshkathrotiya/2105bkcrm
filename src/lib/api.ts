@@ -25,6 +25,13 @@ async function request<T>(
     headers: { "Content-Type": "application/json" },
     ...options,
   });
+  if (res.status === 401) {
+    if (typeof window !== "undefined") {
+      const redirect = encodeURIComponent(window.location.pathname);
+      window.location.href = `/login?redirect=${redirect}`;
+    }
+    throw new Error("Session expired");
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error ?? `HTTP ${res.status}`);
