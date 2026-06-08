@@ -117,50 +117,49 @@ export async function GET(request: NextRequest) {
     const kitsWithStatus = allKitsList.map((kit) => {
       const thisBooking = bookings.find(b => b.kit_id === kit.id);
 
-      // Replicate getKitAvailabilityStatus logic in-memory using our checkIsEquipmentBooked helper
       const mainBodyId = kit.mainBodyId;
-      const accessories = kit.items?.filter((item) => item.id !== mainBodyId) || [];
+      const allItems = kit.items ?? [];
+      const accessories = allItems.filter((item) => item.id !== mainBodyId);
       let availabilityStatus: "AVAILABLE" | "PARTIAL" | "UNAVAILABLE" = "UNAVAILABLE";
 
+      // Track which items are unavailable so the UI can show specifics
+      const unavailableItems: { id: number; productName: string; reason: string }[] = [];
+
+      const checkItem = (item: typeof allItems[number]) => {
+        const isBooked = checkIsEquipmentBooked(item.id, kit.id);
+        const isOutOfService = item.status === "MAINTENANCE" || item.status === "SOLD" || item.status === "RETIRED";
+        if (isBooked) {
+          unavailableItems.push({ id: item.id, productName: item.productName, reason: "Booked elsewhere" });
+          return true;
+        }
+        if (isOutOfService) {
+          unavailableItems.push({ id: item.id, productName: item.productName, reason: item.status });
+          return true;
+        }
+        return false;
+      };
+
       if (mainBodyId) {
-        const mainBodyItem = kit.items?.find((item) => item.id === mainBodyId);
+        const mainBodyItem = allItems.find((item) => item.id === mainBodyId);
         if (!mainBodyItem) {
           availabilityStatus = "UNAVAILABLE";
         } else {
-          const isMainBodyBooked = checkIsEquipmentBooked(mainBodyId, kit.id);
-          const isMainBodyOutOfService = mainBodyItem.status === "MAINTENANCE" || mainBodyItem.status === "SOLD" || mainBodyItem.status === "RETIRED";
-
-          if (isMainBodyBooked || isMainBodyOutOfService) {
+          const mainUnavailable = checkItem(mainBodyItem);
+          if (mainUnavailable) {
             availabilityStatus = "UNAVAILABLE";
           } else {
-            let hasMissingAccessory = false;
-            for (const item of accessories) {
-              const isBooked = checkIsEquipmentBooked(item.id, kit.id);
-              const isOutOfService = item.status === "MAINTENANCE" || item.status === "SOLD" || item.status === "RETIRED";
-              if (isBooked || isOutOfService) {
-                hasMissingAccessory = true;
-                break;
-              }
-            }
-            availabilityStatus = hasMissingAccessory ? "PARTIAL" : "AVAILABLE";
+            const anyAccessoryUnavailable = accessories.some(checkItem);
+            availabilityStatus = anyAccessoryUnavailable ? "PARTIAL" : "AVAILABLE";
           }
         }
       } else {
         if (accessories.length === 0) {
           availabilityStatus = "AVAILABLE";
         } else {
-          let bookedAccessoriesCount = 0;
-          for (const item of accessories) {
-            const isBooked = checkIsEquipmentBooked(item.id, kit.id);
-            const isOutOfService = item.status === "MAINTENANCE" || item.status === "SOLD" || item.status === "RETIRED";
-            if (isBooked || isOutOfService) {
-              bookedAccessoriesCount++;
-            }
-          }
-
-          if (bookedAccessoriesCount === 0) {
+          accessories.forEach(checkItem);
+          if (unavailableItems.length === 0) {
             availabilityStatus = "AVAILABLE";
-          } else if (bookedAccessoriesCount === accessories.length) {
+          } else if (unavailableItems.length === accessories.length) {
             availabilityStatus = "UNAVAILABLE";
           } else {
             availabilityStatus = "PARTIAL";
@@ -171,6 +170,7 @@ export async function GET(request: NextRequest) {
       return {
         ...kit,
         availabilityStatus,
+        unavailableItems,
         bookedForThisInquiry: !!thisBooking,
         bookingDetails: thisBooking || null,
       };

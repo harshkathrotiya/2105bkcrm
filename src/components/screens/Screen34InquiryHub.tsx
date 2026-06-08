@@ -594,8 +594,12 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
         });
       }
 
+      // Set before any dispatch so the row-init useEffect ignores the
+      // viewingQuotation?.id change that follows and doesn't cause a re-render
+      // flicker back to the quotation page before the warehouse navigation lands.
+      justSavedRef.current = true;
+
       if (existingQuotation) {
-        justSavedRef.current = true;
         await dispatchQuotations({
           type: "UPDATE_QUOTATION",
           payload: { id: existingQuotation.id, ...quoteData },
@@ -637,7 +641,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
         }
         toast.success("Quotation created.");
       }
-      // Advance to warehouse step instead of router.push
+      // Advance to warehouse step
       setTab("warehouse");
     } finally {
       setSaving(false);

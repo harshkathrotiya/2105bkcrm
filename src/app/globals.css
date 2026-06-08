@@ -390,8 +390,8 @@ a:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-shadow); bord
   border: 1px solid #111111;
   box-shadow: none;
 }
-.btn-success { background: var(--sem-gr-bg); color: var(--sem-gr-tx); border-color: var(--sem-gr-bdr); }
-.btn-success:hover { background: var(--sem-gr-bdr); border-color: var(--sem-gr-tx); }
+.btn-success { background: #111111; color: #ffffff; border-color: #111111; }
+.btn-success:hover { background: #2e2e2e !important; color: #ffffff !important; border-color: #2e2e2e !important; }
 .btn-warning { background: var(--sem-am-bg); color: var(--sem-am-tx); border-color: var(--sem-am-bdr); }
 .btn-warning:hover { background: var(--sem-am-bdr); border-color: var(--sem-am-tx); }
 .btn-danger { background: var(--sem-rd-bg); color: var(--sem-rd-tx); border-color: var(--sem-rd-bdr); }

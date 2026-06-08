@@ -1083,8 +1083,13 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
                   const isSaving = savingRows[positionStr];
                   const selectKey = `select-${positionStr}`;
 
+                  // Check if the booked kit has items that are now unavailable
+                  const bookedKit = booking?.kitId ? data.kits.find(k => k.id === booking.kitId) : null;
+                  const kitUnavailableItems: { id: number; productName: string; reason: string }[] = (bookedKit as any)?.unavailableItems ?? [];
+                  const kitHasIssue = kitUnavailableItems.length > 0;
+
                   return (
-                    <tr key={row.no}>
+                    <tr key={row.no} style={kitHasIssue ? { background: "rgba(239,68,68,0.04)" } : undefined}>
                       <td>#{row.no}</td>
                       <td>
                         <strong style={{ color: "var(--tx)" }}>{row.equip}</strong>
@@ -1105,6 +1110,24 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
                                   S/N: <span style={{ fontFamily: "var(--font-mono)", wordBreak: "break-all" }}>{matchedInhouseItem.serialNumber}</span>
                                 </div>
                               )}
+                              {/* Kit partial availability warning */}
+                              {kitHasIssue && (
+                                <div style={{ marginTop: "6px", padding: "6px 8px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "6px" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--rd)", fontWeight: 600, fontSize: "10.5px", marginBottom: "4px" }}>
+                                    <AlertTriangle size={11} />
+                                    {kitUnavailableItems.length} kit item{kitUnavailableItems.length > 1 ? "s" : ""} no longer available
+                                  </div>
+                                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    {kitUnavailableItems.map(item => (
+                                      <div key={item.id} style={{ fontSize: "10px", color: "var(--tx2)", display: "flex", gap: "6px" }}>
+                                        <span style={{ color: "var(--rd)", fontWeight: 600 }}>✕</span>
+                                        <span>{item.productName}</span>
+                                        <span style={{ color: "var(--tx3)" }}>— {item.reason}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <span style={{ color: "var(--tx2)" }}>In-house stock (Details loading...)</span>
@@ -1119,7 +1142,6 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
                               disabled={isSaving}
                             >
                               <option value="">-- Select Available In-house Item --</option>
-                              {/* Kits Group */}
                               {availableKits.length > 0 && (
                                 <optgroup label="Available Kits">
                                   {availableKits.map(k => (
@@ -1129,7 +1151,6 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
                                   ))}
                                 </optgroup>
                               )}
-                              {/* Individual Equipment Group */}
                               {availableEquipment.length > 0 && (
                                 <optgroup label="Available Equipment">
                                   {availableEquipment.map(eq => (
@@ -1145,9 +1166,14 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
                       </td>
                       <td>
                         {booking ? (
-                          <Badge variant={booking.status === "RETURNED" ? "gr" : booking.status === "OUT" ? "bl" : "am"}>
-                            {booking.status === "OUT" ? "OUT (At Event)" : booking.status}
-                          </Badge>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
+                            <Badge variant={booking.status === "RETURNED" ? "gr" : booking.status === "OUT" ? "bl" : "am"}>
+                              {booking.status === "OUT" ? "OUT (At Event)" : booking.status}
+                            </Badge>
+                            {kitHasIssue && booking.status === "BOOKED" && (
+                              <Badge variant="rd">Kit Incomplete</Badge>
+                            )}
+                          </div>
                         ) : (
                           <span style={{ fontSize: "11px", color: "var(--tx3)", fontStyle: "italic" }}>Unassigned</span>
                         )}
@@ -1160,10 +1186,22 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
                                 type="button"
                                 className="btn btn-primary"
                                 style={{ padding: "4px 8px", fontSize: "11px" }}
-                                onClick={() => handleConfirmHandover(booking.id)}
+                                onClick={async () => {
+                                  if (kitHasIssue) {
+                                    const names = kitUnavailableItems.map(i => `• ${i.productName} (${i.reason})`).join("\n");
+                                    const ok = await confirm({
+                                      title: "Kit Has Missing Items",
+                                      message: `This kit is missing ${kitUnavailableItems.length} item${kitUnavailableItems.length > 1 ? "s" : ""} that are no longer available:\n\n${names}\n\nAre you sure you want to hand it out in this incomplete state?`,
+                                      confirmLabel: "Hand out anyway",
+                                      danger: true,
+                                    });
+                                    if (!ok) return;
+                                  }
+                                  handleConfirmHandover(booking.id);
+                                }}
                                 disabled={handoverLoading[booking.id]}
                               >
-                                {handoverLoading[booking.id] ? "Confirming..." : "Handover Out"}
+                                {handoverLoading[booking.id] ? "Confirming..." : kitHasIssue ? <><AlertTriangle size={11} /> Handover Out</> : "Handover Out"}
                               </button>
                             )}
                             {booking.status === "OUT" && (
