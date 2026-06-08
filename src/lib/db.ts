@@ -46,7 +46,9 @@ export const db = globalForPrisma.prisma ?? new PrismaClient({ adapter } as any)
 // "Connection terminated unexpectedly"). Neon closes idle connections after ~5 min;
 // the pool hands out a dead socket, the first attempt fails, the pool removes it,
 // and the retry gets a fresh connection.
-const RETRYABLE = /P1017|connection.*terminated|connection.*closed|ConnectionClosed/i;
+// Neon suspends after ~5 min idle. Retry on timeout too so a single suspended-
+// endpoint hit self-heals: the first attempt wakes Neon, the retry succeeds.
+const RETRYABLE = /P1017|connection.*terminated|connection.*closed|ConnectionClosed|timeout exceeded/i;
 export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
@@ -54,8 +56,8 @@ export async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
     const msg = err?.message ?? String(err);
     const code = err?.code ?? err?.cause?.code ?? "";
     if (RETRYABLE.test(msg) || RETRYABLE.test(code)) {
-      // Brief pause so the pool can open a fresh connection.
-      await new Promise((r) => setTimeout(r, 150));
+      // Neon needs ~2–3 s to wake from suspension; give it time then retry.
+      await new Promise((r) => setTimeout(r, 3000));
       return fn();
     }
     throw err;

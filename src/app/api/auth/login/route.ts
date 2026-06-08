@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import { signJWT } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { getRolePermissions } from "@/lib/role-permissions";
@@ -28,10 +28,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Auto-seed admin user if no users exist
-    const userCount = await db.user.count();
+    const userCount = await withRetry(() => db.user.count());
     if (userCount === 0) {
       const hash = await bcrypt.hash("admin", 12);
-      await db.user.create({
+      await withRetry(() => db.user.create({
         data: {
           id: "admin-user",
           username: "admin",
@@ -41,12 +41,12 @@ export async function POST(request: NextRequest) {
           is_active: 1,
           created_at: new Date().toISOString().split("T")[0],
         },
-      });
+      }));
     }
 
-    const user = await db.user.findUnique({
+    const user = await withRetry(() => db.user.findUnique({
       where: { username: username.trim().toLowerCase() },
-    });
+    }));
 
     const passwordOk = user ? await bcrypt.compare(password, user.password) : false;
 
