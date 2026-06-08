@@ -59,8 +59,6 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
     aadharBack: null,
   });
 
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Dynamic, user-managed role list
@@ -213,18 +211,16 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
           type: "UPDATE_STAFF",
           payload: { id: staffId, ...payload },
         });
-        setToastMessage("Staff profile updated successfully!");
+        toast.success("Staff profile updated successfully!");
       } else {
         await dispatchStaff({
           type: "ADD_STAFF",
           payload,
         });
-        setToastMessage("New staff profile created!");
+        toast.success("New staff profile created!");
       }
 
-      setShowToast(true);
       setTimeout(() => {
-        setShowToast(false);
         router.push("/staff");
       }, 1500);
     } catch (err: any) {
@@ -591,20 +587,6 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
         </div>
       </ScreenFrame>
 
-      {/* Success Toast */}
-      {showToast && (
-        <div
-          className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-[13px] font-medium shadow-lg"
-          style={{
-            background: "var(--sem-gr-bg)",
-            border: "1px solid var(--sem-gr-bdr)",
-            color: "var(--sem-gr-tx)",
-          }}
-        >
-          <Check size={15} strokeWidth={3} />
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </>
   );
 }

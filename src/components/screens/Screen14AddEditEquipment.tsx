@@ -30,8 +30,6 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
 
   const [form, setForm] = useState({
     productName: "",
@@ -268,18 +266,16 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
           type: "UPDATE_EQUIPMENT",
           payload: { id: equipmentId, ...payload },
         });
-        setToastMessage("Equipment updated successfully!");
+        toast.success("Equipment updated successfully!");
       } else {
         await dispatchEquipment({
           type: "ADD_EQUIPMENT",
           payload,
         });
-        setToastMessage("Equipment added successfully!");
+        toast.success("Equipment added successfully!");
       }
 
-      setShowToast(true);
       setTimeout(() => {
-        setShowToast(false);
         router.push("/equipment");
       }, 1500);
     } catch (err: any) {
@@ -303,10 +299,8 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
         type: "DELETE_EQUIPMENT",
         payload: equipmentId,
       });
-      setToastMessage("Equipment retired successfully!");
-      setShowToast(true);
+      toast.success("Equipment retired successfully!");
       setTimeout(() => {
-        setShowToast(false);
         router.push("/equipment");
       }, 1500);
     } catch (err: any) {
@@ -797,19 +791,6 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
         </form>
       </ScreenFrame>
 
-      {showToast && (
-        <div
-          className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-[13px] font-medium shadow-lg"
-          style={{
-            background: "var(--sem-gr-bg)",
-            border: "1px solid var(--sem-gr-bdr)",
-            color: "var(--sem-gr-tx)",
-          }}
-        >
-          <Check size={15} strokeWidth={3} />
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </>
   );
 }
