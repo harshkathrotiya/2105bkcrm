@@ -7,7 +7,7 @@ import { AlertTriangle, X, ChevronLeft, ChevronRight, ArrowRight } from "lucide-
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import SearchableSelect from "../ui/SearchableSelect";
 import { useKits, useEquipment } from "@/lib/store";
 import { useCurrentUser } from "@/lib/use-current-user";
@@ -301,9 +301,58 @@ export default function Screen16KitList() {
           </div>
 
           {kitsLoading ? (
-            <div style={{ padding: "30px 10px" }}>
-              <LoadingSkeleton rows={5} type="table" />
-            </div>
+            <>
+              <div className="tbl-scroll">
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th>Kit Name</th>
+                      <th>Main Body Component</th>
+                      <th style={{ width: "120px" }}>Included Items</th>
+                      <th style={{ width: "150px" }}>Total Valuation</th>
+                      <th style={{ width: "140px" }}>Live Status</th>
+                      <th style={{ width: "100px", textAlign: "right" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 6 }).map((_, ri) => (
+                      <tr key={ri} style={{ cursor: "default" }}>
+                        <td>
+                          <ShimmerBar width="140px" height="13px" style={{ animationDelay: `${ri * 60 + 100}ms` }} />
+                        </td>
+                        <td>
+                          <ShimmerBar width="180px" height="13px" style={{ animationDelay: `${ri * 60 + 120}ms` }} />
+                        </td>
+                        <td>
+                          <ShimmerBar width="60px" height="11px" style={{ animationDelay: `${ri * 60 + 140}ms` }} />
+                        </td>
+                        <td>
+                          <ShimmerBar width="70px" height="11px" style={{ animationDelay: `${ri * 60 + 150}ms` }} />
+                        </td>
+                        <td>
+                          <ShimmerBar width="70px" height="18px" radius="9999px" style={{ animationDelay: `${ri * 60 + 160}ms` }} />
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <div className="flex justify-end">
+                            <ShimmerBar width="65px" height="26px" radius="8px" style={{ animationDelay: `${ri * 60 + 175}ms` }} />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination Loading State */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px" }}>
+                <ShimmerBar width="120px" height="12px" style={{ opacity: 0.6 }} />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <ShimmerBar width="32px" height="32px" radius="6px" />
+                  <ShimmerBar width="32px" height="32px" radius="6px" />
+                  <ShimmerBar width="32px" height="32px" radius="6px" />
+                </div>
+              </div>
+            </>
           ) : (
             <>
               <div className="tbl-scroll">

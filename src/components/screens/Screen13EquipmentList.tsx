@@ -7,7 +7,7 @@ import { X, Upload, Download } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import Pagination from "../ui/Pagination";
 import { useEquipment } from "@/lib/store";
 import { useCurrentUser } from "@/lib/use-current-user";
@@ -213,30 +213,66 @@ export default function Screen13EquipmentList() {
           <div className="metrics">
             <div className="met">
               <div className="met-l">Total Items</div>
-              <div className="met-v">{assetSummary?.totalCount || 0}</div>
+              {loading ? (
+                <ShimmerBar width="40px" height="24px" style={{ animationDelay: "0ms" }} />
+              ) : (
+                <div className="met-v">{assetSummary?.totalCount || 0}</div>
+              )}
             </div>
             <div className="met">
               <div className="met-l">In Use (today)</div>
-              <div className="met-v b">{assetSummary?.statusCounts?.inUse || 0}</div>
+              {loading ? (
+                <ShimmerBar width="30px" height="24px" style={{ animationDelay: "20ms" }} />
+              ) : (
+                <div className="met-v b">{assetSummary?.statusCounts?.inUse || 0}</div>
+              )}
             </div>
             <div className="met">
               <div className="met-l">Available</div>
-              <div className="met-v g">{assetSummary?.statusCounts?.available || 0}</div>
+              {loading ? (
+                <ShimmerBar width="40px" height="24px" style={{ animationDelay: "40ms" }} />
+              ) : (
+                <div className="met-v g">{assetSummary?.statusCounts?.available || 0}</div>
+              )}
             </div>
             <div className="met">
               <div className="met-l">Under Maintenance</div>
-              <div className="met-v a">{assetSummary?.statusCounts?.maintenance || 0}</div>
+              {loading ? (
+                <ShimmerBar width="30px" height="24px" style={{ animationDelay: "60ms" }} />
+              ) : (
+                <div className="met-v a">{assetSummary?.statusCounts?.maintenance || 0}</div>
+              )}
             </div>
             <div className="met">
               <div className="met-l">Total Asset Value</div>
-              <div className="met-v g">₹{(assetSummary?.totalValue || 0).toLocaleString("en-IN")}</div>
+              {loading ? (
+                <ShimmerBar width="90px" height="24px" style={{ animationDelay: "80ms" }} />
+              ) : (
+                <div className="met-v g">₹{(assetSummary?.totalValue || 0).toLocaleString("en-IN")}</div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Asset breakdown bar chart */}
-      {assetSummary && (
+      {loading ? (
+        <div className="card" style={{ marginBottom: "20px" }}>
+          <div className="card-t">Asset Value Breakdown by Category</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "130px 1fr 180px", alignItems: "center", gap: "15px" }}>
+                <ShimmerBar width="80px" height="12px" style={{ animationDelay: `${i * 40 + 100}ms` }} />
+                <ShimmerBar width="100%" height="8px" radius="4px" style={{ animationDelay: `${i * 40 + 120}ms` }} />
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <ShimmerBar width="40px" height="10px" style={{ animationDelay: `${i * 40 + 130}ms` }} />
+                  <ShimmerBar width="70px" height="10px" style={{ animationDelay: `${i * 40 + 140}ms` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : assetSummary ? (
         <div className="card" style={{ marginBottom: "20px" }}>
           <div className="card-t">Asset Value Breakdown by Category</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -261,7 +297,7 @@ export default function Screen13EquipmentList() {
             })}
           </div>
         </div>
-      )}
+      ) : null}
 
       <ScreenFrame
         breadcrumbs={[{ label: "Equipment" }]}
@@ -348,7 +384,63 @@ export default function Screen13EquipmentList() {
               </div>
 
               {loading ? (
-                <LoadingSkeleton rows={6} />
+                <>
+                  <div className="tbl-scroll">
+                    <table className="tbl">
+                      <thead>
+                        <tr>
+                          <th style={{ width: "30px" }}>No.</th>
+                          <th>Product name</th>
+                          <th style={{ width: "95px" }}>Category</th>
+                          <th style={{ width: "100px" }}>Body / Kit</th>
+                          <th style={{ width: "90px" }}>Serial no.</th>
+                          <th style={{ width: "100px", textAlign: "right" }}>Purchase price</th>
+                          <th style={{ width: "70px" }}>Resp.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from({ length: 8 }).map((_, ri) => (
+                          <tr key={ri} style={{ cursor: "default" }}>
+                            <td>
+                              <ShimmerBar width="20px" height="11px" style={{ animationDelay: `${ri * 50 + 300}ms` }} />
+                            </td>
+                            <td>
+                              <ShimmerBar width="60%" height="13px" style={{ animationDelay: `${ri * 50 + 320}ms`, marginBottom: "4px" }} />
+                              <ShimmerBar width="30%" height="9px" style={{ animationDelay: `${ri * 50 + 340}ms` }} />
+                            </td>
+                            <td>
+                              <ShimmerBar width="70px" height="18px" radius="9999px" style={{ animationDelay: `${ri * 50 + 330}ms` }} />
+                            </td>
+                            <td>
+                              <ShimmerBar width="80px" height="11px" style={{ animationDelay: `${ri * 50 + 350}ms` }} />
+                            </td>
+                            <td>
+                              <ShimmerBar width="75px" height="11px" style={{ animationDelay: `${ri * 50 + 360}ms` }} />
+                            </td>
+                            <td className="text-right">
+                              <div className="flex justify-end">
+                                <ShimmerBar width="70px" height="11px" style={{ animationDelay: `${ri * 50 + 370}ms` }} />
+                              </div>
+                            </td>
+                            <td>
+                              <ShimmerBar width="50px" height="11px" style={{ animationDelay: `${ri * 50 + 380}ms` }} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination Loading State */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px" }}>
+                    <ShimmerBar width="120px" height="12px" style={{ opacity: 0.6 }} />
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <ShimmerBar width="32px" height="32px" radius="6px" />
+                      <ShimmerBar width="32px" height="32px" radius="6px" />
+                      <ShimmerBar width="32px" height="32px" radius="6px" />
+                    </div>
+                  </div>
+                </>
               ) : (
                 <>
                   <div className="tbl-scroll">

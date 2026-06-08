@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import {
   useInquiries,
   useQuotations,
@@ -391,9 +391,226 @@ export default function Screen00Dashboard() {
 
   if (isLoading) {
     return (
-      <ScreenFrame breadcrumb="Dashboard › Loading...">
-        <LoadingSkeleton rows={8} />
-      </ScreenFrame>
+      <>
+        <SectionHeader
+          title={<>CRM <strong>Dashboard</strong></>}
+          description="BK Media live operational overview, active bookings, payment tracking, and inventory status."
+        />
+
+        <ScreenFrame breadcrumb="Dashboard">
+          {/* KPI cards shimmer */}
+          <div className="metrics" style={{ marginBottom: "20px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px" }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="met group relative overflow-hidden border border-b1"
+                style={{ background: "var(--s1)", padding: "18px", borderRadius: "12px", display: "block" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <ShimmerBar width="50%" height="12px" style={{ opacity: 0.6, animationDelay: `${i * 30}ms` }} />
+                  <ShimmerBar width="28px" height="28px" radius="8px" style={{ animationDelay: `${i * 30 + 15}ms` }} />
+                </div>
+                <ShimmerBar width="40%" height="28px" style={{ margin: "8px 0 4px", animationDelay: `${i * 30 + 30}ms` }} />
+                <ShimmerBar width="70%" height="11px" style={{ opacity: 0.6, animationDelay: `${i * 30 + 45}ms` }} />
+                <div className="absolute bottom-0 left-0 right-0 h-[3px]" style={{ background: "var(--b1)", opacity: 0.8 }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Analytics Section shimmer */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", marginBottom: "20px" }}>
+            {/* Revenue Trend line chart shimmer */}
+            <div className="card transition-all duration-300 hover:shadow-md border border-b1" style={{ padding: "20px", borderRadius: "12px", background: "var(--s1)", margin: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <div>
+                  <ShimmerBar width="110px" height="13px" style={{ animationDelay: "150ms" }} />
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginTop: "4px" }}>
+                    <ShimmerBar width="100px" height="22px" style={{ animationDelay: "180ms" }} />
+                    <ShimmerBar width="120px" height="11px" style={{ opacity: 0.6, animationDelay: "200ms" }} />
+                  </div>
+                </div>
+                <ShimmerBar width="80px" height="20px" radius="6px" style={{ animationDelay: "220ms" }} />
+              </div>
+              <div style={{ width: "100%", height: 180, borderLeft: "1px solid var(--b1)", borderBottom: "1px solid var(--b1)", position: "relative", display: "flex", alignItems: "flex-end", padding: "10px" }}>
+                <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-end", height: "100%" }}>
+                  {Array.from({ length: 12 }).map((_, idx) => (
+                    <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flex: 1 }}>
+                      <ShimmerBar width="16px" height={`${30 + Math.sin(idx) * 20}px`} radius="4px" style={{ opacity: 0.3, animationDelay: `${idx * 40 + 250}ms` }} />
+                      <ShimmerBar width="16px" height="8px" style={{ opacity: 0.4, animationDelay: `${idx * 40 + 260}ms` }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Department Distribution donut chart shimmer */}
+            <div className="card transition-all duration-300 hover:shadow-md border border-b1" style={{ padding: "20px", borderRadius: "12px", background: "var(--s1)", margin: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <div>
+                  <ShimmerBar width="140px" height="13px" style={{ animationDelay: "150ms" }} />
+                  <ShimmerBar width="150px" height="10px" style={{ opacity: 0.6, marginTop: "6px", animationDelay: "180ms" }} />
+                </div>
+                <ShimmerBar width="90px" height="20px" radius="6px" style={{ animationDelay: "200ms" }} />
+              </div>
+              
+              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "16px", alignItems: "center" }}>
+                <div style={{ position: "relative", width: "100%", height: 180, display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <div style={{ width: "120px", height: "120px", borderRadius: "50%", border: "12px solid var(--b1)", position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <ShimmerBar width="36px" height="22px" style={{ animationDelay: "280ms" }} />
+                  </div>
+                </div>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--b1)", flexShrink: 0 }} />
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
+                        <ShimmerBar width="70%" height="11px" style={{ animationDelay: `${i * 30 + 300}ms` }} />
+                        <ShimmerBar width="40%" height="9px" style={{ opacity: 0.6, animationDelay: `${i * 30 + 320}ms` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Alert shimmer banner */}
+          <div className="card" style={{ padding: "14px 16px", marginBottom: "20px", borderLeft: "4px solid var(--acc)", display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", gap: 6, color: "var(--tx2)" }}>
+              <ShimmerBar width="120px" height="13px" style={{ animationDelay: "400ms" }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <ShimmerBar width="7px" height="7px" radius="50%" style={{ animationDelay: `${i * 40 + 420}ms` }} />
+                  <ShimmerBar width={`${60 + i * 10}%`} height="11px" style={{ animationDelay: `${i * 40 + 440}ms` }} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="two-col" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "20px" }}>
+            {/* Left Column Shimmer */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {/* Recent Inquiries Shimmer */}
+              <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)" }}>
+                <div className="flex justify-between items-center" style={{ marginBottom: "16px" }}>
+                  <ShimmerBar width="120px" height="13px" style={{ animationDelay: "480ms" }} />
+                  <ShimmerBar width="60px" height="11px" style={{ animationDelay: "500ms" }} />
+                </div>
+                <div className="tbl-scroll">
+                  <table className="tbl" style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ borderBottom: "1px solid var(--b1)", paddingBottom: "10px" }}>Event Name</th>
+                        <th style={{ borderBottom: "1px solid var(--b1)", paddingBottom: "10px" }}>Client</th>
+                        <th style={{ borderBottom: "1px solid var(--b1)", paddingBottom: "10px" }}>Date</th>
+                        <th style={{ borderBottom: "1px solid var(--b1)", paddingBottom: "10px" }}>Dept.</th>
+                        <th style={{ borderBottom: "1px solid var(--b1)", paddingBottom: "10px" }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: 6 }).map((_, ri) => (
+                        <tr key={ri} style={{ cursor: "default" }}>
+                          <td className="font-semibold"><ShimmerBar width="120px" height="13px" style={{ animationDelay: `${ri * 50 + 520}ms` }} /></td>
+                          <td><ShimmerBar width="100px" height="11px" style={{ animationDelay: `${ri * 50 + 530}ms` }} /></td>
+                          <td style={{ fontSize: "11px" }}><ShimmerBar width="80px" height="11px" style={{ animationDelay: `${ri * 50 + 540}ms` }} /></td>
+                          <td><ShimmerBar width="50px" height="18px" radius="4px" style={{ animationDelay: `${ri * 50 + 550}ms` }} /></td>
+                          <td><ShimmerBar width="60px" height="18px" radius="4px" style={{ animationDelay: `${ri * 50 + 560}ms` }} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Recent Activity Shimmer */}
+              <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                  <ShimmerBar width="110px" height="13px" style={{ animationDelay: "600ms" }} />
+                  <ShimmerBar width="50px" height="11px" style={{ animationDelay: "620ms" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {Array.from({ length: 5 }).map((_, ri) => {
+                    const isLast = ri === 4;
+                    return (
+                      <div key={ri} className="relative flex gap-3 items-start group">
+                        {!isLast && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              left: "14px",
+                              top: "28px",
+                              bottom: "-20px",
+                              width: "1px",
+                              background: "var(--b1)"
+                            }}
+                          />
+                        )}
+
+                        <div 
+                          style={{ 
+                            background: "var(--b1)", 
+                            padding: "6px", 
+                            borderRadius: "50%", 
+                            display: "flex", 
+                            alignItems: "center", 
+                            justifyContent: "center",
+                            zIndex: 2,
+                            width: "27px",
+                            height: "27px"
+                          }}
+                        >
+                          <ShimmerBar width="15px" height="15px" radius="50%" style={{ animationDelay: `${ri * 60 + 640}ms` }} />
+                        </div>
+                        
+                        <div className="flex-1" style={{ marginTop: "2px" }}>
+                          <ShimmerBar width="85%" height="13px" style={{ animationDelay: `${ri * 60 + 650}ms`, marginBottom: "4px" }} />
+                          <ShimmerBar width="60px" height="10px" style={{ opacity: 0.6, animationDelay: `${ri * 60 + 660}ms` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ marginTop: "16px", display: "flex", gap: "8px" }}>
+                  <ShimmerBar width="100%" height="36px" radius="8px" style={{ flex: 1, animationDelay: "700ms" }} />
+                  <ShimmerBar width="100%" height="36px" radius="8px" style={{ flex: 1, animationDelay: "720ms" }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column Shimmer */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {/* Today's Schedule Shimmer */}
+              <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "16px" }}>
+                  <ShimmerBar width="16px" height="16px" radius="4px" style={{ animationDelay: "730ms" }} />
+                  <ShimmerBar width="120px" height="13px" style={{ animationDelay: "740ms" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "140px" }}>
+                  <div style={{ background: "var(--s2)", padding: "12px", borderRadius: "50%", marginBottom: "12px", border: "1px solid var(--b1)", width: "48px", height: "48px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <ShimmerBar width="24px" height="24px" radius="50%" style={{ opacity: 0.4, animationDelay: "750ms" }} />
+                  </div>
+                  <ShimmerBar width="160px" height="13px" style={{ animationDelay: "760ms", marginBottom: "6px" }} />
+                  <ShimmerBar width="100px" height="10px" style={{ opacity: 0.6, animationDelay: "770ms" }} />
+                </div>
+              </div>
+
+              {/* Quick Actions Shimmer */}
+              <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)" }}>
+                <div style={{ fontSize: "13px", fontWeight: 600, marginBottom: "16px", color: "var(--tx2)" }}>Quick Actions</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <ShimmerBar key={idx} width="100%" height="38px" radius="10px" style={{ animationDelay: `${idx * 40 + 820}ms` }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </ScreenFrame>
+      </>
     );
   }
 

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Screen31Login from "@/components/screens/Screen31Login";
+import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 
 export const metadata = {
   title: "Login — BK Media CRM",
@@ -9,11 +10,8 @@ export const metadata = {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="card !p-4 m-8">
-        <div className="flex items-center justify-center gap-3 py-6">
-          <div className="flex gap-1.5">{[0,1,2].map(i=><div key={i} className="w-2 h-2 rounded-full animate-pulse" style={{background:"var(--tx3)",animationDelay:`${i*150}ms`}}/>)}</div>
-          <span className="text-[12px] text-tx3">Loading Login...</span>
-        </div>
+      <div className="m-8 max-w-md mx-auto">
+        <LoadingSkeleton type="form" rows={2} message="Loading Login..." />
       </div>
     }>
       <Screen31Login />

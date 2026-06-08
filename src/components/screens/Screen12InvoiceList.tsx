@@ -8,7 +8,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useInvoices, useInquiries, useQuotations } from "@/lib/store";
 import Pagination from "../ui/Pagination";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 
 const STATUS_COLORS: Record<string, "gr" | "am" | "bl" | "rd" | "gy"> = {
   Paid:           "gr",
@@ -96,7 +96,97 @@ export default function Screen12InvoiceList() {
       />
       <ScreenFrame breadcrumbs={[{ label: "Invoices" }]}>
         {loading ? (
-          <LoadingSkeleton rows={6} />
+          <>
+            {/* Metrics Loading State */}
+            <div className="metrics">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="met" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <ShimmerBar width="40%" height="10px" style={{ opacity: 0.6, animationDelay: `${i * 40}ms` }} />
+                  <ShimmerBar width="30%" height="24px" style={{ animationDelay: `${i * 40 + 20}ms` }} />
+                </div>
+              ))}
+            </div>
+
+            <div className="card !p-3">
+              {/* Dept checkboxes Loading State */}
+              <div className="flex gap-4 items-center" style={{ marginBottom: '14px' }}>
+                <ShimmerBar width="70px" height="11px" style={{ opacity: 0.6 }} />
+                <div className="flex gap-3">
+                  <ShimmerBar width="50px" height="16px" radius="4px" />
+                  <ShimmerBar width="50px" height="16px" radius="4px" />
+                </div>
+              </div>
+
+              {/* Search & filters Loading State */}
+              <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+                <ShimmerBar width="100%" height="38px" radius="8px" style={{ flex: "1 1 auto", animationDelay: "200ms" }} />
+                <ShimmerBar width="140px" height="38px" radius="8px" style={{ flex: "0 0 140px", animationDelay: "240ms" }} />
+              </div>
+
+              {/* Table Loading State */}
+              <div className="tbl-scroll">
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th>Invoice no.</th>
+                      <th>Event</th>
+                      <th>Client</th>
+                      <th style={{ width: 110, textAlign: "right" }}>Total</th>
+                      <th style={{ width: 110, textAlign: "right" }}>Balance</th>
+                      <th style={{ width: 90 }}>Status</th>
+                      <th style={{ width: 80 }}>HDD / Install</th>
+                      <th style={{ width: 80 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 6 }).map((_, ri) => (
+                      <tr key={ri} style={{ cursor: "default" }}>
+                        <td>
+                          <ShimmerBar width="90px" height="13px" style={{ animationDelay: `${ri * 60 + 300}ms` }} />
+                        </td>
+                        <td>
+                          <ShimmerBar width="140px" height="13px" style={{ animationDelay: `${ri * 60 + 310}ms`, marginBottom: "4px" }} />
+                          <ShimmerBar width="70%" height="9px" style={{ animationDelay: `${ri * 60 + 320}ms` }} />
+                        </td>
+                        <td>
+                          <ShimmerBar width="120px" height="13px" style={{ animationDelay: `${ri * 60 + 330}ms` }} />
+                        </td>
+                        <td className="text-right">
+                          <div className="flex justify-end">
+                            <ShimmerBar width="70px" height="11px" style={{ animationDelay: `${ri * 60 + 340}ms` }} />
+                          </div>
+                        </td>
+                        <td className="text-right">
+                          <div className="flex justify-end">
+                            <ShimmerBar width="60px" height="11px" style={{ animationDelay: `${ri * 60 + 350}ms` }} />
+                          </div>
+                        </td>
+                        <td>
+                          <ShimmerBar width="60px" height="18px" radius="9999px" style={{ animationDelay: `${ri * 60 + 360}ms` }} />
+                        </td>
+                        <td>
+                          <ShimmerBar width="60px" height="18px" radius="9999px" style={{ animationDelay: `${ri * 60 + 375}ms` }} />
+                        </td>
+                        <td>
+                          <ShimmerBar width="65px" height="26px" radius="8px" style={{ animationDelay: `${ri * 60 + 390}ms` }} />
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Loading State */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px" }}>
+              <ShimmerBar width="120px" height="12px" style={{ opacity: 0.6 }} />
+              <div style={{ display: "flex", gap: "8px" }}>
+                <ShimmerBar width="32px" height="32px" radius="6px" />
+                <ShimmerBar width="32px" height="32px" radius="6px" />
+                <ShimmerBar width="32px" height="32px" radius="6px" />
+              </div>
+            </div>
+          </div>
+          </>
         ) : (
         <>
         {/* Metrics */}

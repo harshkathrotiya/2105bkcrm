@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import Screen20StaffList from "@/components/screens/Screen20StaffList";
+import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 
 export const metadata = {
   title: "Staff Directory — BK Media CRM",
@@ -6,5 +8,13 @@ export const metadata = {
 };
 
 export default function StaffListPage() {
-  return <Screen20StaffList />;
+  return (
+    <Suspense fallback={
+      <div className="m-8">
+        <LoadingSkeleton type="table" rows={6} cols={7} message="Loading staff directory..." />
+      </div>
+    }>
+      <Screen20StaffList />
+    </Suspense>
+  );
 }

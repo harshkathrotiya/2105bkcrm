@@ -8,7 +8,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useClients, useInquiries, useQuotations, useInvoices } from "@/lib/store";
 import { useCurrentUser } from "@/lib/use-current-user";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import Pagination from "../ui/Pagination";
 
 const ITEMS_PER_PAGE = 20;
@@ -61,6 +61,104 @@ export default function Screen01ClientList() {
     (q) => q.status === "Draft" || q.status === "Sent"
   ).length;
 
+  if (loading) {
+    return (
+      <>
+        <SectionHeader
+          title={<>Client <strong>list</strong></>}
+          description="Manage your clients — search, filter by status, and view event activity."
+        />
+        <ScreenFrame
+          breadcrumbs={[{ label: "Clients" }]}
+          actions={
+            canCreate ? (
+              <ShimmerBar width="100px" height="36px" radius="8px" style={{ animationDelay: "50ms" }} />
+            ) : null
+          }
+        >
+          {/* Metrics Loading State */}
+          <div className="metrics">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="met" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <ShimmerBar width="50%" height="10px" style={{ opacity: 0.6, animationDelay: `${i * 40}ms` }} />
+                <ShimmerBar width="20%" height="24px" style={{ animationDelay: `${i * 40 + 20}ms` }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Table Card Loading State */}
+          <div className="card !p-3">
+            {/* Search & filter Loading State */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+              <ShimmerBar width="100%" height="38px" radius="8px" style={{ flex: "1 1 auto", minWidth: "200px", animationDelay: "150ms" }} />
+              <ShimmerBar width="140px" height="38px" radius="8px" style={{ flex: "0 0 140px", animationDelay: "180ms" }} />
+            </div>
+
+            {/* Table Loading State */}
+            <div className="tbl-scroll">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th style={{ width: 32 }}></th>
+                    <th>Client</th>
+                    <th style={{ width: 130 }}>Mobile</th>
+                    <th style={{ width: 120 }}>Last Activity</th>
+                    <th style={{ width: 130, textAlign: "right" }}>Revenue</th>
+                    <th style={{ width: 90 }}>Status</th>
+                    <th style={{ width: 60 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 8 }).map((_, ri) => (
+                    <tr key={ri} style={{ cursor: "default" }}>
+                      <td>
+                        <ShimmerBar width="32px" height="32px" radius="50%" style={{ animationDelay: `${ri * 60 + 200}ms` }} />
+                      </td>
+                      <td>
+                        <ShimmerBar width="160px" height="13px" style={{ animationDelay: `${ri * 60 + 210}ms`, marginBottom: "4px" }} />
+                        <ShimmerBar width="100px" height="9px" style={{ animationDelay: `${ri * 60 + 225}ms` }} />
+                      </td>
+                      <td>
+                        <ShimmerBar width="95px" height="11px" style={{ animationDelay: `${ri * 60 + 220}ms` }} />
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <ShimmerBar width="8px" height="8px" radius="50%" style={{ animationDelay: `${ri * 60 + 230}ms` }} />
+                          <ShimmerBar width="60px" height="12px" style={{ animationDelay: `${ri * 60 + 235}ms` }} />
+                        </div>
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                          <ShimmerBar width="70px" height="12px" style={{ animationDelay: `${ri * 60 + 240}ms` }} />
+                        </div>
+                      </td>
+                      <td>
+                        <ShimmerBar width="60px" height="18px" radius="4px" style={{ animationDelay: `${ri * 60 + 250}ms` }} />
+                      </td>
+                      <td>
+                        <ShimmerBar width="50px" height="24px" radius="6px" style={{ animationDelay: `${ri * 60 + 260}ms` }} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Loading State */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px" }}>
+              <ShimmerBar width="120px" height="12px" style={{ opacity: 0.6 }} />
+              <div style={{ display: "flex", gap: "8px" }}>
+                <ShimmerBar width="32px" height="32px" radius="6px" />
+                <ShimmerBar width="32px" height="32px" radius="6px" />
+                <ShimmerBar width="32px" height="32px" radius="6px" />
+              </div>
+            </div>
+          </div>
+        </ScreenFrame>
+      </>
+    );
+  }
+
   return (
     <>
       <SectionHeader
@@ -77,9 +175,6 @@ export default function Screen01ClientList() {
           ) : null
         }
       >
-        {loading ? (
-          <LoadingSkeleton rows={6} />
-        ) : (
         <>
         {/* Metrics */}
         <div className="metrics">
@@ -277,7 +372,6 @@ export default function Screen01ClientList() {
           />
         </div>
         </>
-        )}
       </ScreenFrame>
     </>
   );

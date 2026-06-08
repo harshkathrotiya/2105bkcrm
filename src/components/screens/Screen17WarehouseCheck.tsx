@@ -7,7 +7,7 @@ import { ClipboardList, FileText, Banknote, Check, AlertTriangle, BarChart3, Cir
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import * as api from "@/lib/api";
@@ -449,13 +449,51 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
   };
 
   if (loading) {
-    if (embedded) return <LoadingSkeleton rows={8} />;
+    if (embedded) return <LoadingSkeleton type="table" rows={8} />;
+    
+    if (inquiryId) {
+      return (
+        <>
+          <SectionHeader title="Warehouse Availability Check" />
+          <ScreenFrame breadcrumb="Warehouse › Check">
+            <div style={{ padding: "16px" }}>
+              <LoadingSkeleton type="detail" message="Loading audit details..." />
+            </div>
+          </ScreenFrame>
+        </>
+      );
+    }
+
     return (
       <>
         <SectionHeader title="Warehouse Availability Check" />
         <ScreenFrame breadcrumb="Warehouse › Check">
-          <div style={{ padding: "30px" }}>
-            <LoadingSkeleton rows={8} />
+          <div className="card" style={{ padding: "20px" }}>
+            <div className="card-t" style={{ marginBottom: "16px", fontSize: "14px", fontWeight: 600 }}>
+              Select an Inquiry to Audit
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "12px 16px",
+                    background: "var(--s2)",
+                    border: "1px solid var(--b1)",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+                    <ShimmerBar width="200px" height="13px" style={{ animationDelay: `${i * 60}ms` }} />
+                    <ShimmerBar width="320px" height="10px" style={{ animationDelay: `${i * 60 + 20}ms`, opacity: 0.7 }} />
+                  </div>
+                  <ShimmerBar width="90px" height="30px" radius="6px" style={{ animationDelay: `${i * 60 + 40}ms` }} />
+                </div>
+              ))}
+            </div>
           </div>
         </ScreenFrame>
       </>

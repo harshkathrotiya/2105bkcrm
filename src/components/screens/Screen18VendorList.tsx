@@ -8,7 +8,7 @@ import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import Timeline from "../ui/Timeline";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import { useVendors } from "@/lib/vendors-context";
 import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
@@ -399,12 +399,82 @@ export default function Screen18VendorList() {
   if (loading) {
     return (
       <>
-        <SectionHeader title="Rental Vendor Directory" />
-        <ScreenFrame breadcrumb="Vendors › Directory">
-          <div style={{ padding: "30px" }}>
-            <LoadingSkeleton rows={6} />
+        <SectionHeader
+          title={<>Rental <strong>Vendor Management</strong></>}
+          description="Maintain verified external suppliers, track custom hardware specializations, GST credentials, and monitor YTD outsourcing spends."
+        />
+
+        {/* Metrics Loading State */}
+        <div className="metrics" style={{ marginBottom: "20px" }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="met" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <ShimmerBar width="50%" height="10px" style={{ opacity: 0.6, animationDelay: `${i * 40}ms` }} />
+              <ShimmerBar width="20%" height="24px" style={{ animationDelay: `${i * 40 + 20}ms` }} />
+            </div>
+          ))}
+        </div>
+
+        <div className="card" style={{ padding: "16px" }}>
+          {/* Search & Actions Loading State */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", gap: "12px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "8px", flex: 1, minWidth: "260px" }}>
+              <ShimmerBar width="100%" height="38px" radius="8px" style={{ flex: 1, animationDelay: "150ms" }} />
+              <ShimmerBar width="120px" height="38px" radius="8px" style={{ flex: "0 0 120px", animationDelay: "180ms" }} />
+            </div>
+            <ShimmerBar width="150px" height="38px" radius="8px" style={{ animationDelay: "210ms" }} />
           </div>
-        </ScreenFrame>
+
+          {/* Table Loading State */}
+          <div className="tbl-scroll">
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Vendor Name</th>
+                  <th>Specialization</th>
+                  <th>City</th>
+                  <th>Phone</th>
+                  <th style={{ textAlign: "center" }}>Times Used</th>
+                  <th style={{ width: "90px", textAlign: "center" }}>Active</th>
+                  <th style={{ width: "100px", textAlign: "right" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 6 }).map((_, ri) => (
+                  <tr key={ri} style={{ cursor: "default" }}>
+                    <td>
+                      <ShimmerBar width="150px" height="13px" style={{ animationDelay: `${ri * 60 + 250}ms`, marginBottom: "4px" }} />
+                      <ShimmerBar width="100px" height="9px" style={{ animationDelay: `${ri * 60 + 270}ms` }} />
+                    </td>
+                    <td>
+                      <ShimmerBar width="90px" height="18px" radius="9999px" style={{ animationDelay: `${ri * 60 + 260}ms` }} />
+                    </td>
+                    <td>
+                      <ShimmerBar width="70px" height="11px" style={{ animationDelay: `${ri * 60 + 280}ms` }} />
+                    </td>
+                    <td>
+                      <ShimmerBar width="85px" height="11px" style={{ animationDelay: `${ri * 60 + 290}ms` }} />
+                    </td>
+                    <td style={{ textAlign: "center" }}>
+                      <div className="flex justify-center">
+                        <ShimmerBar width="20px" height="11px" style={{ animationDelay: `${ri * 60 + 300}ms` }} />
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex justify-center">
+                        <ShimmerBar width="35px" height="18px" radius="9999px" style={{ animationDelay: `${ri * 60 + 310}ms` }} />
+                      </div>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <div className="flex justify-end">
+                        <ShimmerBar width="45px" height="26px" radius="8px" style={{ animationDelay: `${ri * 60 + 320}ms` }} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </>
     );
   }

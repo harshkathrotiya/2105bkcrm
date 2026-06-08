@@ -7,7 +7,7 @@ import { Network, ArrowUpRight, ArrowRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import Pagination from "../ui/Pagination";
 import { useStaff } from "@/lib/store";
 import { useCurrentUser } from "@/lib/use-current-user";
@@ -122,6 +122,108 @@ export default function Screen20StaffList() {
   };
 
 
+  if (loading) {
+    return (
+      <>
+        <div className="no-print">
+          <SectionHeader
+            title={<>Staff <strong>Directory</strong></>}
+            description="Manage in-house employees, external contractors, assign positions, check availability and record payments."
+          />
+
+          {/* Metrics Loading State */}
+          <div className="metrics" style={{ marginBottom: "20px" }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="met" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <ShimmerBar width="50%" height="10px" style={{ opacity: 0.6, animationDelay: `${i * 40}ms` }} />
+                <ShimmerBar width="25%" height="24px" style={{ animationDelay: `${i * 40 + 20}ms` }} />
+              </div>
+            ))}
+          </div>
+
+          <ScreenFrame
+            breadcrumbs={[{ label: "Staff" }]}
+            actions={
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <ShimmerBar width="110px" height="30px" radius="6px" style={{ animationDelay: "100ms" }} />
+                <ShimmerBar width="120px" height="30px" radius="6px" style={{ animationDelay: "130ms" }} />
+                <ShimmerBar width="160px" height="30px" radius="6px" style={{ animationDelay: "160ms" }} />
+                <ShimmerBar width="110px" height="30px" radius="6px" style={{ animationDelay: "190ms" }} />
+                <ShimmerBar width="90px" height="30px" radius="6px" style={{ animationDelay: "220ms" }} />
+              </div>
+            }
+          >
+            <div>
+              <div className="card !p-3" style={{ marginBottom: "0px" }}>
+                {/* Search & filters Loading State */}
+                <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                  <ShimmerBar width="100%" height="38px" radius="8px" style={{ flex: 1, animationDelay: "250ms" }} />
+                  <ShimmerBar width="135px" height="38px" radius="8px" style={{ flex: "0 0 135px", animationDelay: "280ms" }} />
+                  <ShimmerBar width="135px" height="38px" radius="8px" style={{ flex: "0 0 135px", animationDelay: "310ms" }} />
+                </div>
+
+                {/* Table Loading State */}
+                <div className="tbl-scroll">
+                  <table className="tbl">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "42px" }}></th>
+                        <th>Name</th>
+                        <th style={{ width: "100px" }}>Type</th>
+                        <th style={{ width: "140px" }}>Role</th>
+                        <th style={{ width: "140px" }}>Payment</th>
+                        <th style={{ width: "110px" }}>With Equip.</th>
+                        <th style={{ width: "100px" }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: 8 }).map((_, ri) => (
+                        <tr key={ri} style={{ cursor: "default" }}>
+                          <td>
+                            <ShimmerBar width="32px" height="32px" radius="50%" style={{ animationDelay: `${ri * 60 + 350}ms` }} />
+                          </td>
+                          <td>
+                            <ShimmerBar width="140px" height="13px" style={{ animationDelay: `${ri * 60 + 360}ms`, marginBottom: "4px" }} />
+                            <ShimmerBar width="90px" height="9px" style={{ animationDelay: `${ri * 60 + 375}ms` }} />
+                          </td>
+                          <td>
+                            <ShimmerBar width="60px" height="18px" radius="4px" style={{ animationDelay: `${ri * 60 + 370}ms` }} />
+                          </td>
+                          <td>
+                            <ShimmerBar width="100px" height="12px" style={{ animationDelay: `${ri * 60 + 380}ms` }} />
+                          </td>
+                          <td>
+                            <ShimmerBar width="80px" height="12px" style={{ animationDelay: `${ri * 60 + 390}ms` }} />
+                          </td>
+                          <td>
+                            <ShimmerBar width="50px" height="18px" radius="4px" style={{ animationDelay: `${ri * 60 + 400}ms` }} />
+                          </td>
+                          <td>
+                            <ShimmerBar width="65px" height="18px" radius="4px" style={{ animationDelay: `${ri * 60 + 410}ms` }} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Loading State */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px" }}>
+                  <ShimmerBar width="120px" height="12px" style={{ opacity: 0.6 }} />
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <ShimmerBar width="32px" height="32px" radius="6px" />
+                    <ShimmerBar width="32px" height="32px" radius="6px" />
+                    <ShimmerBar width="32px" height="32px" radius="6px" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScreenFrame>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="no-print">
@@ -211,9 +313,6 @@ export default function Screen20StaffList() {
                 </select>
               </div>
 
-              {loading ? (
-                <LoadingSkeleton rows={6} />
-              ) : (
                 <>
                   {/* Table */}
                   <div className="tbl-scroll">
@@ -308,7 +407,6 @@ export default function Screen20StaffList() {
                     onPageChange={setCurrentPage}
                   />
                 </>
-              )}
             </div>
           </div>
       </ScreenFrame>

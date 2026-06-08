@@ -804,3 +804,50 @@ a:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-shadow); bord
     display: block !important;
   }
 }
+
+/* ===== PREMIUM SHIMMER ANIMATION ===== */
+@keyframes shimmer-premium {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer-premium {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--b1);
+  border-radius: 6px;
+}
+
+.shimmer-premium::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 20%,
+    rgba(255, 255, 255, 0.15) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer-premium 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: inherit;
+  content: "";
+  will-change: transform;
+}
+
+:root.light .shimmer-premium::after {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.35) 20%,
+    rgba(255, 255, 255, 0.65) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}

@@ -10,6 +10,7 @@ import Badge from "../ui/Badge";
 import { useCalendar, useInquiries, useClients, useQuotations, useInvoices } from "@/lib/store";
 import { useCurrentUser } from "@/lib/use-current-user";
 import type { CalendarEvent } from "@/lib/store";
+import { ShimmerBar } from "../ui/LoadingSkeleton";
 
 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -44,7 +45,7 @@ function parseEventId(id: string) {
 export default function Screen03Calendar() {
   const { can } = useCurrentUser();
   const canCreateInquiry = can("inquiries.create");
-  const { calendarEvents } = useCalendar();
+  const { calendarEvents, loading } = useCalendar();
   const { inquiries } = useInquiries();
   const { clients } = useClients();
   const { quotations } = useQuotations();
@@ -348,6 +349,91 @@ export default function Screen03Calendar() {
     d === today.getDate() &&
     (m - 1) === today.getMonth() &&
     y === today.getFullYear();
+
+  if (loading) {
+    return (
+      <>
+        <SectionHeader
+          title={<>Calendar <strong>view</strong></>}
+          description="View and manage all scheduled events — inquiries, quotations, and confirmed bookings."
+        />
+        <ScreenFrame
+          breadcrumb="Calendar — Loading..."
+          actions={
+            <>
+              <div className="flex border border-b1 rounded-md overflow-hidden mr-2">
+                <ShimmerBar width="50px" height="28px" style={{ animationDelay: "50ms" }} />
+                <ShimmerBar width="50px" height="28px" style={{ animationDelay: "80ms" }} />
+                <ShimmerBar width="50px" height="28px" style={{ animationDelay: "110ms" }} />
+              </div>
+              <ShimmerBar width="70px" height="36px" radius="8px" style={{ animationDelay: "140ms" }} />
+              <ShimmerBar width="70px" height="36px" radius="8px" style={{ animationDelay: "170ms" }} />
+              <ShimmerBar width="70px" height="36px" radius="8px" style={{ animationDelay: "200ms" }} />
+              {canCreateInquiry && (
+                <ShimmerBar width="110px" height="36px" radius="8px" style={{ animationDelay: "230ms", marginLeft: "8px" }} />
+              )}
+            </>
+          }
+        >
+          {/* Legend */}
+          <div className="flex gap-3 mb-[10px] text-[11px] items-center">
+            {[{ label: "Inquiry" }, { label: "Quotation sent" }, { label: "Confirmed" }].map(({ label }, i) => (
+              <div key={label} className="flex items-center gap-[5px]">
+                <ShimmerBar width="10px" height="10px" radius="3px" style={{ animationDelay: `${i * 30 + 260}ms` }} />
+                <ShimmerBar width="80px" height="10px" style={{ opacity: 0.6, animationDelay: `${i * 30 + 280}ms` }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Grid */}
+          <div
+            className="grid gap-[1px] rounded-lg overflow-hidden grid-cols-7"
+            style={{ background: "var(--b1)", border: "1px solid var(--b1)", marginTop: "16px" }}
+          >
+            {dayLabels.map((label, idx) => (
+              <div
+                key={`header-${idx}`}
+                className="bg-s2 text-tx3 text-center font-semibold text-[10px] uppercase tracking-wider py-2"
+                style={{ borderBottom: "1px solid var(--b1)" }}
+              >
+                {label}
+              </div>
+            ))}
+
+            {Array.from({ length: 35 }).map((_, i) => {
+              const col = (i % 7) + 1;
+              const hasEvent = i === 10 || i === 12 || i === 18 || i === 24 || i === 25 || i === 26;
+              const eventWidth = i === 24 || i === 25 ? "100%" : "85%";
+              return (
+                <div
+                  key={i}
+                  className="bg-s1"
+                  style={{
+                    minHeight: "110px",
+                    padding: "8px",
+                    borderBottom: "1px solid var(--b1)",
+                    borderRight: col < 7 ? "1px solid var(--b1)" : "none",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div className="flex justify-end">
+                    <ShimmerBar width="16px" height="16px" radius="50%" style={{ opacity: 0.5, animationDelay: `${i * 30 + 300}ms` }} />
+                  </div>
+                  {hasEvent && (
+                    <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <ShimmerBar width={eventWidth} height="18px" radius="4px" style={{ animationDelay: `${i * 30 + 350}ms`, opacity: 0.8 }} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </ScreenFrame>
+      </>
+    );
+  }
 
   return (
     <>

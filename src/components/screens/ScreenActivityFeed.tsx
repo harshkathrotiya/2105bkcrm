@@ -9,7 +9,7 @@ import {
   useInvoices,
   useClients,
 } from "@/lib/store";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import {
   ClipboardList,
   Users,
@@ -225,9 +225,129 @@ export default function ScreenActivityFeed() {
 
   if (isLoading) {
     return (
-      <ScreenFrame breadcrumb="Dashboard › Activity">
-        <LoadingSkeleton rows={10} />
-      </ScreenFrame>
+      <>
+        <SectionHeader
+          title={<>Activity <strong>Feed</strong></>}
+          description="Complete log of all CRM activity — inquiries, payments, clients, equipment, and quotations."
+        />
+
+        <ScreenFrame
+          breadcrumbs={[
+            { label: "Dashboard", href: "/" },
+            { label: "Activity Feed" },
+          ]}
+        >
+          {/* Toolbar Loading State */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "20px",
+              flexWrap: "wrap",
+            }}
+          >
+            {/* Search placeholder */}
+            <div style={{ position: "relative", flex: "1 1 220px", maxWidth: "360px" }}>
+              <ShimmerBar width="100%" height="32px" radius="8px" style={{ animationDelay: "50ms" }} />
+            </div>
+
+            {/* Filter chips placeholder */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+              <ShimmerBar width="50px" height="10px" style={{ opacity: 0.6, animationDelay: "80ms" }} />
+              {ALL_TYPES.map((type, i) => (
+                <ShimmerBar
+                  key={type}
+                  width="70px"
+                  height="24px"
+                  radius="20px"
+                  style={{ animationDelay: `${i * 30 + 100}ms` }}
+                />
+              ))}
+            </div>
+
+            {/* Count badge placeholder */}
+            <ShimmerBar width="80px" height="15px" style={{ marginLeft: "auto", animationDelay: "250ms" }} />
+          </div>
+
+          {/* Activity timeline card loading state */}
+          <div
+            className="card border border-b1"
+            style={{ padding: "24px", borderRadius: "12px", background: "var(--s1)" }}
+          >
+            {/* Date Group Shimmer */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+              <ShimmerBar width="80px" height="11px" style={{ animationDelay: "280ms" }} />
+              <div style={{ flex: 1, height: "1px", background: "var(--b1)" }} />
+              <ShimmerBar width="60px" height="16px" radius="10px" style={{ animationDelay: "300ms" }} />
+            </div>
+
+            {/* Timeline Items */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+              {Array.from({ length: 5 }).map((_, ri) => {
+                const isLast = ri === 4;
+                return (
+                  <div
+                    key={ri}
+                    className="relative flex gap-4 group"
+                    style={{ paddingBottom: isLast ? "0" : "20px" }}
+                  >
+                    {/* Vertical line */}
+                    {!isLast && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: "14px",
+                          top: "28px",
+                          bottom: "0",
+                          width: "1px",
+                          background: "var(--b1)",
+                        }}
+                      />
+                    )}
+
+                    {/* Icon Circle */}
+                    <ShimmerBar
+                      width="28px"
+                      height="28px"
+                      radius="50%"
+                      style={{ zIndex: 2, animationDelay: `${ri * 60 + 320}ms` }}
+                    />
+
+                    {/* Content Box */}
+                    <div
+                      style={{
+                        flex: 1,
+                        background: "var(--s2)",
+                        border: "1px solid var(--b1)",
+                        borderRadius: "10px",
+                        padding: "10px 14px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        gap: "12px",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                          <ShimmerBar width="65px" height="14px" radius="10px" style={{ animationDelay: `${ri * 60 + 330}ms` }} />
+                          <ShimmerBar width="120px" height="12px" style={{ animationDelay: `${ri * 60 + 340}ms` }} />
+                        </div>
+                        <ShimmerBar width="80%" height="11px" style={{ animationDelay: `${ri * 60 + 350}ms` }} />
+                      </div>
+
+                      <div style={{ textAlign: "right" }}>
+                        <ShimmerBar width="60px" height="11px" style={{ animationDelay: `${ri * 60 + 360}ms`, marginBottom: "4px" }} />
+                        <ShimmerBar width="90px" height="10px" style={{ animationDelay: `${ri * 60 + 370}ms` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </ScreenFrame>
+      </>
     );
   }
 
