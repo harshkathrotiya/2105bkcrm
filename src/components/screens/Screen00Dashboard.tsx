@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -26,10 +27,34 @@ import {
   CalendarCheck,
   Wrench,
   PartyPopper,
+  Calendar,
+  AlertCircle,
+  IndianRupee,
+  Package,
+  Clock,
+  TrendingUp,
+  PieChart as PieChartIcon,
+  CheckCircle2,
+  FileCheck,
 } from "lucide-react";
+
+// Recharts components for analytics
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 export default function Screen00Dashboard() {
   const { can } = useCurrentUser();
+  const router = useRouter();
   const { inquiries, loading: inquiriesLoading } = useInquiries();
   const { quotations, loading: quotationsLoading } = useQuotations();
   const { invoices, loading: invoicesLoading } = useInvoices();
@@ -38,6 +63,7 @@ export default function Screen00Dashboard() {
 
   const [assetSummary, setAssetSummary] = useState<{ totalValue: number; totalCount: number } | null>(null);
   const [loadingAsset, setLoadingAsset] = useState(true);
+  const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -81,6 +107,227 @@ export default function Screen00Dashboard() {
       return sum + v;
     }, 0);
   }, [invoices]);
+
+  // ── Monthly Revenue Trend data (current year, Jan to Dec) ──────────────────
+  const revenueTrendData = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const months = [
+      { name: "Jan", revenue: 0 },
+      { name: "Feb", revenue: 0 },
+      { name: "Mar", revenue: 0 },
+      { name: "Apr", revenue: 0 },
+      { name: "May", revenue: 0 },
+      { name: "Jun", revenue: 0 },
+      { name: "Jul", revenue: 0 },
+      { name: "Aug", revenue: 0 },
+      { name: "Sep", revenue: 0 },
+      { name: "Oct", revenue: 0 },
+      { name: "Nov", revenue: 0 },
+      { name: "Dec", revenue: 0 },
+    ];
+
+    invoices.forEach((inv) => {
+      if (inv.advanceReceived && inv.advanceReceivedAt) {
+        const d = new Date(inv.advanceReceivedAt);
+        if (d.getFullYear() === currentYear) {
+          const monthIdx = d.getMonth();
+          if (monthIdx >= 0 && monthIdx < 12) {
+            months[monthIdx].revenue += inv.advance || 0;
+          }
+        }
+      }
+      if (inv.balanceReceived && inv.balanceReceivedAt) {
+        const d = new Date(inv.balanceReceivedAt);
+        if (d.getFullYear() === currentYear) {
+          const monthIdx = d.getMonth();
+          if (monthIdx >= 0 && monthIdx < 12) {
+            months[monthIdx].revenue += inv.balance || 0;
+          }
+        }
+      }
+    });
+
+    return months;
+  }, [invoices]);
+
+  const totalYearRevenue = useMemo(() => {
+    return revenueTrendData.reduce((sum, m) => sum + m.revenue, 0);
+  }, [revenueTrendData]);
+
+  // Growth percentage: comparison of current month vs previous month
+  const revenueGrowthPct = useMemo(() => {
+    const currentMonthIdx = new Date().getMonth();
+    const currentMonthRevenue = revenueTrendData[currentMonthIdx]?.revenue || 0;
+    const prevMonthRevenue = revenueTrendData[currentMonthIdx - 1]?.revenue || 0;
+    if (prevMonthRevenue === 0) {
+      return currentMonthRevenue > 0 ? 100 : 0;
+    }
+    const pct = ((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100;
+    return parseFloat(pct.toFixed(1));
+  }, [revenueTrendData]);
+
+  // ── Department Distribution data ──────────────────────────────────────────
+  const deptDistributionData = useMemo(() => {
+    let videoCount = 0;
+    let ledCount = 0;
+    let mergedCount = 0;
+
+    inquiries.forEach((inq) => {
+      const dept = (inq.department || "VIDEO").toUpperCase();
+      if (dept === "LED") {
+        ledCount++;
+      } else if (dept === "MERGED") {
+        mergedCount++;
+      } else {
+        videoCount++;
+      }
+    });
+
+    const totalDepts = videoCount + ledCount + mergedCount;
+    if (totalDepts === 0) {
+      return [
+        { name: "Video", value: 0, percentage: 0, color: "#10b981" },
+        { name: "LED", value: 0, percentage: 0, color: "#3b82f6" },
+        { name: "Merged", value: 0, percentage: 0, color: "#6b7280" },
+      ];
+    }
+
+    return [
+      { name: "Video", value: videoCount, percentage: Math.round((videoCount / totalDepts) * 100), color: "#10b981" },
+      { name: "LED", value: ledCount, percentage: Math.round((ledCount / totalDepts) * 100), color: "#3b82f6" },
+      { name: "Merged", value: mergedCount, percentage: Math.round((mergedCount / totalDepts) * 100), color: "#6b7280" },
+    ];
+  }, [inquiries]);
+
+  const totalEventsCount = useMemo(() => {
+    return inquiries.length;
+  }, [inquiries]);
+
+  // ── Recent Activity feed data generation ───────────────────────────────
+  const recentActivities = useMemo(() => {
+    const list: {
+      id: string;
+      type: "inquiry" | "client" | "payment" | "equipment" | "quotation";
+      title: string;
+      description: string;
+      timestamp: string;
+      timestampMs: number;
+    }[] = [];
+
+    // 1. Inquiries created
+    inquiries.forEach((inq) => {
+      const client = clients.find((c) => c.id === inq.clientId);
+      const clientName = client?.name || "New Client";
+      const timeMs = inq.createdAt ? new Date(inq.createdAt).getTime() : 0;
+      list.push({
+        id: `inq-${inq.id}`,
+        type: "inquiry",
+        title: "Inquiry Created",
+        description: `New inquiry "${inq.eventName || "Unnamed Event"}" for ${clientName}`,
+        timestamp: inq.createdAt,
+        timestampMs: timeMs,
+      });
+
+      // If Confirmed, also show "Equipment assigned"
+      if (inq.status === "Confirmed") {
+        const updateTime = inq.updatedAt || inq.createdAt;
+        const updateMs = updateTime ? new Date(updateTime).getTime() : timeMs;
+        list.push({
+          id: `equip-${inq.id}`,
+          type: "equipment",
+          title: "Equipment Assigned",
+          description: `Equipment & staff dispatched for "${inq.eventName || "Unnamed Event"}"`,
+          timestamp: updateTime,
+          timestampMs: updateMs + 1000, // offset slightly to distinguish
+        });
+      }
+    });
+
+    // 2. Clients added
+    clients.forEach((client) => {
+      const timeMs = client.createdAt ? new Date(client.createdAt).getTime() : 0;
+      list.push({
+        id: `client-${client.id}`,
+        type: "client",
+        title: "Client Added",
+        description: `Client "${client.name}" registered in CRM`,
+        timestamp: client.createdAt,
+        timestampMs: timeMs,
+      });
+    });
+
+    // 3. Quotation approved
+    quotations.forEach((q) => {
+      if (q.status === "Approved") {
+        const approvedTime = q.approvedAt || q.updatedAt || q.createdAt;
+        const timeMs = approvedTime ? new Date(approvedTime).getTime() : 0;
+        list.push({
+          id: `quote-app-${q.id}`,
+          type: "quotation",
+          title: "Quotation Approved",
+          description: `Quotation ${q.quoteNo} approved for "${q.eventName}"`,
+          timestamp: approvedTime,
+          timestampMs: timeMs,
+        });
+      }
+    });
+
+    // 4. Payments received
+    invoices.forEach((inv) => {
+      if (inv.advanceReceived && inv.advanceReceivedAt) {
+        const timeMs = new Date(inv.advanceReceivedAt).getTime();
+        list.push({
+          id: `pay-adv-${inv.id}`,
+          type: "payment",
+          title: "Payment Received",
+          description: `Advance payment of ₹${fmt(inv.advance || 0)} received from ${inv.clientName}`,
+          timestamp: inv.advanceReceivedAt,
+          timestampMs: timeMs,
+        });
+      }
+      if (inv.balanceReceived && inv.balanceReceivedAt) {
+        const timeMs = new Date(inv.balanceReceivedAt).getTime();
+        list.push({
+          id: `pay-bal-${inv.id}`,
+          type: "payment",
+          title: "Payment Received",
+          description: `Balance payment of ₹${fmt(inv.balance || 0)} received from ${inv.clientName}`,
+          timestamp: inv.balanceReceivedAt,
+          timestampMs: timeMs,
+        });
+      }
+    });
+
+    // Sort by timestamp desc and take the latest 5
+    return list
+      .filter((act) => act.timestampMs > 0)
+      .sort((a, b) => b.timestampMs - a.timestampMs)
+      .slice(0, 5);
+  }, [inquiries, clients, quotations, invoices]);
+
+  const getRelativeTime = (dateStr: string) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    
+    if (isNaN(diffMs)) {
+      return dateStr;
+    }
+
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffSecs < 60) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  };
 
   // ── Alerts ────────────────────────────────────────────────────────────────
   const alerts = useMemo(() => {
@@ -149,20 +396,109 @@ export default function Screen00Dashboard() {
   }
 
   const kpis = [
-    { label: "Active Events (This Month)", value: String(activeEventsCount), sub: "Confirmed events deployed", color: "var(--bl)", href: "/inquiries" },
-    { label: "Pending Quotations", value: String(pendingQuotesCount), sub: "Awaiting client approval", color: "var(--acc)", href: "/quotations" },
-    { label: "Payments Outstanding", value: `₹${fmt(pendingPaymentsTotal)}`, sub: "From pending & partial invoices", color: "var(--rd)", valColor: "var(--sem-rd-tx)", href: "/invoices?status=Unpaid" },
-    { label: "Collected (YTD)", value: `₹${fmt(ytdCollected)}`, sub: "Advance + balance received this year", color: "var(--gr)", valColor: "var(--sem-gr-tx)", href: "/invoices" },
-    { label: "Total Asset Value", value: `₹${fmt(assetSummary?.totalValue || 0)}`, sub: `Valuation of ${assetSummary?.totalCount || 0} items`, color: "var(--gr)", href: "/equipment" },
+    { 
+      label: "Active Events", 
+      value: String(activeEventsCount), 
+      sub: "Confirmed events deployed", 
+      color: "var(--bl)", 
+      iconColor: "#3b82f6", 
+      iconBg: "rgba(59, 130, 246, 0.1)",
+      icon: Calendar,
+      href: "/inquiries" 
+    },
+    { 
+      label: "Pending Quotations", 
+      value: String(pendingQuotesCount), 
+      sub: "Awaiting client approval", 
+      color: "var(--yl)", 
+      iconColor: "#eab308", 
+      iconBg: "rgba(234, 179, 8, 0.1)",
+      icon: FileText,
+      href: "/quotations" 
+    },
+    { 
+      label: "Payments Outstanding", 
+      value: `₹${fmt(pendingPaymentsTotal)}`, 
+      sub: "From pending & partial invoices", 
+      color: "var(--rd)", 
+      valColor: "var(--sem-rd-tx)", 
+      iconColor: "#ef4444", 
+      iconBg: "rgba(239, 68, 68, 0.1)",
+      icon: AlertCircle,
+      href: "/invoices?status=Unpaid" 
+    },
+    { 
+      label: "Collected (YTD)", 
+      value: `₹${fmt(ytdCollected)}`, 
+      sub: "Advance + balance received this year", 
+      color: "var(--gr)", 
+      valColor: "var(--sem-gr-tx)", 
+      iconColor: "#10b981", 
+      iconBg: "rgba(16, 185, 129, 0.1)",
+      icon: IndianRupee,
+      href: "/invoices" 
+    },
+    { 
+      label: "Total Asset Value", 
+      value: `₹${fmt(assetSummary?.totalValue || 0)}`, 
+      sub: `Valuation of ${assetSummary?.totalCount || 0} items`, 
+      color: "var(--gr)", 
+      iconColor: "#10b981", 
+      iconBg: "rgba(16, 185, 129, 0.1)",
+      icon: Package,
+      href: "/equipment" 
+    },
   ];
 
-  const quickActions: { label: string; href: string; icon: typeof Users; primary?: boolean; perm?: Parameters<typeof can>[0] }[] = [
-    { label: "Create New Inquiry", href: "/inquiries/new", icon: ClipboardList, primary: true, perm: "inquiries.create" },
-    { label: "Add Client", href: "/clients/new", icon: Users, perm: "clients.create" },
-    { label: "New Quotation", href: "/quotations/new", icon: FileText, perm: "quotations.create" },
-    { label: "Warehouse Check", href: "/warehouse/check", icon: Building2 },
-    { label: "Manage Staff", href: "/staff", icon: UserCheck },
-    { label: "Add Equipment", href: "/equipment/new", icon: Wrench, perm: "equipment.create" },
+  const quickActions: {
+    label: string;
+    href: string;
+    icon: typeof Users;
+    primary?: boolean;
+    perm?: Parameters<typeof can>[0];
+    className?: string;
+  }[] = [
+    { 
+      label: "Create New Inquiry", 
+      href: "/inquiries/new", 
+      icon: ClipboardList, 
+      primary: true, 
+      perm: "inquiries.create",
+      className: "btn-primary hover:bg-[#2e2e2e] transition-all duration-200" 
+    },
+    { 
+      label: "Add Client", 
+      href: "/clients/new", 
+      icon: Users, 
+      perm: "clients.create",
+      className: "border-blue-200 bg-blue-50/40 text-blue-600 hover:bg-blue-50 hover:border-blue-300 dark:border-blue-900/40 dark:bg-blue-950/20 dark:text-blue-400 dark:hover:bg-blue-950/30 transition-all duration-200" 
+    },
+    { 
+      label: "New Quotation", 
+      href: "/quotations/new", 
+      icon: FileText, 
+      perm: "quotations.create",
+      className: "border-emerald-200 bg-emerald-50/40 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-950/30 transition-all duration-200" 
+    },
+    { 
+      label: "Warehouse Check", 
+      href: "/warehouse/check", 
+      icon: Building2,
+      className: "border-orange-200 bg-orange-50/40 text-orange-600 hover:bg-orange-50 hover:border-orange-300 dark:border-orange-900/40 dark:bg-orange-950/20 dark:text-orange-400 dark:hover:bg-orange-950/30 transition-all duration-200" 
+    },
+    { 
+      label: "Manage Staff", 
+      href: "/staff", 
+      icon: UserCheck,
+      className: "border-purple-200 bg-purple-50/40 text-purple-600 hover:bg-purple-50 hover:border-purple-300 dark:border-purple-900/40 dark:bg-purple-950/20 dark:text-purple-400 dark:hover:bg-purple-950/30 transition-all duration-200" 
+    },
+    { 
+      label: "Add Equipment", 
+      href: "/equipment/new", 
+      icon: Wrench, 
+      perm: "equipment.create",
+      className: "border-cyan-200 bg-cyan-50/40 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300 dark:border-cyan-900/40 dark:bg-cyan-950/20 dark:text-cyan-400 dark:hover:bg-cyan-950/30 transition-all duration-200" 
+    },
   ];
 
   const visibleQuickActions = quickActions.filter((qa) => !qa.perm || can(qa.perm));
@@ -177,25 +513,209 @@ export default function Screen00Dashboard() {
       <ScreenFrame breadcrumb="Dashboard">
         {/* KPI cards — clickable drill-downs */}
         <div className="metrics" style={{ marginBottom: "20px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px" }}>
-          {kpis.map((k) => (
-            <Link
-              key={k.label}
-              href={k.href}
-              className="met"
-              style={{ borderLeft: `4px solid ${k.color}`, background: "var(--s1)", padding: "16px", borderRadius: "8px", display: "block", textDecoration: "none" }}
-            >
-              <div className="met-l" style={{ color: "var(--tx3)", fontSize: "11px", fontWeight: 600, textTransform: "uppercase" }}>{k.label}</div>
-              <div className="met-v" style={{ fontSize: "26px", fontWeight: 700, margin: "6px 0 2px", color: k.valColor || "var(--tx)" }}>{k.value}</div>
-              <div className="text-[10px] text-tx3">{k.sub}</div>
-            </Link>
-          ))}
+          {kpis.map((k) => {
+            const Icon = k.icon;
+            return (
+              <Link
+                key={k.label}
+                href={k.href}
+                className="met group relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md border border-b1 hover:border-hover-card-border"
+                style={{ background: "var(--s1)", padding: "18px", borderRadius: "12px", display: "block", textDecoration: "none" }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div className="met-l" style={{ color: "var(--tx3)", fontSize: "12px", fontWeight: 500, textTransform: "capitalize", letterSpacing: "normal" }}>{k.label}</div>
+                  <div style={{ color: k.iconColor, background: k.iconBg, padding: "6px", borderRadius: "8px" }} className="transition-transform group-hover:scale-110">
+                    <Icon size={16} strokeWidth={2} />
+                  </div>
+                </div>
+                <div className="met-v" style={{ fontSize: "28px", fontWeight: 700, margin: "8px 0 4px", color: k.valColor || "var(--tx)", letterSpacing: "-0.03em" }}>{k.value}</div>
+                <div className="text-[11px] text-tx3 font-normal" style={{ color: "var(--tx3)" }}>{k.sub}</div>
+                <div className="absolute bottom-0 left-0 right-0 h-[3px]" style={{ background: k.color, opacity: 0.8 }} />
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Analytics Section (New) */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", marginBottom: "20px" }}>
+          {/* Revenue Trend Line Chart */}
+          <div className="card transition-all duration-300 hover:shadow-md border border-b1" style={{ padding: "20px", borderRadius: "12px", background: "var(--s1)", margin: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <h3 style={{ fontSize: "13px", fontWeight: 600, color: "var(--tx)" }} className="flex items-center gap-1.5">
+                  <TrendingUp size={15} className="text-emerald-500" /> Revenue Trend
+                </h3>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginTop: "4px" }}>
+                  <span style={{ fontSize: "22px", fontWeight: 700, color: "var(--tx)" }}>₹{fmt(totalYearRevenue)}</span>
+                  <span style={{ fontSize: "11px", fontWeight: 500, color: revenueGrowthPct >= 0 ? "var(--gr)" : "var(--rd)" }}>
+                    {revenueGrowthPct >= 0 ? "+" : ""}{revenueGrowthPct}% vs last month
+                  </span>
+                </div>
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--tx3)", background: "var(--s2)", padding: "4px 8px", borderRadius: "6px", border: "1px solid var(--b1)" }}>
+                YTD Revenue
+              </div>
+            </div>
+            
+            <div style={{ width: "100%", height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={revenueTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--b1)" opacity={0.5} />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: "var(--tx3)", fontSize: 10 }}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: "var(--tx3)", fontSize: 10 }}
+                    tickFormatter={(value) => `₹${value >= 100000 ? (value / 100000).toFixed(1) + "L" : value >= 1000 ? (value / 1000).toFixed(0) + "k" : value}`}
+                  />
+                  <Tooltip 
+                    contentStyle={{ background: "var(--s1)", borderColor: "var(--b1)", borderRadius: "8px", color: "var(--tx)" }}
+                    formatter={(value: any) => [`₹${fmt(value)}`, "Revenue"]}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#10b981" 
+                    strokeWidth={2.5} 
+                    dot={{ r: 3, stroke: "#10b981", strokeWidth: 1.5, fill: "var(--s1)" }}
+                    activeDot={{ r: 5, stroke: "#10b981", strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Department Distribution Donut Chart */}
+          <div className="card transition-all duration-300 hover:shadow-md border border-b1" style={{ padding: "20px", borderRadius: "12px", background: "var(--s1)", margin: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <h3 style={{ fontSize: "13px", fontWeight: 600, color: "var(--tx)" }} className="flex items-center gap-1.5">
+                  <PieChartIcon size={15} className="text-blue-500" /> Department Distribution
+                </h3>
+                <p style={{ fontSize: "10.5px", color: "var(--tx3)", marginTop: "2px" }}>Active inquiries by department</p>
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--tx3)", background: "var(--s2)", padding: "4px 8px", borderRadius: "6px", border: "1px solid var(--b1)" }}>
+                Total: {totalEventsCount} Events
+              </div>
+            </div>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "16px", alignItems: "center" }}>
+              <div style={{ position: "relative", width: "100%", height: 180 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={deptDistributionData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={70}
+                      paddingAngle={3}
+                      dataKey="value"
+                      onMouseEnter={(_, index) => setActivePieIndex(index)}
+                      onMouseLeave={() => setActivePieIndex(null)}
+                    >
+                      {deptDistributionData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.color} 
+                          style={{ 
+                            outline: "none", 
+                            cursor: "pointer", 
+                            opacity: activePieIndex === null || activePieIndex === index ? 1 : 0.6,
+                            transition: "opacity 0.2s ease"
+                          }} 
+                        />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  textAlign: "center",
+                  pointerEvents: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  {activePieIndex !== null && deptDistributionData[activePieIndex] ? (
+                    <>
+                      <span style={{ 
+                        fontSize: "22px", 
+                        fontWeight: 700, 
+                        color: deptDistributionData[activePieIndex].color,
+                        lineHeight: 1.1,
+                        transition: "all 0.2s ease"
+                      }}>
+                        {deptDistributionData[activePieIndex].value}
+                      </span>
+                      <div style={{ 
+                        fontSize: "9px", 
+                        textTransform: "uppercase", 
+                        color: "var(--tx3)", 
+                        fontWeight: 600, 
+                        marginTop: "2px",
+                        letterSpacing: "0.05em",
+                        transition: "all 0.2s ease"
+                      }}>
+                        {deptDistributionData[activePieIndex].name}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ 
+                        fontSize: "22px", 
+                        fontWeight: 700, 
+                        color: "var(--tx)",
+                        lineHeight: 1.1,
+                        transition: "all 0.2s ease"
+                      }}>
+                        {totalEventsCount}
+                      </span>
+                      <div style={{ 
+                        fontSize: "9px", 
+                        textTransform: "uppercase", 
+                        color: "var(--tx3)", 
+                        fontWeight: 600, 
+                        marginTop: "2px",
+                        letterSpacing: "0.05em",
+                        transition: "all 0.2s ease"
+                      }}>
+                        Events
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {deptDistributionData.map((dept) => (
+                  <div key={dept.name} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: dept.color, flexShrink: 0 }} />
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--tx)" }}>{dept.name} ({dept.percentage}%)</span>
+                      <span style={{ fontSize: "10px", color: "var(--tx3)" }}>{dept.value} event{dept.value === 1 ? "" : "s"}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Alerts banner */}
         {alerts.length > 0 && (
           <div className="card" style={{ padding: "14px 16px", marginBottom: "20px", borderLeft: "4px solid var(--acc)" }}>
-            <div className="card-t" style={{ fontSize: "13px", fontWeight: 600, marginBottom: "10px", display: "flex", alignItems: "center", gap: 6 }}>
-              <AlertTriangle size={14} color="var(--acc)" /> Needs attention
+            <div className="card-t" style={{ fontSize: "13px", fontWeight: 600, marginBottom: "10px", display: "flex", alignItems: "center", gap: 6, color: "var(--tx2)", textTransform: "capitalize", letterSpacing: "normal" }}>
+              <AlertTriangle size={14} color="var(--acc)" /> Needs Attention
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {alerts.map((a) => (
@@ -209,24 +729,25 @@ export default function Screen00Dashboard() {
         )}
 
         <div className="two-col" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "20px" }}>
-          {/* Left: Recent inquiries */}
+          {/* Left: Recent Inquiries + Recent Activity */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div className="card" style={{ padding: "16px", margin: 0 }}>
-              <div className="flex justify-between items-center" style={{ marginBottom: "14px" }}>
-                <span className="card-t" style={{ fontSize: "14px", fontWeight: 600 }}>Recent Inquiries</span>
+            {/* Recent Inquiries */}
+            <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)" }}>
+              <div className="flex justify-between items-center" style={{ marginBottom: "16px" }}>
+                <span className="card-t" style={{ fontSize: "13px", fontWeight: 600, color: "var(--tx2)", textTransform: "capitalize", letterSpacing: "normal", marginBottom: 0 }}>Recent Inquiries</span>
                 <Link href="/inquiries" className="text-[11px] text-acc flex items-center gap-1 hover:underline">
                   View all <ArrowRight size={12} />
                 </Link>
               </div>
-              <div style={{ overflowX: "auto" }}>
-                <table className="tbl">
-                  <thead>
+              <div style={{ overflowX: "auto" }} className="tbl-scroll">
+                <table className="tbl" style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+                  <thead style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--s1)" }}>
                     <tr>
-                      <th>Event Name</th>
-                      <th>Client</th>
-                      <th>Date</th>
-                      <th>Dept.</th>
-                      <th>Status</th>
+                      <th style={{ background: "var(--s1)", borderBottom: "1px solid var(--b1)", paddingBottom: "10px" }}>Event Name</th>
+                      <th style={{ background: "var(--s1)", borderBottom: "1px solid var(--b1)", paddingBottom: "10px" }}>Client</th>
+                      <th style={{ background: "var(--s1)", borderBottom: "1px solid var(--b1)", paddingBottom: "10px" }}>Date</th>
+                      <th style={{ background: "var(--s1)", borderBottom: "1px solid var(--b1)", paddingBottom: "10px" }}>Dept.</th>
+                      <th style={{ background: "var(--s1)", borderBottom: "1px solid var(--b1)", paddingBottom: "10px" }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -240,21 +761,32 @@ export default function Screen00Dashboard() {
                       recentInquiries.map((inq) => {
                         const client = clients.find((c) => c.id === inq.clientId);
                         return (
-                          <tr key={inq.id} style={{ cursor: "pointer" }}>
-                            <td>
-                              <Link href={`/inquiries/${inq.id}`} className="font-semibold text-tx">
-                                {inq.eventName || "Unnamed Event"}
-                              </Link>
+                          <tr 
+                            key={inq.id} 
+                            onClick={() => router.push(`/inquiries/${inq.id}`)}
+                            className="hover:bg-row-hover transition-colors duration-150 group"
+                            style={{ cursor: "pointer" }}
+                          >
+                            <td className="font-semibold text-tx group-hover:text-acc transition-colors duration-150">
+                              {inq.eventName || "Unnamed Event"}
                             </td>
                             <td>{client?.name || inq.clientId}</td>
                             <td style={{ fontSize: "11px" }}>{inq.startDate}</td>
                             <td>
-                              <Badge variant={inq.department === "LED" ? "am" : inq.department === "MERGED" ? "bl" : "gr"}>
+                              <Badge variant={
+                                inq.department === "LED" ? "bl" : 
+                                inq.department === "MERGED" ? "gy" : 
+                                "gr" // VIDEO
+                              }>
                                 {inq.department || "VIDEO"}
                               </Badge>
                             </td>
                             <td>
-                              <Badge variant={inq.status === "Confirmed" ? "gr" : inq.status === "Cancelled" ? "rd" : "bl"}>
+                              <Badge variant={
+                                inq.status === "Confirmed" ? "gr" : 
+                                inq.status === "Cancelled" ? "rd" : 
+                                "am" // Pending
+                              }>
                                 {inq.status}
                               </Badge>
                             </td>
@@ -266,41 +798,187 @@ export default function Screen00Dashboard() {
                 </table>
               </div>
             </div>
-          </div>
 
-          {/* Right: today + quick actions */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div className="card" style={{ padding: "16px", margin: 0 }}>
-              <div className="card-t" style={{ fontSize: "14px", fontWeight: 600, marginBottom: "14px", display: "flex", alignItems: "center", gap: 6 }}>
-                <CalendarCheck size={14} /> Today&apos;s Schedule
+            {/* Recent Activity Section (New) */}
+            <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <span className="card-t" style={{ fontSize: "13px", fontWeight: 600, color: "var(--tx2)", textTransform: "capitalize", letterSpacing: "normal", marginBottom: 0 }}>
+                  Recent Activity
+                </span>
+                <span style={{ fontSize: "10px", color: "var(--tx3)" }} className="flex items-center gap-1">
+                  <Clock size={11} /> Live Feed
+                </span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {todayEvents.length === 0 ? (
-                  <div style={{ padding: "20px", textAlign: "center", background: "var(--s2)", borderRadius: "8px", border: "1px solid var(--b1)", color: "var(--tx3)", fontSize: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                    <PartyPopper size={14} /> Nothing scheduled today.
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {recentActivities.length === 0 ? (
+                  <div style={{ padding: "20px 0", textAlign: "center", color: "var(--tx3)", fontSize: "12px" }}>
+                    No recent activities recorded.
                   </div>
                 ) : (
-                  todayEvents.map((evt) => (
-                    <div key={evt.id} style={{ padding: "10px 12px", background: "var(--s2)", borderRadius: "8px", border: "1px solid var(--b1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div>
-                        <div style={{ fontSize: "13px", fontWeight: 600 }}>{evt.label}</div>
-                        <div style={{ fontSize: "10px", color: "var(--tx3)", marginTop: "2px" }}>Type: {evt.type}</div>
+                  recentActivities.map((act, idx) => {
+                    let Icon = CheckCircle2;
+                    let iconColor = "#10b981"; // green
+                    let iconBg = "rgba(16, 185, 129, 0.1)";
+
+                    if (act.type === "inquiry") {
+                      Icon = ClipboardList;
+                      iconColor = "#3b82f6"; // blue
+                      iconBg = "rgba(59, 130, 246, 0.1)";
+                    } else if (act.type === "client") {
+                      Icon = Users;
+                      iconColor = "#a855f7"; // purple
+                      iconBg = "rgba(168, 85, 247, 0.1)";
+                    } else if (act.type === "quotation") {
+                      Icon = FileCheck;
+                      iconColor = "#eab308"; // yellow
+                      iconBg = "rgba(234, 179, 8, 0.1)";
+                    } else if (act.type === "equipment") {
+                      Icon = Wrench;
+                      iconColor = "#06b6d4"; // cyan
+                      iconBg = "rgba(6, 182, 212, 0.1)";
+                    }
+
+                    return (
+                      <div key={act.id} className="relative flex gap-3 items-start group">
+                        {idx < recentActivities.length - 1 && (
+                          <div 
+                            style={{ 
+                              position: "absolute", 
+                              left: "14px", 
+                              top: "28px", 
+                              bottom: "-20px", 
+                              width: "1px", 
+                              background: "var(--b1)" 
+                            }} 
+                          />
+                        )}
+
+                        <div 
+                          style={{ 
+                            color: iconColor, 
+                            background: iconBg, 
+                            padding: "6px", 
+                            borderRadius: "50%", 
+                            display: "flex", 
+                            alignItems: "center", 
+                            justifyContent: "center",
+                            zIndex: 2,
+                          }}
+                        >
+                          <Icon size={15} />
+                        </div>
+                        
+                        <div className="flex-1" style={{ marginTop: "2px" }}>
+                          <p style={{ fontSize: "12.5px", color: "var(--tx)", fontWeight: 500, lineHeight: 1.4 }}>
+                            {act.description}
+                          </p>
+                          <span style={{ fontSize: "10.5px", color: "var(--tx3)", marginTop: "2px", display: "block" }}>
+                            {getRelativeTime(act.timestamp)}
+                          </span>
+                        </div>
                       </div>
-                      <Badge variant="bl">Today</Badge>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
+          </div>
 
-            <div className="card" style={{ padding: "16px", margin: 0 }}>
-              <div className="card-t" style={{ fontSize: "14px", fontWeight: 600, marginBottom: "14px" }}>Quick Actions</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+          {/* Right: Today's Schedule + Quick Actions */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {/* Today's Schedule */}
+            <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)" }}>
+              <div className="card-t" style={{ fontSize: "13px", fontWeight: 600, marginBottom: "16px", display: "flex", alignItems: "center", gap: 8, color: "var(--tx2)", textTransform: "capitalize", letterSpacing: "normal" }}>
+                <CalendarCheck size={16} className="text-acc" /> Today&apos;s Schedule
+              </div>
+              
+              {todayEvents.length === 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "140px", textAlign: "center", color: "var(--tx3)" }}>
+                  <div style={{ background: "var(--s2)", padding: "12px", borderRadius: "50%", marginBottom: "12px", border: "1px solid var(--b1)" }}>
+                    <PartyPopper size={24} className="text-tx3" />
+                  </div>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--tx2)" }}>No events scheduled today</div>
+                  <div style={{ fontSize: "11px", color: "var(--tx3)", marginTop: "2px" }}>Enjoy your day!</div>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }} className="pl-1">
+                  {todayEvents.map((evt, idx) => {
+                    const eventColor = 
+                      evt.type === "confirmed" ? "#10b981" : 
+                      evt.type === "completed" ? "#6b7280" : 
+                      evt.type === "quotation" ? "#3b82f6" : "#eab308";
+                    return (
+                      <div key={evt.id} className="relative flex gap-4">
+                        <div className="flex flex-col items-center flex-shrink-0">
+                          <div 
+                            style={{ 
+                              width: "10px", 
+                              height: "10px", 
+                              borderRadius: "50%", 
+                              border: `2px solid ${eventColor}`, 
+                              background: "var(--s1)", 
+                              zIndex: 2,
+                              marginTop: "4px"
+                            }} 
+                          />
+                          {idx < todayEvents.length - 1 && (
+                            <div style={{ width: "2px", flex: 1, background: "var(--b1)", zIndex: 1, marginTop: "4px" }} />
+                          )}
+                        </div>
+                        
+                        <div 
+                          className="flex-1 transition-all duration-200 hover:border-hover-card-border"
+                          style={{ 
+                            padding: "10px 14px", 
+                            background: "var(--s2)", 
+                            borderRadius: "10px", 
+                            border: "1px solid var(--b1)", 
+                            display: "flex", 
+                            justifyContent: "space-between", 
+                            alignItems: "center" 
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--tx)" }}>{evt.label}</div>
+                            <div style={{ fontSize: "10px", color: "var(--tx3)", marginTop: "2px", textTransform: "capitalize" }}>Type: {evt.type}</div>
+                          </div>
+                          <Badge variant={
+                            evt.type === "confirmed" ? "gr" : 
+                            evt.type === "completed" ? "gy" : 
+                            evt.type === "quotation" ? "bl" : "am"
+                          }>
+                            Today
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)" }}>
+              <div className="card-t" style={{ fontSize: "13px", fontWeight: 600, marginBottom: "16px", color: "var(--tx2)", textTransform: "capitalize", letterSpacing: "normal" }}>Quick Actions</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 {visibleQuickActions.map((qa) => {
                   const Icon = qa.icon;
                   return (
-                    <Link key={qa.href} href={qa.href} className={`btn ${qa.primary ? "btn-primary" : ""} text-[11.5px]`} style={{ justifyContent: "flex-start", gap: 6, padding: "8px 10px" }}>
-                      <Icon size={13} /> {qa.label}
+                    <Link 
+                      key={qa.href} 
+                      href={qa.href} 
+                      className={`btn ${qa.className || ""} text-[12px] font-medium`} 
+                      style={{ 
+                        justifyContent: "flex-start", 
+                        gap: 8, 
+                        padding: "10px 12px",
+                        borderRadius: "10px",
+                        borderWidth: "1px",
+                      }}
+                    >
+                      <Icon size={14} className="flex-shrink-0" /> 
+                      <span className="truncate">{qa.label}</span>
                     </Link>
                   );
                 })}

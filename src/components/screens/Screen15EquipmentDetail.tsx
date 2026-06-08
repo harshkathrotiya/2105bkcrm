@@ -296,7 +296,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                       {item.kit.name}
                     </div>
                   </div>
-                  <Link href={`/kits?kitId=${item.kit.id}`} className="btn" style={{ padding: "4px 8px", fontSize: "11px" }}>
+                  <Link href={`/kits/${item.kit.id}`} className="btn" style={{ padding: "4px 8px", fontSize: "11px" }}>
                     View Kit
                   </Link>
                 </div>
@@ -309,7 +309,7 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
                       {item.mainBodyOfKit.name}
                     </div>
                   </div>
-                  <Link href={`/kits?kitId=${item.mainBodyOfKit.id}`} className="btn" style={{ padding: "4px 8px", fontSize: "11px" }}>
+                  <Link href={`/kits/${item.mainBodyOfKit.id}`} className="btn" style={{ padding: "4px 8px", fontSize: "11px" }}>
                     View Kit
                   </Link>
                 </div>
