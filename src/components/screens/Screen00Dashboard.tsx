@@ -65,6 +65,8 @@ export default function Screen00Dashboard() {
   const [loadingAsset, setLoadingAsset] = useState(true);
   const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
   const [showAllActivities, setShowAllActivities] = useState(false);
+  const [chartsMounted, setChartsMounted] = useState(false);
+  useEffect(() => { setChartsMounted(true); }, []);
 
   useEffect(() => {
     let active = true;
@@ -562,8 +564,8 @@ export default function Screen00Dashboard() {
               </div>
             </div>
             
-            <div style={{ width: "100%", height: 180 }}>
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ width: "100%", height: 180, minWidth: 0 }}>
+              {chartsMounted && <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={revenueTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--b1)" opacity={0.5} />
                   <XAxis 
@@ -591,7 +593,7 @@ export default function Screen00Dashboard() {
                     activeDot={{ r: 5, stroke: "#10b981", strokeWidth: 2 }}
                   />
                 </LineChart>
-              </ResponsiveContainer>
+              </ResponsiveContainer>}
             </div>
           </div>
 
@@ -610,8 +612,8 @@ export default function Screen00Dashboard() {
             </div>
             
             <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "16px", alignItems: "center" }}>
-              <div style={{ position: "relative", width: "100%", height: 180 }}>
-                <ResponsiveContainer width="100%" height="100%">
+              <div style={{ position: "relative", width: "100%", height: 180, minWidth: 0 }}>
+                {chartsMounted && <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={deptDistributionData}
@@ -638,7 +640,7 @@ export default function Screen00Dashboard() {
                       ))}
                     </Pie>
                   </PieChart>
-                </ResponsiveContainer>
+                </ResponsiveContainer>}
                 <div style={{
                   position: "absolute",
                   top: "50%",
