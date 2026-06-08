@@ -266,7 +266,22 @@ export default function Screen13EquipmentList() {
       <ScreenFrame
         breadcrumbs={[{ label: "Equipment" }]}
         actions={
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <select
+              value={categoryFilter}
+              onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
+              className="fsel"
+              style={{ fontSize: "12px" }}
+            >
+              {categoriesList.map((cat) => {
+                const count = categoryCounts[cat.key] || 0;
+                return (
+                  <option key={cat.key} value={cat.key}>
+                    {cat.label}{cat.key !== "ALL" ? ` (${count})` : ""}
+                  </option>
+                );
+              })}
+            </select>
             <button
               className="btn"
               onClick={handleExportCsv}
@@ -294,45 +309,6 @@ export default function Screen13EquipmentList() {
           </div>
         }
       >
-        <div className="two-col" style={{ gridTemplateColumns: "180px 1fr" }}>
-          {/* Categories Sidebar */}
-          <aside className="sf" style={{ background: "var(--alt2)", borderRight: "1px solid var(--b1)", alignSelf: "start" }}>
-            <div className="tb" style={{ padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "var(--tx3)" }}>
-              CATEGORIES
-            </div>
-            <div style={{ padding: "6px" }}>
-              {categoriesList.map((cat) => {
-                const isActive = categoryFilter === cat.key;
-                const count = categoryCounts[cat.key] || 0;
-                return (
-                  <button
-                    key={cat.key}
-                    onClick={() => { setCategoryFilter(cat.key); setCurrentPage(1); }}
-                    style={{
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "7px 10px",
-                      borderRadius: "6px",
-                      background: isActive ? "var(--sidebar-active)" : "transparent",
-                      color: isActive ? "var(--sidebar-tx-active)" : "var(--tx2)",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      fontWeight: isActive ? 600 : 400,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "2px",
-                    }}
-                  >
-                    <span>{cat.label}</span>
-                    <span className="badge bdg-gy" style={{ padding: "1px 6px", fontSize: "9px" }}>{count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </aside>
-
           {/* Main equipment table */}
           <div>
             <div className="card !p-3" style={{ marginBottom: "0px" }}>
@@ -458,7 +434,6 @@ export default function Screen13EquipmentList() {
               )}
             </div>
           </div>
-        </div>
       </ScreenFrame>
 
       {/* CSV Import Modal */}

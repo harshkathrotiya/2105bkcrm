@@ -153,107 +153,28 @@ export default function Screen20StaffList() {
       <ScreenFrame
         breadcrumbs={[{ label: "Staff" }]}
         actions={
-          <div style={{ display: "flex", gap: "8px" }}>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <Link href="/staff/explorer" className="btn">
               <Network size={13} /> Org Explorer
             </Link>
+            <select
+              className="fsel"
+              style={{ fontSize: "12px" }}
+              value={sidebarFilter}
+              onChange={(e) => { setSidebarFilter(e.target.value as any); setCurrentPage(1); }}
+            >
+              <option value="ALL">All Staff ({counts.total})</option>
+              <option value="INHOUSE">In-house ({counts.inHouse})</option>
+              <option value="EXTERNAL">External ({counts.external})</option>
+            </select>
+            <Link href="/staff/reports" className="btn btn-primary">Salary Reports & Payroll <ArrowUpRight size={12} /></Link>
+            <Link href="/staff/inactive" className="btn">Inactive Staff <ArrowRight size={12} /></Link>
             <button className="btn" onClick={handleExportCSV}>Export CSV</button>
             <button className="btn" onClick={handleExportPDF}>Export PDF</button>
             {canCreate && <Link href="/staff/new" className="btn btn-primary">+ Add Staff</Link>}
           </div>
         }
       >
-            <div className="two-col" style={{ gridTemplateColumns: "180px 1fr" }}>
-          
-          {/* Sidebar Filters */}
-          <aside className="sf" style={{ background: "var(--alt2)", borderRight: "1px solid var(--b1)", alignSelf: "start" }}>
-            <div className="tb" style={{ padding: "8px 12px", fontSize: "11px", fontWeight: 600, color: "var(--tx3)" }}>
-              STAFF TYPE
-            </div>
-            <div style={{ padding: "6px" }}>
-              {[
-                { key: "ALL", label: "All Staff", count: counts.total },
-                { key: "INHOUSE", label: "In-house", count: counts.inHouse },
-                { key: "EXTERNAL", label: "External", count: counts.external },
-              ].map((type) => {
-                const isActive = sidebarFilter === type.key;
-                return (
-                  <button
-                    key={type.key}
-                    onClick={() => { setSidebarFilter(type.key as any); setCurrentPage(1); }}
-                    style={{
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "7px 10px",
-                      borderRadius: "6px",
-                      background: isActive ? "var(--sidebar-active)" : "transparent",
-                      color: isActive ? "var(--sidebar-tx-active)" : "var(--tx2)",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: "12px",
-                      fontWeight: isActive ? 600 : 400,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "2px",
-                    }}
-                  >
-                    <span>{type.label}</span>
-                    <span className="badge bdg-gy" style={{ padding: "1px 6px", fontSize: "9px" }}>{type.count}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div style={{ height: "1px", background: "var(--b1)", margin: "4px 12px" }} />
-
-            <div style={{ padding: "8px 12px" }}>
-              <div style={{ fontSize: "10px", color: "var(--tx3)", marginBottom: "3px" }}>Total pending pay</div>
-              <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--acc)" }}>₹{pendingPaymentsDue.toLocaleString("en-IN")}</div>
-            </div>
-
-            <div style={{ height: "1px", background: "var(--b1)", margin: "4px 12px" }} />
-
-            <div style={{ padding: "6px", display: "flex", flexDirection: "column", gap: "6px" }}>
-              <Link
-                href="/staff/explorer"
-                className="btn w-full justify-center"
-                style={{
-                  fontSize: "11px",
-                  padding: "6px 8px",
-                  textDecoration: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "5px",
-                }}
-              >
-                <Network size={12} /> Org Explorer
-              </Link>
-              <Link
-                href="/staff/reports"
-                className="btn btn-primary w-full justify-center"
-                style={{
-                  fontSize: "11px",
-                  padding: "6px 8px",
-                  textDecoration: "none",
-                }}
-              >
-                Salary Reports & Payroll <ArrowUpRight size={12} />
-              </Link>
-              <Link
-                href="/staff/inactive"
-                className="btn w-full justify-center"
-                style={{
-                  fontSize: "11px",
-                  padding: "6px 8px",
-                  textDecoration: "none",
-                }}
-              >
-                Inactive Staff <ArrowRight size={12} />
-              </Link>
-            </div>
-          </aside>
-
           {/* Main Grid Content */}
           <div>
             <div className="card !p-3" style={{ marginBottom: "0px" }}>
@@ -390,7 +311,6 @@ export default function Screen20StaffList() {
               )}
             </div>
           </div>
-        </div>
       </ScreenFrame>
       </div>
 
