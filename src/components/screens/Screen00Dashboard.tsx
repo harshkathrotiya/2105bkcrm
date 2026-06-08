@@ -64,6 +64,7 @@ export default function Screen00Dashboard() {
   const [assetSummary, setAssetSummary] = useState<{ totalValue: number; totalCount: number } | null>(null);
   const [loadingAsset, setLoadingAsset] = useState(true);
   const [activePieIndex, setActivePieIndex] = useState<number | null>(null);
+  const [showAllActivities, setShowAllActivities] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -298,11 +299,10 @@ export default function Screen00Dashboard() {
       }
     });
 
-    // Sort by timestamp desc and take the latest 5
+    // Sort by timestamp desc
     return list
       .filter((act) => act.timestampMs > 0)
-      .sort((a, b) => b.timestampMs - a.timestampMs)
-      .slice(0, 5);
+      .sort((a, b) => b.timestampMs - a.timestampMs);
   }, [inquiries, clients, quotations, invoices]);
 
   const getRelativeTime = (dateStr: string) => {
@@ -395,14 +395,23 @@ export default function Screen00Dashboard() {
     );
   }
 
-  const kpis = [
+  const kpis: {
+    label: string;
+    value: string;
+    sub: string;
+    color: string;
+    iconColor: string;
+    iconBg?: string;
+    icon: any;
+    href: string;
+    valColor?: string;
+  }[] = [
     { 
       label: "Active Events", 
       value: String(activeEventsCount), 
       sub: "Confirmed events deployed", 
       color: "var(--bl)", 
       iconColor: "#3b82f6", 
-      iconBg: "rgba(59, 130, 246, 0.1)",
       icon: Calendar,
       href: "/inquiries" 
     },
@@ -410,9 +419,8 @@ export default function Screen00Dashboard() {
       label: "Pending Quotations", 
       value: String(pendingQuotesCount), 
       sub: "Awaiting client approval", 
-      color: "var(--yl)", 
-      iconColor: "#eab308", 
-      iconBg: "rgba(234, 179, 8, 0.1)",
+      color: "var(--bl)", 
+      iconColor: "var(--bl)", 
       icon: FileText,
       href: "/quotations" 
     },
@@ -420,10 +428,9 @@ export default function Screen00Dashboard() {
       label: "Payments Outstanding", 
       value: `₹${fmt(pendingPaymentsTotal)}`, 
       sub: "From pending & partial invoices", 
-      color: "var(--rd)", 
+      color: "var(--bl)", 
       valColor: "var(--sem-rd-tx)", 
-      iconColor: "#ef4444", 
-      iconBg: "rgba(239, 68, 68, 0.1)",
+      iconColor: "var(--bl)",
       icon: AlertCircle,
       href: "/invoices?status=Unpaid" 
     },
@@ -431,10 +438,9 @@ export default function Screen00Dashboard() {
       label: "Collected (YTD)", 
       value: `₹${fmt(ytdCollected)}`, 
       sub: "Advance + balance received this year", 
-      color: "var(--gr)", 
+      color: "var(--bl)", 
       valColor: "var(--sem-gr-tx)", 
-      iconColor: "#10b981", 
-      iconBg: "rgba(16, 185, 129, 0.1)",
+      iconColor:"var(--bl)", 
       icon: IndianRupee,
       href: "/invoices" 
     },
@@ -442,10 +448,9 @@ export default function Screen00Dashboard() {
       label: "Total Asset Value", 
       value: `₹${fmt(assetSummary?.totalValue || 0)}`, 
       sub: `Valuation of ${assetSummary?.totalCount || 0} items`, 
-      color: "var(--gr)", 
+      color: "var(--bl)", 
       iconColor: "#10b981", 
-      iconBg: "rgba(16, 185, 129, 0.1)",
-      icon: Package,
+     icon: Package,
       href: "/equipment" 
     },
   ];
@@ -524,7 +529,7 @@ export default function Screen00Dashboard() {
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div className="met-l" style={{ color: "var(--tx3)", fontSize: "12px", fontWeight: 500, textTransform: "capitalize", letterSpacing: "normal" }}>{k.label}</div>
-                  <div style={{ color: k.iconColor, background: k.iconBg, padding: "6px", borderRadius: "8px" }} className="transition-transform group-hover:scale-110">
+                  <div style={{ color: k.iconColor, background: k.iconBg || "var(--s2)", padding: "6px", borderRadius: "8px" }} className="transition-transform group-hover:scale-110">
                     <Icon size={16} strokeWidth={2} />
                   </div>
                 </div>
@@ -809,14 +814,14 @@ export default function Screen00Dashboard() {
                   <Clock size={11} /> Live Feed
                 </span>
               </div>
-              
+
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 {recentActivities.length === 0 ? (
                   <div style={{ padding: "20px 0", textAlign: "center", color: "var(--tx3)", fontSize: "12px" }}>
                     No recent activities recorded.
                   </div>
                 ) : (
-                  recentActivities.map((act, idx) => {
+                  (showAllActivities ? recentActivities : recentActivities.slice(0, 5)).map((act, idx) => {
                     let Icon = CheckCircle2;
                     let iconColor = "#10b981"; // green
                     let iconBg = "rgba(16, 185, 129, 0.1)";
@@ -841,16 +846,16 @@ export default function Screen00Dashboard() {
 
                     return (
                       <div key={act.id} className="relative flex gap-3 items-start group">
-                        {idx < recentActivities.length - 1 && (
-                          <div 
-                            style={{ 
-                              position: "absolute", 
-                              left: "14px", 
-                              top: "28px", 
-                              bottom: "-20px", 
-                              width: "1px", 
-                              background: "var(--b1)" 
-                            }} 
+                        {idx < (showAllActivities ? recentActivities.length : Math.min(5, recentActivities.length)) - 1 && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              left: "14px",
+                              top: "28px",
+                              bottom: "-20px",
+                              width: "1px",
+                              background: "var(--b1)"
+                            }}
                           />
                         )}
 
@@ -881,6 +886,60 @@ export default function Screen00Dashboard() {
                     );
                   })
                 )}
+              </div>
+
+              <div style={{ marginTop: "16px", display: "flex", gap: "8px" }}>
+                {recentActivities.length > 5 && (
+                  <button
+                    onClick={() => setShowAllActivities((prev) => !prev)}
+                    style={{
+                      flex: 1,
+                      padding: "8px",
+                      fontSize: "12px",
+                      fontWeight: 500,
+                      color: "var(--tx2)",
+                      background: "transparent",
+                      border: "1px solid var(--b1)",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      transition: "background 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--s2)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <ArrowRight size={12} style={{ transform: showAllActivities ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }} />
+                    {showAllActivities ? "Show Less" : `Show All ${recentActivities.length}`}
+                  </button>
+                )}
+                <Link
+                  href="/activity"
+                  style={{
+                    flex: 1,
+                    padding: "8px",
+                    fontSize: "12px",
+                    fontWeight: 500,
+                    color: "var(--acc)",
+                    background: "transparent",
+                    border: "1px solid var(--b1)",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    textDecoration: "none",
+                    transition: "background 0.15s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--s2)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  <ArrowRight size={12} />
+                  View Full Activity Page
+                </Link>
               </div>
             </div>
           </div>
