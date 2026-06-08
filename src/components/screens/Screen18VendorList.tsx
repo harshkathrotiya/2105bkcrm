@@ -71,13 +71,10 @@ export default function Screen18VendorList() {
     isActive: boolean;
   } | null>(null);
 
-  // Toast State
-  const [toast, setToast] = useState<{ show: boolean; msg: string }>({ show: false, msg: "" });
   const [saving, setSaving] = useState(false);
 
   const triggerToast = (msg: string) => {
-    setToast({ show: true, msg });
-    setTimeout(() => setToast({ show: false, msg: "" }), 2000);
+    appToast.success(msg);
   };
 
   // Load selected vendor from URL parameters
@@ -1040,20 +1037,6 @@ export default function Screen18VendorList() {
         </div>
       )}
 
-      {/* --- Toast notification --- */}
-      {toast.show && (
-        <div
-          className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-[13px] font-medium shadow-lg"
-          style={{
-            background: "var(--sem-gr-bg)",
-            border: "1px solid var(--sem-gr-bdr)",
-            color: "var(--sem-gr-tx)",
-          }}
-        >
-          <Check size={15} strokeWidth={3} />
-          <span>{toast.msg}</span>
-        </div>
-      )}
     </>
   );
 }

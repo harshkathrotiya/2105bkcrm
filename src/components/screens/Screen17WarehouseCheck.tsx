@@ -66,8 +66,6 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
   const [vendors, setVendors] = useState<(Vendor & { timesUsed: number })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
 
   // States for row assignments in progress
   const [savingRows, setSavingRows] = useState<Record<string, boolean>>({});
@@ -247,9 +245,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
         bookedTo: data.inquiry.endDate,
       });
 
-      setToastMessage(`Row #${rowNo} assigned successfully!`);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 1500);
+      toast.success(`Row #${rowNo} assigned successfully!`);
 
       // Refresh data
       const updatedWh = await api.fetchWarehouseCheck(inquiryId);
@@ -299,9 +295,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
         kitId: resolvedKitId,
       });
 
-      setToastMessage(`Row #${rowNo} assigned to rental vendor!`);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 1500);
+      toast.success(`Row #${rowNo} assigned to rental vendor!`);
 
       const updatedWh = await api.fetchWarehouseCheck(inquiryId);
       setData(updatedWh);
@@ -317,9 +311,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
       setHandoverLoading((prev) => ({ ...prev, [bookingId]: true }));
       await api.confirmEquipmentBooking(bookingId);
       
-      setToastMessage("Handover confirmed (Status set to OUT)!");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 1500);
+      toast.success("Handover confirmed (Status set to OUT)!");
 
       const updatedWh = await api.fetchWarehouseCheck(inquiryId!);
       setData(updatedWh);
@@ -351,9 +343,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
       setHandoverLoading((prev) => ({ ...prev, [bookingId]: true }));
       await api.returnEquipmentBooking(bookingId);
       
-      setToastMessage("Item returned to warehouse!");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 1500);
+      toast.success("Item returned to warehouse!");
 
       const updatedWh = await api.fetchWarehouseCheck(inquiryId!);
       setData(updatedWh);
@@ -384,9 +374,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
     try {
       setBulkConfirming(true);
       await api.bulkConfirmBookings(bookedIds);
-      setToastMessage("Bulk handover confirmed successfully!");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 1500);
+      toast.success("Bulk handover confirmed successfully!");
 
       const updatedWh = await api.fetchWarehouseCheck(inquiryId!);
       setData(updatedWh);
@@ -448,9 +436,7 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
         vehicle2Number: vehicle2Number || undefined,
         vehicle2Driver: vehicle2Driver || undefined,
       });
-      setToastMessage("Logistics details saved successfully!");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 1500);
+      toast.success("Logistics details saved successfully!");
       
       // Refresh
       const updatedWh = await api.fetchWarehouseCheck(inquiryId);
@@ -1383,20 +1369,6 @@ export default function Screen17WarehouseCheck({ inquiryIdProp, embedded }: { in
       </ScreenFrame>
 
 
-      {showToast && (
-        <div
-          className="fixed top-4 right-4 z-[9999] flex items-center gap-2 rounded-lg px-4 py-3 text-[13px] font-medium shadow-lg"
-          style={{
-            background: "var(--sem-gr-bg)",
-            border: "1px solid var(--sem-gr-bdr)",
-            color: "var(--sem-gr-tx)",
-            padding: "12px 16px",
-          }}
-        >
-          <Check size={15} strokeWidth={3} />
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </>
   );
 }
