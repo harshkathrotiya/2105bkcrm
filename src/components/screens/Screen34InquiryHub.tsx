@@ -28,6 +28,7 @@ import QuotationPDFModal from "../ui/QuotationPDFModal";
 import Screen17WarehouseCheck from "./Screen17WarehouseCheck";
 import Screen23AssignPosition from "./Screen23AssignPosition";
 import { useCurrentUser } from "@/lib/use-current-user";
+import Button from "../ui/Button";
 import {
   FileText, Receipt, Users, Building2, Wallet, CalendarDays, Pencil,
   ArrowRight, CheckCircle2, AlertCircle, ChevronRight, Trash2,
@@ -1449,26 +1450,16 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
             {/* Save button */}
             <div style={{ marginTop: 18, display: "flex", gap: 10, alignItems: "center" }}>
               {canWrite ? (
-                <button
-                  className={`btn btn-success${!inquiry || saving ? " opacity-50" : ""}`}
-                  onClick={handleSave}
-                  disabled={!inquiry || saving}
-                  style={{ fontSize: 13 }}
-                >
-                  {saving ? "Saving…" : existingQuotation ? "Update quotation" : "Save quotation"}
-                </button>
+                <Button variant="success" loading={saving} disabled={!inquiry} onClick={handleSave} style={{ fontSize: 13 }}>
+                  {existingQuotation ? "Update quotation" : "Save quotation"}
+                </Button>
               ) : (
                 <span className="text-[11px] text-tx3">View only — you don&apos;t have {existingQuotation ? "edit" : "create"} access.</span>
               )}
               {canWrite && existingQuotation && (
-                <button
-                  className={`btn text-[12px]${saving ? " opacity-50" : ""}`}
-                  onClick={handleCreateRevision}
-                  disabled={saving}
-                  title="Creates a new revision with an incremented version number"
-                >
+                <Button loading={saving} className="text-[12px]" onClick={handleCreateRevision} title="Creates a new revision with an incremented version number">
                   + Create Revision
-                </button>
+                </Button>
               )}
               {existingQuotation && (
                 <button className="btn text-[12px]" onClick={() => setShowPdfModal(true)}>
@@ -1754,9 +1745,9 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                         Invoice will be: <strong>₹{fmt(Math.round(quotation.total * 0.5))}</strong> advance + <strong>₹{fmt(quotation.total - Math.round(quotation.total * 0.5))}</strong> balance
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
-                        <button className="btn btn-success" onClick={doApprove} disabled={approving}>
-                          {approving ? "Approving…" : <><Check size={13} strokeWidth={3} /> Confirm approval</>}
-                        </button>
+                        <Button variant="success" loading={approving} onClick={doApprove}>
+                          <Check size={13} strokeWidth={3} /> Confirm approval
+                        </Button>
                         <button className="btn" onClick={() => setShowApprove(false)}>Cancel</button>
                       </div>
                     </div>

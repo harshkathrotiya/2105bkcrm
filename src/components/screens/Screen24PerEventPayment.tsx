@@ -12,6 +12,7 @@ import * as api from "@/lib/api";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
+import Button from "../ui/Button";
 import type { Inquiry, Quotation, StaffAssignment } from "@/lib/types";
 
 interface GroupedStaffPayment {
@@ -268,13 +269,14 @@ export default function Screen24PerEventPayment() {
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href={`/inquiries/${inquiryId}`} className="btn"><ArrowLeft size={13} /> Back to inquiry</Link>
             {canPay && (
-              <button
+              <Button
+                variant="success"
                 onClick={handlePayAllPending}
-                className="btn btn-success"
-                disabled={bulkSubmitting || aggregates.pending === 0}
+                loading={bulkSubmitting}
+                disabled={aggregates.pending === 0}
               >
-                {bulkSubmitting ? "Processing..." : "Pay All Pending"}
-              </button>
+                Pay All Pending
+              </Button>
             )}
           </div>
         }
@@ -450,14 +452,14 @@ export default function Screen24PerEventPayment() {
                               value={referenceNos[g.staffId] || ""}
                               onChange={(e) => setReferenceNos((prev) => ({ ...prev, [g.staffId]: e.target.value }))}
                             />
-                            <button
+                            <Button
+                              variant="success"
                               onClick={() => handleMarkPaid(g.staffId)}
-                              className="btn btn-success"
                               style={{ padding: "4px 10px", fontSize: "11px", height: "26px" }}
-                              disabled={submitting === g.staffId}
+                              loading={submitting === g.staffId}
                             >
-                              {submitting === g.staffId ? "Processing..." : "Mark Paid"}
-                            </button>
+                              Mark Paid
+                            </Button>
                           </div>
                         ) : (
                           <div style={{ fontSize: "11px", color: "var(--tx3)", borderTop: "1px solid #4A3010", paddingTop: "10px" }}>

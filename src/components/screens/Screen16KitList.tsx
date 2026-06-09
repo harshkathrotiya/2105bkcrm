@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AlertTriangle, X, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
@@ -49,20 +50,21 @@ export default function Screen16KitList() {
 
   // Search & Pagination
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery);
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
 
   // Reset pagination when search changes
   useEffect(() => {
     setPage(1);
-  }, [searchQuery]);
+  }, [debouncedSearch]);
 
   // Filter kits by search query
   const filteredKits = useMemo(() => {
-    if (!searchQuery.trim()) return kits;
-    const q = searchQuery.toLowerCase();
+    if (!debouncedSearch.trim()) return kits;
+    const q = debouncedSearch.toLowerCase();
     return kits.filter((kit) => kit.name.toLowerCase().includes(q));
-  }, [kits, searchQuery]);
+  }, [kits, debouncedSearch]);
 
   // Paginate filtered kits
   const totalPages = Math.max(1, Math.ceil(filteredKits.length / ITEMS_PER_PAGE));

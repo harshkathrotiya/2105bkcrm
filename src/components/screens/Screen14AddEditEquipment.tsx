@@ -12,6 +12,7 @@ import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
+import Button from "../ui/Button";
 
 interface Screen14AddEditEquipmentProps {
   equipmentId?: number;
@@ -345,19 +346,14 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href="/equipment" className={`btn ${saving ? "opacity-50 pointer-events-none" : ""}`}>Cancel</Link>
             {isEdit && canDelete && (
-              <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={saving}>
-                {saving ? "Deleting..." : "Retire/Delete"}
-              </button>
+              <Button variant="danger" loading={saving} onClick={handleDelete}>
+                Retire/Delete
+              </Button>
             )}
             {canSave && (
-              <button
-                type="button"
-                className={`btn btn-primary ${!allRequired || saving ? "opacity-50" : ""}`}
-                onClick={() => handleSave()}
-                disabled={!allRequired || saving}
-              >
-                {saving ? "Saving..." : (isEdit ? "Save Changes" : "Create Item")}
-              </button>
+              <Button variant="primary" loading={saving} disabled={!allRequired} onClick={() => handleSave()}>
+                {isEdit ? "Save Changes" : "Create Item"}
+              </Button>
             )}
           </div>
         }

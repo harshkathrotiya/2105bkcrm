@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
@@ -30,6 +31,7 @@ export default function Screen35EquipmentHistory() {
   const [rows, setRows] = useState<EquipmentHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function Screen35EquipmentHistory() {
       setLoading(true);
       try {
         const data = await api.fetchEquipmentHistory({
-          search: search || undefined,
+          search: debouncedSearch || undefined,
           status: statusFilter || undefined,
         });
         if (active) setRows(data);
@@ -48,13 +50,9 @@ export default function Screen35EquipmentHistory() {
         if (active) setLoading(false);
       }
     };
-    // Debounce search typing slightly
-    const t = setTimeout(load, search ? 250 : 0);
-    return () => {
-      active = false;
-      clearTimeout(t);
-    };
-  }, [search, statusFilter]);
+    load();
+    return () => { active = false; };
+  }, [debouncedSearch, statusFilter]);
 
   return (
     <>

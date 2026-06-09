@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
@@ -8,7 +9,7 @@ import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
 import { useClients, useInquiries, useQuotations, useInvoices } from "@/lib/store";
 import { useCurrentUser } from "@/lib/use-current-user";
-import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
+import { ShimmerBar } from "../ui/LoadingSkeleton";
 import Pagination from "../ui/Pagination";
 
 const ITEMS_PER_PAGE = 20;
@@ -25,13 +26,14 @@ export default function Screen01ClientList() {
 
   const loading = clientsLoading || inquiriesLoading || quotationsLoading;
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("All");
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     let list = clients;
-    if (search) {
-      const q = search.toLowerCase();
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
       list = list.filter(
         (c) =>
           c.name.toLowerCase().includes(q) ||
@@ -44,7 +46,7 @@ export default function Screen01ClientList() {
       list = list.filter((c) => c.status === statusFilter);
     }
     return list;
-  }, [clients, search, statusFilter]);
+  }, [clients, debouncedSearch, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice(
@@ -112,7 +114,7 @@ export default function Screen01ClientList() {
                   {Array.from({ length: 8 }).map((_, ri) => (
                     <tr key={ri} style={{ cursor: "default" }}>
                       <td>
-                        <ShimmerBar width="32px" height="32px" radius="50%" style={{ animationDelay: `${ri * 60 + 200}ms` }} />
+                        <ShimmerBar width="28px" height="28px" radius="50%" style={{ animationDelay: `${ri * 60 + 200}ms` }} />
                       </td>
                       <td>
                         <ShimmerBar width="160px" height="13px" style={{ animationDelay: `${ri * 60 + 210}ms`, marginBottom: "4px" }} />

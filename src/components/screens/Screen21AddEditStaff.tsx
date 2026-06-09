@@ -12,6 +12,7 @@ import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import { useToast } from "../ui/Toast";
 import { STAFF_ROLES } from "@/lib/validate";
+import Button from "../ui/Button";
 import type { Staff } from "@/lib/types";
 
 interface FormData {
@@ -242,13 +243,9 @@ export default function Screen21AddEditStaff({ staffId }: { staffId?: number }) 
           <div style={{ display: "flex", gap: "8px" }}>
             <Link href="/staff" className={`btn ${saving ? "opacity-50 pointer-events-none" : ""}`}>Cancel</Link>
             {canWrite && (
-              <button
-                onClick={handleSave}
-                className={`btn btn-success ${!allRequiredValid || saving ? "opacity-50" : ""}`}
-                disabled={!allRequiredValid || saving}
-              >
-                {saving ? "Saving..." : (isEditMode ? "Save Changes" : "Save Staff")}
-              </button>
+              <Button variant="success" loading={saving} disabled={!allRequiredValid} onClick={handleSave}>
+                {isEditMode ? "Save Changes" : "Save Staff"}
+              </Button>
             )}
           </div>
         }

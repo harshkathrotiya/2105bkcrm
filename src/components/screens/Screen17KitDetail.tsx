@@ -13,6 +13,7 @@ import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { useKits, useEquipment } from "@/lib/store";
 import { useCurrentUser } from "@/lib/use-current-user";
+import Button from "../ui/Button";
 import * as api from "@/lib/api";
 import type { Equipment, Kit } from "@/lib/types";
 
@@ -466,14 +467,9 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                         />
                       </div>
                     )}
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={handleSetMainBody}
-                      disabled={!selectedMainBodyId || settingMainBody || !!selectedMainBodyQtyError}
-                    >
-                      {settingMainBody ? "Linking..." : "Set Main Body"}
-                    </button>
+                    <Button variant="primary" loading={settingMainBody} disabled={!selectedMainBodyId || !!selectedMainBodyQtyError} onClick={handleSetMainBody}>
+                      Set Main Body
+                    </Button>
                   </div>
                   {selectedMainBodyQtyError && (
                     <div style={{ color: "var(--rd)", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" }}>
@@ -568,14 +564,9 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                     placeholder="Qty"
                   />
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleAddAccessory}
-                  disabled={!selectedAccessoryId || addingAccessory || !!accessoryQtyError}
-                >
-                  {addingAccessory ? "Adding..." : "Add Equipment"}
-                </button>
+                <Button variant="primary" loading={addingAccessory} disabled={!selectedAccessoryId || !!accessoryQtyError} onClick={handleAddAccessory}>
+                  Add Equipment
+                </Button>
               </div>
               {accessoryQtyError && (
                 <div style={{ color: "var(--rd)", fontSize: "11px", marginTop: "6px", display: "inline-flex", alignItems: "center", gap: "4px" }}>

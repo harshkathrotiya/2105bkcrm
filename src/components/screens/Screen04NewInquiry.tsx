@@ -10,6 +10,7 @@ import { useClients, useInquiries, useCalendar, useQuotations, useInvoices } fro
 import { calcDays, calcHours, timeToMinutes } from "@/lib/utils";
 import { generateId } from "@/lib/types";
 import { useCurrentUser } from "@/lib/use-current-user";
+import Button from "../ui/Button";
 
 const TIME_OPTIONS = [
   "06:00 AM", "06:30 AM", "07:00 AM", "07:30 AM", "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
@@ -333,13 +334,9 @@ export default function Screen04NewInquiry() {
               {!editInquiry && (
                 <button className="btn" onClick={handleReset} disabled={saving}>Reset</button>
               )}
-              <button
-                className={`btn btn-success ${!canSave || saving ? "opacity-50" : ""}`}
-                onClick={handleSave}
-                disabled={!canSave || saving}
-              >
-                {saving ? "Saving..." : editInquiry ? "Update inquiry" : "Save inquiry"}
-              </button>
+              <Button variant="success" loading={saving} disabled={!canSave} onClick={handleSave}>
+                {editInquiry ? "Update inquiry" : "Save inquiry"}
+              </Button>
             </>
           ) : (
             <span className="text-[11px] text-tx3">View only — you don&apos;t have {isEditing ? "edit" : "create"} access.</span>

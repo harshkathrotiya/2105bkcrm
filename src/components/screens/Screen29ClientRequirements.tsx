@@ -7,6 +7,7 @@ import { Check, Printer, ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
+import Button from "../ui/Button";
 import LoadingSkeleton from "../ui/LoadingSkeleton";
 import { useToast } from "../ui/Toast";
 import * as api from "@/lib/api";
@@ -114,9 +115,9 @@ export default function Screen29ClientRequirements({ inquiryId }: Props) {
           <div style={{ display: "flex", gap: "8px" }}>
             <button className="btn" onClick={() => window.print()}><Printer size={13} /> Print / Save PDF</button>
             {canEdit && (
-              <button className="btn btn-success" onClick={handleSave} disabled={saving}>
-                {saving ? "Saving..." : <><Check size={13} strokeWidth={3} /> Save Requirements</>}
-              </button>
+              <Button variant="success" loading={saving} onClick={handleSave}>
+                Save requirements
+              </Button>
             )}
             <Link href={`/inquiries`} className="btn">Back to List</Link>
           </div>

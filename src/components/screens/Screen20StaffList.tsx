@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Network, ArrowUpRight, ArrowRight } from "lucide-react";
@@ -22,6 +23,7 @@ export default function Screen20StaffList() {
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery);
   const [sidebarFilter, setSidebarFilter] = useState<"ALL" | "INHOUSE" | "EXTERNAL">("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "Available" | "Deployed">("ALL");
   const [paymentFilter, setPaymentFilter] = useState<"ALL" | "PER_DAY" | "MONTHLY">("ALL");
@@ -52,9 +54,9 @@ export default function Screen20StaffList() {
     return staff.filter((s) => {
       // Search term match
       const matchesSearch =
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.phone.includes(searchQuery);
+        s.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        s.role.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        s.phone.includes(debouncedSearch);
 
       // Dropdown status match
       const matchesStatus = statusFilter === "ALL" || s.status === statusFilter;
@@ -67,7 +69,7 @@ export default function Screen20StaffList() {
 
       return matchesSearch && matchesStatus && matchesPayment && matchesType;
     });
-  }, [staff, searchQuery, statusFilter, paymentFilter, sidebarFilter]);
+  }, [staff, debouncedSearch, statusFilter, paymentFilter, sidebarFilter]);
 
   // Paginate list
   const paginatedStaff = useMemo(() => {
@@ -180,7 +182,7 @@ export default function Screen20StaffList() {
                       {Array.from({ length: 8 }).map((_, ri) => (
                         <tr key={ri} style={{ cursor: "default" }}>
                           <td>
-                            <ShimmerBar width="32px" height="32px" radius="50%" style={{ animationDelay: `${ri * 60 + 350}ms` }} />
+                            <ShimmerBar width="28px" height="28px" radius="50%" style={{ animationDelay: `${ri * 60 + 350}ms` }} />
                           </td>
                           <td>
                             <ShimmerBar width="140px" height="13px" style={{ animationDelay: `${ri * 60 + 360}ms`, marginBottom: "4px" }} />

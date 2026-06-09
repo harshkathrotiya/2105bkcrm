@@ -13,6 +13,7 @@ import { useCurrentUser } from "@/lib/use-current-user";
 import * as api from "@/lib/api";
 import type { Inquiry, Quotation, Staff, StaffAssignment } from "@/lib/types";
 import { useToast } from "../ui/Toast";
+import Button from "../ui/Button";
 
 interface PositionRow {
   no: number;
@@ -721,13 +722,9 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
             {/* Save button — only shown in embedded (tab) mode */}
             {embedded && canAssign && (
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "16px" }}>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => setShowConfirmSave(true)}
-                  disabled={saving || Object.keys(selectedStaff).length === 0}
-                >
-                  {saving ? "Saving…" : "Save Assignments"}
-                </button>
+                <Button variant="primary" loading={saving} disabled={Object.keys(selectedStaff).length === 0} onClick={() => setShowConfirmSave(true)}>
+                  Save Assignments
+                </Button>
               </div>
             )}
 
@@ -870,13 +867,9 @@ export default function Screen23AssignPosition({ inquiryIdProp, embedded }: { in
                       >
                         Cancel
                       </button>
-                      <button
-                        className="btn btn-success"
-                        onClick={() => { setShowConfirmSave(false); handleSave(); }}
-                        disabled={saving}
-                      >
-                        {saving ? "Saving…" : <><Check size={13} strokeWidth={3} /> Confirm & save</>}
-                      </button>
+                      <Button variant="success" loading={saving} onClick={() => { setShowConfirmSave(false); handleSave(); }}>
+                        <Check size={13} strokeWidth={3} /> Confirm & save
+                      </Button>
                     </div>
                   </div>
                 </div>

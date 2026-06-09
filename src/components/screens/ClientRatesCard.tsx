@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import { X } from "lucide-react";
 import * as api from "@/lib/api";
 import type { Equipment } from "@/lib/types";
@@ -19,6 +20,7 @@ export default function ClientRatesCard({ clientId }: { clientId: string }) {
   const [drafts, setDrafts] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [savingId, setSavingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function ClientRatesCard({ clientId }: { clientId: string }) {
   }, [clientId]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     const list = q
       ? equipment.filter((e) => e.productName.toLowerCase().includes(q))
       : equipment;
@@ -57,7 +59,7 @@ export default function ClientRatesCard({ clientId }: { clientId: string }) {
       if (ao !== bo) return ao - bo;
       return a.productName.localeCompare(b.productName);
     });
-  }, [equipment, search, overrides]);
+  }, [equipment, debouncedSearch, overrides]);
 
   const saveRate = async (eq: Equipment) => {
     const raw = drafts[eq.id];

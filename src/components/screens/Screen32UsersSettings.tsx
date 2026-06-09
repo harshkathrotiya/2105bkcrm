@@ -5,6 +5,7 @@ import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
+import Button from "../ui/Button";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { useCurrentUser } from "@/lib/use-current-user";
@@ -45,6 +46,7 @@ export default function Screen32UsersSettings() {
   const [editActive, setEditActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -118,11 +120,14 @@ export default function Screen32UsersSettings() {
       danger: true,
     });
     if (!ok) return;
+    setDeletingId(u.id);
     try {
       await api.deleteUser(u.id);
       load();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to delete");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -187,12 +192,14 @@ export default function Screen32UsersSettings() {
                       <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
                         <button className="btn btn-sm" onClick={() => openEdit(u)}>Edit</button>
                         {u.id !== currentUser?.id && (
-                          <button
-                            className="btn btn-danger btn-sm"
+                          <Button
+                            variant="danger"
+                            className="btn-sm"
+                            loading={deletingId === u.id}
                             onClick={() => handleDelete(u)}
                           >
                             Delete
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -253,9 +260,9 @@ export default function Screen32UsersSettings() {
 
             <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
               <button className="btn" onClick={() => setShowCreate(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleCreate} disabled={creating}>
-                {creating ? "Creating…" : "Create user"}
-              </button>
+              <Button variant="primary" loading={creating} onClick={handleCreate}>
+                Create user
+              </Button>
             </div>
           </div>
         </div>
@@ -339,9 +346,9 @@ export default function Screen32UsersSettings() {
 
             <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
               <button className="btn" onClick={() => setEditUser(null)}>Cancel</button>
-              <button className="btn btn-success" onClick={handleSave} disabled={saving}>
-                {saving ? "Saving…" : "Save changes"}
-              </button>
+              <Button variant="success" loading={saving} onClick={handleSave}>
+                Save changes
+              </Button>
             </div>
           </div>
         </div>

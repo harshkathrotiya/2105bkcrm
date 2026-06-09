@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import {
@@ -108,6 +109,7 @@ export default function ScreenActivityFeed() {
   const { clients } = useClients();
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [activeFilters, setActiveFilters] = useState<ActivityType[]>([]);
 
   const fmt = (n: number) => n.toLocaleString("en-IN");
@@ -204,8 +206,8 @@ export default function ScreenActivityFeed() {
     if (activeFilters.length > 0) {
       result = result.filter((a) => activeFilters.includes(a.type));
     }
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
       result = result.filter(
         (a) =>
           a.title.toLowerCase().includes(q) ||
@@ -213,7 +215,7 @@ export default function ScreenActivityFeed() {
       );
     }
     return result;
-  }, [allActivities, activeFilters, search]);
+  }, [allActivities, activeFilters, debouncedSearch]);
 
   const toggleFilter = (type: ActivityType) => {
     setActiveFilters((prev) =>

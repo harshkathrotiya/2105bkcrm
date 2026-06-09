@@ -13,6 +13,7 @@ import { useClients, useInquiries, useQuotations, useInvoices } from "@/lib/stor
 import { AVATAR_PALETTE } from "@/lib/constants";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { useCurrentUser } from "@/lib/use-current-user";
+import Button from "../ui/Button";
 
 interface FormData {
   name: string;
@@ -275,18 +276,14 @@ export default function Screen02EditClient({
               </Link>
             )}
             {canDelete && (
-              <button className="btn text-rd" onClick={handleDelete} disabled={saving}>
-                {saving ? "Deleting..." : "Delete"}
-              </button>
+              <Button className="text-rd" loading={saving} onClick={handleDelete}>
+                Delete
+              </Button>
             )}
             {canEdit ? (
-              <button
-                className={`btn btn-success ${!allRequired || saving ? "opacity-50" : ""}`}
-                onClick={handleSave}
-                disabled={!allRequired || saving}
-              >
-                {saving ? "Updating..." : "Update client"}
-              </button>
+              <Button variant="success" loading={saving} disabled={!allRequired} onClick={handleSave}>
+                Update client
+              </Button>
             ) : (
               <span className="text-[11px] text-tx3">View only — you don&apos;t have edit access.</span>
             )}

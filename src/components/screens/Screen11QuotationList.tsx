@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
@@ -45,6 +46,7 @@ export default function Screen11QuotationList() {
   const { inquiries } = useInquiries();
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("All");
   const [deptFilter, setDeptFilter] = useState<'All'|'VIDEO'|'LED'|'MERGED'>('All');
   const [page, setPage] = useState(1);
@@ -84,8 +86,8 @@ export default function Screen11QuotationList() {
   // Filter chains
   const filteredChains = useMemo(() => {
     let chains = allChains;
-    if (search) {
-      const q = search.toLowerCase();
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
       chains = chains.filter((chain) =>
         // Show chain if any quotation in the chain matches
         chain.quotations.some(
@@ -108,7 +110,7 @@ export default function Screen11QuotationList() {
       });
     }
     return chains;
-  }, [allChains, search, statusFilter, deptFilter, inquiries]);
+  }, [allChains, debouncedSearch, statusFilter, deptFilter, inquiries]);
 
   const totalPages = Math.max(
     1,

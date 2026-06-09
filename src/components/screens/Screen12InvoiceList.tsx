@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import SectionHeader from "../ui/SectionHeader";
@@ -34,6 +35,7 @@ export default function Screen12InvoiceList() {
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get("status") ?? "All";
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState(
     ["All", "Paid", "Partial paid", "Unpaid"].includes(initialStatus) ? initialStatus : "All"
   );
@@ -44,8 +46,8 @@ export default function Screen12InvoiceList() {
     let list = [...invoices].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
-    if (search) {
-      const q = search.toLowerCase();
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
       list = list.filter(
         (inv) =>
           inv.clientName.toLowerCase().includes(q) ||
@@ -66,7 +68,7 @@ export default function Screen12InvoiceList() {
       list = [];
     }
     return list;
-  }, [invoices, search, statusFilter, selectedDepts, inquiries, quotations]);
+  }, [invoices, debouncedSearch, statusFilter, selectedDepts, inquiries, quotations]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice(

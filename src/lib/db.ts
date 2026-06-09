@@ -19,8 +19,8 @@ const pool =
   new pg.Pool({
     connectionString: process.env.DATABASE_URL || process.env.DIRECT_URL!,
     // Vercel: 1 connection per serverless instance.
-    // Local: 2 — Aiven free tier caps total connections at ~25; keep headroom.
-    max: isVercel ? 1 : 2,
+    // Local: 10 — allow concurrent API requests to execute in parallel without pool exhaustion.
+    max: isVercel ? 1 : 10,
     // Release idle connections after 10 s so Neon doesn't close them first.
     idleTimeoutMillis: 10_000,
     // Give up acquiring a connection after 15 s rather than hanging forever.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { X, Check } from "lucide-react";
@@ -11,6 +12,7 @@ import Timeline from "../ui/Timeline";
 import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import { useVendors } from "@/lib/vendors-context";
 import { useCurrentUser } from "@/lib/use-current-user";
+import Button from "../ui/Button";
 import * as api from "@/lib/api";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
@@ -43,6 +45,7 @@ export default function Screen18VendorList() {
 
   // Search and Filter States
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery);
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
 
   // Modal / Drawer state for Add and Edit
@@ -353,9 +356,9 @@ export default function Screen18VendorList() {
   const filteredVendors = useMemo(() => {
     return vendors.filter((v) => {
       const matchesSearch =
-        v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (v.specialization && v.specialization.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (v.city && v.city.toLowerCase().includes(searchQuery.toLowerCase()));
+        v.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        (v.specialization && v.specialization.toLowerCase().includes(debouncedSearch.toLowerCase())) ||
+        (v.city && v.city.toLowerCase().includes(debouncedSearch.toLowerCase()));
 
       const matchesStatus =
         statusFilter === "ALL" ||
@@ -364,7 +367,7 @@ export default function Screen18VendorList() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [vendors, searchQuery, statusFilter]);
+  }, [vendors, debouncedSearch, statusFilter]);
 
   // Compute Metrics
   const metrics = useMemo(() => {
@@ -986,9 +989,9 @@ export default function Screen18VendorList() {
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "12px" }}>
                 <button type="button" className="btn" onClick={() => setShowAddModal(false)} disabled={saving}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? "Saving..." : "Save Vendor"}
-                </button>
+                <Button type="submit" variant="primary" loading={saving}>
+                  Save Vendor
+                </Button>
               </div>
             </form>
           </div>
@@ -1098,9 +1101,9 @@ export default function Screen18VendorList() {
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "12px" }}>
                 <button type="button" className="btn" onClick={() => setShowEditModal(false)} disabled={saving}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? "Updating..." : "Update Vendor"}
-                </button>
+                <Button type="submit" variant="primary" loading={saving}>
+                  Update Vendor
+                </Button>
               </div>
             </form>
           </div>

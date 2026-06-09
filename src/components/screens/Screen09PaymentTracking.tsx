@@ -5,6 +5,7 @@ import { Check, Lock, Unlock, PartyPopper } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
+import Button from "../ui/Button";
 import Timeline from "../ui/Timeline";
 import { useRouter } from "next/navigation";
 import { useInvoices, useQuotations, useInquiries } from "@/lib/store";
@@ -82,6 +83,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
   const [formRef, setFormRef] = useState("");
   const [formDate, setFormDate] = useState("");
   const [formNotes, setFormNotes] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -97,7 +99,7 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
     };
   }, []);
 
-  const handleRecordPayment = () => {
+  const handleRecordPayment = async () => {
     if (!invoice) return;
     const isAdvance = formType === "Advance";
     if (isAdvance && invoice.advanceReceived) return;
@@ -128,23 +130,39 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
       payload.status = invoice.advanceReceived ? "Paid" : "Partial paid";
     }
 
-    dispatchInvoices({
-      type: "UPDATE_INVOICE",
-      payload,
-    });
-    router.push("/invoices/" + invoice.id);
+    setSaving(true);
+    try {
+      dispatchInvoices({
+        type: "UPDATE_INVOICE",
+        payload,
+      });
+      router.push("/invoices/" + invoice.id);
+    } catch (err) {
+      toast.error("Failed to record payment. Please try again.");
+      console.error("handleRecordPayment error:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleMarkHDD = () => {
+  const handleMarkHDD = async () => {
     if (!invoice) return;
-    dispatchInvoices({
-      type: "UPDATE_INVOICE",
-      payload: {
-        id: invoice.id,
-        hddDelivered: !invoice.hddDelivered,
-      },
-    });
-    router.push("/invoices/" + invoice.id);
+    setSaving(true);
+    try {
+      dispatchInvoices({
+        type: "UPDATE_INVOICE",
+        payload: {
+          id: invoice.id,
+          hddDelivered: !invoice.hddDelivered,
+        },
+      });
+      router.push("/invoices/" + invoice.id);
+    } catch (err) {
+      toast.error("Failed to update HDD delivery status. Please try again.");
+      console.error("handleMarkHDD error:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleToggleDeinstall = async () => {
@@ -155,29 +173,32 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
     }
 
     const nextVal = !invoice.deinstallDone;
+    setSaving(true);
+    try {
+      dispatchInvoices({
+        type: "UPDATE_INVOICE",
+        payload: {
+          id: invoice.id,
+          deinstallDone: nextVal,
+        },
+      });
 
-    dispatchInvoices({
-      type: "UPDATE_INVOICE",
-      payload: {
-        id: invoice.id,
-        deinstallDone: nextVal,
-      },
-    });
-
-    if (isLed && nextVal && warehouseData?.bookings) {
-      try {
+      if (isLed && nextVal && warehouseData?.bookings) {
         const activeBookings = warehouseData.bookings.filter(
           (b: any) => b.status === "OUT" || b.status === "BOOKED"
         );
         await Promise.all(
           activeBookings.map((b: any) => api.returnEquipmentBooking(b.id))
         );
-      } catch (err) {
-        console.error("Failed to automatically return equipment bookings:", err);
       }
-    }
 
-    router.push("/invoices/" + invoice.id);
+      router.push("/invoices/" + invoice.id);
+    } catch (err) {
+      toast.error("Failed to update de-installation status. Please try again.");
+      console.error("handleToggleDeinstall error:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const fmt = (n: number) => n.toLocaleString("en-IN");
@@ -394,13 +415,15 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                 </div>
                 </fieldset>
                 {canRecordPayment && (
-                  <button
-                    className="btn btn-success w-full justify-center"
+                  <Button
+                    variant="success"
+                    loading={saving}
+                    className="w-full justify-center"
                     style={{ marginTop: "10px" }}
                     onClick={handleRecordPayment}
                   >
                     <Check size={13} strokeWidth={3} /> Record payment
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -460,13 +483,15 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                       </div>
                     )}
                     {canRecordPayment && (
-                      <button
-                        className={`btn w-full justify-center ${invoice.deinstallDone ? "btn-success" : (invoice.balanceReceived ? "btn-primary" : "")}`}
+                      <Button
+                        variant={invoice.deinstallDone ? "success" : (invoice.balanceReceived ? "primary" : "default")}
+                        loading={saving}
+                        className="w-full justify-center"
                         onClick={handleToggleDeinstall}
                         disabled={!invoice.balanceReceived}
                       >
                         <Check size={13} strokeWidth={3} /> {invoice.deinstallDone ? "De-installation done!" : "Mark de-installation done"}
-                      </button>
+                      </Button>
                     )}
                   </>
                 ) : (
@@ -483,12 +508,14 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                       </div>
                     </div>
                     {canRecordPayment && (
-                      <button
-                        className={`btn w-full justify-center ${invoice.deinstallDone ? "" : "btn-primary"}`}
+                      <Button
+                        variant={invoice.deinstallDone ? "default" : "primary"}
+                        loading={saving}
+                        className="w-full justify-center"
                         onClick={handleToggleDeinstall}
                       >
                         <Check size={13} strokeWidth={3} /> {invoice.deinstallDone ? "Mark Pending" : "Mark Deinstalled"}
-                      </button>
+                      </Button>
                     )}
                   </>
                 )}
@@ -523,15 +550,15 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                   </div>
                 </div>
                 {canRecordPayment && (
-                  <button
-                    className={`btn w-full justify-center ${
-                      invoice.balanceReceived ? "btn-success" : ""
-                    }`}
+                  <Button
+                    variant={invoice.balanceReceived ? "success" : "default"}
+                    loading={saving}
+                    className="w-full justify-center"
                     onClick={handleMarkHDD}
                     disabled={!invoice.balanceReceived && !invoice.hddDelivered}
                   >
                     <Check size={13} strokeWidth={3} /> {invoice.hddDelivered ? "HDD delivered" : "Mark HDD delivered"}
-                  </button>
+                  </Button>
                 )}
                 <div className="text-[10px] text-tx3 text-center" style={{ marginTop: "6px" }}>
                   HDD deliver only after full payment

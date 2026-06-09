@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { X, Upload, Download } from "lucide-react";
@@ -29,6 +30,7 @@ export default function Screen13EquipmentList() {
   } = useEquipment();
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,12 +47,12 @@ export default function Screen13EquipmentList() {
     refreshEquipment({
       category: categoryFilter,
       status: statusFilter || undefined,
-      search: search || undefined,
+      search: debouncedSearch || undefined,
       page: currentPage,
       limit: 20,
       department: deptFilter || undefined,
     });
-  }, [categoryFilter, statusFilter, search, currentPage, deptFilter, refreshEquipment]);
+  }, [categoryFilter, statusFilter, debouncedSearch, currentPage, deptFilter, refreshEquipment]);
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
 

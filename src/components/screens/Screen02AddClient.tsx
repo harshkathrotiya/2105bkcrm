@@ -9,6 +9,7 @@ import { TextField, TextAreaField, SelectField } from "../ui/Field";
 import { useClients } from "@/lib/store";
 import { AVATAR_PALETTE } from "@/lib/constants";
 import { useCurrentUser } from "@/lib/use-current-user";
+import Button from "../ui/Button";
 
 interface FormData {
   name: string;
@@ -137,13 +138,9 @@ export default function Screen02AddClient() {
               <button className="btn" onClick={handleReset} disabled={saving}>
                 Reset
               </button>
-              <button
-                className={`btn btn-success ${!allRequired || saving ? "opacity-50" : ""}`}
-                onClick={handleSave}
-                disabled={!allRequired || saving}
-              >
-                {saving ? "Saving..." : "Save client"}
-              </button>
+              <Button variant="success" loading={saving} disabled={!allRequired} onClick={handleSave}>
+                Save client
+              </Button>
             </>
           ) : (
             <span className="text-[11px] text-tx3">View only — you don&apos;t have create access.</span>

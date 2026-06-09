@@ -431,7 +431,7 @@ export default function Screen00Dashboard() {
                 </div>
                 <ShimmerBar width="80px" height="20px" radius="6px" style={{ animationDelay: "220ms" }} />
               </div>
-              <div style={{ width: "100%", height: 180, borderLeft: "1px solid var(--b1)", borderBottom: "1px solid var(--b1)", position: "relative", display: "flex", alignItems: "flex-end", padding: "10px" }}>
+              <div style={{ width: "100%", height: 180, position: "relative", display: "flex", alignItems: "flex-end", padding: "10px" }}>
                 <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-end", height: "100%" }}>
                   {Array.from({ length: 12 }).map((_, idx) => (
                     <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flex: 1 }}>
@@ -476,7 +476,7 @@ export default function Screen00Dashboard() {
           </div>
 
           {/* Alert shimmer banner */}
-          <div className="card" style={{ padding: "14px 16px", marginBottom: "20px", borderLeft: "4px solid var(--acc)", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="card" style={{ padding: "14px 16px", marginBottom: "20px", display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", gap: 6, color: "var(--tx2)" }}>
               <ShimmerBar width="120px" height="13px" style={{ animationDelay: "400ms" }} />
             </div>
@@ -526,7 +526,7 @@ export default function Screen00Dashboard() {
               </div>
 
               {/* Recent Activity Shimmer */}
-              <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)" }}>
+              <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)", overflow: "hidden" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                   <ShimmerBar width="110px" height="13px" style={{ animationDelay: "600ms" }} />
                   <ShimmerBar width="50px" height="11px" style={{ animationDelay: "620ms" }} />
@@ -1024,7 +1024,7 @@ export default function Screen00Dashboard() {
             </div>
 
             {/* Recent Activity Section (New) */}
-            <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)" }}>
+            <div className="card border border-b1" style={{ padding: "20px", margin: 0, borderRadius: "12px", background: "var(--s1)", overflow: "hidden" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <span className="card-t" style={{ fontSize: "13px", fontWeight: 600, color: "var(--tx2)", textTransform: "capitalize", letterSpacing: "normal", marginBottom: 0 }}>
                   Recent Activity

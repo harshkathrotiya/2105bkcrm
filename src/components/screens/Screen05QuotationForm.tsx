@@ -16,6 +16,7 @@ import { computeGst } from "@/lib/pricing";
 import * as api from "@/lib/api";
 import { useToast } from "../ui/Toast";
 import { useCurrentUser } from "@/lib/use-current-user";
+import Button from "../ui/Button";
 
 
 
@@ -565,13 +566,9 @@ export default function Screen05QuotationForm() {
         ]}
         actions={
           canWrite ? (
-            <button
-              className={`btn btn-success ${!selectedInquiry || saving ? "opacity-50" : ""}`}
-              onClick={handleSave}
-              disabled={!selectedInquiry || saving}
-            >
-              {saving ? "Saving..." : existingQuotation ? "Update quotation" : "Save quotation"}
-            </button>
+            <Button variant="success" loading={saving} disabled={!selectedInquiry} onClick={handleSave}>
+              {existingQuotation ? "Update quotation" : "Save quotation"}
+            </Button>
           ) : (
             <span className="text-[11px] text-tx3">View only — you don&apos;t have {existingQuotation ? "edit" : "create"} access.</span>
           )

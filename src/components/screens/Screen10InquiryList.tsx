@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
@@ -40,6 +41,7 @@ export default function Screen10InquiryList() {
   const loading = inquiriesLoading || clientsLoading;
 
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("All");
   const [monthFilter, setMonthFilter] = useState("All");
   const [deptFilter, setDeptFilter] = useState<'All'|'VIDEO'|'LED'|'MERGED'>('All');
@@ -64,8 +66,8 @@ export default function Screen10InquiryList() {
       list = list.filter((i) => i.department === deptFilter);
     }
 
-    if (search) {
-      const q = search.toLowerCase();
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
       list = list.filter((i) => {
         const client = clients.find((c) => c.id === i.clientId);
         const quote = quotations.find((qt) => qt.inquiryId === i.id);
@@ -92,7 +94,7 @@ export default function Screen10InquiryList() {
     }
 
     return list;
-  }, [inquiries, clients, quotations, search, statusFilter, monthFilter, deptFilter]);
+  }, [inquiries, clients, quotations, debouncedSearch, statusFilter, monthFilter, deptFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice(
