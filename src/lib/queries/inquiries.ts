@@ -42,28 +42,28 @@ function mapRow(r: any): Inquiry {
 }
 
 export async function getAllInquiries(): Promise<Inquiry[]> {
-  const rows = await db.inquiry.findMany({
+  const rows = await withRetry(() => db.inquiry.findMany({
     orderBy: { created_at: "desc" },
     include: INCLUDE_CREW_COUNT,
-  });
+  }));
   return rows.map(mapRow);
 }
 
 export async function getInquiryById(id: string): Promise<Inquiry | undefined> {
-  const row = await db.inquiry.findUnique({
+  const row = await withRetry(() => db.inquiry.findUnique({
     where: { id },
     include: INCLUDE_CREW_COUNT,
-  });
+  }));
   if (!row) return undefined;
   return mapRow(row);
 }
 
 export async function getInquiriesByClient(clientId: string): Promise<Inquiry[]> {
-  const rows = await db.inquiry.findMany({
+  const rows = await withRetry(() => db.inquiry.findMany({
     where: { client_id: clientId },
     orderBy: { start_date: "desc" },
     include: INCLUDE_CREW_COUNT,
-  });
+  }));
   return rows.map(mapRow);
 }
 

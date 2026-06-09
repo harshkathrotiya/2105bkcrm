@@ -74,7 +74,7 @@ export async function getEquipment(filters: EquipmentFilters = {}): Promise<{ it
     ];
   }
 
-  const [rows, total] = await Promise.all([
+  const [rows, total] = await withRetry(() => Promise.all([
     db.equipment.findMany({
       where,
       include: { kit: true, vendor: true, owner_staff: true },
@@ -83,7 +83,7 @@ export async function getEquipment(filters: EquipmentFilters = {}): Promise<{ it
       skip: filters.offset,
     }),
     db.equipment.count({ where }),
-  ]);
+  ]));
 
   // Derive "in use today" from active bookings covering today (date-based), rather
   // than a permanent status column. An item is in use if it — or its kit — has a
