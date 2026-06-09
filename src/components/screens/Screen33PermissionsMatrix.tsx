@@ -110,9 +110,83 @@ export default function Screen33PermissionsMatrix() {
 
   if (loading) {
     return (
-      <ScreenFrame breadcrumb="Settings › Permissions › Loading...">
-        <LoadingSkeleton rows={8} />
-      </ScreenFrame>
+      <>
+        <SectionHeader
+          title={<>Permissions <strong>Matrix</strong></>}
+          description="Configure access rights and feature availability for all user roles across different departments."
+        />
+
+        <ScreenFrame
+          breadcrumbs={[{ label: "Settings" }, { label: "Permissions Matrix" }]}
+          actions={
+            <button className="btn btn-primary" disabled style={{ opacity: 0.6 }}>
+              + New Role
+            </button>
+          }
+        >
+          {/* Navigation Tabs */}
+          <div style={{ display: "flex", gap: "4px", borderBottom: "1px solid var(--b1)", marginBottom: "20px" }}>
+            <Link href="/settings/users" style={{ borderBottom: "none", padding: "10px 16px", borderRadius: "6px 6px 0 0", color: "var(--tx3)", display: "block" }}>
+              User Accounts
+            </Link>
+            <Link href="/settings/permissions" style={{ borderBottom: "2px solid var(--acc)", padding: "10px 16px", borderRadius: "6px 6px 0 0", color: "var(--tx)", fontWeight: 600, display: "block" }}>
+              Permissions Matrix
+            </Link>
+          </div>
+
+          {/* Matrix Grid Skeleton */}
+          <div className="card" style={{ padding: "16px", overflowX: "auto" }}>
+            <table className="tbl" style={{ borderCollapse: "collapse", width: "100%" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid var(--b1)" }}>
+                  <th style={{ textAlign: "left", padding: "10px 14px", minWidth: "220px" }}>Module & Specific Permission</th>
+                  {rolesList.map((role) => (
+                    <th key={role} style={{ textAlign: "center", padding: "10px 14px", minWidth: "110px" }}>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="font-semibold text-tx" style={{ opacity: 0.6 }}>{role}</span>
+                      </div>
+                      {role.toLowerCase() === "admin" && (
+                        <span style={{ fontSize: "8.5px", color: "var(--sem-rd-tx)", fontWeight: 500 }}>(Locked)</span>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(MODULE_PERMISSIONS).map(([moduleName, perms]) => (
+                  <React.Fragment key={moduleName}>
+                    {/* Category Header Row */}
+                    <tr style={{ background: "var(--alt2)", borderBottom: "1px solid var(--b1)" }}>
+                      <td colSpan={rolesList.length + 1} style={{ padding: "8px 14px", fontWeight: 700, fontSize: "11.5px", color: "var(--acc)", textTransform: "uppercase" }}>
+                        {moduleName}
+                      </td>
+                    </tr>
+                    {/* Permission Rows */}
+                    {perms.map((perm) => (
+                      <tr key={perm.key} style={{ borderBottom: "1px solid var(--tbl-line)" }}>
+                        <td style={{ padding: "10px 14px" }}>
+                          <div className="font-medium text-tx text-[12px]">{perm.label}</div>
+                          <div className="text-[9.5px] text-tx3 font-mono">{perm.key}</div>
+                        </td>
+                        {rolesList.map((role) => (
+                          <td key={role} style={{ textAlign: "center", padding: "10px 14px" }}>
+                            <input
+                              type="checkbox"
+                              checked={role.toLowerCase() === "admin"}
+                              disabled
+                              style={{ cursor: "not-allowed", opacity: 0.4 }}
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </ScreenFrame>
+      </>
     );
   }
 

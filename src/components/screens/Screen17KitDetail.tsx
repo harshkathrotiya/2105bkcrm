@@ -7,7 +7,7 @@ import { AlertTriangle, X, ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import SearchableSelect from "../ui/SearchableSelect";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
@@ -267,11 +267,139 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
 
   if (kitsLoading && !activeKit) {
     return (
-      <ScreenFrame breadcrumb="Kit Details" actions={<Link href="/kits" className="btn"><ArrowLeft size={13} /> Back to Kits</Link>}>
-        <div style={{ padding: "20px" }}>
-          <LoadingSkeleton rows={6} />
+      <>
+        <SectionHeader
+          title={<>Kit: <strong>Loading Kit...</strong></>}
+          description="Configure and inspect the kit component assembly list, set the core camera body, and link complementary accessories."
+        />
+        {/* Date Availability Checker Bar */}
+        <div className="card" style={{ marginBottom: "20px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <strong style={{ fontSize: "13px", color: "var(--tx)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Check Kit Availability for Date Range:
+              </strong>
+              <div style={{ fontSize: "11px", color: "var(--tx3)", marginTop: "2px" }}>Displays live status of kit components for the chosen dates.</div>
+            </div>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "11.5px", color: "var(--tx2)" }}>From:</span>
+                <ShimmerBar width="135px" height="38px" radius="8px" />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "11.5px", color: "var(--tx2)" }}>To:</span>
+                <ShimmerBar width="135px" height="38px" radius="8px" />
+              </div>
+            </div>
+          </div>
         </div>
-      </ScreenFrame>
+
+        <ScreenFrame
+          breadcrumb={
+            <div className="flex items-center gap-1">
+              <ShimmerBar width="40px" height="12px" />
+              <span style={{ color: "var(--tx3)" }}>›</span>
+              <ShimmerBar width="110px" height="12px" />
+            </div>
+          }
+          actions={
+            <div style={{ display: "flex", gap: "8px" }}>
+              <ShimmerBar width="110px" height="30px" radius="8px" />
+              <ShimmerBar width="100px" height="30px" radius="8px" />
+            </div>
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {/* Kit Stats Panel */}
+            <div className="card" style={{ padding: "20px", marginBottom: "0px" }}>
+              <div>
+                <ShimmerBar width="180px" height="18px" style={{ marginBottom: "8px" }} />
+                <ShimmerBar width="340px" height="13px" />
+              </div>
+              <hr style={{ border: 0, borderTop: "1px solid var(--b1)", margin: "18px 0" }} />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "15px" }}>
+                <div>
+                  <ShimmerBar width="80px" height="10px" style={{ marginBottom: "6px" }} />
+                  <ShimmerBar width="110px" height="16px" />
+                </div>
+                <div>
+                  <ShimmerBar width="80px" height="10px" style={{ marginBottom: "6px" }} />
+                  <ShimmerBar width="60px" height="16px" />
+                </div>
+                <div>
+                  <ShimmerBar width="120px" height="10px" style={{ marginBottom: "6px" }} />
+                  <ShimmerBar width="75px" height="18px" radius="9999px" />
+                </div>
+              </div>
+            </div>
+
+            {/* Main Body Section */}
+            <div className="card" style={{ marginBottom: "0px" }}>
+              <div className="card-t">Main Body Component</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "40%" }}>
+                  <ShimmerBar width="100%" height="13px" />
+                  <ShimmerBar width="70%" height="11px" />
+                </div>
+                <ShimmerBar width="110px" height="26px" radius="8px" />
+              </div>
+            </div>
+
+            {/* Accessories Section */}
+            <div className="card" style={{ marginBottom: "0px" }}>
+              <div className="card-t">Linked Equipment</div>
+              <table className="tbl" style={{ marginBottom: "15px" }}>
+                <thead>
+                  <tr>
+                    <th>Product Name</th>
+                    <th style={{ width: "120px" }}>Category</th>
+                    <th style={{ width: "140px" }}>Serial Number</th>
+                    <th style={{ width: "110px" }}>Status</th>
+                    <th style={{ width: "80px" }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 3 }).map((_, ri) => (
+                    <tr key={ri} style={{ cursor: "default" }}>
+                      <td>
+                        <ShimmerBar width="150px" height="13px" />
+                      </td>
+                      <td>
+                        <ShimmerBar width="80px" height="11px" />
+                      </td>
+                      <td>
+                        <ShimmerBar width="100px" height="11px" />
+                      </td>
+                      <td>
+                        <ShimmerBar width="65px" height="18px" radius="9999px" />
+                      </td>
+                      <td>
+                        <ShimmerBar width="55px" height="22px" radius="6px" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Add Accessory Form */}
+              <div style={{ borderTop: "1px solid var(--b1)", paddingTop: "15px" }}>
+                <div style={{ fontSize: "11.3px", fontWeight: 600, color: "var(--tx3)", marginBottom: "6px" }}>ADD EQUIPMENT TO KIT</div>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <ShimmerBar width="100%" height="38px" radius="8px" style={{ flex: 1 }} />
+                  <ShimmerBar width="80px" height="38px" radius="8px" style={{ flexShrink: 0 }} />
+                  <ShimmerBar width="110px" height="38px" radius="8px" style={{ flexShrink: 0 }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </ScreenFrame>
+      </>
     );
   }
 

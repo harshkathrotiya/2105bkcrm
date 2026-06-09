@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Pencil, Check, Settings, ArrowLeft } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import Badge from "../ui/Badge";
 import * as api from "@/lib/api";
 import { useEquipment, useQuotations, useInvoices } from "@/lib/store";
@@ -113,9 +113,154 @@ export default function Screen15EquipmentDetail({ equipmentId }: Screen15Equipme
   if (loading) {
     return (
       <>
-        <SectionHeader title="Equipment Details" />
-        <ScreenFrame breadcrumb="Equipment Master › Details">
-          <LoadingSkeleton rows={6} />
+        <SectionHeader
+          title={<>Equipment <strong>Details</strong></>}
+          description="View complete asset data, kit memberships, and booking logs."
+        />
+        <ScreenFrame
+          breadcrumb={
+            <div className="flex items-center gap-1">
+              <ShimmerBar width="110px" height="12px" />
+              <span style={{ color: "var(--tx3)" }}>›</span>
+              <ShimmerBar width="120px" height="12px" />
+            </div>
+          }
+          actions={
+            <div style={{ display: "flex", gap: "8px" }}>
+              <ShimmerBar width="95px" height="30px" radius="8px" />
+              <ShimmerBar width="120px" height="30px" radius="8px" />
+            </div>
+          }
+        >
+          {/* Header section skeleton */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "20px", marginBottom: "20px" }}>
+            <div>
+              <ShimmerBar width="320px" height="20px" style={{ marginBottom: "10px" }} />
+              <div style={{ display: "flex", gap: "8px" }}>
+                <ShimmerBar width="60px" height="18px" radius="9999px" />
+                <ShimmerBar width="75px" height="18px" radius="9999px" />
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+              <ShimmerBar width="45px" height="11px" />
+              <ShimmerBar width="70px" height="18px" />
+            </div>
+          </div>
+
+          <div className="two-col" style={{ gridTemplateColumns: "1fr 340px" }}>
+            {/* Left Column: Specs, Purchase, and Kits */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {/* Technical Specifications */}
+              <div className="card" style={{ marginBottom: "0px" }}>
+                <div className="card-t">Technical Specifications</div>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div className="row-item" key={i}>
+                    <ShimmerBar width="110px" height="10px" />
+                    <ShimmerBar width="140px" height="11px" />
+                  </div>
+                ))}
+                <div className="row-item" style={{ flexDirection: "column", alignItems: "flex-start", gap: "4px" }}>
+                  <ShimmerBar width="90px" height="10px" />
+                  <ShimmerBar width="100%" height="32px" radius="6px" />
+                </div>
+              </div>
+
+              {/* Purchase & Financial Details */}
+              <div className="card" style={{ marginBottom: "0px" }}>
+                <div className="card-t">Purchase & Financial Info</div>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div className="row-item" key={i}>
+                    <ShimmerBar width="130px" height="10px" />
+                    <ShimmerBar width="100px" height="11px" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Kit Associations */}
+              <div className="card" style={{ marginBottom: "0px" }}>
+                <div className="card-t">Kit Associations</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <ShimmerBar width="90px" height="10px" style={{ marginBottom: "6px" }} />
+                    <ShimmerBar width="120px" height="13px" />
+                  </div>
+                  <ShimmerBar width="70px" height="26px" radius="8px" />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Active Status and History */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {/* Active Booking Banner */}
+              <div className="card" style={{ padding: "16px", marginBottom: "0px" }}>
+                <div className="card-t">Current Booking Status</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", border: "1px solid var(--b1)", borderRadius: "8px", padding: "12px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <ShimmerBar width="50px" height="10px" />
+                    <ShimmerBar width="60px" height="18px" radius="9999px" />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <ShimmerBar width="35px" height="9px" />
+                    <ShimmerBar width="110px" height="12px" />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <ShimmerBar width="35px" height="9px" />
+                    <ShimmerBar width="95px" height="12px" />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <ShimmerBar width="55px" height="9px" />
+                      <ShimmerBar width="75px" height="11px" />
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <ShimmerBar width="55px" height="9px" />
+                      <ShimmerBar width="75px" height="11px" />
+                    </div>
+                  </div>
+                  <ShimmerBar width="100%" height="28px" radius="8px" style={{ marginTop: "4px" }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Section: Booking History Log */}
+          <div className="card" style={{ marginTop: "20px", marginBottom: "0px" }}>
+            <div className="card-t">Booking History Log</div>
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Event & Inquiry</th>
+                  <th>Client</th>
+                  <th>Dates</th>
+                  <th>Status</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 3 }).map((_, ri) => (
+                  <tr key={ri} style={{ cursor: "default" }}>
+                    <td>
+                      <ShimmerBar width="110px" height="13px" style={{ marginBottom: "6px" }} />
+                      <ShimmerBar width="160px" height="9px" />
+                    </td>
+                    <td>
+                      <ShimmerBar width="90px" height="11px" />
+                    </td>
+                    <td>
+                      <ShimmerBar width="120px" height="11px" />
+                    </td>
+                    <td>
+                      <ShimmerBar width="65px" height="18px" radius="9999px" />
+                    </td>
+                    <td>
+                      <ShimmerBar width="85px" height="11px" style={{ marginBottom: "4px" }} />
+                      <ShimmerBar width="60px" height="9px" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </ScreenFrame>
       </>
     );

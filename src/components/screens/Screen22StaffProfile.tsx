@@ -7,7 +7,7 @@ import { Check, ArrowUpRight } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
-import LoadingSkeleton from "../ui/LoadingSkeleton";
+import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { useStaff } from "@/lib/store";
@@ -266,9 +266,268 @@ export default function Screen22StaffProfile({ staffId }: { staffId: number }) {
 
   if (staffLoading || (loadingDetails && !staffMember)) {
     return (
-      <ScreenFrame breadcrumb="Staff › Profile › Loading...">
-        <LoadingSkeleton rows={6} />
-      </ScreenFrame>
+      <>
+        <SectionHeader
+          title={<>Staff <strong>Profile</strong></>}
+          description="Loading staff details, event history, earnings summary and timeline..."
+        />
+
+        <ScreenFrame
+          breadcrumb="Staff › Profile › Loading..."
+          actions={
+            <div style={{ display: "flex", gap: "8px" }}>
+              <Link href="/staff" className="btn">Back to List</Link>
+              {canEditStaff && (
+                <button
+                  className="btn"
+                  disabled
+                  style={{ color: "var(--rd)", borderColor: "var(--rd)", opacity: 0.5 }}
+                >
+                  Deactivate
+                </button>
+              )}
+              {canEditStaff && (
+                <button className="btn btn-primary" disabled style={{ opacity: 0.5 }}>
+                  Edit Profile <ArrowUpRight size={13} />
+                </button>
+              )}
+            </div>
+          }
+        >
+          <div style={{ display: "flex", border: "1px solid var(--b1)", borderRadius: "12px", overflow: "hidden", background: "var(--s1)" }}>
+            
+            {/* Quick Staff Navigation Sidebar */}
+            <div
+              style={{
+                width: "185px",
+                background: "var(--s2)",
+                borderRight: "1px solid var(--b1)",
+                padding: "12px 0",
+                flexShrink: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                overflowY: "auto",
+                maxHeight: "650px",
+              }}
+            >
+              <div style={{ padding: "6px 14px 2px", fontSize: "9px", color: "var(--tx3)", letterSpacing: ".1em", textTransform: "uppercase" }}>
+                Staff List
+              </div>
+              {staff.length > 0 ? (
+                staff.map((s) => (
+                  <div
+                    key={s.id}
+                    style={{
+                      padding: "8px 14px",
+                      fontSize: "12px",
+                      color: s.id === staffId ? "var(--tx)" : "var(--tx3)",
+                      background: s.id === staffId ? "var(--s1)" : "transparent",
+                      borderLeft: `2px solid ${s.id === staffId ? "var(--acc)" : "transparent"}`,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontWeight: s.id === staffId ? 500 : 400,
+                      opacity: 0.7,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "50%",
+                        fontSize: "8px",
+                        background: s.id === staffId ? "var(--sidebar-active)" : "var(--alt3)",
+                        color: s.id === staffId ? "var(--acc)" : "var(--tx3)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {s.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0,2)}
+                    </div>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.name}</span>
+                  </div>
+                ))
+              ) : (
+                Array.from({ length: 8 }).map((_, idx) => (
+                  <div key={idx} style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "var(--b1)", flexShrink: 0 }} className="shimmer" />
+                    <ShimmerBar width={90} height={12} />
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Profile Core View Skeleton */}
+            <div style={{ flex: 1, padding: "16px", background: "var(--cnt-bg)", display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr)", gap: "16px" }}>
+              
+              {/* Left Column: Core Info & YTD summary */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                
+                {/* Profile Card Skeleton */}
+                <div className="card" style={{ padding: "16px", marginBottom: 0 }}>
+                  <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: "16px", borderBottom: "1px solid var(--b1)" }}>
+                    <div
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "50%",
+                        background: "var(--b1)",
+                        marginBottom: "10px",
+                      }}
+                      className="shimmer"
+                    />
+                    <ShimmerBar width={120} height={16} style={{ marginBottom: "6px" }} />
+                    <ShimmerBar width={80} height={12} style={{ marginBottom: "8px" }} />
+                    
+                    <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
+                      <ShimmerBar width={60} height={20} radius="4px" />
+                      <ShimmerBar width={60} height={20} radius="4px" />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: "12px" }}>
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                      <div className="row-item" key={idx}>
+                        <ShimmerBar width={80} height={12} />
+                        <ShimmerBar width={100} height={12} />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginTop: "12px" }}>
+                    <div className="btn" style={{ fontSize: "10.5px", padding: "6px 8px", justifyContent: "center", display: "flex", opacity: 0.5, cursor: "not-allowed" }}>
+                      Aadhar Front
+                    </div>
+                    <div className="btn" style={{ fontSize: "10.5px", padding: "6px 8px", justifyContent: "center", display: "flex", opacity: 0.5, cursor: "not-allowed" }}>
+                      Aadhar Back
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fiscal Year Financial Summary Card Skeleton */}
+                <div className="card" style={{ padding: "16px", marginBottom: 0 }}>
+                  <div className="ct">
+                    <ShimmerBar width={150} height={14} />
+                  </div>
+                  
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <div className="row-item" key={idx}>
+                      <ShimmerBar width={100} height={12} />
+                      <ShimmerBar width={80} height={12} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Column: Deployment & Event History & Timeline */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                
+                {/* Current Deployment Card Skeleton */}
+                <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
+                  <div className="ct">Current Deployment</div>
+                  <div
+                    style={{
+                      background: "var(--s2)",
+                      borderRadius: "8px",
+                      padding: "10px 12px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      border: "1px solid var(--b1)",
+                    }}
+                  >
+                    <div>
+                      <ShimmerBar width={140} height={13} style={{ marginBottom: "6px" }} />
+                      <ShimmerBar width={180} height={10} />
+                    </div>
+                    <ShimmerBar width={60} height={20} radius="4px" />
+                  </div>
+                </div>
+
+                {/* Event History Table Skeleton */}
+                <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
+                  <div className="ct">Event History</div>
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="tbl">
+                      <thead>
+                        <tr>
+                          <th>Event</th>
+                          <th style={{ width: "95px" }}>Dates</th>
+                          <th style={{ width: "50px" }} className="tc">Days</th>
+                          <th style={{ width: "85px" }} className="tr">Amount</th>
+                          <th style={{ width: "75px" }} className="tc">Payment</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from({ length: 4 }).map((_, idx) => (
+                          <tr key={idx}>
+                            <td>
+                              <ShimmerBar width={120} height={12} style={{ marginBottom: "4px" }} />
+                              <ShimmerBar width={80} height={10} />
+                            </td>
+                            <td><ShimmerBar width={70} height={10} /></td>
+                            <td className="tc"><ShimmerBar width={20} height={10} style={{ margin: "0 auto" }} /></td>
+                            <td className="tr"><ShimmerBar width={50} height={10} style={{ marginLeft: "auto" }} /></td>
+                            <td className="tc"><ShimmerBar width={45} height={16} radius="4px" style={{ margin: "0 auto" }} /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Owned Equipment Skeleton */}
+                <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
+                  <h4 style={{ margin: "0 0 12px 0", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                      <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                      <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                      <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                    </svg>
+                    Owned Equipment
+                  </h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
+                    {Array.from({ length: 2 }).map((_, idx) => (
+                      <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--alt)", padding: "8px 10px", borderRadius: "6px", border: "1px solid var(--b1)" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%" }}>
+                          <ShimmerBar width={140} height={12} />
+                          <ShimmerBar width={90} height={10} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment Timeline Skeleton */}
+                <div className="card" style={{ padding: "14px", marginBottom: 0 }}>
+                  <div className="ct">Payment Timeline</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                    {Array.from({ length: 3 }).map((_, idx) => (
+                      <div className="tl-item" key={idx}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                          <div className="tl-dot" style={{ background: "var(--b2)" }} />
+                          {idx < 2 && <div className="tl-line" />}
+                        </div>
+                        <div style={{ width: "100%" }}>
+                          <ShimmerBar width={145} height={12} />
+                          <ShimmerBar width={180} height={10} style={{ marginTop: "4px" }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </ScreenFrame>
+      </>
     );
   }
 

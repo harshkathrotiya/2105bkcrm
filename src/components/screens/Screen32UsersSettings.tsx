@@ -46,7 +46,7 @@ export default function Screen32UsersSettings() {
   const [editActive, setEditActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);

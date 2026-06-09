@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useRef } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -38,6 +39,16 @@ const ICON_MAP: Record<string, React.ElementType> = {
 export default function AppSidebar() {
   const pathname = usePathname();
   const { can, loading } = useCurrentUser();
+  const lastNavTime = useRef<Record<string, number>>({});
+
+  function throttledNav(path: string, e: React.MouseEvent) {
+    const now = Date.now();
+    if (now - (lastNavTime.current[path] ?? 0) < 500) {
+      e.preventDefault();
+      return;
+    }
+    lastNavTime.current[path] = now;
+  }
 
   const isActive = (path: string, exact = false) => {
     if (exact) return pathname === path;
@@ -76,6 +87,7 @@ export default function AppSidebar() {
               title={item.label}
               aria-label={item.label}
               aria-current={isActive(item.path) ? "page" : undefined}
+              onClick={(e) => throttledNav(item.path, e)}
             >
               <span className="app-nav-icon" aria-hidden="true">
                 <Icon size={15} strokeWidth={1.8} />
