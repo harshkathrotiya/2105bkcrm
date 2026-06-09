@@ -864,6 +864,17 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
 
   return (
     <div style={{ minHeight: "100%", background: "var(--bg)" }}>
+      <style>{`
+        .inquiry-step-chevron {
+          transition: all 0.15s ease;
+        }
+        .inquiry-step-chevron:hover {
+          filter: brightness(0.96);
+        }
+        .inquiry-step-chevron:active {
+          filter: brightness(0.92);
+        }
+      `}</style>
 
       {/* ── Title header ── */}
       <div style={{ padding: "18px 24px 0", background: "var(--bg)" }}>
@@ -903,98 +914,82 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
 
       {/* ── Step progress bar ── */}
       <div style={{
-        margin: "18px 24px 0",
-        background: "var(--s1)",
-        border: "1px solid var(--b1)",
-        borderRadius: 14,
-        padding: "10px 8px",
+        margin: "24px 24px 0",
         display: "flex",
-        alignItems: "center",
+        borderRadius: "8px",
+        overflow: "hidden",
+        border: "1px solid var(--b1)",
+        height: "38px",
+        background: "var(--alt2)",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.02)",
       }}>
         {STEPS.map((s, i) => {
           const isActive = tab === s.key;
           const isDone = s.done && !isActive;
           const isPending = !s.done && !isActive;
-          const Icon = [CalendarDays, FileText, Building2, Users, CheckCircle2, Receipt][i];
+          const isFirst = i === 0;
           const isLast = i === STEPS.length - 1;
+
+          let bg = "var(--s1)";
+          let color = "var(--tx3)";
+
+          if (isActive) {
+            bg = "var(--acc)";
+            color = "#fff";
+          } else if (isDone) {
+            bg = "var(--sem-gr-bg)";
+            color = "var(--sem-gr-tx)";
+          }
+
+          // Generate clip-path polygon to form chevron arrows
+          let clipPath = "polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%, 10px 50%)";
+          if (isFirst) {
+            clipPath = "polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%)";
+          } else if (isLast) {
+            clipPath = "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 10px 50%)";
+          }
+
           return (
-            <div key={s.key} style={{ flex: 1, display: "flex", alignItems: "center", minWidth: 0 }}>
-              {/* Step button */}
-              <button
-                onClick={() => setTab(s.key)}
-                style={{
-                  flex: 1,
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-                  padding: "10px 6px",
-                  background: isActive ? "var(--sidebar-active)" : "transparent",
-                  border: "none",
-                  borderRadius: 10,
-                  cursor: "pointer",
-                  transition: "all 0.18s",
-                  position: "relative",
-                  minWidth: 0,
-                }}
-              >
-                {/* Circle with number / icon */}
-                <div style={{
-                  width: 32, height: 32,
-                  borderRadius: "50%",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                  background: isActive
-                    ? "#111"
-                    : isDone
-                    ? "var(--gr)"
-                    : "var(--alt2)",
-                  border: isActive
-                    ? "2px solid #111"
-                    : isDone
-                    ? "2px solid var(--gr)"
-                    : "2px solid var(--b2)",
-                  transition: "all 0.18s",
-                }}>
-                  {isDone ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 6L9 17l-5-5" />
-                    </svg>
-                  ) : (
-                    <Icon size={14} strokeWidth={isActive ? 2.4 : 1.8} color={isActive ? "#fff" : isPending ? "var(--tx3)" : "#fff"} />
-                  )}
-                </div>
-                {/* Label */}
-                <span style={{
-                  fontSize: 11,
-                  fontWeight: isActive ? 700 : isDone ? 500 : 400,
-                  color: isActive ? "var(--tx)" : isDone ? "var(--tx2)" : "var(--tx3)",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  maxWidth: "100%",
-                  lineHeight: 1.2,
-                }}>
-                  {s.label}
-                </span>
-                {/* Active underline pill */}
-                {isActive && (
-                  <span style={{
-                    position: "absolute", bottom: 4, left: "50%", transform: "translateX(-50%)",
-                    width: 20, height: 3, borderRadius: 2,
-                    background: "var(--acc)",
-                  }} />
-                )}
-              </button>
-              {/* Connector line */}
-              {!isLast && (
-                <div style={{
-                  width: 24, flexShrink: 0,
-                  height: 2,
-                  background: s.done ? "var(--gr)" : "var(--b2)",
-                  borderRadius: 2,
-                  opacity: 0.5,
-                  transition: "background 0.3s",
-                }} />
+            <button
+              key={s.key}
+              onClick={() => setTab(s.key)}
+              className="inquiry-step-chevron"
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                border: "none",
+                background: bg,
+                color: color,
+                cursor: "pointer",
+                clipPath: clipPath,
+                paddingLeft: isFirst ? "16px" : "24px",
+                paddingRight: isLast ? "16px" : "20px",
+                transition: "all 0.15s ease",
+                fontWeight: isActive ? 600 : 500,
+                fontSize: "12.5px",
+                height: "100%",
+                marginLeft: isFirst ? "0px" : "-9px", // overlap to lock them together
+                position: "relative",
+                zIndex: isActive ? 10 : 5 - i, // Active stage sits on top, rest overlap left-to-right
+                minWidth: 0,
+              }}
+            >
+              {isDone && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
               )}
-            </div>
+              <span className="step-label" style={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}>
+                {s.label}
+              </span>
+            </button>
           );
         })}
       </div>

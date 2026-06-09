@@ -587,10 +587,11 @@ export default function Screen03Calendar() {
               {weeksData.map((week) => {
                 const totalTracks = week.totalTracks;
                 const rowHeight = Math.max(viewMode === "month" ? 120 : 320, 40 + totalTracks * 28);
+                const weekRow = week.weekIndex + 1;
 
                 return (
                   <div key={`week-${week.weekIndex}`} style={{ display: "contents" }}>
-                    {/* Cell backgrounds */}
+                    {/* Cell backgrounds — each in its own grid column */}
                     {week.cells.map((cell, dIdx) => {
                       const todayCell = cell && isToday(cell.year, cell.month, cell.date);
                       const otherMonth = cell && !isCurrentMonth(cell.month, cell.year);
@@ -599,8 +600,10 @@ export default function Screen03Calendar() {
                           key={`cell-${week.weekIndex}-${dIdx}`}
                           className="cal-grid-cell"
                           style={{
+                            gridRow: weekRow,
+                            gridColumn: dIdx + 1,
                             background: todayCell ? "var(--cal-today)" : "var(--cal-cell)",
-                            minHeight: `${rowHeight}px`,
+                            height: `${rowHeight}px`,
                             padding: "8px",
                             position: "relative",
                             opacity: otherMonth ? 0.55 : 1,
@@ -653,13 +656,15 @@ export default function Screen03Calendar() {
                       );
                     })}
 
-                    {/* Spanning event pills */}
+                    {/* Event pills — span all 7 columns in the same row as the cells */}
                     <div
                       style={{
+                        gridRow: weekRow,
                         gridColumn: "1 / span 7",
                         position: "relative",
                         pointerEvents: "none",
-                        height: "100%",
+                        height: `${rowHeight}px`,
+                        zIndex: 2,
                       }}
                     >
                       {week.segments.map((seg, sIdx) => {

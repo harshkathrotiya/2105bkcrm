@@ -10,6 +10,7 @@ import { useQuotations, useInquiries } from "@/lib/store";
 import { generateRevisionNo } from "@/lib/utils";
 import { generateId } from "@/lib/types";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { ShimmerBar } from "../ui/LoadingSkeleton";
 
 interface Props {
   quotationId: string;
@@ -38,8 +39,192 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
   const canEditQuote = can("quotations.edit");
   const canAssignCrew = can("staff.edit");
   const canViewWarehouse = can("warehouse.view");
-  const { quotations, dispatchQuotations } = useQuotations();
-  const { inquiries } = useInquiries();
+  const { quotations, dispatchQuotations, loading: quotationsLoading } = useQuotations();
+  const { inquiries, loading: inquiriesLoading } = useInquiries();
+  const loading = quotationsLoading || inquiriesLoading;
+  
+  if (loading) {
+    return (
+      <>
+        <SectionHeader
+          title={<>Quotation <strong>PDF preview</strong></>}
+          description="Preview the client-facing quotation PDF — rates are hidden from the client view."
+        />
+        <ScreenFrame
+          breadcrumb={
+            <>
+              <ShimmerBar width="80px" height="12px" />
+              {" › "}
+              <ShimmerBar width="60px" height="12px" />
+              {" › "}
+              <ShimmerBar width="80px" height="12px" />
+            </>
+          }
+          actions={
+            <>
+              <ShimmerBar width="60px" height="22px" radius="9999px" />
+              <button className="btn" disabled style={{ opacity: 0.6 }}>Crew</button>
+              <button className="btn" disabled style={{ opacity: 0.6 }}>Warehouse</button>
+              <button className="btn" disabled style={{ opacity: 0.6 }}>+ Revise</button>
+              <button className="btn btn-success" disabled style={{ opacity: 0.6 }}><Check size={13} strokeWidth={3} /> Mark approved</button>
+              <button className="btn" disabled style={{ opacity: 0.6 }}>WhatsApp <ArrowUpRight size={13} /></button>
+              <button className="btn btn-primary" disabled style={{ opacity: 0.6 }}>Download PDF</button>
+            </>
+          }
+        >
+          {/* Warning Banner Skeleton */}
+          <div
+            className="rounded-lg text-[11px]"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "10px 14px",
+              marginBottom: "20px",
+              background: "var(--sem-notif-bg)",
+              border: "1px solid var(--sem-notif-bdr)",
+            }}
+          >
+            <ShimmerBar width="320px" height="12px" />
+          </div>
+
+          <div className="two-col">
+            {/* PDF Preview Skeleton */}
+            <div>
+              <div className="pdf-frame">
+                <div className="pdf-hdr">
+                  <div>
+                    <div className="pdf-co">BK Media</div>
+                    <div className="pdf-co-sub">
+                      Media Production Services · Vadodara, Gujarat<br />
+                      +91 98250 00000 · info@bkmedia.in · GST: 24XXXXX1234X1ZX
+                    </div>
+                  </div>
+                  <div className="pdf-doc" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+                    <div className="pdf-doc-lbl">Quotation</div>
+                    <ShimmerBar width="90px" height="14px" />
+                    <ShimmerBar width="110px" height="10px" />
+                    <ShimmerBar width="110px" height="10px" />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "12px" }}>
+                  <ShimmerBar width="180px" height="13px" />
+                </div>
+
+                <div className="pdf-strip grid-cols-4">
+                  <div>
+                    <div className="psi-l">Event</div>
+                    <ShimmerBar width="90px" height="12px" style={{ marginTop: "4px" }} />
+                  </div>
+                  <div>
+                    <div className="psi-l">Dates</div>
+                    <ShimmerBar width="100px" height="12px" style={{ marginTop: "4px" }} />
+                  </div>
+                  <div>
+                    <div className="psi-l">Days</div>
+                    <ShimmerBar width="40px" height="12px" style={{ marginTop: "4px" }} />
+                  </div>
+                  <div>
+                    <div className="psi-l">Venue</div>
+                    <ShimmerBar width="90px" height="12px" style={{ marginTop: "4px" }} />
+                  </div>
+                </div>
+
+                {/* Items table skeleton */}
+                <table className="pdf-tbl">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 28 }}>No.</th>
+                      <th>Position</th>
+                      <th>Equipment description</th>
+                      <th style={{ width: 46, textAlign: "center" }}>Days</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 3 }).map((_, idx) => (
+                      <tr key={idx}>
+                        <td>{idx + 1}</td>
+                        <td><ShimmerBar width="120px" height="12px" /></td>
+                        <td><ShimmerBar width="200px" height="12px" /></td>
+                        <td style={{ textAlign: "center" }}><ShimmerBar width="20px" height="10px" style={{ margin: "0 auto" }} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Totals skeleton */}
+                <div className="pdf-totals">
+                  <div className="pdf-totals-box">
+                    {Array.from({ length: 4 }).map((_, idx) => (
+                      <div className="pdf-trow" key={idx}>
+                        <ShimmerBar width="80px" height="10px" />
+                        <ShimmerBar width="60px" height="10px" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pdf-footer">
+                  <div className="pdf-sign">
+                    <div className="pdf-sign-line"></div>
+                    <div className="pdf-sign-lbl">BK Media — Authorised</div>
+                  </div>
+                  <div className="w-10 h-10 rounded-full border-[1.5px] border-[#888] flex items-center justify-center text-[8px] font-bold text-[#888]">
+                    STAMP
+                  </div>
+                  <div className="pdf-sign">
+                    <div className="pdf-sign-line"></div>
+                    <div className="pdf-sign-lbl">Client acceptance</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column Skeleton */}
+            <div>
+              <div className="card">
+                <div className="card-t">Status & actions</div>
+                <div className="row-item">
+                  <span className="text-[11px] text-tx3">Created</span>
+                  <ShimmerBar width="50px" height="11px" />
+                </div>
+                <div className="row-item">
+                  <span className="text-[11px] text-tx3">Sent</span>
+                  <ShimmerBar width="50px" height="11px" />
+                </div>
+                <div className="row-item">
+                  <span className="text-[11px] text-tx3">Approved</span>
+                  <ShimmerBar width="50px" height="11px" />
+                </div>
+                <div className="divider"></div>
+                <div className="flex flex-col gap-[6px]">
+                  <button className="btn justify-center" disabled style={{ opacity: 0.6 }}>WhatsApp send <ArrowUpRight size={13} /></button>
+                  <button className="btn justify-center" disabled style={{ opacity: 0.6 }}>Email send <ArrowUpRight size={13} /></button>
+                  <button className="btn btn-success justify-center" disabled style={{ opacity: 0.6 }}><Check size={13} strokeWidth={3} /> Mark approved</button>
+                  <button className="btn justify-center" disabled style={{ opacity: 0.6 }}>+ Create revision</button>
+                  <button className="btn btn-primary justify-center" disabled style={{ opacity: 0.6 }}>Go to approval</button>
+                </div>
+              </div>
+
+              {/* Revision history skeleton */}
+              <div className="card">
+                <div className="card-t">Revision history</div>
+                <div className="flex flex-col gap-[8px]">
+                  {Array.from({ length: 2 }).map((_, idx) => (
+                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px" }}>
+                      <ShimmerBar width="80px" height="11px" />
+                      <ShimmerBar width="50px" height="16px" radius="9999px" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </ScreenFrame>
+      </>
+    );
+  }
+
   const quotation = quotations.find((q) => q.id === quotationId);
   const inquiry = quotation ? inquiries.find((i) => i.id === quotation.inquiryId) : null;
   const isLed = inquiry?.department === "LED";
