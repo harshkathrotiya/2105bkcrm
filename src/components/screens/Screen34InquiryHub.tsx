@@ -1159,7 +1159,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
                   </div>
                 </div>
                 {screenArea > 0 && (
-                  <div className="flex gap-4 mt-3" style={{ background: "var(--sem-bl-bg)", color: "var(--sem-bl-tx)", borderRadius: "6px", padding: "8px 12px", fontSize: "11px" }}>
+                  <div className="flex gap-4" style={{ background: "var(--sem-bl-bg)", color: "var(--sem-bl-tx)", borderRadius: "6px", padding: "8px 12px", fontSize: "11px", marginTop: "12px" }}>
                     <span>Area: <strong>{screenArea.toFixed(1)} sq.ft</strong></span>
                     <span>Cabinets: <strong>{totalCabinets} pcs</strong></span>
                     <span className="ml-auto">Estimated amount: <strong>₹{(screenArea * ratePerSqft * eventDays).toLocaleString("en-IN")}</strong></span>
