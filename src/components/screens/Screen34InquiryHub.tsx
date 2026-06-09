@@ -191,18 +191,22 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
     [invoices, quotation]
   );
 
-  // Crew assignments
-  // Only fetch crew assignments when a crew-relevant tab is opened
+  // Crew assignments — always fetch on mount so the stepper shows correct
+  // completion state even when the user lands on a tab other than "crew".
+  // Re-fetch whenever the tab changes to crew/overview/preview to pick up
+  // any changes made in another session.
   const assignmentsFetchedRef = useRef(false);
   const crewTabs = ["crew", "overview", "preview"];
   useEffect(() => {
-    if (!crewTabs.includes(tab) && !assignmentsFetchedRef.current) return;
-    assignmentsFetchedRef.current = true;
-    let active = true;
-    api.fetchStaffAssignments(inquiryId)
-      .then((a) => { if (active) setAssignments(a); })
-      .catch(() => { if (active) setAssignments([]); });
-    return () => { active = false; };
+    // Always fetch on first mount; afterwards only re-fetch on crew-relevant tabs.
+    if (!assignmentsFetchedRef.current || crewTabs.includes(tab)) {
+      assignmentsFetchedRef.current = true;
+      let active = true;
+      api.fetchStaffAssignments(inquiryId)
+        .then((a) => { if (active) setAssignments(a); })
+        .catch(() => { if (active) setAssignments([]); });
+      return () => { active = false; };
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inquiryId, tab]);
 
@@ -775,7 +779,7 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
     overview:  true,
     quotation: !!quotation,
     warehouse: !!quotation,
-    crew:      assignments.length > 0,
+    crew:      assignments.length > 0 || (inquiry?.crewCount ?? 0) > 0,
     preview:   quotation?.status === "Approved",
     invoice:   !!invoice,
   };

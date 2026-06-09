@@ -45,12 +45,14 @@ export default function Screen04NewInquiry() {
       : clients[0]?.id ?? "";
 
   const today = new Date().toISOString().split("T")[0];
+  const queryDate = searchParams.get("date");
+  const defaultDate = queryDate && /^\d{4}-\d{2}-\d{2}$/.test(queryDate) ? queryDate : today;
 
   const [clientId, setClientId] = useState(defaultClientId);
   const [eventType, setEventType] = useState(EVENT_TYPES[0]);
   const [eventName, setEventName] = useState("");
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(today);
+  const [startDate, setStartDate] = useState(defaultDate);
+  const [endDate, setEndDate] = useState(defaultDate);
   const [startTime, setStartTime] = useState("09:00 AM");
   const [endTime, setEndTime] = useState("09:00 PM");
   const [venue, setVenue] = useState("");

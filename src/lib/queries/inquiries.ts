@@ -5,11 +5,11 @@
 import { db, withRetry } from "@/lib/db";
 import type { Inquiry } from "@/lib/types";
 
-export async function getAllInquiries(): Promise<Inquiry[]> {
-  const rows = await db.inquiry.findMany({
-    orderBy: { created_at: "desc" },
-  });
-  return rows.map((r: any) => ({
+const INCLUDE_CREW_COUNT = { _count: { select: { staff_assignments: true } } } as const;
+
+function mapRow(r: any): Inquiry {
+  return {
+    crewCount: r._count?.staff_assignments ?? 0,
     id: r.id,
     clientId: r.client_id,
     eventType: r.event_type,
@@ -38,81 +38,33 @@ export async function getAllInquiries(): Promise<Inquiry[]> {
     vehicle1Driver: r.vehicle1_driver ?? undefined,
     vehicle2Number: r.vehicle2_number ?? undefined,
     vehicle2Driver: r.vehicle2_driver ?? undefined,
-  }));
+  };
+}
+
+export async function getAllInquiries(): Promise<Inquiry[]> {
+  const rows = await db.inquiry.findMany({
+    orderBy: { created_at: "desc" },
+    include: INCLUDE_CREW_COUNT,
+  });
+  return rows.map(mapRow);
 }
 
 export async function getInquiryById(id: string): Promise<Inquiry | undefined> {
   const row = await db.inquiry.findUnique({
     where: { id },
+    include: INCLUDE_CREW_COUNT,
   });
   if (!row) return undefined;
-  return {
-    id: row.id,
-    clientId: row.client_id,
-    eventType: row.event_type,
-    eventName: row.event_name || "",
-    startDate: row.start_date,
-    endDate: row.end_date,
-    startTime: row.start_time,
-    endTime: row.end_time,
-    venue: row.venue,
-    notes: row.notes,
-    status: row.status as "New" | "Quoted" | "Confirmed" | "Cancelled",
-    createdAt: row.created_at,
-    updatedAt: row.updated_at ?? undefined,
-    department: row.department as "VIDEO" | "LED" | "MERGED",
-    screenWidth: row.screen_width ?? undefined,
-    screenHeight: row.screen_height ?? undefined,
-    screenAreaSqft: row.screen_area_sqft ?? undefined,
-    totalCabinets: row.total_cabinets ?? undefined,
-    ledType: row.led_type ?? undefined,
-    ratePerSqft: row.rate_per_sqft ?? undefined,
-    location: row.location,
-    stageType: row.stage_type ?? undefined,
-    dispatchDate: row.dispatch_date ?? undefined,
-    dispatchTime: row.dispatch_time ?? undefined,
-    vehicle1Number: row.vehicle1_number ?? undefined,
-    vehicle1Driver: row.vehicle1_driver ?? undefined,
-    vehicle2Number: row.vehicle2_number ?? undefined,
-    vehicle2Driver: row.vehicle2_driver ?? undefined,
-  };
+  return mapRow(row);
 }
 
 export async function getInquiriesByClient(clientId: string): Promise<Inquiry[]> {
   const rows = await db.inquiry.findMany({
     where: { client_id: clientId },
     orderBy: { start_date: "desc" },
+    include: INCLUDE_CREW_COUNT,
   });
-  return rows.map((r: any) => ({
-    id: r.id,
-    clientId: r.client_id,
-    eventType: r.event_type,
-    eventName: r.event_name || "",
-    startDate: r.start_date,
-    endDate: r.end_date,
-    startTime: r.start_time,
-    endTime: r.end_time,
-    venue: r.venue,
-    notes: r.notes,
-    status: r.status as "New" | "Quoted" | "Confirmed" | "Cancelled",
-    createdAt: r.created_at,
-    updatedAt: r.updated_at ?? undefined,
-    department: r.department as "VIDEO" | "LED" | "MERGED",
-    screenWidth: r.screen_width ?? undefined,
-    screenHeight: r.screen_height ?? undefined,
-    screenAreaSqft: r.screen_area_sqft ?? undefined,
-    totalCabinets: r.total_cabinets ?? undefined,
-    ledType: r.led_type ?? undefined,
-    ratePerSqft: r.rate_per_sqft ?? undefined,
-    location: r.location,
-    stageType: r.stage_type ?? undefined,
-    dispatchDate: r.dispatch_date ?? undefined,
-    dispatchTime: r.dispatch_time ?? undefined,
-    vehicle1Number: r.vehicle1_number ?? undefined,
-    vehicle1Driver: r.vehicle1_driver ?? undefined,
-    vehicle2Number: r.vehicle2_number ?? undefined,
-    vehicle2Driver: r.vehicle2_driver ?? undefined,
-  }));
+  return rows.map(mapRow);
 }
 
 export async function createInquiry(inquiry: Inquiry): Promise<Inquiry> {

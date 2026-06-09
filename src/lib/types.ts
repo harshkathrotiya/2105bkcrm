@@ -48,6 +48,7 @@ export interface Inquiry {
   vehicle1Driver?: string;
   vehicle2Number?: string;
   vehicle2Driver?: string;
+  crewCount?: number;
 }
 
 export interface QuotationRow {

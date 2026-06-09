@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     // role still "exists"), so the brief gap between them is harmless for what
     // is low-frequency role config.
     await db.rolePermission.deleteMany({ where: { role: trimmedRole } });
-    await db.rolePermission.createMany({ data });
+    await db.rolePermission.createMany({ data, skipDuplicates: true });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

@@ -9,6 +9,7 @@ import { useInvoices, useInquiries, useQuotations, useClients } from "@/lib/stor
 import { calcDays } from "@/lib/utils";
 import { computeGst } from "@/lib/pricing";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { ShimmerBar } from "../ui/LoadingSkeleton";
 
 interface Props {
   invoiceId: string;
@@ -17,10 +18,11 @@ interface Props {
 export default function Screen08Invoice({ invoiceId }: Props) {
   const { can } = useCurrentUser();
   const canEditInvoice = can("invoices.edit");
-  const { invoices, dispatchInvoices } = useInvoices();
-  const { inquiries } = useInquiries();
-  const { quotations } = useQuotations();
-  const { clients } = useClients();
+  const { invoices, loading: invoicesLoading, dispatchInvoices } = useInvoices();
+  const { inquiries, loading: inquiriesLoading } = useInquiries();
+  const { quotations, loading: quotationsLoading } = useQuotations();
+  const { clients, loading: clientsLoading } = useClients();
+  const loading = invoicesLoading || inquiriesLoading || quotationsLoading || clientsLoading;
   const invoice = invoices.find((inv) => inv.id === invoiceId) ?? invoices[invoices.length - 1];
 
   const quotation = invoice ? quotations.find((q) => q.id === invoice.quotationId) : null;
@@ -47,6 +49,194 @@ export default function Screen08Invoice({ invoiceId }: Props) {
     });
     setShowConfirm(false);
   };
+
+  if (loading) {
+    return (
+      <>
+        <SectionHeader
+          title={<>Invoice</>}
+          description="Two-line-item invoice for videography and photography services with payment tracking."
+        />
+        <ScreenFrame
+          breadcrumbs={[
+            { label: "Invoices", href: "/invoices" },
+            { label: "Loading..." },
+          ]}
+          actions={
+            <>
+              <ShimmerBar width="60px" height="22px" radius="9999px" />
+              <button className="btn" disabled style={{ opacity: 0.6 }}>WhatsApp <ArrowUpRight size={13} /></button>
+              <button className="btn btn-primary" disabled style={{ opacity: 0.6 }}>Download PDF</button>
+            </>
+          }
+        >
+          {/* Warning Banner Skeleton */}
+          <div
+            className="rounded-lg text-[11px]"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "10px 14px",
+              marginBottom: "20px",
+              background: "var(--sem-notif-bg)",
+              border: "1px solid var(--sem-notif-bdr)",
+            }}
+          >
+            <ShimmerBar width="240px" height="12px" />
+          </div>
+
+          <div className="two-col">
+            {/* PDF Invoice Skeleton */}
+            <div>
+              <div className="pdf-frame">
+                <div className="pdf-hdr">
+                  <div>
+                    <div className="pdf-co">BK Media</div>
+                    <div className="pdf-co-sub">
+                      Vadodara, Gujarat · GST: 24XXXXX1234X1ZX<br />
+                      +91 98250 00000 · info@bkmedia.in
+                    </div>
+                  </div>
+                  <div className="pdf-doc" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
+                    <div className="pdf-doc-lbl">Tax invoice</div>
+                    <ShimmerBar width="80px" height="14px" />
+                    <ShimmerBar width="110px" height="10px" />
+                    <ShimmerBar width="110px" height="10px" />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: "12px" }}>
+                  <ShimmerBar width="160px" height="13px" />
+                </div>
+
+                <div className="pdf-strip grid-cols-3">
+                  <div>
+                    <div className="psi-l">Event</div>
+                    <ShimmerBar width="110px" height="12px" style={{ marginTop: "4px" }} />
+                  </div>
+                  <div>
+                    <div className="psi-l">Dates</div>
+                    <ShimmerBar width="90px" height="12px" style={{ marginTop: "4px" }} />
+                  </div>
+                  <div>
+                    <div className="psi-l">Venue</div>
+                    <ShimmerBar width="110px" height="12px" style={{ marginTop: "4px" }} />
+                  </div>
+                </div>
+
+                {/* Table Skeleton */}
+                <table className="pdf-tbl">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 28 }}>No.</th>
+                      <th>Service description</th>
+                      <th style={{ width: 46, textAlign: "center" }}>Days</th>
+                      <th style={{ width: 90, textAlign: "right" }}>Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 2 }).map((_, idx) => (
+                      <tr key={idx}>
+                        <td>{idx + 1}</td>
+                        <td>
+                          <ShimmerBar width="140px" height="12px" style={{ marginBottom: "4px" }} />
+                          <ShimmerBar width="90px" height="9px" />
+                        </td>
+                        <td style={{ textAlign: "center" }}><ShimmerBar width="20px" height="10px" style={{ margin: "0 auto" }} /></td>
+                        <td style={{ textAlign: "right" }}><ShimmerBar width="60px" height="12px" style={{ marginLeft: "auto" }} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Totals Skeleton */}
+                <div className="pdf-totals">
+                  <div className="pdf-totals-box">
+                    {Array.from({ length: 6 }).map((_, idx) => (
+                      <div className="pdf-trow" key={idx}>
+                        <ShimmerBar width="80px" height="10px" />
+                        <ShimmerBar width="60px" height="10px" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-[#F8F8F0] rounded-[4px] p-[8px_10px] text-[9px] mt-2">
+                  <ShimmerBar width="260px" height="10px" />
+                </div>
+
+                <div className="pdf-footer">
+                  <div className="pdf-sign">
+                    <div className="pdf-sign-line"></div>
+                    <div className="pdf-sign-lbl">BK Media — Authorised</div>
+                  </div>
+                  <div className="w-10 h-10 rounded-full border-[1.5px] border-[#888] flex items-center justify-center text-[8px] font-bold text-[#888]">
+                    STAMP
+                  </div>
+                  <div className="pdf-sign">
+                    <div className="pdf-sign-line"></div>
+                    <div className="pdf-sign-lbl">Client signature</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column Skeleton */}
+            <div>
+              <div className="grid grid-cols-2 gap-2 mb-[14px]">
+                <div className="met" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <ShimmerBar width="50%" height="10px" style={{ opacity: 0.6 }} />
+                  <ShimmerBar width="70%" height="18px" />
+                </div>
+                <div className="met" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <ShimmerBar width="50%" height="10px" style={{ opacity: 0.6 }} />
+                  <ShimmerBar width="70%" height="18px" />
+                </div>
+              </div>
+              <div className="card">
+                <div className="card-t">Payment tracking</div>
+                <div
+                  className="rounded-lg"
+                  style={{
+                    padding: "10px 12px",
+                    marginBottom: "8px",
+                    background: "var(--sem-gy-bg)",
+                    border: "1px solid var(--b1)",
+                  }}
+                >
+                  <ShimmerBar width="90px" height="12px" style={{ marginBottom: "6px" }} />
+                  <ShimmerBar width="120px" height="10px" style={{ marginBottom: "12px" }} />
+                  <div className="flex justify-between items-center">
+                    <ShimmerBar width="70px" height="14px" />
+                    <ShimmerBar width="50px" height="18px" radius="9999px" />
+                  </div>
+                </div>
+                <div
+                  className="rounded-lg"
+                  style={{
+                    padding: "10px 12px",
+                    marginBottom: "10px",
+                    background: "var(--sem-gy-bg)",
+                    border: "1px solid var(--b1)",
+                  }}
+                >
+                  <ShimmerBar width="90px" height="12px" style={{ marginBottom: "6px" }} />
+                  <ShimmerBar width="120px" height="10px" style={{ marginBottom: "12px" }} />
+                  <div className="flex justify-between items-center">
+                    <ShimmerBar width="70px" height="14px" />
+                    <ShimmerBar width="50px" height="18px" radius="9999px" />
+                  </div>
+                </div>
+                <button className="btn w-full justify-center" disabled style={{ opacity: 0.6 }}>
+                  Mark balance received
+                </button>
+              </div>
+            </div>
+          </div>
+        </ScreenFrame>
+      </>
+    );
+  }
 
   if (!invoice) {
     return (
