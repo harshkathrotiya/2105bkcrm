@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Pencil, Trash2 } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import SearchableSelect from "../ui/SearchableSelect";
@@ -11,21 +12,14 @@ import { calcDays, calcHours, timeToMinutes } from "@/lib/utils";
 import { generateId } from "@/lib/types";
 import { useCurrentUser } from "@/lib/use-current-user";
 import Button from "../ui/Button";
+import * as api from "@/lib/api";
+import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 
 const TIME_OPTIONS = [
   "06:00 AM", "06:30 AM", "07:00 AM", "07:30 AM", "08:00 AM", "08:30 AM", "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
   "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM",
   "06:00 PM", "06:30 PM", "07:00 PM", "07:30 PM", "08:00 PM", "08:30 PM", "09:00 PM", "09:30 PM", "10:00 PM", "10:30 PM", "11:00 PM", "11:30 PM",
-];
-
-const EVENT_TYPES = [
-  "Corporate event",
-  "Religious event",
-  "Wedding",
-  "Conference / Summit",
-  "Concert / Show",
-  "Government event",
-  "Other",
 ];
 
 export default function Screen04NewInquiry() {
@@ -37,6 +31,8 @@ export default function Screen04NewInquiry() {
   const { calendarEvents, dispatchCalendar } = useCalendar();
   const { quotations } = useQuotations();
   const { invoices } = useInvoices();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const preselectedClientId = searchParams.get("clientId") ?? "";
   const defaultClientId =
@@ -48,8 +44,91 @@ export default function Screen04NewInquiry() {
   const queryDate = searchParams.get("date");
   const defaultDate = queryDate && /^\d{4}-\d{2}-\d{2}$/.test(queryDate) ? queryDate : today;
 
+  // Dynamic event types
+  const [eventTypes, setEventTypes] = useState<string[]>([]);
+  const [showEventTypeDropdown, setShowEventTypeDropdown] = useState(false);
+  const [addingEventType, setAddingEventType] = useState(false);
+  const [newEventType, setNewEventType] = useState("");
+  const [editingEventType, setEditingEventType] = useState(false);
+  const [editEventTypeName, setEditEventTypeName] = useState("");
+  const eventTypeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (eventTypeRef.current && !eventTypeRef.current.contains(e.target as Node)) {
+        setShowEventTypeDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    api.fetchOptions("EVENT_TYPE")
+      .then((opts) => {
+        if (!active) return;
+        const values = opts.map((o) => o.value);
+        setEventTypes(values);
+        // Set default only if no value yet (not editing)
+        setEventType((cur) => cur || values[0] || "");
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const handleAddEventType = async () => {
+    const value = newEventType.trim();
+    if (!value) return;
+    try {
+      await api.addOption("EVENT_TYPE", value);
+      setEventTypes((prev) => prev.includes(value) ? prev : [...prev, value]);
+      setEventType(value);
+      setNewEventType("");
+      setAddingEventType(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add event type");
+    }
+  };
+
+  const handleEditEventType = async () => {
+    const oldValue = eventType;
+    const newValue = editEventTypeName.trim();
+    if (!newValue || oldValue === newValue) { setEditingEventType(false); return; }
+    try {
+      await api.updateOption("EVENT_TYPE", oldValue, newValue);
+      setEventTypes((prev) => prev.map((t) => t === oldValue ? newValue : t));
+      setEventType(newValue);
+      setEditingEventType(false);
+      toast.success("Event type updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update event type");
+    }
+  };
+
+  const handleRemoveEventType = async (value: string) => {
+    if (!value) return;
+    const ok = await confirm({
+      message: `Remove event type "${value}"? Existing inquiries will keep their current type.`,
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await api.removeOption("EVENT_TYPE", value);
+      setEventTypes((prev) => {
+        const remaining = prev.filter((t) => t !== value);
+        setEventType((cur) => cur === value ? (remaining[0] ?? "") : cur);
+        return remaining;
+      });
+      toast.success("Event type removed!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove event type");
+    }
+  };
+
   const [clientId, setClientId] = useState(defaultClientId);
-  const [eventType, setEventType] = useState(EVENT_TYPES[0]);
+  const [eventType, setEventType] = useState("");
   const [eventName, setEventName] = useState("");
   const [startDate, setStartDate] = useState(defaultDate);
   const [endDate, setEndDate] = useState(defaultDate);
@@ -159,7 +238,7 @@ export default function Screen04NewInquiry() {
 
   const handleReset = () => {
     setClientId(defaultClientId);
-    setEventType(EVENT_TYPES[0]);
+    setEventType(eventTypes[0] ?? "");
     setEventName("");
     setStartDate(today);
     setEndDate(today);
@@ -404,14 +483,64 @@ export default function Screen04NewInquiry() {
 
                 {/* Event type */}
                 <div className="field span2">
-                  <div className="flbl">Event type *</div>
-                  <select
-                    className="fsel"
-                    value={eventType}
-                    onChange={(e) => setEventType(e.target.value)}
-                  >
-                    {EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}
-                  </select>
+                  <div className="flbl" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>Event type *</span>
+                    {!addingEventType && !editingEventType && (
+                      <button type="button" className="btn" style={{ fontSize: 10, padding: "2px 6px" }} onClick={() => setAddingEventType(true)}>
+                        + Add type
+                      </button>
+                    )}
+                  </div>
+                  {addingEventType ? (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        className="finp" autoFocus placeholder="New event type"
+                        value={newEventType} onChange={(e) => setNewEventType(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddEventType(); } if (e.key === "Escape") { setAddingEventType(false); setNewEventType(""); } }}
+                      />
+                      <button type="button" className="btn btn-primary" style={{ fontSize: 11 }} onClick={handleAddEventType}>Add</button>
+                      <button type="button" className="btn" style={{ fontSize: 11 }} onClick={() => { setAddingEventType(false); setNewEventType(""); }}>Cancel</button>
+                    </div>
+                  ) : editingEventType ? (
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        className="finp" autoFocus placeholder="Edit event type name"
+                        value={editEventTypeName} onChange={(e) => setEditEventTypeName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleEditEventType(); } if (e.key === "Escape") { setEditingEventType(false); setEditEventTypeName(""); } }}
+                      />
+                      <button type="button" className="btn btn-primary" style={{ fontSize: 11 }} onClick={handleEditEventType}>Save</button>
+                      <button type="button" className="btn" style={{ fontSize: 11 }} onClick={() => { setEditingEventType(false); setEditEventTypeName(""); }}>Cancel</button>
+                    </div>
+                  ) : (
+                    <div ref={eventTypeRef} style={{ position: "relative" }}>
+                      <div className="fsel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setShowEventTypeDropdown(!showEventTypeDropdown)}>
+                        <span>{eventType || "-- Select Event Type --"}</span>
+                        <span style={{ fontSize: 10, color: "var(--tx3)", opacity: 0.7 }}>▼</span>
+                      </div>
+                      {showEventTypeDropdown && (
+                        <div className="absolute z-[999] left-0 w-full bg-s1 border border-b1 rounded-md shadow-lg flex flex-col" style={{ top: "100%", marginTop: 4, padding: "6px", maxHeight: 250, overflowY: "auto" }}>
+                          {eventType && !eventTypes.includes(eventType) && (
+                            <div className="flex items-center justify-between px-3 py-2 text-[12px] cursor-pointer hover:bg-s2 transition-colors text-tx font-medium rounded" onClick={() => setShowEventTypeDropdown(false)}>
+                              <span>{eventType}</span>
+                            </div>
+                          )}
+                          {eventTypes.map((t) => (
+                            <div key={t} className={`flex items-center justify-between px-3 py-2 text-[12px] cursor-pointer hover:bg-s2 transition-colors rounded ${eventType === t ? "bg-s2 font-medium" : "text-tx"}`} onClick={() => { setEventType(t); setShowEventTypeDropdown(false); }}>
+                              <span>{t}</span>
+                              <div className="flex items-center gap-3 pr-2" onClick={(e) => e.stopPropagation()}>
+                                <button type="button" className="p-1 hover:bg-s3 rounded text-tx3 hover:text-bl transition-all" title="Rename" onClick={() => { setEditingEventType(true); setEditEventTypeName(t); setEventType(t); setShowEventTypeDropdown(false); }}>
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button type="button" className="p-1 hover:bg-s3 rounded text-tx3 hover:text-rd transition-all" title="Delete" onClick={() => handleRemoveEventType(t)}>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Event Name */}

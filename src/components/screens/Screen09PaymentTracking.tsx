@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Check, Lock, Unlock, PartyPopper } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Check, Lock, Unlock, PartyPopper, Pencil, Trash2 } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -12,6 +12,7 @@ import { useInvoices, useQuotations, useInquiries } from "@/lib/store";
 import * as api from "@/lib/api";
 import { useMemo } from "react";
 import { useToast } from "../ui/Toast";
+import { useConfirm } from "../ui/ConfirmDialog";
 import { useCurrentUser } from "@/lib/use-current-user";
 
 interface Props {
@@ -21,6 +22,7 @@ interface Props {
 export default function Screen09PaymentTracking({ invoiceId }: Props) {
   const router = useRouter();
   const toast = useToast();
+  const confirm = useConfirm();
   const { can } = useCurrentUser();
   const canRecordPayment = can("invoices.edit");
   const { invoices, dispatchInvoices } = useInvoices();
@@ -72,6 +74,87 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
     
     return { total: inHouse + vendor || total, inHouse, vendor };
   }, [warehouseData, inquiry]);
+
+  // Dynamic payment methods
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const [showMethodDropdown, setShowMethodDropdown] = useState(false);
+  const [addingMethod, setAddingMethod] = useState(false);
+  const [newMethod, setNewMethod] = useState("");
+  const [editingMethod, setEditingMethod] = useState(false);
+  const [editMethodName, setEditMethodName] = useState("");
+  const methodRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (methodRef.current && !methodRef.current.contains(e.target as Node)) {
+        setShowMethodDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    api.fetchOptions("PAYMENT_METHOD")
+      .then((opts) => {
+        if (!active) return;
+        const values = opts.map((o) => o.value);
+        setPaymentMethods(values);
+        setFormMethod((cur) => cur || values[0] || "Bank transfer");
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const handleAddMethod = async () => {
+    const value = newMethod.trim();
+    if (!value) return;
+    try {
+      await api.addOption("PAYMENT_METHOD", value);
+      setPaymentMethods((prev) => prev.includes(value) ? prev : [...prev, value]);
+      setFormMethod(value);
+      setNewMethod("");
+      setAddingMethod(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add payment method");
+    }
+  };
+
+  const handleEditMethod = async () => {
+    const oldValue = formMethod;
+    const newValue = editMethodName.trim();
+    if (!newValue || oldValue === newValue) { setEditingMethod(false); return; }
+    try {
+      await api.updateOption("PAYMENT_METHOD", oldValue, newValue);
+      setPaymentMethods((prev) => prev.map((m) => m === oldValue ? newValue : m));
+      setFormMethod(newValue);
+      setEditingMethod(false);
+      toast.success("Payment method updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update payment method");
+    }
+  };
+
+  const handleRemoveMethod = async (value: string) => {
+    const ok = await confirm({
+      message: `Remove payment method "${value}"?`,
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await api.removeOption("PAYMENT_METHOD", value);
+      setPaymentMethods((prev) => {
+        const remaining = prev.filter((m) => m !== value);
+        setFormMethod((cur) => cur === value ? (remaining[0] ?? "") : cur);
+        return remaining;
+      });
+      toast.success("Payment method removed!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove payment method");
+    }
+  };
 
   const [formAmount, setFormAmount] = useState(
     invoice ? (invoice.advanceReceived ? invoice.balance.toString() : invoice.advance.toString()) : ""
@@ -375,17 +458,64 @@ export default function Screen09PaymentTracking({ invoiceId }: Props) {
                     </select>
                   </div>
                   <div className="field">
-                    <div className="flbl">Payment method</div>
-                    <select
-                      className="fsel"
-                      value={formMethod}
-                      onChange={(e) => setFormMethod(e.target.value)}
-                    >
-                      <option>Bank transfer</option>
-                      <option>UPI</option>
-                      <option>Cash</option>
-                      <option>Cheque</option>
-                    </select>
+                    <div className="flbl" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>Payment method</span>
+                      {!addingMethod && !editingMethod && (
+                        <button type="button" className="btn" style={{ fontSize: 10, padding: "2px 6px" }} onClick={() => setAddingMethod(true)}>
+                          + Add
+                        </button>
+                      )}
+                    </div>
+                    {addingMethod ? (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <input
+                          className="finp" autoFocus placeholder="New payment method"
+                          value={newMethod} onChange={(e) => setNewMethod(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddMethod(); } if (e.key === "Escape") { setAddingMethod(false); setNewMethod(""); } }}
+                        />
+                        <button type="button" className="btn btn-primary" style={{ fontSize: 11 }} onClick={handleAddMethod}>Add</button>
+                        <button type="button" className="btn" style={{ fontSize: 11 }} onClick={() => { setAddingMethod(false); setNewMethod(""); }}>Cancel</button>
+                      </div>
+                    ) : editingMethod ? (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <input
+                          className="finp" autoFocus placeholder="Edit method name"
+                          value={editMethodName} onChange={(e) => setEditMethodName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleEditMethod(); } if (e.key === "Escape") { setEditingMethod(false); setEditMethodName(""); } }}
+                        />
+                        <button type="button" className="btn btn-primary" style={{ fontSize: 11 }} onClick={handleEditMethod}>Save</button>
+                        <button type="button" className="btn" style={{ fontSize: 11 }} onClick={() => { setEditingMethod(false); setEditMethodName(""); }}>Cancel</button>
+                      </div>
+                    ) : (
+                      <div ref={methodRef} style={{ position: "relative" }}>
+                        <div className="fsel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setShowMethodDropdown(!showMethodDropdown)}>
+                          <span>{formMethod || "-- Select Method --"}</span>
+                          <span style={{ fontSize: 10, color: "var(--tx3)", opacity: 0.7 }}>▼</span>
+                        </div>
+                        {showMethodDropdown && (
+                          <div className="absolute z-[999] left-0 w-full bg-s1 border border-b1 rounded-md shadow-lg flex flex-col" style={{ top: "100%", marginTop: 4, padding: "6px", maxHeight: 200, overflowY: "auto" }}>
+                            {formMethod && !paymentMethods.includes(formMethod) && (
+                              <div className="flex items-center px-3 py-2 text-[12px] cursor-pointer hover:bg-s2 rounded font-medium" onClick={() => setShowMethodDropdown(false)}>
+                                <span>{formMethod}</span>
+                              </div>
+                            )}
+                            {paymentMethods.map((m) => (
+                              <div key={m} className={`flex items-center justify-between px-3 py-2 text-[12px] cursor-pointer hover:bg-s2 transition-colors rounded ${formMethod === m ? "bg-s2 font-medium" : "text-tx"}`} onClick={() => { setFormMethod(m); setShowMethodDropdown(false); }}>
+                                <span>{m}</span>
+                                <div className="flex items-center gap-3 pr-2" onClick={(e) => e.stopPropagation()}>
+                                  <button type="button" className="p-1 hover:bg-s3 rounded text-tx3 hover:text-bl transition-all" title="Rename" onClick={() => { setEditingMethod(true); setEditMethodName(m); setFormMethod(m); setShowMethodDropdown(false); }}>
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button type="button" className="p-1 hover:bg-s3 rounded text-tx3 hover:text-rd transition-all" title="Delete" onClick={() => handleRemoveMethod(m)}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="field">
                     <div className="flbl">Reference no.</div>

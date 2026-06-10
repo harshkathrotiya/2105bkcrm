@@ -82,7 +82,7 @@ export default function Screen19AssetReportPDF() {
         escapeCell(eq.id),
         escapeCell(eq.productName),
         escapeCell(eq.category),
-        escapeCell(eq.quantity),
+        escapeCell(eq.itemType === "BULK" ? `${eq.quantity} ${eq.quantityUnit}` : "1"),
         escapeCell(eq.serialNumber),
         escapeCell(eq.bodyName),
         escapeCell(eq.kitId),
@@ -369,7 +369,7 @@ export default function Screen19AssetReportPDF() {
                 <td>{categoryLabels[eq.category] || eq.category}</td>
                 <td style={{ fontFamily: "monospace", wordBreak: "break-all" }}>{eq.serialNumber || "—"}</td>
                 <td>{eq.respPerson || "Warehouse"}</td>
-                <td style={{ textAlign: "right" }}>{eq.quantity}</td>
+                <td style={{ textAlign: "right" }}>{eq.itemType === "BULK" ? `${eq.quantity} ${eq.quantityUnit}` : "1"}</td>
                 <td style={{ textAlign: "right" }}>₹{(eq.purchasePrice || 0).toLocaleString("en-IN")}</td>
                 <td>{eq.status}</td>
               </tr>

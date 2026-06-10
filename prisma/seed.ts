@@ -517,6 +517,7 @@ async function main() {
   let eqCount = 0;
   for (const row of equipRows) {
     const { quantity, quantity_unit } = parseQty(row.qty_raw ?? 1);
+    const isBulk = quantity > 1 || quantity_unit !== "pieces";
     const sold = isSold(row.bill_number);
     // Find kit by body_name
     const kitId = row.body_name && kitMap[row.body_name] ? kitMap[row.body_name] : null;
@@ -524,7 +525,8 @@ async function main() {
       data: {
         product_name: row.product_name,
         category: row.category,
-        quantity,
+        item_type: isBulk ? "BULK" : "INDIVIDUAL",
+        quantity: isBulk ? quantity : 1,
         quantity_unit,
         serial_number: row.serial || null,
         body_name: row.body_name || null,

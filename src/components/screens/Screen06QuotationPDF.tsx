@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, AlertTriangle, ArrowUpRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Check, AlertTriangle, ArrowUpRight, ChevronDown, ChevronUp } from "lucide-react";
 import SectionHeader from "../ui/SectionHeader";
 import ScreenFrame from "../ui/ScreenFrame";
 import Badge from "../ui/Badge";
@@ -11,6 +12,8 @@ import { generateRevisionNo } from "@/lib/utils";
 import { generateId } from "@/lib/types";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { ShimmerBar } from "../ui/LoadingSkeleton";
+import * as api from "@/lib/api";
+import type { QuotationRevision } from "@/lib/api";
 
 interface Props {
   quotationId: string;
@@ -42,6 +45,18 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
   const { quotations, dispatchQuotations, loading: quotationsLoading } = useQuotations();
   const { inquiries, loading: inquiriesLoading } = useInquiries();
   const loading = quotationsLoading || inquiriesLoading;
+
+  const [revisionHistory, setRevisionHistory] = useState<QuotationRevision[]>([]);
+  const [expandedRevision, setExpandedRevision] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!quotationId) return;
+    let active = true;
+    api.fetchQuotationRevisions(quotationId)
+      .then((data) => { if (active) setRevisionHistory(data); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [quotationId]);
   
   if (loading) {
     return (
@@ -229,16 +244,6 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
   const inquiry = quotation ? inquiries.find((i) => i.id === quotation.inquiryId) : null;
   const isLed = inquiry?.department === "LED";
   const isMerged = inquiry?.department === "MERGED";
-
-  // All quotations for the same inquiry (current + revisions)
-  const revisions = quotation
-    ? quotations
-        .filter((q) => q.inquiryId === quotation.inquiryId)
-        .sort(
-          (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        )
-    : [];
 
   const statusBadge = (() => {
     switch (quotation?.status) {
@@ -728,54 +733,71 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
 
             {/* Revision history */}
             <div className="card">
-              <div className="card-t">Revision history</div>
-              {revisions.length === 0 ? (
-                <div className="text-[11px] text-tx3">No revisions yet</div>
+              <div className="card-t" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>Revision history</span>
+                {revisionHistory.length > 0 && (
+                  <span className="text-[10px] text-tx3 font-normal">
+                    v{quotation.revisionNumber ?? 0} current · {revisionHistory.length} saved
+                  </span>
+                )}
+              </div>
+              {revisionHistory.length === 0 ? (
+                <div className="text-[11px] text-tx3">No revisions yet — edits you save will appear here.</div>
               ) : (
                 <div className="flex flex-col gap-[4px]">
-                  {/* Show from latest to oldest */}
-                  {[...revisions].reverse().map((rev) => {
-                    const isCurrent = rev.id === quotation.id;
+                  {[...revisionHistory].reverse().map((rev) => {
+                    const isExpanded = expandedRevision === rev.id;
+                    const fmt2 = (n: number) => n.toLocaleString("en-IN");
+                    const savedDate = new Date(rev.savedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                    const savedTime = new Date(rev.savedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
                     return (
-                      <Link
-                        key={rev.id}
-                        href={`/quotations/${rev.id}/pdf`}
-                        className={`flex items-center justify-between rounded-md transition-colors ${
-                          isCurrent
-                            ? "bg-bl/10 border border-bl/20"
-                            : "hover:bg-hover-bg"
-                        }`}
-                        style={{ padding: "8px 12px" }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <span
-                          className={`font-mono text-[11px] ${
-                            isCurrent ? "text-bl font-medium" : "text-tx2"
-                          }`}
+                      <div key={rev.id} className="rounded-md border border-b1 overflow-hidden">
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between text-left hover:bg-s2 transition-colors"
+                          style={{ padding: "8px 12px" }}
+                          onClick={() => setExpandedRevision(isExpanded ? null : rev.id)}
                         >
-                          {rev.quoteNo}
-                        </span>
-                        <div className="flex items-center gap-[6px]">
-                          {isCurrent && (
-                            <span className="text-[9px] text-bl font-medium">
-                              Current
-                            </span>
-                          )}
-                          <Badge
-                            variant={
-                              rev.status === "Approved"
-                                ? "gr"
-                                : rev.status === "Revised"
-                                ? "bl"
-                                : rev.status === "Sent"
-                                ? "am"
-                                : "gy"
-                            }
-                          >
-                            {rev.status}
-                          </Badge>
-                        </div>
-                      </Link>
+                          <div>
+                            <span className="text-[11px] font-medium text-tx">v{rev.version}</span>
+                            <span className="text-[10px] text-tx3 ml-2">{savedDate} · {savedTime}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-mono text-tx2">₹{fmt2(rev.total)}</span>
+                            {isExpanded ? <ChevronUp className="w-3.5 h-3.5 text-tx3" /> : <ChevronDown className="w-3.5 h-3.5 text-tx3" />}
+                          </div>
+                        </button>
+                        {isExpanded && (
+                          <div className="border-t border-b1" style={{ padding: "10px 12px", background: "var(--s2)" }}>
+                            <table style={{ width: "100%", fontSize: "10.5px", borderCollapse: "collapse" }}>
+                              <thead>
+                                <tr style={{ color: "var(--tx3)", borderBottom: "1px solid var(--b1)" }}>
+                                  <th style={{ textAlign: "left", fontWeight: 500, paddingBottom: "4px" }}>Position</th>
+                                  <th style={{ textAlign: "right", fontWeight: 500, paddingBottom: "4px" }}>Days</th>
+                                  <th style={{ textAlign: "right", fontWeight: 500, paddingBottom: "4px" }}>Amount</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rev.equipment.map((row, i) => (
+                                  <tr key={i} style={{ borderBottom: "1px solid var(--b1)" }}>
+                                    <td style={{ padding: "4px 0", color: "var(--tx2)" }}>{row.position}</td>
+                                    <td style={{ textAlign: "right", color: "var(--tx3)" }}>{row.days}</td>
+                                    <td style={{ textAlign: "right", color: "var(--tx)" }}>₹{fmt2(row.amount)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            <div style={{ marginTop: "8px", paddingTop: "6px", borderTop: "1px solid var(--b1)", display: "flex", justifyContent: "space-between", fontSize: "10.5px" }}>
+                              <span className="text-tx3">Subtotal / CGST / SGST</span>
+                              <span className="text-tx2">₹{fmt2(rev.subtotal)} + ₹{fmt2(rev.cgst)} + ₹{fmt2(rev.sgst)}</span>
+                            </div>
+                            <div style={{ marginTop: "4px", display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: 600 }}>
+                              <span>Total</span>
+                              <span style={{ color: "var(--bl)" }}>₹{fmt2(rev.total)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

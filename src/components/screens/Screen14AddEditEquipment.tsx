@@ -35,6 +35,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
   const [form, setForm] = useState({
     productName: "",
     category: "CAMERA" as string,
+    itemType: "INDIVIDUAL" as "INDIVIDUAL" | "BULK",
     quantity: 1,
     serialNumber: "",
     bodyName: "",
@@ -119,8 +120,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
     }
   };
 
-  const handleRemoveCategory = async () => {
-    const value = form.category;
+  const handleRemoveCategory = async (value: string) => {
     if (!value) return;
     const ok = await confirm({
       message: `Are you sure you want to remove the category "${catLabel(value)}"? Existing equipment items of this category will remain unchanged, but it will be removed from the option list.`,
@@ -130,9 +130,12 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
     if (!ok) return;
     try {
       await api.removeOption("EQUIPMENT_CATEGORY", value);
-      const remaining = categories.filter((c) => c !== value);
-      setCategories(remaining);
-      update("category", remaining.length > 0 ? remaining[0] : "");
+      setCategories((prev) => {
+        const remaining = prev.filter((c) => c !== value);
+        // If the deleted category was selected, move to first remaining
+        setForm((f) => f.category === value ? { ...f, category: remaining[0] ?? "" } : f);
+        return remaining;
+      });
       toast.success("Category removed successfully!");
     } catch (err: any) {
       toast.error(err.message || "Failed to remove category");
@@ -153,6 +156,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
           setForm({
             productName: data.productName || "",
             category: data.category || "CAMERA",
+            itemType: data.itemType || "INDIVIDUAL",
             quantity: data.quantity || 1,
             serialNumber: data.serialNumber || "",
             bodyName: data.bodyName || "",
@@ -229,14 +233,13 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
     return {
       productName: form.productName.trim().length >= 2,
       category: form.category.trim().length > 0,
-      quantity: Number(form.quantity) >= 1,
       purchasePrice: form.purchasePrice === "" || (!isNaN(priceNum) && priceNum >= 0),
       vendorSelected: hasVendorId,
       ownerStaffSelected: hasOwnerStaff,
     };
   }, [form]);
 
-  const allRequired = validations.productName && validations.category && validations.quantity && validations.purchasePrice && validations.vendorSelected && validations.ownerStaffSelected;
+  const allRequired = validations.productName && validations.category && validations.purchasePrice && validations.vendorSelected && validations.ownerStaffSelected;
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -247,7 +250,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
     try {
       const payload = {
         ...form,
-        quantity: Number(form.quantity),
+        quantity: form.itemType === "BULK" ? Number(form.quantity) : 1,
         purchasePrice: form.purchasePrice === "" ? null : Number(form.purchasePrice),
         serialNumber: form.serialNumber.trim() || null,
         bodyName: form.bodyName.trim() || null,
@@ -362,6 +365,39 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
         <fieldset disabled={!canSave} className="two-col" style={{ border: "none", padding: 0, margin: 0, minInlineSize: "auto", gridTemplateColumns: "1fr 280px", display: "grid" }}>
           {/* Main Form Fields */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div className="card">
+              <div className="card-t">Item Type</div>
+              <div style={{ display: "flex", gap: "10px" }}>
+                {(["INDIVIDUAL", "BULK"] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => update("itemType", type)}
+                    style={{
+                      flex: 1,
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      border: `2px solid ${form.itemType === type ? "var(--bl)" : "var(--b1)"}`,
+                      background: form.itemType === type ? "var(--sem-bl-bg)" : "var(--s2)",
+                      color: form.itemType === type ? "var(--bl)" : "var(--tx2)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, fontSize: "12px", marginBottom: "3px" }}>
+                      {type === "INDIVIDUAL" ? "Individual Item" : "Bulk / Consumable"}
+                    </div>
+                    <div style={{ fontSize: "10.5px", opacity: 0.75 }}>
+                      {type === "INDIVIDUAL"
+                        ? "One unique unit — camera, lens, light, monitor, etc."
+                        : "Quantity-based — wire, cable, connector, etc."}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="card">
               <div className="card-t">General Information</div>
               <div className="fgrid">
@@ -490,10 +526,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                                   type="button"
                                   className="p-1 hover:bg-s3 rounded text-tx3 hover:text-rd transition-all"
                                   title="Delete Category"
-                                  onClick={async () => {
-                                    update("category", c);
-                                    await handleRemoveCategory();
-                                  }}
+                                  onClick={() => handleRemoveCategory(c)}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -522,30 +555,32 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                   </select>
                 </div>
 
-                <div className="field">
-                  <div className="flbl">Quantity *</div>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <input
-                      type="number"
-                      className="finp"
-                      style={{ flex: 1 }}
-                      min="1"
-                      value={form.quantity}
-                      onChange={(e) => update("quantity", Math.max(1, parseInt(e.target.value) || 1))}
-                      required
-                    />
-                    <select
-                      className="fsel"
-                      style={{ width: "100px" }}
-                      value={form.quantityUnit}
-                      onChange={(e) => update("quantityUnit", e.target.value as "pieces" | "pair" | "metre")}
-                    >
-                      <option value="pieces">pcs</option>
-                      <option value="pair">pair</option>
-                      <option value="metre">mtr</option>
-                    </select>
+                {form.itemType === "BULK" && (
+                  <div className="field">
+                    <div className="flbl">Quantity *</div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <input
+                        type="number"
+                        className="finp"
+                        style={{ flex: 1 }}
+                        min="1"
+                        value={form.quantity}
+                        onChange={(e) => update("quantity", Math.max(1, parseInt(e.target.value) || 1))}
+                        required
+                      />
+                      <select
+                        className="fsel"
+                        style={{ width: "110px" }}
+                        value={form.quantityUnit}
+                        onChange={(e) => update("quantityUnit", e.target.value as "pieces" | "pair" | "metre")}
+                      >
+                        <option value="pieces">Pieces</option>
+                        <option value="pair">Pair</option>
+                        <option value="metre">Metre</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="field">
                   <div className="flbl">Responsible Person (Ops/Owner)</div>
@@ -648,21 +683,14 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                 )}
 
                 <div className="field span2">
-                  <div className="flbl">
-                    Serial Numbers {form.quantity > 1 ? "(Enter one serial number per line)" : ""}
-                  </div>
-                  <textarea
-                    className="ftxt"
+                  <div className="flbl">Serial Number{form.itemType === "BULK" ? " / Batch Number" : ""}</div>
+                  <input
+                    type="text"
+                    className="finp"
                     value={form.serialNumber}
                     onChange={(e) => update("serialNumber", e.target.value)}
-                    placeholder={form.quantity > 1 ? "FX6-S-701\nFX6-S-702\nFX6-S-703" : "e.g. FX6-S-701"}
-                    rows={form.quantity > 1 ? 4 : 2}
+                    placeholder={form.itemType === "BULK" ? "e.g. BATCH-2026-001" : "e.g. FX6-S-701"}
                   />
-                  {form.quantity > 1 && (
-                    <div style={{ fontSize: "10.5px", color: "var(--tx3)", marginTop: "4px" }}>
-                      Tip: Enter {form.quantity} serial numbers split by newlines.
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -743,10 +771,6 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                   <span>{validations.category ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />}</span>
                   <span>Valid Category Selected</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", color: validations.quantity ? "var(--gr)" : "var(--tx3)" }}>
-                  <span>{validations.quantity ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />}</span>
-                  <span>Quantity (minimum 1)</span>
-                </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", color: validations.purchasePrice ? "var(--gr)" : "var(--tx3)" }}>
                   <span>{validations.purchasePrice ? <Check size={12} strokeWidth={3} /> : <Circle size={12} />}</span>
                   <span>Purchase Price (non-negative)</span>
@@ -761,23 +785,29 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
             </div>
 
             <div className="card">
-              <div className="card-t">Asset Valuation Summary</div>
+              <div className="card-t">Asset Valuation</div>
               <div style={{ fontSize: "11.5px", lineHeight: "1.6" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <span style={{ color: "var(--tx3)" }}>Quantity:</span>
-                  <span style={{ fontWeight: 500 }}>{form.quantity} {form.quantityUnit}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <span style={{ color: "var(--tx3)" }}>Price per unit:</span>
-                  <span style={{ fontWeight: 500 }}>
-                    {form.purchasePrice !== "" ? `₹${Number(form.purchasePrice).toLocaleString("en-IN")}` : "—"}
-                  </span>
-                </div>
-                <hr style={{ border: "0", borderTop: "1px solid var(--b1)", margin: "8px 0" }} />
+                {form.itemType === "BULK" && (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <span style={{ color: "var(--tx3)" }}>Quantity:</span>
+                      <span style={{ fontWeight: 500 }}>{form.quantity} {form.quantityUnit}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <span style={{ color: "var(--tx3)" }}>Price per unit:</span>
+                      <span style={{ fontWeight: 500 }}>
+                        {form.purchasePrice !== "" ? `₹${Number(form.purchasePrice).toLocaleString("en-IN")}` : "—"}
+                      </span>
+                    </div>
+                    <hr style={{ border: "0", borderTop: "1px solid var(--b1)", margin: "8px 0" }} />
+                  </>
+                )}
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", fontWeight: 600 }}>
                   <span>Total Value:</span>
                   <span style={{ color: "var(--gr)" }}>
-                    {form.purchasePrice !== "" ? `₹${(Number(form.purchasePrice) * Number(form.quantity)).toLocaleString("en-IN")}` : "—"}
+                    {form.purchasePrice !== ""
+                      ? `₹${(Number(form.purchasePrice) * (form.itemType === "BULK" ? Number(form.quantity) : 1)).toLocaleString("en-IN")}`
+                      : "—"}
                   </span>
                 </div>
               </div>

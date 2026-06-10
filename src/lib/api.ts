@@ -8,7 +8,7 @@ import type { Client, Inquiry, Quotation, Invoice, CalendarEvent, Equipment, Kit
 
 export type OptionItem = {
   id: number;
-  type: "STAFF_ROLE" | "QUOTATION_POSITION" | "EQUIPMENT_CATEGORY";
+  type: "STAFF_ROLE" | "QUOTATION_POSITION" | "EQUIPMENT_CATEGORY" | "EVENT_TYPE" | "PAYMENT_METHOD";
   value: string;
   metaEquip?: string | null;
   metaRate?: number | null;
@@ -138,6 +138,22 @@ export function updateQuotation(
 
 export function deleteQuotation(id: string): Promise<void> {
   return request(`/api/quotations/${id}`, { method: "DELETE" });
+}
+
+export type QuotationRevision = {
+  id: number;
+  quotationId: string;
+  version: number;
+  equipment: import("./types").QuotationRow[];
+  subtotal: number;
+  cgst: number;
+  sgst: number;
+  total: number;
+  savedAt: string;
+};
+
+export function fetchQuotationRevisions(quotationId: string): Promise<QuotationRevision[]> {
+  return request(`/api/quotations/${quotationId}/revisions`);
 }
 
 // ── Invoices (API is available if needed, but frontend uses context for now) ──

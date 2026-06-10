@@ -130,6 +130,7 @@ export interface Equipment {
   id: number;
   productName: string;
   category: "CAMERA" | "LENS" | "VIDEO_MIXER" | "VIDEO_RECORDER" | "AUDIO_MIXER" | "WIRELESS_TX" | "MONITOR" | "TALLY_SYSTEM" | "INTERCOM" | "STREAMING_DEVICE" | "CONVERTER" | "SPLITTER" | "NETWORK" | "CABLE" | "GIMBAL" | "TRIPOD" | "CONTROLLER" | "INTERNET_DEVICE" | "UPS" | "STORAGE" | "ACCESSORY" | "LED_PANEL" | "LED_PROCESSOR" | "LED_CABLE" | "LED_ACCESSORY" | string;
+  itemType: "INDIVIDUAL" | "BULK";
   quantity: number;
   quantityUnit: "pieces" | "pair" | "metre";
   serialNumber?: string | null;

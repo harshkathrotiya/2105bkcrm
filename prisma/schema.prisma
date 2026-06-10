@@ -105,8 +105,25 @@ model Quotation {
   sent_at         String?
   approved_at     String?
   invoices        Invoice[]
+  revisions       QuotationRevision[]
 
   @@map("quotations")
+}
+
+model QuotationRevision {
+  id             Int    @id @default(autoincrement())
+  quotation_id   String
+  quotation      Quotation @relation(fields: [quotation_id], references: [id], onDelete: Cascade)
+  version        Int
+  equipment      String @default("[]")
+  subtotal       Float  @default(0)
+  cgst           Float  @default(0)
+  sgst           Float  @default(0)
+  total          Float  @default(0)
+  saved_at       String
+
+  @@index([quotation_id])
+  @@map("quotation_revisions")
 }
 
 model Invoice {
@@ -170,6 +187,7 @@ model Equipment {
   id             Int                @id @default(autoincrement())
   product_name   String
   category       String
+  item_type      String             @default("INDIVIDUAL") // "INDIVIDUAL" | "BULK"
   quantity       Int                @default(1)
   quantity_unit  String             @default("pieces") // "pieces" | "pair" | "metre"
   serial_number  String?

@@ -111,11 +111,6 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
   }, [unassignedEquipmentOptions, selectedAccessoryId]);
 
   const accessoryQtyError = useMemo(() => {
-    if (!selectedAccessory) return "";
-    if (selectedAccessoryQty <= 0) return "Quantity must be greater than 0";
-    if (selectedAccessoryQty > selectedAccessory.quantity) {
-      return `Quantity exceeds available stock (${selectedAccessory.quantity})`;
-    }
     return "";
   }, [selectedAccessory, selectedAccessoryQty]);
 
@@ -126,11 +121,6 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
   }, [unassignedMainBodies, selectedMainBodyId]);
 
   const selectedMainBodyQtyError = useMemo(() => {
-    if (!selectedMainBodyItem) return "";
-    if (selectedMainBodyQty <= 0) return "Quantity must be greater than 0";
-    if (selectedMainBodyQty > selectedMainBodyItem.quantity) {
-      return `Quantity exceeds available stock (${selectedMainBodyItem.quantity})`;
-    }
     return "";
   }, [selectedMainBodyItem, selectedMainBodyQty]);
 
@@ -262,7 +252,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
 
   const getKitTotalValue = (kit: Kit) => {
     if (!kit.items) return 0;
-    return kit.items.reduce((sum, item) => sum + (item.purchasePrice || 0) * (item.quantity || 1), 0);
+    return kit.items.reduce((sum, item) => sum + (item.purchasePrice || 0) * (item.itemType === "BULK" ? (item.quantity || 1) : 1), 0);
   };
 
   if (kitsLoading && !activeKit) {
@@ -576,7 +566,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                       }}
                       options={unassignedMainBodies.map((item) => ({
                         value: String(item.id),
-                        label: `[${item.category}] ${item.productName} (S/N: ${formatSerialNumber(item.serialNumber)}) [Available: ${item.quantity}]`,
+                        label: `[${item.category}] ${item.productName}${item.serialNumber ? ` (S/N: ${formatSerialNumber(item.serialNumber)})` : ""}`,
                       }))}
                       placeholder="-- Select Unassigned Main Body (Camera / Mixer / etc.) --"
                       disabled={settingMainBody || equipmentLoading}
@@ -673,7 +663,7 @@ export default function Screen17KitDetail({ kitId }: Screen17KitDetailProps) {
                     }}
                     options={unassignedEquipmentOptions.map((item) => ({
                       value: String(item.id),
-                      label: `${item.productName} (S/N: ${formatSerialNumber(item.serialNumber)}) [Available: ${item.quantity}]`,
+                      label: `${item.productName}${item.serialNumber ? ` (S/N: ${formatSerialNumber(item.serialNumber)})` : ""}`,
                     }))}
                     placeholder="-- Select Equipment (Lens, Cables, Batteries, etc.) --"
                     disabled={addingAccessory || equipmentLoading}

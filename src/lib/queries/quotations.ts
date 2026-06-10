@@ -5,6 +5,56 @@
 import { db, withRetry } from "@/lib/db";
 import type { Quotation, QuotationRow } from "@/lib/types";
 
+export interface QuotationRevision {
+  id: number;
+  quotationId: string;
+  version: number;
+  equipment: QuotationRow[];
+  subtotal: number;
+  cgst: number;
+  sgst: number;
+  total: number;
+  savedAt: string;
+}
+
+function mapRevision(r: any): QuotationRevision {
+  return {
+    id: r.id,
+    quotationId: r.quotation_id,
+    version: r.version,
+    equipment: JSON.parse(r.equipment) as QuotationRow[],
+    subtotal: r.subtotal,
+    cgst: r.cgst,
+    sgst: r.sgst,
+    total: r.total,
+    savedAt: r.saved_at,
+  };
+}
+
+export async function getQuotationRevisions(quotationId: string): Promise<QuotationRevision[]> {
+  const rows = await db.quotationRevision.findMany({
+    where: { quotation_id: quotationId },
+    orderBy: { version: "asc" },
+  });
+  return rows.map(mapRevision);
+}
+
+async function saveRevision(quotation: Quotation): Promise<void> {
+  const savedAt = new Date().toISOString();
+  await db.quotationRevision.create({
+    data: {
+      quotation_id: quotation.id,
+      version: quotation.revisionNumber ?? 0,
+      equipment: JSON.stringify(quotation.equipment),
+      subtotal: quotation.subtotal,
+      cgst: quotation.cgst,
+      sgst: quotation.sgst,
+      total: quotation.total,
+      saved_at: savedAt,
+    },
+  });
+}
+
 export async function getAllQuotations(): Promise<Quotation[]> {
   const rows = await db.quotation.findMany({
     orderBy: { created_at: "desc" },
@@ -94,12 +144,25 @@ export async function createQuotation(quotation: Quotation): Promise<Quotation> 
 
 export async function updateQuotation(
   id: string,
-  patch: Partial<Omit<Quotation, "id">>
+  patch: Partial<Omit<Quotation, "id">>,
+  { saveRevision: doSaveRevision = false }: { saveRevision?: boolean } = {}
 ): Promise<Quotation | undefined> {
   const existing = await getQuotationById(id);
   if (!existing) return undefined;
 
-  const merged = { ...existing, ...patch };
+  // Snapshot the current state before overwriting when equipment changes
+  const equipmentChanged = doSaveRevision ||
+    (patch.equipment !== undefined && JSON.stringify(patch.equipment) !== JSON.stringify(existing.equipment));
+
+  if (equipmentChanged) {
+    await saveRevision(existing);
+  }
+
+  const nextRevision = equipmentChanged
+    ? (existing.revisionNumber ?? 0) + 1
+    : (patch.revisionNumber ?? existing.revisionNumber ?? 0);
+
+  const merged = { ...existing, ...patch, revisionNumber: nextRevision };
 
   await db.quotation.update({
     where: { id },

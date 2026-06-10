@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
     v.required("productName", "product name").minLength("productName", 2).maxLength("productName", 200);
     // Category is now user-extensible (managed via OptionList); require non-empty, capped length
     v.required("category").maxLength("category", 50);
-    if (body.quantity !== undefined) v.positiveInteger("quantity");
     if (body.quantityUnit !== undefined) v.oneOf("quantityUnit", ["pieces", "pair", "metre"]);
     if (body.serialNumber) v.maxLength("serialNumber", 100, "serial number");
     if (body.bodyName) v.maxLength("bodyName", 100, "body name");
@@ -70,8 +69,9 @@ export async function POST(request: NextRequest) {
     const item = await createEquipment({
       productName: body.productName.trim(),
       category: body.category,
-      quantity: parseInt(body.quantity ?? "1", 10),
-      quantityUnit: body.quantityUnit || "pieces",
+      itemType: (body.itemType === "BULK" ? "BULK" : "INDIVIDUAL") as "INDIVIDUAL" | "BULK",
+      quantity: body.itemType === "BULK" ? parseInt(body.quantity ?? "1", 10) : 1,
+      quantityUnit: (body.quantityUnit || "pieces") as "pieces" | "pair" | "metre",
       serialNumber: body.serialNumber?.trim() || null,
       bodyName: body.bodyName?.trim() || null,
       kitId: body.kitId ? parseInt(body.kitId, 10) : null,

@@ -97,7 +97,7 @@ export default function Screen13EquipmentList() {
         escapeCell(eq.id),
         escapeCell(eq.productName),
         escapeCell(eq.category),
-        escapeCell(eq.quantity),
+        escapeCell(eq.itemType === "BULK" ? `${eq.quantity} ${eq.quantityUnit}` : "1"),
         escapeCell(eq.serialNumber),
         escapeCell(eq.bodyName),
         escapeCell(eq.kitId),
@@ -379,6 +379,7 @@ export default function Screen13EquipmentList() {
                 >
                   <option value="">All Statuses</option>
                   <option value="AVAILABLE">Available</option>
+                  <option value="IN_USE">In Use</option>
                   <option value="MAINTENANCE">Maintenance</option>
                   <option value="SOLD">Sold</option>
                   <option value="RETIRED">Retired</option>
@@ -398,6 +399,7 @@ export default function Screen13EquipmentList() {
                           <th style={{ width: "90px" }}>Serial no.</th>
                           <th style={{ width: "100px", textAlign: "right" }}>Purchase price</th>
                           <th style={{ width: "70px" }}>Resp.</th>
+                          <th style={{ width: "90px" }}>Status</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -426,6 +428,9 @@ export default function Screen13EquipmentList() {
                             </td>
                             <td>
                               <ShimmerBar width="50px" height="11px" style={{ animationDelay: `${ri * 50 + 380}ms` }} />
+                            </td>
+                            <td>
+                              <ShimmerBar width="60px" height="18px" radius="9999px" style={{ animationDelay: `${ri * 50 + 390}ms` }} />
                             </td>
                           </tr>
                         ))}
@@ -461,7 +466,7 @@ export default function Screen13EquipmentList() {
                     <tbody>
                       {equipment.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="text-center py-6 text-tx3">
+                          <td colSpan={8} className="text-center py-6 text-tx3">
                             No equipment items matching filters
                           </td>
                         </tr>
@@ -510,6 +515,11 @@ export default function Screen13EquipmentList() {
                               )}
                             </td>
                             <td>{item.respPerson || <span style={{ color: "var(--tx3)" }}>—</span>}</td>
+                            <td>
+                              <Badge variant={item.inUseToday ? "bl" : item.status === "AVAILABLE" ? "gr" : item.status === "MAINTENANCE" ? "am" : item.status === "SOLD" || item.status === "RETIRED" ? "rd" : "gy"}>
+                                {item.inUseToday ? "In Use" : item.status.replace(/_/g, " ")}
+                              </Badge>
+                            </td>
                           </tr>
                         ))
                       )}

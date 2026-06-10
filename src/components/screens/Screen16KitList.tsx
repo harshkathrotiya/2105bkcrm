@@ -126,19 +126,13 @@ export default function Screen16KitList() {
         errors[index] = "Selected item not found";
         return;
       }
-
-      if (item.qty <= 0) {
-        errors[index] = "Quantity must be greater than 0";
-        return;
-      }
-
-      const totalSelected = equipmentTotals[item.id];
-      if (dbItem.quantity < totalSelected) {
-        if (modalEquipment.filter((a) => a.id === item.id).length > 1) {
-          errors[index] = `Combined quantity (${totalSelected}) exceeds available stock (${dbItem.quantity})`;
-        } else {
-          errors[index] = `Quantity exceeds available stock (${dbItem.quantity})`;
-        }
+      const alreadyAdded = modalEquipment.filter((a, i) => i !== index && a.id === item.id).length > 0;
+      if (alreadyAdded) {
+        errors[index] = "This item is already added";
+      } else if (dbItem.itemType === "BULK" && item.qty < 1) {
+        errors[index] = "Quantity must be at least 1";
+      } else if (dbItem.itemType === "BULK" && item.qty > dbItem.quantity) {
+        errors[index] = `Exceeds available stock (${dbItem.quantity} ${dbItem.quantityUnit})`;
       } else {
         errors[index] = "";
       }
@@ -217,7 +211,7 @@ export default function Screen16KitList() {
 
   const getKitTotalValue = (kit: Kit) => {
     if (!kit.items) return 0;
-    return kit.items.reduce((sum, item) => sum + (item.purchasePrice || 0) * (item.quantity || 1), 0);
+    return kit.items.reduce((sum, item) => sum + (item.purchasePrice || 0) * (item.itemType === "BULK" ? (item.quantity || 1) : 1), 0);
   };
 
   return (
@@ -529,9 +523,8 @@ export default function Screen16KitList() {
                               value={eq.id}
                               onChange={(val) => {
                                 const updated = [...modalEquipment];
-                                updated[index].id = val;
-                                updated[index].qty = 1;
-                                setModalEquipment(updated);
+                                updated[index] = { id: val, qty: 1 };
+                                setModalEquipment([...updated]);
                               }}
                               options={unassignedEquipmentOptions
                                 .filter((item) => {
@@ -540,27 +533,37 @@ export default function Screen16KitList() {
                                 })
                                 .map((item) => ({
                                   value: String(item.id),
-                                  label: `${item.productName} (S/N: ${formatSerialNumber(item.serialNumber)}) [Avail: ${item.quantity}]`,
+                                  label: `${item.productName}${item.serialNumber ? ` (S/N: ${formatSerialNumber(item.serialNumber)})` : ""}`,
                                 }))}
                               placeholder="-- Select Equipment --"
                               disabled={creating}
                               placement={index >= Math.max(2, modalEquipment.length - 2) ? "top" : "bottom"}
                             />
                             <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "4px" }}>
-                              <label style={{ fontSize: "11px", color: "var(--tx3)" }}>Qty:</label>
-                              <input
-                                type="number"
-                                min={1}
-                                className="finp"
-                                style={{ width: "70px", padding: "3px 6px", fontSize: "12px" }}
-                                value={eq.qty}
-                                onChange={(e) => {
-                                  const updated = [...modalEquipment];
-                                  updated[index].qty = parseInt(e.target.value, 10) || 0;
-                                  setModalEquipment(updated);
-                                }}
-                                disabled={creating || !eq.id}
-                              />
+                              {(() => {
+                                const selectedItem = eq.id ? unassignedEquipmentOptions.find((i) => i.id === parseInt(eq.id, 10)) : null;
+                                if (!selectedItem || selectedItem.itemType !== "BULK") return null;
+                                return (
+                                  <>
+                                    <label style={{ fontSize: "11px", color: "var(--tx3)" }}>Qty:</label>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      max={selectedItem.quantity}
+                                      className="finp"
+                                      style={{ width: "70px", padding: "3px 6px", fontSize: "12px" }}
+                                      value={eq.qty}
+                                      onChange={(e) => {
+                                        const updated = [...modalEquipment];
+                                        updated[index].qty = parseInt(e.target.value, 10) || 1;
+                                        setModalEquipment(updated);
+                                      }}
+                                      disabled={creating}
+                                    />
+                                    <span style={{ fontSize: "10px", color: "var(--tx3)" }}>/ {selectedItem.quantity} {selectedItem.quantityUnit}</span>
+                                  </>
+                                );
+                              })()}
                               <button
                                 type="button"
                                 className="btn"

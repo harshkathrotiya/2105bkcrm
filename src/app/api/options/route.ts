@@ -3,7 +3,7 @@ import { getOptions, addOption, removeOption, updateOption, type OptionType } fr
 import { Validator } from "@/lib/validate";
 import { requirePermission } from "@/lib/role-permissions";
 
-const VALID_TYPES: OptionType[] = ["STAFF_ROLE", "QUOTATION_POSITION", "EQUIPMENT_CATEGORY"];
+const VALID_TYPES: OptionType[] = ["STAFF_ROLE", "QUOTATION_POSITION", "EQUIPMENT_CATEGORY", "EVENT_TYPE", "PAYMENT_METHOD"];
 
 function isValidType(t: string | null): t is OptionType {
   return t !== null && VALID_TYPES.includes(t as OptionType);
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const type = request.nextUrl.searchParams.get("type");
     if (!isValidType(type)) {
-      return Response.json({ error: "type must be STAFF_ROLE, QUOTATION_POSITION or EQUIPMENT_CATEGORY" }, { status: 400 });
+      return Response.json({ error: "Invalid type. Must be one of: STAFF_ROLE, QUOTATION_POSITION, EQUIPMENT_CATEGORY, EVENT_TYPE, PAYMENT_METHOD" }, { status: 400 });
     }
     const options = await getOptions(type);
     return Response.json(options);
@@ -29,15 +29,17 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     if (!isValidType(body.type)) {
-      return Response.json({ error: "type must be STAFF_ROLE, QUOTATION_POSITION or EQUIPMENT_CATEGORY" }, { status: 400 });
+      return Response.json({ error: "Invalid type. Must be one of: STAFF_ROLE, QUOTATION_POSITION, EQUIPMENT_CATEGORY, EVENT_TYPE, PAYMENT_METHOD" }, { status: 400 });
     }
 
     // Adding a dropdown option requires edit access to the owning module,
     // so inline "add custom value" flows keep working for Managers.
-    const permByType: Record<string, "staff.edit" | "quotations.edit" | "equipment.edit"> = {
+    const permByType: Record<string, "staff.edit" | "quotations.edit" | "equipment.edit" | "inquiries.edit" | "invoices.edit"> = {
       STAFF_ROLE: "staff.edit",
       QUOTATION_POSITION: "quotations.edit",
       EQUIPMENT_CATEGORY: "equipment.edit",
+      EVENT_TYPE: "inquiries.edit",
+      PAYMENT_METHOD: "invoices.edit",
     };
     const auth = await requirePermission(request, permByType[body.type as string] ?? "settings.users");
     if (!auth.ok) return auth.response!;
@@ -66,7 +68,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     if (!isValidType(body.type)) {
-      return Response.json({ error: "type must be STAFF_ROLE, QUOTATION_POSITION or EQUIPMENT_CATEGORY" }, { status: 400 });
+      return Response.json({ error: "Invalid type. Must be one of: STAFF_ROLE, QUOTATION_POSITION, EQUIPMENT_CATEGORY, EVENT_TYPE, PAYMENT_METHOD" }, { status: 400 });
     }
 
     const v = new Validator(body);
@@ -92,7 +94,7 @@ export async function DELETE(request: NextRequest) {
     const type = request.nextUrl.searchParams.get("type");
     const value = request.nextUrl.searchParams.get("value");
     if (!isValidType(type)) {
-      return Response.json({ error: "type must be STAFF_ROLE, QUOTATION_POSITION or EQUIPMENT_CATEGORY" }, { status: 400 });
+      return Response.json({ error: "Invalid type. Must be one of: STAFF_ROLE, QUOTATION_POSITION, EQUIPMENT_CATEGORY, EVENT_TYPE, PAYMENT_METHOD" }, { status: 400 });
     }
     if (!value) {
       return Response.json({ error: "value is required" }, { status: 400 });

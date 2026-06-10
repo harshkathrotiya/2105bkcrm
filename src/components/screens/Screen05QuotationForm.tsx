@@ -188,64 +188,11 @@ export default function Screen05QuotationForm() {
     [quotations, selectedInquiryId]
   );
 
-  const makePositionRow = (no: number, posName: string, days: number): QuotationRow => {
-    const meta = positionMap[posName] ?? { equip: "", rate: 0 };
-    return { no, position: posName, equip: meta.equip, rate: meta.rate, days, amount: meta.rate * days };
-  };
-
-  const getDefaultRows = (inq: any, days: number): QuotationRow[] => {
-    if (!inq) return [];
-    const dept = inq.department || "VIDEO";
-    if (dept === "LED") {
-      const area = inq.screenWidth && inq.screenHeight ? inq.screenWidth * inq.screenHeight : 0;
-      const rateSetting = inq.ratePerSqft || 50;
-      const rate = rateSetting * area;
-      const desc = `LED Screen ${inq.screenWidth || 0}x${inq.screenHeight || 0} ${inq.ledType || "P4"} (${inq.location || "INDOOR"})${inq.stageType ? ` at ${inq.stageType}` : ""}`;
-      return [
-        { no: 1, position: desc, equip: `${inq.ledType || "P4"} LED`, rate, days, amount: rate * days },
-        makePositionRow(2, "Installation & de-installation charges", 1),
-        makePositionRow(3, "Content management operator", days),
-      ];
-    } else if (dept === "MERGED") {
-      const area = inq.screenWidth && inq.screenHeight ? inq.screenWidth * inq.screenHeight : 0;
-      const rateSetting = inq.ratePerSqft || 50;
-      const rate = rateSetting * area;
-      const desc = `LED Screen ${inq.screenWidth || 0}x${inq.screenHeight || 0} ${inq.ledType || "P4"} (${inq.location || "INDOOR"})${inq.stageType ? ` at ${inq.stageType}` : ""}`;
-      return [
-        makePositionRow(1, "Center Tally", days),
-        makePositionRow(2, "Center Semi Wide", days),
-        makePositionRow(3, "Wireless 1", days),
-        makePositionRow(4, "Photo 1", days),
-        makePositionRow(5, "Video Crane 32 Feet", days),
-        { no: 6, position: desc, equip: `${inq.ledType || "P4"} LED`, rate, days, amount: rate * days },
-        makePositionRow(7, "Installation & de-installation charges", 1),
-        makePositionRow(8, "Content management operator", days),
-      ];
-    } else {
-      return [
-        makePositionRow(1, "Center Tally", days),
-        makePositionRow(2, "Center Semi Wide", days),
-        makePositionRow(3, "Wireless 1", days),
-        makePositionRow(4, "Photo 1", days),
-        makePositionRow(5, "Video Crane 32 Feet", days),
-      ];
-    }
-  };
-
-  // Rows — start empty for new quotations; populated once positionMap loads from DB
+  // Rows — start from existing quotation data or empty for new quotations
   const [rows, setRows] = useState<QuotationRow[]>(() => {
     if (existingQuotation) return existingQuotation.equipment;
     return [];
   });
-
-  // Once positionMap is loaded from DB, populate default rows for new quotations
-  useEffect(() => {
-    if (!positionsLoaded) return;
-    if (existingQuotation) return; // editing — keep existing rows
-    const inq = inquiries.find((i) => i.id === selectedInquiryId);
-    setRows(getDefaultRows(inq, eventDays));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [positionsLoaded]);
 
   const canWrite = existingQuotation ? can("quotations.edit") : can("quotations.create");
 
@@ -292,91 +239,6 @@ export default function Screen05QuotationForm() {
     setRatePerSqft(ledRates[ledType] ?? 50);
   }, [ledType, ledRates]);
 
-  // Synchronize LED states back to quotation rows
-  useEffect(() => {
-    const isLedOrMerged = selectedInquiry?.department === "LED" || selectedInquiry?.department === "MERGED";
-    if (!isLedOrMerged) return;
-
-    const area = screenWidth && screenHeight ? parseFloat(screenWidth) * parseFloat(screenHeight) : 0;
-    const rate = ratePerSqft * area;
-    const desc = `LED Screen ${screenWidth || 0}x${screenHeight || 0} ${ledType} (${location})${stageType ? ` at ${stageType}` : ""}`;
-
-    setRows((prev) => {
-      // Find row indexes
-      const ledRowIdx = prev.findIndex(r => r.equip.includes("LED") || r.equip.toLowerCase() === "led screen");
-
-      const nextRows = [...prev];
-
-      // 1. Sync or add LED Screen row
-      if (ledRowIdx !== -1) {
-        nextRows[ledRowIdx] = {
-          ...nextRows[ledRowIdx],
-          position: desc,
-          equip: `${ledType} LED`,
-          rate: rate,
-          days: eventDays,
-          amount: rate * eventDays,
-        };
-      } else {
-        const maxNo = nextRows.reduce((m, r) => Math.max(m, r.no), 0);
-        nextRows.push({
-          no: maxNo + 1,
-          position: desc,
-          equip: `${ledType} LED`,
-          rate: rate,
-          days: eventDays,
-          amount: rate * eventDays,
-        });
-      }
-
-      // 2. Sync or add Installation row
-      const updatedInstallRowIdx = nextRows.findIndex(r => r.position.toLowerCase().includes("installation"));
-      if (updatedInstallRowIdx !== -1) {
-        nextRows[updatedInstallRowIdx] = {
-          ...nextRows[updatedInstallRowIdx],
-          rate: 5000,
-          days: 1,
-          amount: 5000,
-        };
-      } else {
-        const maxNo = nextRows.reduce((m, r) => Math.max(m, r.no), 0);
-        nextRows.push({
-          no: maxNo + 1,
-          position: "Installation & de-installation charges",
-          equip: "Service",
-          rate: 5000,
-          days: 1,
-          amount: 5000,
-        });
-      }
-
-      // 3. Sync or add Operator row
-      const updatedOperatorRowIdx = nextRows.findIndex(r => r.position.toLowerCase().includes("operator"));
-      if (updatedOperatorRowIdx !== -1) {
-        nextRows[updatedOperatorRowIdx] = {
-          ...nextRows[updatedOperatorRowIdx],
-          rate: 2000,
-          days: eventDays,
-          amount: 2000 * eventDays,
-        };
-      } else {
-        const maxNo = nextRows.reduce((m, r) => Math.max(m, r.no), 0);
-        nextRows.push({
-          no: maxNo + 1,
-          position: "Content management operator",
-          equip: "Operator",
-          rate: 2000,
-          days: eventDays,
-          amount: 2000 * eventDays,
-        });
-      }
-
-      // Re-index row numbers
-      return nextRows.map((r, i) => ({ ...r, no: i + 1 }));
-    });
-  }, [screenWidth, screenHeight, ledType, location, stageType, ratePerSqft, selectedInquiry, eventDays]);
-
-  // getDefaultRows and rows state moved above
 
   const handleInquiryChange = (id: string) => {
     setSelectedInquiryId(id);
@@ -386,7 +248,7 @@ export default function Screen05QuotationForm() {
     if (q) {
       setRows(q.equipment);
     } else {
-      setRows(getDefaultRows(inq, days));
+      setRows([]);
     }
   };
 

@@ -20,7 +20,8 @@ function mapEquipment(row: any): Equipment {
     id: row.id,
     productName: row.product_name,
     category: row.category,
-    quantity: row.quantity,
+    itemType: (row.item_type as "INDIVIDUAL" | "BULK") || "INDIVIDUAL",
+    quantity: row.quantity ?? 1,
     quantityUnit: (row.quantity_unit as "pieces" | "pair" | "metre") || "pieces",
     serialNumber: row.serial_number,
     bodyName: row.body_name,
@@ -291,8 +292,9 @@ export async function createEquipment(item: Omit<Equipment, "id" | "createdAt">)
     data: {
       product_name: item.productName,
       category: item.category,
-      quantity: item.quantity,
-      quantity_unit: item.quantityUnit || "pieces",
+      item_type: item.itemType || "INDIVIDUAL",
+      quantity: item.itemType === "BULK" ? (item.quantity ?? 1) : 1,
+      quantity_unit: item.itemType === "BULK" ? (item.quantityUnit || "pieces") : "pieces",
       serial_number: item.serialNumber ?? null,
       body_name: item.bodyName ?? null,
       kit_id: item.kitId ?? null,
@@ -328,8 +330,9 @@ export async function updateEquipment(id: number, patch: Partial<Omit<Equipment,
     data: {
       product_name: merged.productName,
       category: merged.category,
-      quantity: merged.quantity,
-      quantity_unit: merged.quantityUnit || "pieces",
+      item_type: merged.itemType || "INDIVIDUAL",
+      quantity: merged.itemType === "BULK" ? (merged.quantity ?? 1) : 1,
+      quantity_unit: merged.itemType === "BULK" ? (merged.quantityUnit || "pieces") : "pieces",
       serial_number: merged.serialNumber ?? null,
       body_name: merged.bodyName ?? null,
       kit_id: merged.kitId ?? null,
@@ -406,7 +409,7 @@ export async function getAssetSummary() {
   };
 
   for (const eq of equipment) {
-    const val = (eq.purchase_price || 0) * eq.quantity;
+    const val = (eq.purchase_price || 0) * (eq.item_type === "BULK" ? (eq.quantity || 1) : 1);
     totalValue += val;
     totalCount += 1; // Or eq.quantity? The previous SQL did COUNT(*)
 
