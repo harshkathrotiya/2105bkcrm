@@ -880,6 +880,10 @@ export default function Screen34InquiryHub({ inquiryId, activeTab }: { inquiryId
       <div style={{ padding: "18px 24px 0", background: "var(--bg)" }}>
         {/* Breadcrumb */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--tx3)", marginBottom: 8 }}>
+          <button onClick={() => router.push("/inquiries")} style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 6, border: "1px solid var(--b1)", background: "var(--s1)", color: "var(--tx2)", cursor: "pointer", fontSize: 12, fontWeight: 500 }}>
+            <ArrowLeft size={13} /> Back
+          </button>
+          <span style={{ color: "var(--b2)" }}>|</span>
           <Link href="/inquiries" style={{ color: "var(--tx3)", textDecoration: "none" }} className="hover:text-tx">Inquiries</Link>
           <ChevronRight size={12} style={{ opacity: 0.5 }} />
           <span style={{ color: "var(--tx2)" }}>{inquiry.eventName || inquiry.eventType}</span>

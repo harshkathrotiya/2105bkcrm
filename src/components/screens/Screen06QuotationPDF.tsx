@@ -338,15 +338,11 @@ export default function Screen06QuotationPDF({ quotationId }: Props) {
         description="Preview the client-facing quotation PDF — rates are hidden from the client view."
       />
       <ScreenFrame
-        breadcrumb={
-          <>
-            <Link href={`/inquiries/${quotation.inquiryId}?tab=quotation`} style={{ color: "var(--tx2)" }} className="hover:underline">
-              {inquiry?.eventName || inquiry?.eventType || "Inquiry"}
-            </Link>
-            {" › "}
-            <span className="text-tx2">{quotation.quoteNo}</span> › Quotation PDF
-          </>
-        }
+        breadcrumbs={[
+          { label: inquiry?.eventName || inquiry?.eventType || "Inquiry", href: `/inquiries/${quotation.inquiryId}?tab=quotation` },
+          { label: quotation.quoteNo },
+          { label: "Quotation PDF" },
+        ]}
         actions={
           <>
             {statusBadge}

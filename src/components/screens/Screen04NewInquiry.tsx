@@ -38,7 +38,7 @@ export default function Screen04NewInquiry() {
   const defaultClientId =
     preselectedClientId && clients.find((c) => c.id === preselectedClientId)
       ? preselectedClientId
-      : clients[0]?.id ?? "";
+      : "";
 
   const today = new Date().toISOString().split("T")[0];
   const queryDate = searchParams.get("date");
@@ -71,7 +71,7 @@ export default function Screen04NewInquiry() {
         const values = opts.map((o) => o.value);
         setEventTypes(values);
         // Set default only if no value yet (not editing)
-        setEventType((cur) => cur || values[0] || "");
+        setEventType((cur) => cur || "");
       })
       .catch(() => {});
     return () => { active = false; };
