@@ -267,6 +267,9 @@ export default function Screen05QuotationForm() {
             updated.rate = clientRateMap[eqId];
           } else if (kitNameToRate[name] != null) {
             updated.rate = kitNameToRate[name];
+          } else if (eqId != null) {
+            const eq = allEquipment.find((e) => e.id === eqId);
+            updated.rate = eq?.defaultRate ?? 0;
           }
         }
         // When creating (not editing), cap days at eventDays

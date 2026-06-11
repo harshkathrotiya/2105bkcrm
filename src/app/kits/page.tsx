@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import Screen16KitList from "@/components/screens/Screen16KitList";
+import DeptKits from "@/components/screens/dept/DeptKits";
+import RoleRouter from "@/components/screens/dept/RoleRouter";
 import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 
 export default function KitsPage() {
@@ -9,7 +11,10 @@ export default function KitsPage() {
         <LoadingSkeleton type="table" rows={5} cols={5} message="Loading kits..." />
       </div>
     }>
-      <Screen16KitList />
+      <RoleRouter
+        admin={<Screen16KitList />}
+        dept={<DeptKits />}
+      />
     </Suspense>
   );
 }

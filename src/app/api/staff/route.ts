@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { getAllStaff, createStaff } from "@/lib/queries/staff";
 import { Validator, STAFF_TYPES, PAYMENT_TYPES } from "@/lib/validate";
 import { requirePermission } from "@/lib/role-permissions";
+import { verifyJWT } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +24,11 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "status must be AVAILABLE or DEPLOYED" }, { status: 400 });
     }
 
-    const staff = await getAllStaff({ search, type, paymentType, status, department });
+    const token = request.cookies.get("bk-media-session")?.value;
+    const payload = token ? await verifyJWT(token) : null;
+    const forcedDept = payload?.role === "Department Head" ? payload.department : undefined;
+
+    const staff = await getAllStaff({ search, type, paymentType, status, department: (forcedDept as "VIDEO" | "LED" | "BOTH") ?? department });
     return Response.json(staff);
   } catch (err) {
     console.error("[GET /api/staff]", err);

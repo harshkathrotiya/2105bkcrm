@@ -785,6 +785,7 @@ export interface UserRow {
   username: string;
   name: string;
   role: string;
+  department: string;
   is_active: number;
   created_at: string;
 }
@@ -793,14 +794,14 @@ export function fetchUsers(): Promise<UserRow[]> {
   return request("/api/users");
 }
 
-export function createUser(data: { username: string; name: string; password: string; role: string }): Promise<UserRow> {
+export function createUser(data: { username: string; name: string; password: string; role: string; department?: string; staffId?: number | "" }): Promise<UserRow> {
   return request("/api/users", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export function updateUser(id: string, data: { name?: string; role?: string; password?: string; is_active?: number }): Promise<UserRow> {
+export function updateUser(id: string, data: { name?: string; role?: string; department?: string; password?: string; is_active?: number }): Promise<UserRow> {
   return request(`/api/users/${id}`, {
     method: "PATCH",
     body: JSON.stringify(data),

@@ -12,7 +12,7 @@ import { ROLE_PERMISSIONS, type Role, type Permission } from "./permissions";
  */
 export const ROLE_MARKER = "__role__";
 
-export const DEFAULT_ROLES = ["Admin", "Manager", "Operator"];
+export const DEFAULT_ROLES = ["Admin", "Manager", "Operator", "Department Head", "Staff"];
 
 /** True if `role` is a built-in default (case-insensitive). */
 export function isDefaultRole(role: string): boolean {

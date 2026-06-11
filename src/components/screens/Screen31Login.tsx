@@ -28,9 +28,10 @@ export default function Screen31Login() {
     setError("");
 
     try {
-      await api.login(username.trim(), password.trim());
-      // Force a full navigation to re-trigger middleware and context state
-      window.location.href = redirectUrl;
+      const res = await api.login(username.trim(), password.trim());
+      // Staff role goes to their own portal
+      const dest = res.user?.role === "Staff" ? "/my-schedule" : redirectUrl;
+      window.location.href = dest;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An error occurred during login.");
       setLoading(false);

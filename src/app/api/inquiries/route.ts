@@ -6,6 +6,7 @@
 
 import type { NextRequest } from "next/server";
 import { requirePermission } from "@/lib/role-permissions";
+import { verifyJWT } from "@/lib/auth";
 import {
   getAllInquiries,
   getInquiriesByClient,
@@ -18,10 +19,15 @@ import { Validator, INQUIRY_STATUSES } from "@/lib/validate";
 
 export async function GET(request: NextRequest) {
   try {
+    const token = request.cookies.get("bk-media-session")?.value;
+    const payload = token ? await verifyJWT(token) : null;
+
     const clientId = request.nextUrl.searchParams.get("clientId");
+    const deptFilter = payload?.role === "Department Head" ? payload.department : undefined;
+
     const inquiries = clientId
-      ? await getInquiriesByClient(clientId)
-      : await getAllInquiries();
+      ? await getInquiriesByClient(clientId, deptFilter)
+      : await getAllInquiries(deptFilter);
     return Response.json(inquiries);
   } catch (err) {
     console.error("[GET /api/inquiries]", err);

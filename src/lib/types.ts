@@ -152,7 +152,7 @@ export interface Equipment {
   ownerStaffId?: number | null;
   ownerStaffName?: string | null;
   defaultRate?: number | null;
-  department?: "VIDEO" | "LED";
+  department?: "VIDEO" | "LED" | "AUDIO" | "LIGHTS" | string;
   // Derived (not stored): true when an active booking (OUT/BOOKED, not RETURNED)
   // covers today. Availability is date-based, not a permanent status flag.
   inUseToday?: boolean;

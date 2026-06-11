@@ -11,7 +11,7 @@ export interface EquipmentFilters {
   search?: string;
   limit?: number;
   offset?: number;
-  department?: "VIDEO" | "LED";
+  department?: string;
   ownerStaffId?: number;
 }
 

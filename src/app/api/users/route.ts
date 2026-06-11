@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   }
   const users = await db.user.findMany({
     orderBy: { created_at: "asc" },
-    select: { id: true, username: true, name: true, role: true, is_active: true, created_at: true },
+    select: { id: true, username: true, name: true, role: true, department: true, is_active: true, created_at: true },
   });
   return Response.json(users);
 }
@@ -30,10 +30,16 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { username, name, password, role } = body;
+  const { username, name, password, role, department, staffId } = body;
 
   if (!username?.trim() || !password?.trim() || !role) {
     return Response.json({ error: "username, password and role are required" }, { status: 400 });
+  }
+  if (role === "Department Head" && !department) {
+    return Response.json({ error: "Department is required for Department Head role" }, { status: 400 });
+  }
+  if (role === "Staff" && !staffId) {
+    return Response.json({ error: "Staff record link is required for Staff role" }, { status: 400 });
   }
   if (!(await roleExists(role))) {
     return Response.json({ error: `Unknown role "${role}". Create it under Settings › Permissions first.` }, { status: 400 });
@@ -54,10 +60,12 @@ export async function POST(request: NextRequest) {
       name: name?.trim() ?? "",
       password: hash,
       role,
+      department: department ?? "VIDEO",
+      staff_id: role === "Staff" && staffId ? parseInt(staffId, 10) : null,
       is_active: 1,
       created_at: new Date().toISOString().split("T")[0],
     },
-    select: { id: true, username: true, name: true, role: true, is_active: true, created_at: true },
+    select: { id: true, username: true, name: true, role: true, department: true, is_active: true, created_at: true },
   });
 
   return Response.json(user, { status: 201 });

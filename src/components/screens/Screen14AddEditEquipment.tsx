@@ -51,6 +51,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
     ownerStaffId: "" as string | number,
     defaultRate: "" as string | number,
     quantityUnit: "pieces" as "pieces" | "pair" | "metre",
+    department: "VIDEO" as string,
   });
 
   const [vendors, setVendors] = useState<any[]>([]);
@@ -172,6 +173,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
             ownerStaffId: data.ownerStaffId !== null && data.ownerStaffId !== undefined ? data.ownerStaffId : "",
             defaultRate: data.defaultRate !== null && data.defaultRate !== undefined ? data.defaultRate : "",
             quantityUnit: data.quantityUnit || "pieces",
+            department: data.department || "VIDEO",
           });
         }
       } catch (err: any) {
@@ -393,6 +395,37 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                         ? "One unique unit — camera, lens, light, monitor, etc."
                         : "Quantity-based — wire, cable, connector, etc."}
                     </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-t">Department</div>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                {[
+                  { value: "VIDEO", label: "Video", desc: "Cameras, lenses, mixers, recorders" },
+                  { value: "LED", label: "LED", desc: "LED panels, processors, cables" },
+                  { value: "AUDIO", label: "Audio", desc: "Mixers, wireless, intercoms" },
+                  { value: "LIGHTS", label: "Lights", desc: "Lighting equipment" },
+                ].map((dept) => (
+                  <button
+                    key={dept.value}
+                    type="button"
+                    onClick={() => update("department", dept.value)}
+                    style={{
+                      flex: "1 1 140px",
+                      padding: "12px 14px",
+                      borderRadius: "8px",
+                      border: `2px solid ${form.department === dept.value ? "var(--bl)" : "var(--b1)"}`,
+                      background: form.department === dept.value ? "var(--sem-bl-bg)" : "var(--s2)",
+                      color: form.department === dept.value ? "var(--bl)" : "var(--tx2)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <div style={{ fontWeight: 600, fontSize: 13 }}>{dept.label}</div>
+                    <div style={{ fontSize: 10, opacity: 0.7, marginTop: 3 }}>{dept.desc}</div>
                   </button>
                 ))}
               </div>

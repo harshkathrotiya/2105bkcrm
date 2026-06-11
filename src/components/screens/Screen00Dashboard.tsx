@@ -14,6 +14,7 @@ import {
   useCalendar,
   useClients,
 } from "@/lib/store";
+import { useStaff } from "@/lib/store";
 import * as api from "@/lib/api";
 import { useCurrentUser } from "@/lib/use-current-user";
 import {
@@ -52,8 +53,131 @@ import {
   Cell,
 } from "recharts";
 
+function DeptDashboard() {
+  const { user } = useCurrentUser();
+  const { staff, loading: staffLoading } = useStaff();
+  const { inquiries, loading: inquiriesLoading } = useInquiries();
+  const [equipment, setEquipment] = useState<any[]>([]);
+  const [equipLoading, setEquipLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    api.fetchEquipment({ limit: 500 })
+      .then((d) => { if (active) setEquipment(d.items ?? []); })
+      .catch(() => {})
+      .finally(() => { if (active) setEquipLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const dept = user?.department ?? "";
+  const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
+
+  const activeEvents = useMemo(
+    () => inquiries.filter((i) => i.status === "Confirmed" && i.startDate <= todayStr && i.endDate >= todayStr).length,
+    [inquiries, todayStr]
+  );
+  const staffDeployed = useMemo(
+    () => staff.filter((s) => s.status === "Deployed").length,
+    [staff]
+  );
+  const equipInUse = useMemo(
+    () => equipment.filter((e: any) => e.inUseToday).length,
+    [equipment]
+  );
+  const pendingPayments = useMemo(
+    () => staff.reduce((acc, s) => acc + (s.pendingPayment ?? 0), 0),
+    [staff]
+  );
+
+  const loading = staffLoading || inquiriesLoading || equipLoading;
+
+  const kpis = [
+    { label: "Active Events Today", value: loading ? "—" : String(activeEvents), icon: CalendarCheck, color: "var(--acc)" },
+    { label: "Staff Deployed", value: loading ? "—" : String(staffDeployed), icon: UserCheck, color: "var(--gr)" },
+    { label: "Equipment In Use", value: loading ? "—" : String(equipInUse), icon: Wrench, color: "var(--am)" },
+    { label: "Pending Payments", value: loading ? "—" : `₹${pendingPayments.toLocaleString("en-IN")}`, icon: IndianRupee, color: "var(--rd)" },
+  ];
+
+  return (
+    <>
+      <SectionHeader
+        title={<>Department <strong>Dashboard</strong></>}
+        description={`${dept} department — active events, team, and equipment at a glance.`}
+      />
+      <ScreenFrame breadcrumbs={[{ label: "Dashboard" }]}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
+          {kpis.map((kpi) => {
+            const Icon = kpi.icon;
+            return (
+              <div key={kpi.label} className="card" style={{ padding: "18px 20px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                  <div className="text-[11px] text-tx3 font-medium uppercase tracking-wider">{kpi.label}</div>
+                  <Icon size={16} color={kpi.color} strokeWidth={1.8} />
+                </div>
+                <div className="text-[28px] font-bold text-tx" style={{ lineHeight: 1 }}>{kpi.value}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          {/* Upcoming events */}
+          <div className="card !p-4">
+            <div className="card-t" style={{ marginBottom: "12px" }}>Upcoming Events</div>
+            {inquiriesLoading ? (
+              <div className="text-[12px] text-tx3">Loading…</div>
+            ) : inquiries.filter((i) => i.startDate >= todayStr).slice(0, 5).length === 0 ? (
+              <div className="text-[12px] text-tx3">No upcoming events.</div>
+            ) : (
+              inquiries.filter((i) => i.startDate >= todayStr).slice(0, 5).map((i) => (
+                <div key={i.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 0", borderBottom: "1px solid var(--tbl-line)" }}>
+                  <Calendar size={13} color="var(--tx3)" />
+                  <div className="flex-1">
+                    <div className="text-[13px] font-medium text-tx">{i.eventName}</div>
+                    <div className="text-[11px] text-tx3">{i.startDate} – {i.endDate}</div>
+                  </div>
+                  <Badge variant={i.status === "Confirmed" ? "gr" : i.status === "New" ? "am" : "gy"}>{i.status}</Badge>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Team at a glance */}
+          <div className="card !p-4">
+            <div className="card-t" style={{ marginBottom: "12px" }}>Team at a Glance</div>
+            {staffLoading ? (
+              <div className="text-[12px] text-tx3">Loading…</div>
+            ) : staff.length === 0 ? (
+              <div className="text-[12px] text-tx3">No staff in {dept} department.</div>
+            ) : (
+              staff.slice(0, 6).map((s) => (
+                <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "6px 0", borderBottom: "1px solid var(--tbl-line)" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--b2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600, color: "var(--tx2)", flexShrink: 0 }}>
+                    {s.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[12px] font-medium text-tx">{s.name}</div>
+                    <div className="text-[11px] text-tx3">{s.role}</div>
+                  </div>
+                  <Badge variant={s.status === "Deployed" ? "bl" : "gr"}>{s.status}</Badge>
+                </div>
+              ))
+            )}
+            {staff.length > 6 && (
+              <Link href="/my-team" className="text-[11px] text-acc" style={{ display: "block", marginTop: "8px" }}>
+                View all {staff.length} members →
+              </Link>
+            )}
+          </div>
+        </div>
+      </ScreenFrame>
+    </>
+  );
+}
+
 export default function Screen00Dashboard() {
-  const { can } = useCurrentUser();
+  const { can, user } = useCurrentUser();
+  if (user?.role === "Department Head") return <DeptDashboard />;
   const router = useRouter();
   const { inquiries, loading: inquiriesLoading } = useInquiries();
   const { quotations, loading: quotationsLoading } = useQuotations();

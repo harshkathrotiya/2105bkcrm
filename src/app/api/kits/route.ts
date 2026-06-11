@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { requirePermission } from "@/lib/role-permissions";
+import { verifyJWT } from "@/lib/auth";
 import { getAllKits, createKit, getAllKitsWithAvailability } from "@/lib/queries/kits";
 import { Validator } from "@/lib/validate";
 
@@ -19,11 +20,16 @@ export async function GET(request: NextRequest) {
       if (v.hasErrors()) return v.response();
     }
 
+    const token = request.cookies.get("bk-media-session")?.value;
+    const payload = token ? await verifyJWT(token) : null;
+    const forcedDept = payload?.role === "Department Head" ? (payload.department as "VIDEO" | "LED") : undefined;
+    const effectiveDept = forcedDept ?? department;
+
     if (startDate && endDate) {
-      return Response.json(await getAllKitsWithAvailability(startDate, endDate, department));
+      return Response.json(await getAllKitsWithAvailability(startDate, endDate, effectiveDept));
     }
 
-    return Response.json(await getAllKits(department));
+    return Response.json(await getAllKits(effectiveDept));
   } catch (err) {
     console.error("[GET /api/kits]", err);
     return Response.json({ error: "Failed to fetch kits" }, { status: 500 });

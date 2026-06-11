@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
       username: user.username,
       name: user.name ?? "",
       role: user.role,
+      department: user.department ?? "VIDEO",
       permissions,
     });
 

@@ -41,8 +41,9 @@ function mapRow(r: any): Inquiry {
   };
 }
 
-export async function getAllInquiries(): Promise<Inquiry[]> {
+export async function getAllInquiries(department?: string): Promise<Inquiry[]> {
   const rows = await withRetry(() => db.inquiry.findMany({
+    where: department ? { department } : undefined,
     orderBy: { created_at: "desc" },
     include: INCLUDE_CREW_COUNT,
   }));
@@ -58,9 +59,9 @@ export async function getInquiryById(id: string): Promise<Inquiry | undefined> {
   return mapRow(row);
 }
 
-export async function getInquiriesByClient(clientId: string): Promise<Inquiry[]> {
+export async function getInquiriesByClient(clientId: string, department?: string): Promise<Inquiry[]> {
   const rows = await withRetry(() => db.inquiry.findMany({
-    where: { client_id: clientId },
+    where: { client_id: clientId, ...(department ? { department } : {}) },
     orderBy: { start_date: "desc" },
     include: INCLUDE_CREW_COUNT,
   }));

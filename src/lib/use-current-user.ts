@@ -8,6 +8,8 @@ export interface CurrentUser {
   username: string;
   name: string;
   role: string;
+  department: string;
+  staffId: number | null;
   permissions: Permission[];
 }
 

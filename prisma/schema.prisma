@@ -354,6 +354,8 @@ model User {
   name       String  @default("")
   password   String
   role       String  @default("Admin")
+  department String  @default("VIDEO") // "VIDEO" | "LED" — only relevant for "Department Head" role
+  staff_id   Int?    // only set when role = "Staff" — links to the Staff record
   is_active  Int     @default(1)
   created_at String
   updated_at String?

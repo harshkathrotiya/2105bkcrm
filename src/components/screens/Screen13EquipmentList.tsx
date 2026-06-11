@@ -34,7 +34,7 @@ export default function Screen13EquipmentList() {
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [deptFilter, setDeptFilter] = useState<"" | "VIDEO" | "LED">("");
+  const [deptFilter, setDeptFilter] = useState<"" | "VIDEO" | "LED" | "AUDIO" | "LIGHTS">("");
   const [showCsvModal, setShowCsvModal] = useState(false);
   const [csvText, setCsvText] = useState("");
   const [csvError, setCsvError] = useState("");
@@ -351,16 +351,14 @@ export default function Screen13EquipmentList() {
           <div>
             <div className="card !p-3" style={{ marginBottom: "0px" }}>
               {/* Dept tabs */}
-              <div className="flex gap-1" style={{ marginBottom: "12px" }}>
-                {([["", "All"], ["VIDEO", "Video"], ["LED", "LED"]] as const).map(([val, label]) => (
-                  <button
-                    key={val}
-                    className={`btn text-[10px] px-3 ${deptFilter === val ? "btn-primary" : ""}`}
-                    onClick={() => { setDeptFilter(val); setCurrentPage(1); }}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div style={{ marginBottom: "12px" }}>
+                <select className="finp" style={{ width: "auto" }} value={deptFilter} onChange={(e) => { setDeptFilter(e.target.value as "" | "VIDEO" | "LED" | "AUDIO" | "LIGHTS"); setCurrentPage(1); }}>
+                  <option value="">All Departments</option>
+                  <option value="VIDEO">Video</option>
+                  <option value="LED">LED</option>
+                  <option value="AUDIO">Audio</option>
+                  <option value="LIGHTS">Lights</option>
+                </select>
               </div>
               <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
                 <input
@@ -479,8 +477,11 @@ export default function Screen13EquipmentList() {
                           >
                             <td>{item.id}</td>
                             <td>
-                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                                 <span style={{ fontWeight: 500, color: "var(--tx)" }}>{item.productName}</span>
+                                {item.department && (
+                                  <Badge variant="gy">{item.department}</Badge>
+                                )}
                                 {item.ownershipType === "VENDOR" && (
                                   <Badge variant="am">
                                     Vendor: {item.vendorName || "Outsourced"}

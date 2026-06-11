@@ -2,7 +2,7 @@
 // Roles & Permissions — single source of truth
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const ROLES = ["Admin", "Manager", "Operator"] as const;
+export const ROLES = ["Admin", "Manager", "Operator", "Department Head", "Staff"] as const;
 export type Role = typeof ROLES[number];
 
 // Every named permission in the system
@@ -139,6 +139,20 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "staff.view",
     "warehouse.view",
   ],
+  "Department Head": [
+    "dashboard.view",
+    "inquiries.view",
+    "calendar.view",
+    "equipment.view",
+    "equipment.edit",
+    "kits.view",
+    "staff.view",
+    "staff.create",
+    "staff.edit",
+    "staff.payments",
+    "kits.edit",
+  ],
+  Staff: [],
 };
 
 // Map app route prefix → required permission

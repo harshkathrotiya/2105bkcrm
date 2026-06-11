@@ -36,7 +36,7 @@ export async function GET() {
     const all = await db.rolePermission.findMany();
     const grouped: Record<string, string[]> = {};
 
-    // Always ensure default roles exist as keys.
+    // Always ensure ALL default roles exist as keys (including Staff which has no permissions).
     for (const r of DEFAULT_ROLES) grouped[r] = [];
 
     all.forEach((item) => {

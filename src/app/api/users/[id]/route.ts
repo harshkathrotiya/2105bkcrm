@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { id } = await params;
   const body = await request.json();
-  const { name, role, is_active, password } = body;
+  const { name, role, is_active, password, department } = body;
 
   const data: any = { updated_at: new Date().toISOString().split("T")[0] };
 
@@ -47,11 +47,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     data.password = await bcrypt.hash(password, 12);
   }
+  if (department !== undefined) data.department = department;
 
   const user = await db.user.update({
     where: { id },
     data,
-    select: { id: true, username: true, name: true, role: true, is_active: true, created_at: true },
+    select: { id: true, username: true, name: true, role: true, department: true, is_active: true, created_at: true },
   });
 
   return Response.json(user);

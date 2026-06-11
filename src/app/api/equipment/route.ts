@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { requirePermission } from "@/lib/role-permissions";
+import { verifyJWT } from "@/lib/auth";
 import { getEquipment, createEquipment, getEquipmentCategoryCounts } from "@/lib/queries/equipment";
 import { Validator, EQUIPMENT_STATUSES } from "@/lib/validate";
 
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category") || undefined;
     const status = searchParams.get("status") || undefined;
     const search = searchParams.get("search") || undefined;
-    const department = (searchParams.get("department") as "VIDEO" | "LED") || undefined;
+    const department = searchParams.get("department") || undefined;
     const ownerStaffIdRaw = searchParams.get("ownerStaffId");
     const ownerStaffId = ownerStaffIdRaw ? parseInt(ownerStaffIdRaw, 10) : undefined;
     const pageRaw = parseInt(searchParams.get("page") || "1", 10);
@@ -19,13 +20,17 @@ export async function GET(request: NextRequest) {
     const limit = isNaN(limitRaw) || limitRaw < 1 ? 20 : Math.min(limitRaw, 200);
     const offset = (page - 1) * limit;
 
+    const token = request.cookies.get("bk-media-session")?.value;
+    const payload = token ? await verifyJWT(token) : null;
+    const forcedDept = payload?.role === "Department Head" ? payload.department : undefined;
+
     const { items, total } = await getEquipment({
       category: category === "ALL" ? undefined : category,
       status,
       search,
       limit,
       offset,
-      department,
+      department: forcedDept ?? department,
       ownerStaffId: ownerStaffId && !isNaN(ownerStaffId) ? ownerStaffId : undefined,
     });
 

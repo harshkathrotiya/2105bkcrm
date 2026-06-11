@@ -39,14 +39,45 @@ function parseEventId(id: string) {
 }
 
 export default function Screen03Calendar() {
-  const { can } = useCurrentUser();
+  const { can, user } = useCurrentUser();
   const canCreateInquiry = can("inquiries.create");
   const { calendarEvents, loading } = useCalendar();
-  const { inquiries } = useInquiries();
+  const { inquiries: allInquiries } = useInquiries();
   const { clients } = useClients();
   const { quotations } = useQuotations();
   const { invoices } = useInvoices();
   const today = new Date();
+
+  // Department Head: only show events for their dept + MERGED
+  const inquiries = useMemo(() => {
+    if (user?.role !== "Department Head" || !user.department) return allInquiries;
+    return allInquiries.filter(
+      (i) => i.department === user.department || i.department === "MERGED"
+    );
+  }, [allInquiries, user]);
+
+  // Build a set of inquiry IDs visible to this user for fast calendar event filtering
+  const visibleInquiryIds = useMemo(
+    () => new Set(inquiries.map((i) => i.id)),
+    [inquiries]
+  );
+
+  // Filter calendar events for Department Head — keep only events that match a visible inquiry
+  const filteredCalendarEvents = useMemo(() => {
+    if (user?.role !== "Department Head") return calendarEvents;
+    return calendarEvents.filter((ev) => {
+      // Try to extract inquiry ID from event ID (format: cal-<inquiryId>-<index>)
+      if (ev.id.startsWith("cal-")) {
+        let cleanId = ev.id.substring(4);
+        if (cleanId.includes("-confirmed-")) cleanId = cleanId.split("-confirmed-")[0];
+        else { const last = cleanId.lastIndexOf("-"); if (last !== -1) cleanId = cleanId.substring(0, last); }
+        if (visibleInquiryIds.has(cleanId)) return true;
+      }
+      // Fallback: check if label matches a visible inquiry's event name
+      const labelLower = ev.label.toLowerCase();
+      return inquiries.some((inq) => inq.eventName.toLowerCase().includes(labelLower) || labelLower.includes(inq.eventName.toLowerCase()));
+    });
+  }, [calendarEvents, user, visibleInquiryIds, inquiries]);
 
   const [viewDate, setViewDate] = useState(today);
   const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
@@ -135,11 +166,11 @@ export default function Screen03Calendar() {
       start = new Date(viewYear, viewMonth, viewDate.getDate());
       end = new Date(viewYear, viewMonth, viewDate.getDate(), 23, 59, 59);
     }
-    return calendarEvents.filter(e => {
+    return filteredCalendarEvents.filter(e => {
       const d = new Date(e.year, e.month - 1, e.date);
       return d >= start && d <= end;
     });
-  }, [calendarEvents, viewDate, viewMode, viewMonth, viewYear]);
+  }, [filteredCalendarEvents, viewDate, viewMode, viewMonth, viewYear]);
 
   const filteredEvents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();

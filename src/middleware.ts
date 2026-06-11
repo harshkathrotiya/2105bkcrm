@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyJWT, type SessionPayload } from "@/lib/auth";
-import { ROUTE_PERMISSION, NAV_ITEMS } from "@/lib/permissions";
+import { ROUTE_PERMISSION, NAV_ITEMS, ROLE_PERMISSIONS } from "@/lib/permissions";
 
-function firstAllowedPath(role: string, permissions: string[] | undefined): string {
+function getEffectivePermissions(role: string, jwtPermissions: string[] | undefined): string[] {
+  if (role === "Admin") return ["*"];
+  // Use static ROLE_PERMISSIONS for built-in roles so middleware never uses stale JWT perms.
+  // Fall back to JWT perms for custom DB-only roles.
+  const staticPerms = ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS];
+  return staticPerms ? [...staticPerms] : (jwtPermissions ?? []);
+}
+
+function firstAllowedPath(role: string, permissions: string[]): string {
   if (role === "Admin") return "/";
-  const perms = permissions ?? [];
-  const item = NAV_ITEMS.find((n) => perms.includes(n.permission));
+  const item = NAV_ITEMS.find((n) => permissions.includes(n.permission));
   return item?.path ?? "/login";
 }
 
@@ -25,7 +32,20 @@ export async function middleware(request: NextRequest) {
 
   // Redirect authenticated users away from login
   if (pathname === "/login") {
-    if (isAuthenticated) return NextResponse.redirect(new URL("/clients", request.url));
+    if (isAuthenticated) {
+      const dest = payload?.role === "Staff" ? "/my-schedule" : "/clients";
+      return NextResponse.redirect(new URL(dest, request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Staff portal routes — require auth, no permission check
+  if (pathname.startsWith("/my-schedule") || pathname.startsWith("/my-payments")) {
+    if (!isAuthenticated) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
     return NextResponse.next();
   }
 
@@ -60,17 +80,17 @@ export async function middleware(request: NextRequest) {
   // Permission check — find matching route rule
   if (isAuthenticated && payload) {
     const role = payload.role;
-    const permissions = payload.permissions;
-    const matched = ROUTE_PERMISSION.find(
-      ({ prefix }) => pathname === prefix || pathname.startsWith(prefix + "/")
+    const permissions = getEffectivePermissions(role, payload.permissions);
+    const matched = ROUTE_PERMISSION.find(({ prefix }) =>
+      prefix === "/"
+        ? pathname === "/"
+        : pathname === prefix || pathname.startsWith(prefix + "/")
     );
     if (matched) {
-      const hasRight = role === "Admin" || (permissions && permissions.includes(matched.permission));
+      const hasRight = permissions.includes("*") || permissions.includes(matched.permission);
       if (!hasRight) {
-        // Bounce to the user's first allowed page (NOT the dashboard, which now
-        // requires its own permission — bouncing there could loop forever).
         const landing = firstAllowedPath(role, permissions);
-        if (pathname === landing) return NextResponse.next(); // already there; avoid loop
+        if (pathname === landing) return NextResponse.next();
         const url = new URL(landing, request.url);
         url.searchParams.set("forbidden", "1");
         return NextResponse.redirect(url);

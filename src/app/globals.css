@@ -805,6 +805,77 @@ a:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-shadow); bord
   }
 }
 
+/* ===== DEPARTMENT THEME (overrides CSS vars for dept role only) ===== */
+:root.dept-theme {
+  --bg: #F4F6F9;
+  --s1: #FFFFFF;
+  --s2: #F8FAFC;
+  --alt: #F8FAFC;
+  --alt2: #F1F5F9;
+  --alt3: #F8FAFC;
+  --cnt-bg: #FFFFFF;
+  --b1: #E2E8F0;
+  --b2: #CBD5E1;
+  --tbl-line: #E2E8F0;
+  --tx: #0F172A;
+  --tx2: #334155;
+  --tx3: #64748B;
+  --tx-hover: #0F172A;
+  --tx-muted: #64748B;
+  --placeholder: #94A3B8;
+  --hover-bg: #F1F5F9;
+  --hover-border: #CBD5E1;
+  --hover-card-border: #CBD5E1;
+  --acc: #3B82F6;
+  --bl: #3B82F6;
+  --hdr-bg: #FFFFFF;
+  --sidebar-bg: #FFFFFF;
+  --sidebar-hover: #F1F5F9;
+  --sidebar-active: #EFF6FF;
+  --sidebar-border: #E2E8F0;
+  --sidebar-tx: #64748B;
+  --sidebar-tx-active: #1D4ED8;
+  --row-hover: rgba(59, 130, 246, 0.04);
+  --sem-bl-bg: #EFF6FF;
+  --sem-bl-bdr: #BFDBFE;
+  --sem-bl-tx: #1D4ED8;
+  --sem-gr-bg: #DCFCE7;
+  --sem-gr-bdr: #86EFAC;
+  --sem-gr-tx: #15803D;
+  --sem-am-bg: #FEF3C7;
+  --sem-am-bdr: #FCD34D;
+  --sem-am-tx: #B45309;
+  --sem-rd-bg: #FEE2E2;
+  --sem-rd-bdr: #FCA5A5;
+  --sem-rd-tx: #DC2626;
+  --bdg-gy-bg: #E2E8F0;
+  --bdg-gy-tx: #475569;
+}
+
+:root.dept-theme .btn-primary {
+  background: #3B82F6;
+  border-color: #3B82F6;
+  color: #FFFFFF;
+}
+:root.dept-theme .btn-primary:hover {
+  background: #2563EB !important;
+  border-color: #2563EB !important;
+  color: #FFFFFF !important;
+}
+:root.dept-theme .btn-success {
+  background: #3B82F6;
+  border-color: #3B82F6;
+  color: #FFFFFF;
+}
+:root.dept-theme .btn-success:hover {
+  background: #2563EB !important;
+  border-color: #2563EB !important;
+  color: #FFFFFF !important;
+}
+:root.dept-theme .app-nav-item.active::before {
+  background: #3B82F6;
+}
+
 /* ===== PREMIUM SHIMMER ANIMATION ===== */
 @keyframes shimmer-premium {
   0% {

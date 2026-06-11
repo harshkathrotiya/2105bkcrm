@@ -245,16 +245,13 @@ export default function Screen10InquiryList() {
 
         <div className="card !p-3">
           {/* Dept tabs */}
-          <div className="flex gap-1" style={{ marginBottom: '14px' }}>
-            {(['All', 'VIDEO', 'LED', 'MERGED'] as const).map((d) => (
-              <button
-                key={d}
-                className={`btn text-[10px] px-3 ${deptFilter === d ? 'btn-primary' : ''}`}
-                onClick={() => { setDeptFilter(d); setPage(1); }}
-              >
-                {d === 'All' ? 'All' : d === 'VIDEO' ? 'Video' : d === 'LED' ? 'LED' : 'Merged'}
-              </button>
-            ))}
+          <div style={{ marginBottom: '14px' }}>
+            <select className="finp" style={{ width: "auto" }} value={deptFilter} onChange={(e) => { setDeptFilter(e.target.value as 'All' | 'VIDEO' | 'LED' | 'MERGED'); setPage(1); }}>
+              <option value="All">All Departments</option>
+              <option value="VIDEO">Video</option>
+              <option value="LED">LED</option>
+              <option value="MERGED">Merged</option>
+            </select>
           </div>
 
           {/* Search & filters */}

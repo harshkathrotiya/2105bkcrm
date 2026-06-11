@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
       username: user.username,
       name: user.name,
       role: user.role,
+      department: user.department ?? "VIDEO",
+      staffId: (user as any).staff_id ?? null,
       permissions: await getRolePermissions(user.role),
     });
   } catch (err) {

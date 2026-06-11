@@ -12,6 +12,7 @@ export interface SessionPayload {
   username: string;
   name: string;
   role: string;
+  department?: string;
   permissions?: string[];
   exp?: number;
 }
