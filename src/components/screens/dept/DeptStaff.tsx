@@ -24,7 +24,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 export default function DeptStaff() {
-  const { can } = useCurrentUser();
+  const { can, user } = useCurrentUser();
   const { staff, loading } = useStaff();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
