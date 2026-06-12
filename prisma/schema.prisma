@@ -75,6 +75,15 @@ model Inquiry {
   equipment_bookings EquipmentBooking[]
   dispatch_boxes     LedDispatchBox[]
 
+  // LED relations
+  led_screen_positions      LedScreenPosition[]
+  led_warehouse_allocations LedWarehouseAllocation[]
+  led_vendor_arrangements   LedVendorArrangement[]
+  led_day_statuses          LedDayStatus[]
+  led_issue_logs            LedIssueLog[]
+  led_operations_logs       LedOperationsLog[]
+  led_expenses              LedExpense[]
+
   @@index([client_id])
   @@index([status, start_date])
   @@index([department])
@@ -261,6 +270,7 @@ model Staff {
   payments               StaffPayment[]
   owned_equipment        Equipment[]       @relation("StaffOwnedEquipment")
   equipment_rentals      EquipmentBooking[] @relation("StaffEquipmentRentals")
+  led_positions          LedScreenPosition[] @relation("LedOperators")
 
   @@map("staff")
 }
@@ -419,4 +429,132 @@ model ClientEquipmentRate {
   @@index([client_id])
   @@index([equipment_id])
   @@map("client_equipment_rates")
+}
+
+// ── LED Department Models ─────────────────────────────────────────────────────
+
+// BK Media's owned LED cabinet inventory, organised by supplier company.
+model LedCompanyLot {
+  id                Int      @id @default(autoincrement())
+  name              String
+  led_type          String   // "P4" | "P3" | "P2" | "FLOOR" | "P4_CURVED"
+  cabinet_height_mm Int      @default(576)
+  cabinet_width_mm  Int      @default(576)
+  cabinets_per_box  Int      @default(5)
+  total_cabinets    Int
+  created_at        String
+  updated_at        String?
+
+  event_allocations LedWarehouseAllocation[]
+
+  @@map("led_company_lots")
+}
+
+// Per-event allocation of sq.ft from a company lot.
+model LedWarehouseAllocation {
+  id             Int           @id @default(autoincrement())
+  inquiry_id     String
+  inquiry        Inquiry       @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  lot_id         Int
+  lot            LedCompanyLot @relation(fields: [lot_id], references: [id], onDelete: Cascade)
+  allocated_sqft Float
+  created_at     String
+
+  @@unique([inquiry_id, lot_id])
+  @@index([inquiry_id])
+  @@map("led_warehouse_allocations")
+}
+
+// Vendor-supplied panels that fill the shortfall for an event.
+model LedVendorArrangement {
+  id                    Int     @id @default(autoincrement())
+  inquiry_id            String
+  inquiry               Inquiry @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  vendor_name           String
+  led_type              String  // "P4" | "P3" | "P2" | "FLOOR" | "P4_CURVED"
+  sqft                  Float
+  rate_per_sqft_per_day Float
+  created_at            String
+
+  @@index([inquiry_id])
+  @@map("led_vendor_arrangements")
+}
+
+// One screen position at a specific place and location within the venue.
+model LedScreenPosition {
+  id                Int     @id @default(autoincrement())
+  inquiry_id        String
+  inquiry           Inquiry @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  position_no       Int
+  place             String
+  location          String
+  led_type          String  // "P4" | "P3" | "P2" | "FLOOR" | "P4_CURVED"
+  target_height_ft  Float
+  target_width_ft   Float
+  quantity          Int     @default(1)
+  cabinet_height_mm Int     @default(576)
+  cabinet_width_mm  Int     @default(576)
+  operator_staff_id Int?
+  operator_staff    Staff?  @relation("LedOperators", fields: [operator_staff_id], references: [id], onDelete: SetNull)
+  operator_source   String? @default("IN_HOUSE") // "IN_HOUSE" | "EXTERNAL"
+  created_at        String
+
+  @@unique([inquiry_id, position_no])
+  @@index([inquiry_id])
+  @@map("led_screen_positions")
+}
+
+// Per-screen per-day status during event execution.
+model LedDayStatus {
+  id          Int     @id @default(autoincrement())
+  inquiry_id  String
+  inquiry     Inquiry @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  position_no Int
+  day_index   Int     // 0 = setup day, 1..N = event days
+  status      String  @default("OFF") // "OFF" | "SETUP" | "LIVE" | "ISSUE"
+  notes       String  @default("")
+  day_done    Boolean @default(false)
+
+  @@unique([inquiry_id, position_no, day_index])
+  @@index([inquiry_id])
+  @@map("led_day_statuses")
+}
+
+// Issue reports logged during event execution.
+model LedIssueLog {
+  id         Int     @id @default(autoincrement())
+  inquiry_id String
+  inquiry    Inquiry @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  text       String
+  logged_at  String
+
+  @@index([inquiry_id])
+  @@map("led_issue_logs")
+}
+
+// Operational notes logged during event execution.
+model LedOperationsLog {
+  id         Int     @id @default(autoincrement())
+  inquiry_id String
+  inquiry    Inquiry @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  log_time   String
+  text       String
+  logged_at  String
+
+  @@index([inquiry_id])
+  @@map("led_operations_logs")
+}
+
+// Other event expenses: transport, food, misc, custom line items.
+model LedExpense {
+  id         Int     @id @default(autoincrement())
+  inquiry_id String
+  inquiry    Inquiry @relation(fields: [inquiry_id], references: [id], onDelete: Cascade)
+  category   String  // "TRANSPORT" | "FOOD" | "MISC" | "CUSTOM"
+  label      String  @default("")
+  amount     Float
+  created_at String
+
+  @@index([inquiry_id])
+  @@map("led_expenses")
 }

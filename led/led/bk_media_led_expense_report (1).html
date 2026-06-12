@@ -1,0 +1,357 @@
+
+<h2 class="sr-only">BK Media CRM — LED Event Expense Report with staff payment, vendor LED cost, transport, food and net profit calculation</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+.two-col{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.einfo{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap}
+.ei{font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px}
+.ei span{color:var(--color-text-primary);font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+th{text-align:left;font-size:11px;color:var(--color-text-secondary);padding:0 8px 8px;border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500}
+td{padding:8px 8px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.section-title{font-size:12px;font-weight:500;color:var(--color-text-primary);padding:10px 0 8px;border-bottom:0.5px solid var(--color-border-secondary);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.exp-row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.exp-row:last-child{border-bottom:none}
+.exp-label{color:var(--color-text-secondary);display:flex;align-items:center;gap:6px}
+.exp-val{font-weight:500;color:var(--color-text-primary)}
+.total-section{display:flex;justify-content:space-between;font-size:14px;font-weight:500;padding:10px 0 0;margin-top:6px;border-top:0.5px solid var(--color-border-secondary)}
+.pnl-card{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.pnl-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.pnl-row:last-child{border-bottom:none}
+.pnl-total{display:flex;justify-content:space-between;font-size:16px;font-weight:500;padding:12px 0 0;margin-top:6px;border-top:0.5px solid var(--color-border-secondary)}
+.add-expense-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.flabel{font-size:11px;color:var(--color-text-secondary)}
+.action-bar{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+.edit-val{width:100%;font-size:12px;text-align:right}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED event execution screen બતાવો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Execution
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">LED expense report — દ્વિશતાબ્દી મહોત્સવ</span>
+    </div>
+    <span class="badge" style="background:#FAEEDA;color:#633806">Accounts</span>
+  </div>
+
+  <div class="einfo">
+    <div class="ei"><i class="ti ti-file-invoice" style="font-size:12px" aria-hidden="true"></i> <span>BKM/26-27/05/14</span></div>
+    <div class="ei"><i class="ti ti-calendar" style="font-size:12px" aria-hidden="true"></i> <span>15–20 May 2026 · 5 days</span></div>
+    <div class="ei"><i class="ti ti-building" style="font-size:12px" aria-hidden="true"></i> <span>શ્રી મદનમોહનજી ટ્રસ્ટ</span></div>
+    <div class="ei"><i class="ti ti-device-tv" style="font-size:12px" aria-hidden="true"></i> <span>6,300 sq.ft/day · ₹50/sq.ft/day</span></div>
+  </div>
+
+  <div class="sgrid">
+    <div class="metric"><div class="metric-label">Client billing</div><div class="metric-value" style="color:var(--color-text-success)" id="m-rev">₹15,75,000</div></div>
+    <div class="metric"><div class="metric-label">Total expenses</div><div class="metric-value" style="color:var(--color-text-danger)" id="m-exp">₹0</div></div>
+    <div class="metric"><div class="metric-label">Net profit</div><div class="metric-value" id="m-profit">₹15,75,000</div></div>
+    <div class="metric"><div class="metric-label">Margin</div><div class="metric-value" style="color:var(--color-text-info)" id="m-margin">100%</div></div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="section-title">
+          <span><i class="ti ti-users" style="font-size:13px;vertical-align:-1px;margin-right:5px" aria-hidden="true"></i>Staff payment</span>
+          <span style="font-size:12px;color:var(--color-text-success)" id="staff-total-label">₹0</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Staff name</th>
+            <th style="width:90px">Role</th>
+            <th style="width:70px">Source</th>
+            <th style="width:60px;text-align:center">Days</th>
+            <th style="width:80px;text-align:right">Rate/day</th>
+            <th style="width:80px;text-align:right">Total</th>
+          </tr></thead>
+          <tbody id="staff-tbody"></tbody>
+        </table>
+        <div style="display:flex;justify-content:flex-end;padding-top:8px;margin-top:4px;border-top:0.5px solid var(--color-border-secondary)">
+          <span style="font-size:13px;font-weight:500">Staff total: <span style="color:var(--color-text-warning)" id="staff-total">₹0</span></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          <span><i class="ti ti-device-tv" style="font-size:13px;vertical-align:-1px;margin-right:5px" aria-hidden="true"></i>LED vendor cost</span>
+          <span style="font-size:12px;color:var(--color-text-warning)" id="vendor-total-label">₹0</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Vendor name</th>
+            <th style="width:52px">Type</th>
+            <th style="width:70px;text-align:right">Sq.ft</th>
+            <th style="width:80px;text-align:right">Rate/sq.ft/day</th>
+            <th style="width:52px;text-align:center">Days</th>
+            <th style="width:80px;text-align:right">Total cost</th>
+          </tr></thead>
+          <tbody id="vendor-tbody"></tbody>
+        </table>
+        <div style="display:flex;justify-content:flex-end;padding-top:8px;margin-top:4px;border-top:0.5px solid var(--color-border-secondary)">
+          <span style="font-size:13px;font-weight:500">Vendor total: <span style="color:var(--color-text-warning)" id="vendor-total">₹0</span></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          <span><i class="ti ti-truck" style="font-size:13px;vertical-align:-1px;margin-right:5px" aria-hidden="true"></i>Other expenses</span>
+        </div>
+        <div id="other-expenses">
+          <div class="exp-row" id="exp-transport">
+            <span class="exp-label"><i class="ti ti-truck" style="font-size:12px" aria-hidden="true"></i> Transport</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="color:var(--color-text-secondary);font-size:11px">₹</span>
+              <input type="number" class="edit-val" id="exp-t" value="0" style="width:100px;font-size:12px;text-align:right" oninput="updateTotals()">
+            </div>
+          </div>
+          <div class="exp-row">
+            <span class="exp-label"><i class="ti ti-tools-kitchen-2" style="font-size:12px" aria-hidden="true"></i> Food & meals</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="color:var(--color-text-secondary);font-size:11px">₹</span>
+              <input type="number" class="edit-val" id="exp-f" value="0" style="width:100px;font-size:12px;text-align:right" oninput="updateTotals()">
+            </div>
+          </div>
+          <div class="exp-row">
+            <span class="exp-label"><i class="ti ti-package" style="font-size:12px" aria-hidden="true"></i> Misc / consumables</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="color:var(--color-text-secondary);font-size:11px">₹</span>
+              <input type="number" class="edit-val" id="exp-m" value="0" style="width:100px;font-size:12px;text-align:right" oninput="updateTotals()">
+            </div>
+          </div>
+        </div>
+        <div id="extra-expenses"></div>
+        <button style="width:100%;margin-top:8px;font-size:12px" onclick="toggleAddExp()"><i class="ti ti-plus" style="font-size:12px" aria-hidden="true"></i> Extra expense add ↗</button>
+        <div id="add-exp-form" style="display:none;margin-top:8px">
+          <div class="add-expense-form">
+            <div class="field"><span class="flabel">Expense name</span><input type="text" id="exp-name" placeholder="expense name" style="font-size:12px"></div>
+            <div class="field"><span class="flabel">Amount (₹)</span><input type="number" id="exp-amt" placeholder="0" style="font-size:12px"></div>
+            <div class="field" style="grid-column:span 2"><button onclick="addExpense()" style="width:100%;font-size:12px">Add expense ↗</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button onclick="sendPrompt('LED expense report PDF download કરો')" style="background:var(--color-background-success);color:var(--color-text-success);border-color:transparent"><i class="ti ti-download" style="font-size:13px" aria-hidden="true"></i> Download report ↗</button>
+        <button onclick="sendPrompt('LED event invoice generate કરો')"><i class="ti ti-file-invoice" style="font-size:13px" aria-hidden="true"></i> Generate invoice ↗</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="pnl-card">
+        <div style="font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:12px"><i class="ti ti-receipt" style="font-size:14px;vertical-align:-2px;margin-right:6px" aria-hidden="true"></i>P&L summary</div>
+        <div class="pnl-row">
+          <span style="color:var(--color-text-secondary)">Client billing</span>
+          <span style="font-weight:500;color:var(--color-text-success)">₹15,75,000</span>
+        </div>
+        <div style="font-size:10px;color:var(--color-text-tertiary);padding:2px 0 6px">6,300 sq.ft × ₹50/sq.ft/day × 5 days</div>
+        <div class="pnl-row">
+          <span style="color:var(--color-text-secondary)">Staff payment</span>
+          <span style="font-weight:500;color:var(--color-text-danger)" id="pnl-staff">— ₹0</span>
+        </div>
+        <div class="pnl-row">
+          <span style="color:var(--color-text-secondary)">LED vendor cost</span>
+          <span style="font-weight:500;color:var(--color-text-danger)" id="pnl-vendor">— ₹0</span>
+        </div>
+        <div class="pnl-row">
+          <span style="color:var(--color-text-secondary)">Transport</span>
+          <span style="font-weight:500;color:var(--color-text-danger)" id="pnl-transport">— ₹0</span>
+        </div>
+        <div class="pnl-row">
+          <span style="color:var(--color-text-secondary)">Food & misc</span>
+          <span style="font-weight:500;color:var(--color-text-danger)" id="pnl-other">— ₹0</span>
+        </div>
+        <div class="pnl-total">
+          <span>Net profit</span>
+          <span id="pnl-net" style="color:var(--color-text-success)">₹15,75,000</span>
+        </div>
+        <div style="margin-top:8px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;color:var(--color-text-secondary)">
+            <span>Profit margin</span>
+            <span id="pnl-margin-pct">100%</span>
+          </div>
+          <div style="height:6px;background:var(--color-border-tertiary);border-radius:3px">
+            <div id="pnl-bar" style="height:100%;border-radius:3px;background:var(--color-text-success);width:100%;transition:width .3s"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-chart-bar" style="font-size:14px" aria-hidden="true"></i> Expense breakdown</div>
+        <div id="exp-breakdown" style="display:flex;flex-direction:column;gap:5px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-users" style="font-size:14px" aria-hidden="true"></i> Staff payment status</div>
+        <div id="staff-pay-status" style="display:flex;flex-direction:column;gap:5px"></div>
+        <button style="width:100%;margin-top:10px;font-size:12px" onclick="sendPrompt('LED staff payment mark as paid screen બતાવો')"><i class="ti ti-check" style="font-size:12px" aria-hidden="true"></i> Mark payments paid ↗</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS=5, SQFT=6300, CLIENT_RATE=50;
+const CLIENT_REV=SQFT*CLIENT_RATE*DAYS;
+
+const staffList=[
+  {name:'Rishi Kumar',  role:'LED operator',  source:'in', rate:1500, days:6},
+  {name:'Dev Vora',     role:'LED technician',source:'in', rate:1500, days:6},
+  {name:'Mehul Shah',   role:'LED operator',  source:'in', rate:1200, days:6},
+  {name:'Priya Joshi',  role:'LED controller',source:'in', rate:1500, days:6},
+  {name:'Karan Patel',  role:'LED operator',  source:'in', rate:1200, days:6},
+  {name:'Nirav Parmar', role:'LED technician',source:'in', rate:1200, days:6},
+  {name:'Jignesh Rao',  role:'LED operator',  source:'ext',rate:1000, days:5},
+  {name:'Viral Desai',  role:'LED controller',source:'ext',rate:1200, days:5},
+];
+
+const vendorList=[
+  {name:'Star LED',type:'P4',sqft:4300,rate:35,days:5},
+];
+
+let extraExpenses=[];
+let expId=1;
+
+function fmt(n){return n.toLocaleString('en-IN');}
+
+function staffTotal(){return staffList.reduce((a,s)=>a+(s.rate*s.days),0);}
+function vendorTotal(){return vendorList.reduce((a,v)=>a+(v.sqft*v.rate*v.days),0);}
+function transport(){return parseInt(document.getElementById('exp-t')?.value)||0;}
+function food(){return parseInt(document.getElementById('exp-f')?.value)||0;}
+function misc(){return parseInt(document.getElementById('exp-m')?.value)||0;}
+function extraTotal(){return extraExpenses.reduce((a,e)=>a+e.amt,0);}
+function otherTotal(){return transport()+food()+misc()+extraTotal();}
+function totalExp(){return staffTotal()+vendorTotal()+otherTotal();}
+function netProfit(){return CLIENT_REV-totalExp();}
+
+function renderStaff(){
+  document.getElementById('staff-tbody').innerHTML=staffList.map(s=>{
+    const total=s.rate*s.days;
+    const srcStyle=s.source==='in'?'background:var(--color-background-success);color:var(--color-text-success)':'background:var(--color-background-warning);color:var(--color-text-warning)';
+    return`<tr>
+      <td style="font-weight:500">${s.name}</td>
+      <td style="font-size:11px;color:var(--color-text-secondary)">${s.role}</td>
+      <td><span class="badge" style="font-size:10px;${srcStyle}">${s.source==='in'?'In-house':'External'}</span></td>
+      <td style="text-align:center">${s.days}</td>
+      <td style="text-align:right">₹${fmt(s.rate)}</td>
+      <td style="text-align:right;font-weight:500;color:var(--color-text-warning)">₹${fmt(total)}</td>
+    </tr>`;
+  }).join('');
+  const st=staffTotal();
+  document.getElementById('staff-total').textContent='₹'+fmt(st);
+  document.getElementById('staff-total-label').textContent='₹'+fmt(st);
+}
+
+function renderVendors(){
+  document.getElementById('vendor-tbody').innerHTML=vendorList.map(v=>{
+    const total=v.sqft*v.rate*v.days;
+    return`<tr>
+      <td style="font-weight:500">${v.name}</td>
+      <td><span class="badge bb" style="font-size:10px">${v.type}</span></td>
+      <td style="text-align:right">${fmt(v.sqft)}</td>
+      <td style="text-align:right">₹${v.rate}</td>
+      <td style="text-align:center">${v.days}</td>
+      <td style="text-align:right;font-weight:500;color:var(--color-text-warning)">₹${fmt(total)}</td>
+    </tr>`;
+  }).join('');
+  const vt=vendorTotal();
+  document.getElementById('vendor-total').textContent='₹'+fmt(vt);
+  document.getElementById('vendor-total-label').textContent='₹'+fmt(vt);
+}
+
+function renderExtra(){
+  document.getElementById('extra-expenses').innerHTML=extraExpenses.map(e=>`
+    <div class="exp-row">
+      <span class="exp-label"><i class="ti ti-circle-dot" style="font-size:12px" aria-hidden="true"></i>${e.name}</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-weight:500;color:var(--color-text-primary)">₹${fmt(e.amt)}</span>
+        <button style="background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:12px;padding:0" onclick="removeExp(${e.id})"><i class="ti ti-x" style="font-size:11px" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateTotals(){
+  const st=staffTotal(), vt=vendorTotal(), ot=otherTotal(), te=totalExp(), np=netProfit();
+  const margin=Math.max(0,Math.round(np/CLIENT_REV*100));
+  document.getElementById('m-exp').textContent='₹'+fmt(te);
+  document.getElementById('m-profit').textContent='₹'+fmt(np);
+  document.getElementById('m-profit').style.color=np>=0?'var(--color-text-success)':'var(--color-text-danger)';
+  document.getElementById('m-margin').textContent=margin+'%';
+  document.getElementById('pnl-staff').textContent='— ₹'+fmt(st);
+  document.getElementById('pnl-vendor').textContent='— ₹'+fmt(vt);
+  document.getElementById('pnl-transport').textContent='— ₹'+fmt(transport());
+  document.getElementById('pnl-other').textContent='— ₹'+fmt(food()+misc()+extraTotal());
+  document.getElementById('pnl-net').textContent='₹'+fmt(np);
+  document.getElementById('pnl-net').style.color=np>=0?'var(--color-text-success)':'var(--color-text-danger)';
+  document.getElementById('pnl-margin-pct').textContent=margin+'%';
+  document.getElementById('pnl-bar').style.width=margin+'%';
+  document.getElementById('pnl-bar').style.background=margin>60?'var(--color-text-success)':margin>30?'var(--color-text-warning)':'var(--color-text-danger)';
+
+  const items=[
+    {label:'Staff payment',val:st,color:'var(--color-text-warning)'},
+    {label:'LED vendor cost',val:vt,color:'var(--color-text-warning)'},
+    {label:'Transport',val:transport(),color:'var(--color-text-secondary)'},
+    {label:'Food & meals',val:food(),color:'var(--color-text-secondary)'},
+    {label:'Misc',val:misc()+extraTotal(),color:'var(--color-text-secondary)'},
+  ];
+  document.getElementById('exp-breakdown').innerHTML=items.map(i=>`
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+      <span style="color:var(--color-text-secondary)">${i.label}</span>
+      <span style="font-weight:500;color:${i.val>0?i.color:'var(--color-text-tertiary)'}">₹${fmt(i.val)}</span>
+    </div>
+  `).join('')+`<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:500;padding:8px 0 0;border-top:0.5px solid var(--color-border-secondary)"><span>Total expenses</span><span style="color:var(--color-text-danger)">₹${fmt(te)}</span></div>`;
+
+  document.getElementById('staff-pay-status').innerHTML=staffList.map(s=>`
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+      <span style="color:var(--color-text-secondary)">${s.name}</span>
+      <span style="font-weight:500;color:var(--color-text-warning)">₹${fmt(s.rate*s.days)} <span class="badge ba" style="font-size:10px;margin-left:4px">Pending</span></span>
+    </div>
+  `).join('');
+}
+
+function toggleAddExp(){
+  const f=document.getElementById('add-exp-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+}
+
+function addExpense(){
+  const name=document.getElementById('exp-name').value.trim();
+  const amt=parseInt(document.getElementById('exp-amt').value)||0;
+  if(!name||!amt)return;
+  extraExpenses.push({id:expId++,name,amt});
+  document.getElementById('exp-name').value='';
+  document.getElementById('exp-amt').value='';
+  document.getElementById('add-exp-form').style.display='none';
+  renderExtra();
+  updateTotals();
+}
+
+function removeExp(id){
+  extraExpenses=extraExpenses.filter(x=>x.id!==id);
+  renderExtra();
+  updateTotals();
+}
+
+renderStaff();
+renderVendors();
+updateTotals();
+</script>

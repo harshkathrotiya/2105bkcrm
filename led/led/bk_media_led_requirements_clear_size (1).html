@@ -1,0 +1,332 @@
+
+<h2 class="sr-only">BK Media CRM — LED Requirements list showing actual clear height and width in mm and feet for client table and structure arrangement</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.two-col{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.note{background:var(--color-background-info);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-info);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.pdf-wrap{background:#fff;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:26px 30px;color:#1a1a1a;font-family:var(--font-sans)}
+.pdf-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #1a1a1a}
+.pdf-company{font-size:18px;font-weight:500;color:#1a1a1a}
+.pdf-company-sub{font-size:11px;color:#666;margin-top:3px;line-height:1.6}
+.pdf-doc-block{text-align:right}
+.pdf-doc-title{font-size:13px;font-weight:500;color:#1a1a1a}
+.pdf-doc-sub{font-size:11px;color:#666;margin-top:3px}
+.pdf-event-strip{background:#f5f5f5;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pdf-ei{display:flex;flex-direction:column;gap:2px}
+.pdf-ei-label{font-size:9px;color:#999;letter-spacing:0.08em;text-transform:uppercase}
+.pdf-ei-val{font-size:12px;font-weight:500;color:#1a1a1a}
+.pdf-section-title{font-size:12px;font-weight:500;color:#1a1a1a;padding:6px 0;border-bottom:1px solid #1a1a1a;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.pdf-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px;table-layout:fixed}
+.pdf-table th{text-align:left;font-size:10px;color:#999;padding:0 6px 6px;border-bottom:0.5px solid #ddd;letter-spacing:0.05em;text-transform:uppercase;font-weight:500}
+.pdf-table td{padding:7px 6px;border-bottom:0.5px solid #f0f0f0;color:#333;vertical-align:middle}
+.pdf-table tr:last-child td{border-bottom:none}
+.pdf-table .ctr{text-align:center}
+.pdf-table .num{text-align:right}
+.place-header{font-size:12px;font-weight:500;color:#1a1a1a;padding:8px 0 6px;border-bottom:0.5px solid #1a1a1a;margin-bottom:6px;display:flex;align-items:center;gap:6px;margin-top:12px}
+.place-header:first-of-type{margin-top:0}
+.clear-size-badge{display:inline-block;background:#E6F1FB;color:#0C447C;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.note-box{background:#f5f5f5;border-radius:6px;padding:8px 12px;font-size:10px;color:#777;margin-top:4px;line-height:1.6}
+.pdf-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px;padding-top:12px;border-top:0.5px solid #e0e0e0}
+.pdf-sign{text-align:center;min-width:110px}
+.pdf-sign-line{height:1px;background:#1a1a1a;margin-bottom:5px}
+.pdf-sign-label{font-size:10px;color:#999}
+.pdf-stamp{width:48px;height:48px;border-radius:50%;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#1a1a1a;text-align:center;line-height:1.3}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.calc-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;margin-bottom:10px}
+.calc-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.calc-row:last-child{border-bottom:none}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED Department operator assignment screen બતાવો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Operator assignment
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Client requirements — LED clear size</span>
+    </div>
+    <span class="badge" style="background:#FAEEDA;color:#633806">LED dept</span>
+  </div>
+
+  <div class="note">
+    <i class="ti ti-ruler" style="font-size:14px" aria-hidden="true"></i>
+    Table/structure arrangement માટે actual clear size (mm + ft) — pricing sq.ft અલગ, clear size અલગ
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="pdf-wrap">
+        <div class="pdf-header">
+          <div>
+            <div class="pdf-company">BK Media</div>
+            <div class="pdf-company-sub">Media Production Services · Vadodara, Gujarat<br>+91 98250 00000 · info@bkmedia.in</div>
+          </div>
+          <div class="pdf-doc-block">
+            <div class="pdf-doc-title">LED screen clear size list</div>
+            <div class="pdf-doc-sub">Ref: BKM/26-27/05/14</div>
+            <div class="pdf-doc-sub">Date: 09 May 2026</div>
+            <div class="pdf-doc-sub" style="color:#185FA5;font-weight:500">For table & structure arrangement only</div>
+          </div>
+        </div>
+
+        <div class="pdf-event-strip">
+          <div class="pdf-ei"><span class="pdf-ei-label">Event</span><span class="pdf-ei-val">દ્વિશતાબ્દી મહોત્સવ</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Dates</span><span class="pdf-ei-val">15–20 May 2026</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Cabinet</span><span class="pdf-ei-val">576 × 576 mm</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Company</span><span class="pdf-ei-val">NVS (P4)</span></div>
+        </div>
+
+        <div style="background:#E6F1FB;border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:11px;color:#0C447C">
+          <strong>Calculation method:</strong> Target height (ft) ÷ 1.889 = cabinets needed &nbsp;·&nbsp; Cabinets × 576mm = actual mm &nbsp;·&nbsp; mm ÷ 304.8 = actual feet
+        </div>
+
+        <div class="place-header"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i> Sabha Mandap</div>
+        <table class="pdf-table">
+          <thead>
+            <tr>
+              <th style="width:28px">No.</th>
+              <th style="width:120px">Location</th>
+              <th style="width:52px">Type</th>
+              <th style="width:60px" class="ctr">Target size</th>
+              <th style="width:48px" class="ctr">H cabs</th>
+              <th style="width:75px" class="ctr">Clear H</th>
+              <th style="width:48px" class="ctr">W cabs</th>
+              <th style="width:75px" class="ctr">Clear W</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td><td>On Stage</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">16×28 ft</td>
+              <td class="ctr">8</td>
+              <td class="ctr"><span class="clear-size-badge">4,608mm<br>15.12 ft</span></td>
+              <td class="ctr">14</td>
+              <td class="ctr"><span class="clear-size-badge">8,064mm<br>26.46 ft</span></td>
+            </tr>
+            <tr>
+              <td>2</td><td>Center Dom</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">8×14 ft</td>
+              <td class="ctr">4</td>
+              <td class="ctr"><span class="clear-size-badge">2,304mm<br>7.56 ft</span></td>
+              <td class="ctr">7</td>
+              <td class="ctr"><span class="clear-size-badge">4,032mm<br>13.23 ft</span></td>
+            </tr>
+            <tr>
+              <td>3</td><td>Left Side Dom</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">8×14 ft</td>
+              <td class="ctr">4</td>
+              <td class="ctr"><span class="clear-size-badge">2,304mm<br>7.56 ft</span></td>
+              <td class="ctr">7</td>
+              <td class="ctr"><span class="clear-size-badge">4,032mm<br>13.23 ft</span></td>
+            </tr>
+            <tr>
+              <td>4</td><td>Right Side Dom</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">8×14 ft</td>
+              <td class="ctr">4</td>
+              <td class="ctr"><span class="clear-size-badge">2,304mm<br>7.56 ft</span></td>
+              <td class="ctr">7</td>
+              <td class="ctr"><span class="clear-size-badge">4,032mm<br>13.23 ft</span></td>
+            </tr>
+            <tr>
+              <td>5</td><td>On Stage</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">8×14 ft</td>
+              <td class="ctr">4</td>
+              <td class="ctr"><span class="clear-size-badge">2,304mm<br>7.56 ft</span></td>
+              <td class="ctr">7</td>
+              <td class="ctr"><span class="clear-size-badge">4,032mm<br>13.23 ft</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="place-header"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i> OutDoor Campus</div>
+        <table class="pdf-table">
+          <thead>
+            <tr>
+              <th style="width:28px">No.</th>
+              <th style="width:120px">Location</th>
+              <th style="width:52px">Type</th>
+              <th style="width:60px" class="ctr">Target size</th>
+              <th style="width:48px" class="ctr">H cabs</th>
+              <th style="width:75px" class="ctr">Clear H</th>
+              <th style="width:48px" class="ctr">W cabs</th>
+              <th style="width:75px" class="ctr">Clear W</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td><td>Utsav Gate</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">10×18 ft</td>
+              <td class="ctr">5</td>
+              <td class="ctr"><span class="clear-size-badge">2,880mm<br>9.45 ft</span></td>
+              <td class="ctr">9</td>
+              <td class="ctr"><span class="clear-size-badge">5,184mm<br>17.00 ft</span></td>
+            </tr>
+            <tr>
+              <td>2</td><td>VIP Bhojnalay</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">8×14 ft</td>
+              <td class="ctr">4</td>
+              <td class="ctr"><span class="clear-size-badge">2,304mm<br>7.56 ft</span></td>
+              <td class="ctr">7</td>
+              <td class="ctr"><span class="clear-size-badge">4,032mm<br>13.23 ft</span></td>
+            </tr>
+            <tr>
+              <td>3</td><td>Rasodu</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">8×14 ft</td>
+              <td class="ctr">4</td>
+              <td class="ctr"><span class="clear-size-badge">2,304mm<br>7.56 ft</span></td>
+              <td class="ctr">7</td>
+              <td class="ctr"><span class="clear-size-badge">4,032mm<br>13.23 ft</span></td>
+            </tr>
+            <tr>
+              <td>4</td><td>Yagnshala</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">8×14 ft</td>
+              <td class="ctr">4</td>
+              <td class="ctr"><span class="clear-size-badge">2,304mm<br>7.56 ft</span></td>
+              <td class="ctr">7</td>
+              <td class="ctr"><span class="clear-size-badge">4,032mm<br>13.23 ft</span></td>
+            </tr>
+            <tr>
+              <td>5</td><td>Welcome</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">8×14 ft</td>
+              <td class="ctr">4</td>
+              <td class="ctr"><span class="clear-size-badge">2,304mm<br>7.56 ft</span></td>
+              <td class="ctr">7</td>
+              <td class="ctr"><span class="clear-size-badge">4,032mm<br>13.23 ft</span></td>
+            </tr>
+            <tr>
+              <td>6</td><td>Add Mate Led</td><td>P4</td>
+              <td class="ctr" style="font-size:10px">8×14 ft</td>
+              <td class="ctr">4</td>
+              <td class="ctr"><span class="clear-size-badge">2,304mm<br>7.56 ft</span></td>
+              <td class="ctr">7</td>
+              <td class="ctr"><span class="clear-size-badge">4,032mm<br>13.23 ft</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="note-box">
+          <strong>Important:</strong> Above clear sizes are for table and structural framework arrangement only. Actual screen area including bezels may vary slightly. Please ensure minimum 1 ft clearance around each screen for access and cable management. Structure load bearing capacity: minimum 8 kg/sq.ft.
+        </div>
+
+        <div class="pdf-footer">
+          <div>
+            <div style="font-size:11px;color:#999;margin-bottom:8px">For BK Media</div>
+            <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-label">Operations manager</div></div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:11px;color:#999;margin-bottom:4px">BK Media</div>
+            <div class="pdf-stamp">BK<br>MEDIA</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#999;margin-bottom:8px">Acknowledged by</div>
+            <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-label">Client representative</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button onclick="sendPrompt('LED clear size requirements PDF download કરો')"><i class="ti ti-download" style="font-size:13px" aria-hidden="true"></i> Download PDF ↗</button>
+        <button onclick="sendPrompt('LED clear size requirements WhatsApp send કરો')"><i class="ti ti-brand-whatsapp" style="font-size:13px" aria-hidden="true"></i> WhatsApp ↗</button>
+        <button onclick="sendPrompt('LED clear size requirements Email send કરો')"><i class="ti ti-mail" style="font-size:13px" aria-hidden="true"></i> Email ↗</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-calculator" style="font-size:14px" aria-hidden="true"></i> Clear size calculator</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <span style="font-size:11px;color:var(--color-text-secondary)">Cabinet size (mm)</span>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="number" id="calc-h" value="576" placeholder="H mm" oninput="calcSize()" style="flex:1;font-size:12px">
+              <span style="color:var(--color-text-secondary);font-size:13px">×</span>
+              <input type="number" id="calc-w" value="576" placeholder="W mm" oninput="calcSize()" style="flex:1;font-size:12px">
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <span style="font-size:11px;color:var(--color-text-secondary)">Target size (ft)</span>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="number" id="calc-th" value="8" placeholder="H ft" oninput="calcSize()" style="flex:1;font-size:12px">
+              <span style="color:var(--color-text-secondary);font-size:13px">×</span>
+              <input type="number" id="calc-tw" value="14" placeholder="W ft" oninput="calcSize()" style="flex:1;font-size:12px">
+            </div>
+          </div>
+        </div>
+        <div id="calc-result" style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-info-circle" style="font-size:14px" aria-hidden="true"></i> Formula explained</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.8">
+          <div style="padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-weight:500;color:var(--color-text-primary)">Target ft → cabinets:</span><br>Target H (ft) × 304.8 ÷ cabinet H (mm)</div>
+          <div style="padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="font-weight:500;color:var(--color-text-primary)">Cabinets → clear mm:</span><br>Cabinets × cabinet size (mm)</div>
+          <div style="padding:4px 0"><span style="font-weight:500;color:var(--color-text-primary)">mm → clear ft:</span><br>Total mm ÷ 304.8</div>
+        </div>
+        <div style="background:var(--color-background-info);border-radius:var(--border-radius-md);padding:8px 12px;margin-top:10px;font-size:12px;color:var(--color-text-info)">
+          <i class="ti ti-bulb" style="font-size:12px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>
+          Cabinet mm size company-wise અલગ — stock add કરતી વખતે enter કરો
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-eye" style="font-size:14px" aria-hidden="true"></i> Example — 8×14 ft (NVS 576mm)</div>
+        <div class="calc-card">
+          <div class="calc-row"><span style="color:var(--color-text-secondary)">Target H</span><span style="font-weight:500">8 ft = 2,438 mm</span></div>
+          <div class="calc-row"><span style="color:var(--color-text-secondary)">H cabinets needed</span><span style="font-weight:500">2438 ÷ 576 = 4.23 → 4 cabs</span></div>
+          <div class="calc-row"><span style="color:var(--color-text-secondary)">Actual clear H</span><span style="font-weight:500;color:var(--color-text-info)">4 × 576 = 2,304mm = 7.56 ft</span></div>
+        </div>
+        <div class="calc-card">
+          <div class="calc-row"><span style="color:var(--color-text-secondary)">Target W</span><span style="font-weight:500">14 ft = 4,267 mm</span></div>
+          <div class="calc-row"><span style="color:var(--color-text-secondary)">W cabinets needed</span><span style="font-weight:500">4267 ÷ 576 = 7.40 → 7 cabs</span></div>
+          <div class="calc-row"><span style="color:var(--color-text-secondary)">Actual clear W</span><span style="font-weight:500;color:var(--color-text-info)">7 × 576 = 4,032mm = 13.23 ft</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function calcSize(){
+  const ch=parseFloat(document.getElementById('calc-h').value)||0;
+  const cw=parseFloat(document.getElementById('calc-w').value)||0;
+  const th=parseFloat(document.getElementById('calc-th').value)||0;
+  const tw=parseFloat(document.getElementById('calc-tw').value)||0;
+  const res=document.getElementById('calc-result');
+  if(!ch||!cw||!th||!tw){res.innerHTML='<div style="font-size:12px;color:var(--color-text-tertiary)">Values enter કરો</div>';return;}
+  const hMm=th*304.8;
+  const wMm=tw*304.8;
+  const hCabs=Math.round(hMm/ch);
+  const wCabs=Math.round(wMm/cw);
+  const clearHmm=hCabs*ch;
+  const clearWmm=wCabs*cw;
+  const clearHft=(clearHmm/304.8).toFixed(2);
+  const clearWft=(clearWmm/304.8).toFixed(2);
+  res.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:var(--color-background-primary);border-radius:var(--border-radius-md);padding:10px 12px;border:0.5px solid var(--color-border-tertiary)">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Clear height</div>
+        <div style="font-size:14px;font-weight:500;color:var(--color-text-info)">${clearHmm.toLocaleString('en-IN')}mm</div>
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary)">${clearHft} ft</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">${hCabs} cabinets × ${ch}mm</div>
+      </div>
+      <div style="background:var(--color-background-primary);border-radius:var(--border-radius-md);padding:10px 12px;border:0.5px solid var(--color-border-tertiary)">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">Clear width</div>
+        <div style="font-size:14px;font-weight:500;color:var(--color-text-info)">${clearWmm.toLocaleString('en-IN')}mm</div>
+        <div style="font-size:12px;font-weight:500;color:var(--color-text-primary)">${clearWft} ft</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">${wCabs} cabinets × ${cw}mm</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-top:8px;text-align:center">Target: ${th}×${tw} ft &nbsp;→&nbsp; Actual clear: ${clearHft}×${clearWft} ft</div>
+  `;
+}
+calcSize();
+</script>

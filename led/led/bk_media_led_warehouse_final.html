@@ -1,0 +1,280 @@
+
+<h2 class="sr-only">BK Media LED Warehouse — per sqft per day pricing for client and vendor with P&L summary</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.br{background:var(--color-background-danger);color:var(--color-text-danger)}
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:17px;font-weight:500;color:var(--color-text-primary)}
+.two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.einfo{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap}
+.ei{font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px}
+.ei span{color:var(--color-text-primary);font-weight:500}
+.co-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px;margin-bottom:8px}
+.co-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.co-name{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:6px}
+.pbar{height:5px;background:var(--color-border-tertiary);border-radius:3px;margin-top:6px}
+.pbar-fill{height:100%;border-radius:3px;transition:width .3s}
+.v-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;margin-bottom:6px}
+.v-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.v-name{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:6px}
+.v-calc{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.vc{display:flex;flex-direction:column;gap:2px}
+.vc-l{font-size:10px;color:var(--color-text-secondary)}
+.vc-v{font-size:12px;font-weight:500;color:var(--color-text-primary)}
+.del-btn{width:24px;height:24px;border-radius:var(--border-radius-md);background:none;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.del-btn:hover{background:var(--color-background-danger);color:var(--color-text-danger);border-color:transparent}
+.addform{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);margin-top:8px}
+.field{display:flex;flex-direction:column;gap:4px}
+.flabel{font-size:11px;color:var(--color-text-secondary)}
+.pnl{display:flex;flex-direction:column;gap:5px}
+.pnl-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.pnl-row:last-child{border-bottom:none}
+.notice{border-radius:var(--border-radius-md);padding:8px 12px;font-size:12px;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.action-bar{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED Quotation PDF screen બતાવો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Quotation
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">LED warehouse — availability check</span>
+    </div>
+    <span class="badge bb">Warehouse</span>
+  </div>
+
+  <div class="einfo">
+    <div class="ei"><i class="ti ti-file-invoice" style="font-size:12px" aria-hidden="true"></i> Ref: <span>BKM/26-27/05/14</span></div>
+    <div class="ei"><i class="ti ti-calendar" style="font-size:12px" aria-hidden="true"></i> <span>15–20 May 2026 · 5 days</span></div>
+    <div class="ei"><i class="ti ti-stack" style="font-size:12px" aria-hidden="true"></i> Required: <span>6,300 sq.ft/day</span></div>
+    <div class="ei"><i class="ti ti-cash" style="font-size:12px" aria-hidden="true"></i> Client rate: <span>₹50/sq.ft/day</span></div>
+  </div>
+
+  <div class="sgrid">
+    <div class="metric"><div class="metric-label">BK Media allocated</div><div class="metric-value" style="color:var(--color-text-success)" id="m-bk">0 sq.ft</div></div>
+    <div class="metric"><div class="metric-label">Vendor arranged</div><div class="metric-value" style="color:var(--color-text-warning)" id="m-vd">0 sq.ft</div></div>
+    <div class="metric"><div class="metric-label">Shortfall</div><div class="metric-value" id="m-sf" style="color:var(--color-text-danger)">6,300 sq.ft</div></div>
+    <div class="metric"><div class="metric-label">Vendor total cost</div><div class="metric-value" style="color:var(--color-text-warning)" id="m-vc">₹0</div></div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-building-warehouse" style="font-size:14px" aria-hidden="true"></i> BK Media — LED lots (company-wise)</div>
+        <div id="co-list"></div>
+        <button style="width:100%;margin-top:8px;font-size:12px" onclick="toggleCoForm()"><i class="ti ti-plus" style="font-size:12px" aria-hidden="true"></i> New company lot add ↗</button>
+        <div id="co-form" style="display:none">
+          <div class="addform">
+            <div class="field"><span class="flabel">Company name</span><input type="text" id="co-name" placeholder="Company" style="font-size:12px"></div>
+            <div class="field"><span class="flabel">LED type</span><select id="co-type" style="font-size:12px"><option>P4</option><option>P3</option><option>P2</option><option>Floor Led</option><option>P4 Curved</option></select></div>
+            <div class="field"><span class="flabel">Total sq.ft</span><input type="number" id="co-sqft" placeholder="1000" style="font-size:12px"></div>
+            <div class="field" style="align-self:flex-end"><button onclick="addCo()" style="font-size:12px;width:100%">Add lot</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-users" style="font-size:14px" aria-hidden="true"></i> Vendor arrangement</div>
+        <div class="notice" id="notice" style="background:var(--color-background-warning);color:var(--color-text-warning)">
+          <i class="ti ti-alert-triangle" style="font-size:13px" aria-hidden="true"></i>
+          <span id="notice-text">Shortfall: 6,300 sq.ft — vendor arrange કરો</span>
+        </div>
+        <div id="v-list"></div>
+        <div class="addform" style="margin-top:8px">
+          <div class="field"><span class="flabel">Vendor name</span><input type="text" id="v-name" placeholder="Vendor" style="font-size:12px"></div>
+          <div class="field"><span class="flabel">LED type</span><select id="v-type" style="font-size:12px"><option>P4</option><option>P3</option><option>P2</option><option>Floor Led</option><option>P4 Curved</option></select></div>
+          <div class="field"><span class="flabel">Sq.ft arranged</span><input type="number" id="v-sqft" placeholder="2000" style="font-size:12px"></div>
+          <div class="field"><span class="flabel">Cost rate ₹/sq.ft/day</span><input type="number" id="v-rate" placeholder="35" style="font-size:12px"></div>
+          <div class="field" style="grid-column:span 2"><button onclick="addVendor()" style="font-size:12px;width:100%"><i class="ti ti-plus" style="font-size:11px" aria-hidden="true"></i> Add vendor ↗</button></div>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button onclick="sendPrompt('LED Department operator assignment screen બતાવો')" id="proceed-btn" style="font-size:12px"><i class="ti ti-arrow-right" style="font-size:13px" aria-hidden="true"></i> Proceed to assignment ↗</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-chart-bar" style="font-size:14px" aria-hidden="true"></i> Coverage summary</div>
+        <div id="coverage"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-receipt" style="font-size:14px" aria-hidden="true"></i> P&L — this event</div>
+        <div class="pnl" id="pnl"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-stack" style="font-size:14px" aria-hidden="true"></i> Inventory status</div>
+        <div id="inv-status" style="display:flex;flex-direction:column;gap:5px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS = 5;
+const REQUIRED = 6300;
+const CLIENT_RATE = 50;
+
+let companies = [
+  {id:'c1', name:'NVS', type:'P4', total:1000, alloc:0},
+  {id:'c2', name:'VCORE', type:'P4', total:1000, alloc:0},
+];
+let vendors = [];
+let coIdx=3, vIdx=1;
+
+const fmt = n => n.toLocaleString('en-IN');
+
+function bkAlloc(){ return companies.reduce((a,c)=>a+c.alloc,0); }
+function vdSqft(){ return vendors.reduce((a,v)=>a+v.sqft,0); }
+function vdCost(){ return vendors.reduce((a,v)=>a+(v.sqft*v.rate*DAYS),0); }
+
+function render(){
+  const bk=bkAlloc(), vd=vdSqft(), vc=vdCost();
+  const covered=bk+vd;
+  const sf=Math.max(0,REQUIRED-covered);
+  const pct=Math.min(100,Math.round(covered/REQUIRED*100));
+  const clientRev=REQUIRED*CLIENT_RATE*DAYS;
+  const profit=clientRev-vc;
+
+  document.getElementById('m-bk').textContent=fmt(bk)+' sq.ft';
+  document.getElementById('m-vd').textContent=fmt(vd)+' sq.ft';
+  document.getElementById('m-sf').textContent=fmt(sf)+' sq.ft';
+  document.getElementById('m-sf').style.color=sf===0?'var(--color-text-success)':'var(--color-text-danger)';
+  document.getElementById('m-vc').textContent='₹'+fmt(vc);
+
+  const notice=document.getElementById('notice');
+  if(sf===0){
+    notice.style.background='var(--color-background-success)';
+    notice.style.color='var(--color-text-success)';
+    document.getElementById('notice-text').textContent='બધું covered — ready to proceed!';
+    const btn=document.getElementById('proceed-btn');
+    btn.style.background='var(--color-background-success)';
+    btn.style.color='var(--color-text-success)';
+    btn.style.borderColor='transparent';
+  } else {
+    notice.style.background='var(--color-background-warning)';
+    notice.style.color='var(--color-text-warning)';
+    document.getElementById('notice-text').textContent=`Shortfall: ${fmt(sf)} sq.ft — vendor arrange કરો`;
+  }
+
+  document.getElementById('co-list').innerHTML = companies.map(c=>{
+    const pct2=Math.round(c.alloc/c.total*100);
+    const rem=c.total-c.alloc;
+    return `<div class="co-card">
+      <div class="co-header">
+        <div>
+          <div class="co-name"><i class="ti ti-building" style="font-size:13px" aria-hidden="true"></i>${c.name}<span class="badge bb" style="font-size:10px">${c.type}</span></div>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Total: ${fmt(c.total)} sq.ft &nbsp;·&nbsp; Free: ${fmt(rem)} sq.ft</div>
+        </div>
+        <button class="del-btn" onclick="removeCo('${c.id}')"><i class="ti ti-x" style="font-size:11px" aria-hidden="true"></i></button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+        <span style="color:var(--color-text-secondary);flex-shrink:0">Event allocate:</span>
+        <input type="number" value="${c.alloc}" min="0" max="${c.total}" oninput="updateAlloc('${c.id}',this.value)" style="width:80px;font-size:12px">
+        <span style="color:var(--color-text-secondary)">sq.ft</span>
+        <span style="margin-left:auto;font-size:11px;color:${pct2>90?'var(--color-text-warning)':'var(--color-text-secondary)'}">${pct2}% used</span>
+      </div>
+      <div class="pbar"><div class="pbar-fill" style="width:${pct2}%;background:${pct2===100?'var(--color-text-success)':pct2>80?'var(--color-text-warning)':'var(--color-text-info)'}"></div></div>
+    </div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--color-text-tertiary);padding:6px 0;text-align:center">No company lots added</div>';
+
+  document.getElementById('v-list').innerHTML = vendors.length ? vendors.map(v=>{
+    const totalCost=v.sqft*v.rate*DAYS;
+    return `<div class="v-card">
+      <div class="v-header">
+        <div class="v-name"><i class="ti ti-user-check" style="font-size:13px" aria-hidden="true"></i>${v.name}<span class="badge ba" style="font-size:10px">${v.type}</span></div>
+        <button class="del-btn" onclick="removeVendor(${v.id})"><i class="ti ti-x" style="font-size:11px" aria-hidden="true"></i></button>
+      </div>
+      <div class="v-calc">
+        <div class="vc"><span class="vc-l">Sq.ft</span><span class="vc-v">${fmt(v.sqft)}</span></div>
+        <div class="vc"><span class="vc-l">Rate/sq.ft/day</span><span class="vc-v">₹${v.rate}</span></div>
+        <div class="vc"><span class="vc-l">Days</span><span class="vc-v">${DAYS}</span></div>
+        <div class="vc"><span class="vc-l">Total payable</span><span class="vc-v" style="color:var(--color-text-warning)">₹${fmt(totalCost)}</span></div>
+      </div>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--color-text-tertiary);padding:6px 0">No vendors added yet</div>';
+
+  document.getElementById('coverage').innerHTML = `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+        <span style="color:var(--color-text-secondary)">Coverage (${fmt(covered)} / ${fmt(REQUIRED)} sq.ft)</span>
+        <span style="font-weight:500">${pct}%</span>
+      </div>
+      <div style="height:8px;background:var(--color-border-tertiary);border-radius:4px">
+        <div style="width:${pct}%;height:100%;border-radius:4px;background:${pct===100?'var(--color-text-success)':pct>70?'var(--color-text-warning)':'var(--color-text-danger)'}"></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="color:var(--color-text-secondary)">BK Media lots</span><span style="font-weight:500;color:var(--color-text-success)">${fmt(bk)} sq.ft</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="color:var(--color-text-secondary)">Vendor arranged</span><span style="font-weight:500;color:var(--color-text-warning)">${fmt(vd)} sq.ft</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="color:var(--color-text-secondary)">Shortfall remaining</span><span style="font-weight:500;color:${sf===0?'var(--color-text-success)':'var(--color-text-danger)'}">${fmt(sf)} sq.ft</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:500;padding:8px 0 0"><span>Required (per day)</span><span style="color:var(--color-text-info)">${fmt(REQUIRED)} sq.ft</span></div>
+  `;
+
+  document.getElementById('pnl').innerHTML = `
+    <div class="pnl-row"><span style="color:var(--color-text-secondary)">Client billing</span><span style="font-weight:500;color:var(--color-text-success)">₹${fmt(clientRev)}</span></div>
+    <div style="font-size:10px;color:var(--color-text-tertiary);padding:2px 0 4px">${fmt(REQUIRED)} sq.ft × ₹${CLIENT_RATE}/sq.ft/day × ${DAYS} days</div>
+    <div class="pnl-row"><span style="color:var(--color-text-secondary)">Vendor cost</span><span style="font-weight:500;color:var(--color-text-warning)">— ₹${fmt(vc)}</span></div>
+    <div style="font-size:10px;color:var(--color-text-tertiary);padding:2px 0 4px">${vendors.length?vendors.map(v=>`${fmt(v.sqft)} × ₹${v.rate}/day × ${DAYS} days`).join(' + '):'No vendors'}</div>
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:500;padding:8px 0 0;border-top:0.5px solid var(--color-border-secondary)">
+      <span>Net margin</span>
+      <span style="color:${profit>=0?'var(--color-text-success)':'var(--color-text-danger)'}">₹${fmt(profit)}</span>
+    </div>
+  `;
+
+  document.getElementById('inv-status').innerHTML = companies.map(c=>`
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+      <span style="color:var(--color-text-secondary)">${c.name} (${c.type})</span>
+      <span style="font-weight:500">${fmt(c.alloc)} / ${fmt(c.total)} sq.ft used</span>
+    </div>
+  `).join('') + `<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:500;padding:8px 0 0"><span>Total BK Media inventory</span><span>${fmt(companies.reduce((a,c)=>a+c.total,0))} sq.ft</span></div>`;
+}
+
+function updateAlloc(id,val){
+  const c=companies.find(x=>x.id===id);
+  if(c){ c.alloc=Math.min(c.total,Math.max(0,parseInt(val)||0)); render(); }
+}
+function removeCo(id){ companies=companies.filter(x=>x.id!==id); render(); }
+function removeVendor(id){ vendors=vendors.filter(x=>x.id!==id); render(); }
+function toggleCoForm(){ const f=document.getElementById('co-form'); f.style.display=f.style.display==='none'?'block':'none'; }
+function addCo(){
+  const name=document.getElementById('co-name').value.trim();
+  const type=document.getElementById('co-type').value;
+  const sqft=parseInt(document.getElementById('co-sqft').value)||0;
+  if(!name||!sqft)return;
+  companies.push({id:'c'+coIdx++,name,type,total:sqft,alloc:0});
+  document.getElementById('co-name').value='';
+  document.getElementById('co-sqft').value='';
+  document.getElementById('co-form').style.display='none';
+  render();
+}
+function addVendor(){
+  const name=document.getElementById('v-name').value.trim();
+  const type=document.getElementById('v-type').value;
+  const sqft=parseInt(document.getElementById('v-sqft').value)||0;
+  const rate=parseInt(document.getElementById('v-rate').value)||0;
+  if(!name||!sqft||!rate)return;
+  vendors.push({id:vIdx++,name,type,sqft,rate});
+  document.getElementById('v-name').value='';
+  document.getElementById('v-sqft').value='';
+  document.getElementById('v-rate').value='';
+  render();
+}
+render();
+</script>

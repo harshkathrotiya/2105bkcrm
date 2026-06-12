@@ -1,0 +1,320 @@
+
+<h2 class="sr-only">BK Media CRM — LED Event Execution screen with place-wise screen status tracking, daily operations log and issue reporting</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.br{background:var(--color-background-danger);color:var(--color-text-danger)}
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:20px;font-weight:500;color:var(--color-text-primary)}
+.two-col{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.einfo{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap}
+.ei{font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px}
+.ei span{color:var(--color-text-primary);font-weight:500}
+.day-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.day-tab{font-size:12px;padding:5px 14px;border-radius:20px;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);transition:all .15s;font-family:var(--font-sans)}
+.day-tab:hover{background:var(--color-background-secondary)}
+.day-tab.active{background:var(--color-background-info);color:var(--color-text-info);border-color:transparent}
+.day-tab.done{background:var(--color-background-success);color:var(--color-text-success);border-color:transparent}
+.place-section{margin-bottom:16px}
+.place-header{font-size:12px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:0.5px solid var(--color-border-secondary);margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+th{text-align:left;font-size:11px;color:var(--color-text-secondary);padding:0 8px 8px;border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500}
+td{padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--color-background-secondary)}
+.status-btn{font-size:11px;padding:3px 10px;border-radius:20px;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:transparent;font-family:var(--font-sans);transition:all .15s;white-space:nowrap}
+.status-btn:hover{opacity:0.8}
+.s-setup{background:var(--color-background-warning);color:var(--color-text-warning);border-color:transparent}
+.s-live{background:var(--color-background-success);color:var(--color-text-success);border-color:transparent}
+.s-issue{background:var(--color-background-danger);color:var(--color-text-danger);border-color:transparent}
+.s-off{background:var(--color-background-secondary);color:var(--color-text-secondary);border-color:transparent}
+.issue-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);margin-bottom:6px;font-size:12px}
+.issue-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.log-item{font-size:12px;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;gap:8px}
+.log-item:last-child{border-bottom:none}
+.log-time{color:var(--color-text-secondary);flex-shrink:0;width:52px}
+.log-text{color:var(--color-text-primary)}
+.add-log{display:flex;gap:8px;margin-top:8px}
+.action-bar{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED dispatch list ready કરો — vehicle assignment')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Dispatch
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">LED event execution</span>
+    </div>
+    <span class="badge" style="background:#FAEEDA;color:#633806">LED dept</span>
+  </div>
+
+  <div class="einfo">
+    <div class="ei"><i class="ti ti-file-invoice" style="font-size:12px" aria-hidden="true"></i> <span>BKM/26-27/05/14</span></div>
+    <div class="ei"><i class="ti ti-calendar" style="font-size:12px" aria-hidden="true"></i> <span>15–20 May 2026 · 5 days</span></div>
+    <div class="ei"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i> <span>ધોલેરાધામ</span></div>
+    <div class="ei"><i class="ti ti-device-tv" style="font-size:12px" aria-hidden="true"></i> <span>21 screens · 6,300 sq.ft/day</span></div>
+  </div>
+
+  <div class="sgrid">
+    <div class="metric"><div class="metric-label">Screens live</div><div class="metric-value" style="color:var(--color-text-success)" id="m-live">0</div></div>
+    <div class="metric"><div class="metric-label">In setup</div><div class="metric-value" style="color:var(--color-text-warning)" id="m-setup">0</div></div>
+    <div class="metric"><div class="metric-label">Issues</div><div class="metric-value" style="color:var(--color-text-danger)" id="m-issue">0</div></div>
+    <div class="metric"><div class="metric-label">Days done</div><div class="metric-value" style="color:var(--color-text-info)" id="m-days">0 / 5</div></div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-calendar" style="font-size:14px" aria-hidden="true"></i> Day-wise screen status</div>
+        <div class="day-tabs" id="day-tabs"></div>
+        <div id="day-content"></div>
+      </div>
+
+      <div class="action-bar">
+        <button onclick="sendPrompt('LED event invoice generate કરો')" style="background:var(--color-background-success);color:var(--color-text-success);border-color:transparent"><i class="ti ti-file-invoice" style="font-size:13px" aria-hidden="true"></i> Generate invoice ↗</button>
+        <button onclick="sendPrompt('LED event expense report generate કરો')"><i class="ti ti-report" style="font-size:13px" aria-hidden="true"></i> Expense report ↗</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-alert-triangle" style="font-size:14px" aria-hidden="true"></i> Issues log</div>
+        <div id="issues-list"><div style="font-size:12px;color:var(--color-text-tertiary);padding:6px 0">No issues reported</div></div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:8px">
+          <input type="text" id="issue-input" placeholder="Issue describe કરો..." style="font-size:12px">
+          <button onclick="addIssue()" style="font-size:12px;padding:6px 12px"><i class="ti ti-plus" style="font-size:12px" aria-hidden="true"></i> Add</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-notes" style="font-size:14px" aria-hidden="true"></i> Operations log</div>
+        <div id="ops-log" style="max-height:200px;overflow-y:auto"></div>
+        <div class="add-log">
+          <input type="text" id="log-input" placeholder="Log entry..." style="flex:1;font-size:12px">
+          <button onclick="addLog()" style="font-size:12px;padding:6px 12px"><i class="ti ti-plus" style="font-size:12px" aria-hidden="true"></i> Add</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-device-tv" style="font-size:14px" aria-hidden="true"></i> Screen status summary</div>
+        <div id="status-summary"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const days=[
+  {id:'d1',label:'Setup day',date:'14 May',done:false},
+  {id:'d2',label:'Day 1',date:'15 May',done:false},
+  {id:'d3',label:'Day 2',date:'16 May',done:false},
+  {id:'d4',label:'Day 3',date:'17 May',done:false},
+  {id:'d5',label:'Day 4',date:'18 May',done:false},
+  {id:'d6',label:'Day 5',date:'19 May',done:false},
+];
+
+const screens=[
+  {place:'Sabha Mandap', items:[
+    {no:1,loc:'On Stage',type:'P4',size:'16×28 ft'},
+    {no:2,loc:'Center Dom',type:'P4',size:'8×14 ft'},
+    {no:3,loc:'Left Side Dom',type:'P4',size:'8×14 ft'},
+    {no:4,loc:'Right Side Dom',type:'P4',size:'8×14 ft'},
+    {no:5,loc:'On Stage',type:'P4',size:'8×14 ft'},
+  ]},
+  {place:'OutDoor Campus', items:[
+    {no:6,loc:'Utsav Gate',type:'P4',size:'10×18 ft'},
+    {no:7,loc:'VIP Bhojnalay',type:'P4',size:'8×14 ft'},
+    {no:8,loc:'Rasodu',type:'P4',size:'8×14 ft'},
+    {no:9,loc:'Yagnshala',type:'P4',size:'8×14 ft'},
+    {no:10,loc:'Welcome',type:'P4',size:'8×14 ft'},
+    {no:11,loc:'Add Mate Led',type:'P4',size:'8×14 ft'},
+  ]},
+  {place:'Pradarshan', items:[
+    {no:12,loc:'Swaminarayan Darshanam',type:'P4',size:'20×12 ft'},
+    {no:13,loc:'Swaminarayan Darshanam',type:'Floor Led',size:'10×10 ft'},
+    {no:14,loc:'Swaminarayan Darshanam',type:'P4 Curved',size:'20×12 ft'},
+    {no:15,loc:'Manki Circle',type:'P3',size:'12×8 ft'},
+    {no:16,loc:'Akshardham Darshan',type:'P2',size:'8×6 ft'},
+    {no:17,loc:'Light And Sound Show',type:'P4',size:'100×18 ft'},
+    {no:18,loc:'Short Films',type:'P4',size:'60×18 ft'},
+    {no:19,loc:'Book Projection',type:'P4',size:'60×20 ft'},
+    {no:20,loc:'Main stage',type:'P4',size:'10×10 ft'},
+    {no:21,loc:'Entry gate',type:'P4',size:'20×10 ft'},
+  ]},
+];
+
+let activeDay='d1';
+const statusMap={};
+days.forEach(d=>{ screens.forEach(p=>{ p.items.forEach(s=>{ statusMap[`${d.id}-${s.no}`]='off'; }); }); });
+
+let issues=[];
+let logs=[];
+let issueId=1;
+
+function cycleStatus(dayId, screenNo){
+  const key=`${dayId}-${screenNo}`;
+  const cur=statusMap[key];
+  const next={off:'setup',setup:'live',live:'issue',issue:'off'};
+  statusMap[key]=next[cur];
+  renderAll();
+}
+
+function getStatusClass(s){ return s==='live'?'s-live':s==='setup'?'s-setup':s==='issue'?'s-issue':'s-off'; }
+function getStatusLabel(s){ return s==='live'?'Live':s==='setup'?'Setup':s==='issue'?'Issue':'Off'; }
+
+function renderTabs(){
+  document.getElementById('day-tabs').innerHTML=days.map(d=>`
+    <button class="day-tab${activeDay===d.id?' active':''}${d.done?' done':''}" onclick="setDay('${d.id}')">
+      ${d.done?'<i class="ti ti-check" style="font-size:11px;margin-right:3px" aria-hidden="true"></i>':''}${d.label} <span style="opacity:0.7">${d.date}</span>
+    </button>`).join('');
+}
+
+function renderDayContent(){
+  const dayInfo=days.find(x=>x.id===activeDay);
+  document.getElementById('day-content').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${dayInfo.label} — ${dayInfo.date}</span>
+      <div style="display:flex;gap:6px">
+        <button style="font-size:11px;padding:4px 10px" onclick="setAllLive()"><i class="ti ti-check" style="font-size:11px" aria-hidden="true"></i> All live</button>
+        <button style="font-size:11px;padding:4px 10px;${dayInfo.done?'background:var(--color-background-success);color:var(--color-text-success);border-color:transparent':''}" onclick="toggleDone('${activeDay}')">
+          ${dayInfo.done?'<i class="ti ti-check" style="font-size:11px"></i> Done':'Mark day done'}
+        </button>
+      </div>
+    </div>
+    ${screens.map(place=>`
+      <div class="place-section">
+        <div class="place-header"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i>${place.place}</div>
+        <table>
+          <thead><tr>
+            <th style="width:28px">No.</th>
+            <th style="width:140px">Location</th>
+            <th style="width:72px">Type</th>
+            <th style="width:70px">Size</th>
+            <th>Status</th>
+            <th style="width:80px">Notes</th>
+          </tr></thead>
+          <tbody>
+            ${place.items.map(s=>{
+              const key=`${activeDay}-${s.no}`;
+              const st=statusMap[key];
+              return `<tr>
+                <td style="color:var(--color-text-secondary)">${s.no}</td>
+                <td style="font-size:11px;font-weight:500">${s.loc}</td>
+                <td><span class="badge bb" style="font-size:10px">${s.type}</span></td>
+                <td style="font-size:11px;color:var(--color-text-secondary)">${s.size}</td>
+                <td>
+                  <button class="status-btn ${getStatusClass(st)}" onclick="cycleStatus('${activeDay}',${s.no})">
+                    ${getStatusLabel(st)}
+                  </button>
+                </td>
+                <td><input type="text" placeholder="Note..." style="font-size:11px;width:100%"></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `).join('')}
+  `;
+}
+
+function renderIssues(){
+  const list=document.getElementById('issues-list');
+  if(!issues.length){list.innerHTML='<div style="font-size:12px;color:var(--color-text-tertiary);padding:6px 0">No issues reported</div>';return;}
+  list.innerHTML=issues.map(i=>`
+    <div class="issue-item">
+      <div class="issue-dot" style="background:var(--color-text-danger)"></div>
+      <div style="flex:1">
+        <div style="font-weight:500;color:var(--color-text-primary)">${i.text}</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">${i.time}</div>
+      </div>
+      <button class="back-btn" style="font-size:11px;color:var(--color-text-secondary)" onclick="removeIssue(${i.id})"><i class="ti ti-x" style="font-size:11px" aria-hidden="true"></i></button>
+    </div>`).join('');
+}
+
+function renderLogs(){
+  const div=document.getElementById('ops-log');
+  if(!logs.length){div.innerHTML='<div style="font-size:12px;color:var(--color-text-tertiary);padding:6px 0">No log entries</div>';return;}
+  div.innerHTML=logs.map(l=>`
+    <div class="log-item">
+      <span class="log-time">${l.time}</span>
+      <span class="log-text">${l.text}</span>
+    </div>`).join('');
+}
+
+function renderStatusSummary(){
+  const allScreens=screens.flatMap(p=>p.items);
+  const live=allScreens.filter(s=>statusMap[`${activeDay}-${s.no}`]==='live').length;
+  const setup=allScreens.filter(s=>statusMap[`${activeDay}-${s.no}`]==='setup').length;
+  const issue=allScreens.filter(s=>statusMap[`${activeDay}-${s.no}`]==='issue').length;
+  const off=allScreens.filter(s=>statusMap[`${activeDay}-${s.no}`]==='off').length;
+  const total=allScreens.length;
+  document.getElementById('m-live').textContent=live;
+  document.getElementById('m-setup').textContent=setup;
+  document.getElementById('m-issue').textContent=issue;
+  document.getElementById('m-days').textContent=days.filter(d=>d.done).length+' / '+(days.length-1);
+  document.getElementById('status-summary').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+        <span style="display:flex;align-items:center;gap:6px"><span class="badge bg" style="font-size:10px">Live</span></span>
+        <span style="font-weight:500;color:var(--color-text-success)">${live} / ${total} screens</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+        <span style="display:flex;align-items:center;gap:6px"><span class="badge ba" style="font-size:10px">Setup</span></span>
+        <span style="font-weight:500;color:var(--color-text-warning)">${setup}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+        <span style="display:flex;align-items:center;gap:6px"><span class="badge br" style="font-size:10px">Issue</span></span>
+        <span style="font-weight:500;color:var(--color-text-danger)">${issue}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0">
+        <span style="color:var(--color-text-secondary)">Off</span>
+        <span style="font-weight:500;color:var(--color-text-secondary)">${off}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderAll(){renderTabs();renderDayContent();renderIssues();renderLogs();renderStatusSummary();}
+
+function setDay(id){activeDay=id;renderAll();}
+function toggleDone(id){const d=days.find(x=>x.id===id);if(d){d.done=!d.done;renderAll();}}
+function setAllLive(){screens.forEach(p=>p.items.forEach(s=>{statusMap[`${activeDay}-${s.no}`]='live';}));renderAll();}
+
+function addIssue(){
+  const inp=document.getElementById('issue-input');
+  const text=inp.value.trim();
+  if(!text)return;
+  const now=new Date();
+  issues.unshift({id:issueId++,text,time:now.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+' '+now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})});
+  inp.value='';
+  renderIssues();
+  document.getElementById('m-issue').textContent=issues.length;
+}
+
+function removeIssue(id){issues=issues.filter(x=>x.id!==id);renderIssues();}
+
+function addLog(){
+  const inp=document.getElementById('log-input');
+  const text=inp.value.trim();
+  if(!text)return;
+  const now=new Date();
+  logs.unshift({time:now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}),text});
+  inp.value='';
+  renderLogs();
+}
+
+renderAll();
+</script>

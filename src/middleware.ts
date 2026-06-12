@@ -30,11 +30,14 @@ export async function middleware(request: NextRequest) {
   payload = token ? await verifyJWT(token) : null;
   const isAuthenticated = !!payload;
 
-  // Redirect authenticated users away from login
-  if (pathname === "/login") {
+  // Redirect authenticated users away from login pages
+  if (pathname === "/login" || pathname === "/led/login") {
     if (isAuthenticated) {
-      const dest = payload?.role === "Staff" ? "/my-schedule" : "/clients";
-      return NextResponse.redirect(new URL(dest, request.url));
+      const role = payload?.role;
+      const dept = payload?.department;
+      if (role === "Staff") return NextResponse.redirect(new URL("/my-schedule", request.url));
+      if (role === "Department Head" && dept === "LED") return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/clients", request.url));
     }
     return NextResponse.next();
   }
@@ -65,6 +68,7 @@ export async function middleware(request: NextRequest) {
     "/clients", "/inquiries", "/quotations", "/invoices",
     "/calendar", "/equipment", "/kits", "/vendors",
     "/staff", "/warehouse", "/reports", "/settings",
+    "/led/inquiries", "/led/stock",
   ];
 
   const isProtected = pathname === "/" || protectedRoutes.some(

@@ -1,0 +1,265 @@
+
+<h2 class="sr-only">BK Media CRM — LED Event Expense Report PDF with staff cost, vendor LED cost, transport, food and net profit for admin</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.internal-note{background:var(--color-background-warning);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-warning);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.two-col{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.pdf-wrap{background:#fff;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:26px 30px;color:#1a1a1a;font-family:var(--font-sans)}
+.pdf-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #1a1a1a}
+.pdf-company{font-size:18px;font-weight:500;color:#1a1a1a}
+.pdf-company-sub{font-size:11px;color:#666;margin-top:3px;line-height:1.6}
+.pdf-doc-block{text-align:right}
+.pdf-doc-title{font-size:13px;font-weight:500;color:#1a1a1a}
+.pdf-doc-sub{font-size:11px;color:#666;margin-top:3px}
+.pdf-event-strip{background:#f5f5f5;border-radius:8px;padding:10px 14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pdf-ei{display:flex;flex-direction:column;gap:2px}
+.pdf-ei-label{font-size:9px;color:#999;letter-spacing:0.08em;text-transform:uppercase}
+.pdf-ei-val{font-size:12px;font-weight:500;color:#1a1a1a}
+.pdf-section{margin-bottom:16px}
+.pdf-section-title{font-size:12px;font-weight:500;color:#1a1a1a;padding:6px 0;border-bottom:1px solid #1a1a1a;margin-bottom:8px}
+.pdf-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:4px;table-layout:fixed}
+.pdf-table th{text-align:left;font-size:10px;color:#999;padding:0 7px 6px;border-bottom:0.5px solid #ddd;letter-spacing:0.05em;text-transform:uppercase;font-weight:500}
+.pdf-table td{padding:7px 7px;border-bottom:0.5px solid #f0f0f0;color:#333;vertical-align:middle}
+.pdf-table tr:last-child td{border-bottom:none}
+.pdf-table .num{text-align:right}
+.pdf-table .ctr{text-align:center}
+.section-subtotal{display:flex;justify-content:flex-end;padding:6px 0;font-size:11px;color:#555;border-top:0.5px solid #e0e0e0;margin-top:2px}
+.section-subtotal span:last-child{font-weight:500;color:#1a1a1a;margin-left:8px}
+.exp-row{display:flex;justify-content:space-between;font-size:11px;padding:5px 7px;border-bottom:0.5px solid #f0f0f0}
+.exp-row:last-child{border-bottom:none}
+.pnl-box{background:#f5f5f5;border-radius:8px;padding:14px 16px;margin-bottom:14px}
+.pnl-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid #e0e0e0}
+.pnl-row:last-child{border-bottom:none}
+.pnl-total{display:flex;justify-content:space-between;font-size:15px;font-weight:500;padding:10px 0 0;margin-top:6px;border-top:2px solid #1a1a1a}
+.pdf-note{font-size:11px;color:#777;border-top:0.5px solid #e0e0e0;padding-top:12px;margin-top:12px;line-height:1.7}
+.pdf-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:14px;padding-top:12px;border-top:0.5px solid #e0e0e0}
+.pdf-sign{text-align:center;min-width:120px}
+.pdf-sign-line{height:1px;background:#1a1a1a;margin-bottom:5px}
+.pdf-sign-label{font-size:10px;color:#999}
+.pdf-stamp{width:48px;height:48px;border-radius:50%;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#1a1a1a;text-align:center;line-height:1.3}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.summary-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.summary-row:last-child{border-bottom:none}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED event expense report generate કરો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Expense report
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Expense report PDF — LED</span>
+    </div>
+    <span class="badge" style="background:#FAEEDA;color:#633806">Admin only</span>
+  </div>
+
+  <div class="internal-note">
+    <i class="ti ti-lock" style="font-size:14px" aria-hidden="true"></i>
+    Internal document — Admin only · Client ને send નહીં થાય · BK Media internal P&L
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="pdf-wrap">
+        <div class="pdf-header">
+          <div>
+            <div class="pdf-company">BK Media</div>
+            <div class="pdf-company-sub">Internal expense report · Confidential<br>+91 98250 00000 · info@bkmedia.in</div>
+          </div>
+          <div class="pdf-doc-block">
+            <div class="pdf-doc-title">Expense report — LED</div>
+            <div class="pdf-doc-sub">Ref: BKM/26-27/05/14</div>
+            <div class="pdf-doc-sub">Date: 21 May 2026</div>
+            <div class="pdf-doc-sub" style="color:#D85A30;font-weight:500">Confidential — Internal use only</div>
+          </div>
+        </div>
+
+        <div class="pdf-event-strip">
+          <div class="pdf-ei"><span class="pdf-ei-label">Event</span><span class="pdf-ei-val">દ્વિશતાબ્દી મહોત્સવ</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Client</span><span class="pdf-ei-val">MadanMohanji Trust</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Dates</span><span class="pdf-ei-val">15–20 May 2026</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">LED total</span><span class="pdf-ei-val">6,300 sq.ft/day</span></div>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section-title">Section 1 — Client billing</div>
+          <table class="pdf-table">
+            <thead><tr>
+              <th>Description</th>
+              <th style="width:80px" class="num">Sq.ft/day</th>
+              <th style="width:80px" class="num">Rate/sq.ft/day</th>
+              <th style="width:52px" class="ctr">Days</th>
+              <th style="width:90px" class="num">Amount</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>LED screen service (P4, P3, P2, Floor Led)</td>
+                <td class="num">6,300</td>
+                <td class="num">₹50</td>
+                <td class="ctr">5</td>
+                <td class="num" style="font-weight:500;color:#1D9E75">₹15,75,000</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="section-subtotal"><span>Client billing total</span><span>₹15,75,000</span></div>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section-title">Section 2 — Staff payment</div>
+          <table class="pdf-table">
+            <thead><tr>
+              <th>Name</th>
+              <th style="width:100px">Role</th>
+              <th style="width:60px" class="ctr">Source</th>
+              <th style="width:46px" class="ctr">Days</th>
+              <th style="width:70px" class="num">Rate/day</th>
+              <th style="width:80px" class="num">Total</th>
+            </tr></thead>
+            <tbody>
+              <tr><td>Rishi Kumar</td><td>LED operator</td><td class="ctr" style="font-size:10px">In-house</td><td class="ctr">6</td><td class="num">₹1,500</td><td class="num" style="font-weight:500">₹9,000</td></tr>
+              <tr><td>Dev Vora</td><td>LED technician</td><td class="ctr" style="font-size:10px">In-house</td><td class="ctr">6</td><td class="num">₹1,500</td><td class="num" style="font-weight:500">₹9,000</td></tr>
+              <tr><td>Mehul Shah</td><td>LED operator</td><td class="ctr" style="font-size:10px">In-house</td><td class="ctr">6</td><td class="num">₹1,200</td><td class="num" style="font-weight:500">₹7,200</td></tr>
+              <tr><td>Priya Joshi</td><td>LED controller</td><td class="ctr" style="font-size:10px">In-house</td><td class="ctr">6</td><td class="num">₹1,500</td><td class="num" style="font-weight:500">₹9,000</td></tr>
+              <tr><td>Karan Patel</td><td>LED operator</td><td class="ctr" style="font-size:10px">In-house</td><td class="ctr">6</td><td class="num">₹1,200</td><td class="num" style="font-weight:500">₹7,200</td></tr>
+              <tr><td>Nirav Parmar</td><td>LED technician</td><td class="ctr" style="font-size:10px">In-house</td><td class="ctr">6</td><td class="num">₹1,200</td><td class="num" style="font-weight:500">₹7,200</td></tr>
+              <tr><td>Jignesh Rao</td><td>LED operator</td><td class="ctr" style="font-size:10px">External</td><td class="ctr">5</td><td class="num">₹1,000</td><td class="num" style="font-weight:500">₹5,000</td></tr>
+              <tr><td>Viral Desai</td><td>LED controller</td><td class="ctr" style="font-size:10px">External</td><td class="ctr">5</td><td class="num">₹1,200</td><td class="num" style="font-weight:500">₹6,000</td></tr>
+            </tbody>
+          </table>
+          <div class="section-subtotal"><span>Staff total</span><span>₹59,600</span></div>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section-title">Section 3 — LED vendor cost</div>
+          <table class="pdf-table">
+            <thead><tr>
+              <th>Vendor name</th>
+              <th style="width:52px" class="ctr">Type</th>
+              <th style="width:70px" class="num">Sq.ft</th>
+              <th style="width:80px" class="num">Rate/sq.ft/day</th>
+              <th style="width:52px" class="ctr">Days</th>
+              <th style="width:90px" class="num">Total cost</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>Star LED</td>
+                <td class="ctr"><span style="font-size:10px;padding:2px 6px;background:#E6F1FB;color:#0C447C;border-radius:4px">P4</span></td>
+                <td class="num">4,300</td>
+                <td class="num">₹35</td>
+                <td class="ctr">5</td>
+                <td class="num" style="font-weight:500;color:#D85A30">₹7,52,500</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="section-subtotal"><span>Vendor total</span><span>₹7,52,500</span></div>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section-title">Section 4 — Other expenses</div>
+          <div class="exp-row"><span style="color:#555">Transport (2 trucks + tempo + car)</span><span style="font-weight:500">₹28,000</span></div>
+          <div class="exp-row"><span style="color:#555">Food & meals (8 staff × 7 days)</span><span style="font-weight:500">₹16,800</span></div>
+          <div class="exp-row"><span style="color:#555">Miscellaneous / consumables</span><span style="font-weight:500">₹5,000</span></div>
+          <div class="section-subtotal"><span>Other expenses total</span><span>₹49,800</span></div>
+        </div>
+
+        <div class="pnl-box">
+          <div style="font-size:12px;font-weight:500;color:#1a1a1a;margin-bottom:8px">P&L summary</div>
+          <div class="pnl-row"><span style="color:#555">Client billing</span><span style="font-weight:500;color:#1D9E75">+ ₹15,75,000</span></div>
+          <div class="pnl-row"><span style="color:#555">Staff payment</span><span style="font-weight:500;color:#D85A30">— ₹59,600</span></div>
+          <div class="pnl-row"><span style="color:#555">LED vendor cost</span><span style="font-weight:500;color:#D85A30">— ₹7,52,500</span></div>
+          <div class="pnl-row"><span style="color:#555">Other expenses</span><span style="font-weight:500;color:#D85A30">— ₹49,800</span></div>
+          <div style="height:0.5px;background:#ddd;margin:8px 0"></div>
+          <div class="pnl-row"><span style="color:#555">Total expenses</span><span style="font-weight:500;color:#D85A30">₹8,61,900</span></div>
+          <div class="pnl-total"><span>Net profit</span><span style="color:#1D9E75">₹7,13,100</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#777;margin-top:6px">
+            <span>Profit margin</span>
+            <span style="font-weight:500;color:#1a1a1a">45.3%</span>
+          </div>
+          <div style="height:5px;background:#e0e0e0;border-radius:3px;margin-top:4px">
+            <div style="width:45%;height:100%;border-radius:3px;background:#1D9E75"></div>
+          </div>
+        </div>
+
+        <div class="pdf-note">
+          <strong>Note:</strong> This is an internal expense report for BK Media management. All figures are approximate and subject to final verification. Vendor payment (Star LED ₹7,52,500) to be settled within 30 days. Staff payments pending — to be cleared after client balance payment received.
+        </div>
+
+        <div class="pdf-footer">
+          <div>
+            <div style="font-size:11px;color:#999;margin-bottom:8px">Prepared by</div>
+            <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-label">Accounts manager</div></div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:11px;color:#999;margin-bottom:4px">BK Media</div>
+            <div class="pdf-stamp">BK<br>MEDIA</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#999;margin-bottom:8px">Approved by</div>
+            <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-label">Admin / Director</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button onclick="sendPrompt('LED expense report PDF save કરો')"><i class="ti ti-download" style="font-size:13px" aria-hidden="true"></i> Download PDF ↗</button>
+        <button onclick="sendPrompt('LED event invoice generate કરો')"><i class="ti ti-file-invoice" style="font-size:13px" aria-hidden="true"></i> Generate invoice ↗</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-receipt" style="font-size:14px" aria-hidden="true"></i> Quick summary</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div class="summary-row"><span style="color:var(--color-text-secondary)">Client billing</span><span style="font-weight:500;color:var(--color-text-success)">₹15,75,000</span></div>
+          <div class="summary-row"><span style="color:var(--color-text-secondary)">Staff payment</span><span style="font-weight:500;color:var(--color-text-danger)">₹59,600</span></div>
+          <div class="summary-row"><span style="color:var(--color-text-secondary)">LED vendor cost</span><span style="font-weight:500;color:var(--color-text-danger)">₹7,52,500</span></div>
+          <div class="summary-row"><span style="color:var(--color-text-secondary)">Other expenses</span><span style="font-weight:500;color:var(--color-text-danger)">₹49,800</span></div>
+          <div class="summary-row" style="border-bottom:none;padding-top:8px;margin-top:4px;border-top:0.5px solid var(--color-border-secondary)">
+            <span style="font-weight:500;color:var(--color-text-primary)">Net profit</span>
+            <span style="font-weight:500;color:var(--color-text-success);font-size:15px">₹7,13,100</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-chart-pie" style="font-size:14px" aria-hidden="true"></i> Expense split</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--color-text-secondary)">LED vendor cost</span><span style="font-weight:500">87.3%</span></div>
+            <div style="height:5px;background:var(--color-border-tertiary);border-radius:3px"><div style="width:87%;height:100%;border-radius:3px;background:var(--color-text-warning)"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--color-text-secondary)">Staff payment</span><span style="font-weight:500">6.9%</span></div>
+            <div style="height:5px;background:var(--color-border-tertiary);border-radius:3px"><div style="width:7%;height:100%;border-radius:3px;background:var(--color-text-info)"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--color-text-secondary)">Other expenses</span><span style="font-weight:500">5.8%</span></div>
+            <div style="height:5px;background:var(--color-border-tertiary);border-radius:3px"><div style="width:6%;height:100%;border-radius:3px;background:var(--color-text-secondary)"></div></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:10px"><i class="ti ti-bulb" style="font-size:11px;vertical-align:-1px" aria-hidden="true"></i> LED vendor cost સૌથી વધારે expense — BK Media ના own panels વધારવાથી margin improve થઈ શકે</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-clock" style="font-size:14px" aria-hidden="true"></i> Payables pending</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div class="summary-row"><span style="color:var(--color-text-secondary)">Star LED (vendor)</span><span class="badge ba">₹7,52,500</span></div>
+          <div class="summary-row"><span style="color:var(--color-text-secondary)">Staff (8 persons)</span><span class="badge ba">₹59,600</span></div>
+          <div class="summary-row" style="border-bottom:none"><span style="font-weight:500;color:var(--color-text-primary)">Total payable</span><span style="font-weight:500;color:var(--color-text-warning)">₹8,12,100</span></div>
+        </div>
+        <button style="width:100%;margin-top:10px;font-size:12px" onclick="sendPrompt('LED staff payment mark as paid screen બતાવો')"><i class="ti ti-check" style="font-size:12px" aria-hidden="true"></i> Settle payments ↗</button>
+      </div>
+    </div>
+  </div>
+</div>

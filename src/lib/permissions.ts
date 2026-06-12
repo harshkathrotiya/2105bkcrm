@@ -141,6 +141,8 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   ],
   "Department Head": [
     "dashboard.view",
+    "clients.view",
+    "clients.create",
     "inquiries.view",
     "calendar.view",
     "equipment.view",
@@ -170,6 +172,7 @@ export const ROUTE_PERMISSION: { prefix: string; permission: Permission }[] = [
   { prefix: "/warehouse",      permission: "warehouse.view" },
   { prefix: "/reports",        permission: "reports.view" },
   { prefix: "/settings",       permission: "settings.users" },
+  { prefix: "/led",            permission: "inquiries.view" },
 ];
 
 // Nav items shown in the sidebar — filtered by permission

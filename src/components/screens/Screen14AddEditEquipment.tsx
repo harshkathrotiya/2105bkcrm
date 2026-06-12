@@ -412,7 +412,11 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                   <button
                     key={dept.value}
                     type="button"
-                    onClick={() => update("department", dept.value)}
+                    onClick={() => {
+                      update("department", dept.value);
+                      if (dept.value === "LED") update("category", "LED_PANEL");
+                      else if (form.department === "LED") update("category", "CAMERA");
+                    }}
                     style={{
                       flex: "1 1 140px",
                       padding: "12px 14px",
@@ -441,7 +445,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                     className="finp"
                     value={form.productName}
                     onChange={(e) => update("productName", e.target.value)}
-                    placeholder="e.g. Sony FX6 Cinema Camera"
+                    placeholder={form.department === "LED" ? "e.g. Nova LED P4 Lot" : "e.g. Sony FX6 Cinema Camera"}
                     required
                   />
                 </div>
@@ -449,7 +453,7 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                 <div className="field">
                   <div className="flbl" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span>Category *</span>
-                    {!addingCategory && !editingCategory && (
+                    {form.department !== "LED" && !addingCategory && !editingCategory && (
                       <button
                         type="button"
                         className="btn"
@@ -460,7 +464,20 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                       </button>
                     )}
                   </div>
-                  {addingCategory ? (
+                  {form.department === "LED" ? (
+                    <select
+                      className="fsel"
+                      value={form.category}
+                      onChange={(e) => update("category", e.target.value)}
+                      required
+                    >
+                      <option value="LED_PANEL">LED Panel</option>
+                      <option value="LED_PROCESSOR">LED Processor</option>
+                      <option value="LED_CONTROLLER">LED Controller</option>
+                      <option value="LED_CABLE">LED Cable</option>
+                      <option value="LED_ACCESSORY">LED Accessory</option>
+                    </select>
+                  ) : addingCategory ? (
                     <div style={{ display: "flex", gap: 6 }}>
                       <input
                         className="finp"
@@ -725,6 +742,72 @@ export default function Screen14AddEditEquipment({ equipmentId }: Screen14AddEdi
                     placeholder={form.itemType === "BULK" ? "e.g. BATCH-2026-001" : "e.g. FX6-S-701"}
                   />
                 </div>
+
+                {/* LED-specific fields */}
+                {form.department === "LED" && (
+                  <>
+                    <div className="field">
+                      <div className="flbl">LED Type</div>
+                      <select className="fsel" value={(form as any).ledType ?? "P4"} onChange={(e) => update("ledType", e.target.value)}>
+                        <option value="P4">P4</option>
+                        <option value="P3">P3</option>
+                        <option value="P2">P2</option>
+                        <option value="FLOOR">FLOOR</option>
+                        <option value="P4_CURVED">P4 Curved</option>
+                      </select>
+                    </div>
+                    <div className="field">
+                      <div className="flbl">Cabinets / Box</div>
+                      <input type="number" className="finp" min={1} placeholder="e.g. 5"
+                        value={(form as any).cabinetsPerBox ?? ""}
+                        onChange={(e) => update("cabinetsPerBox", e.target.value ? Number(e.target.value) : "")} />
+                    </div>
+                    <div className="field">
+                      <div className="flbl">Cabinet Height (mm)</div>
+                      <input type="number" className="finp" min={1} placeholder="e.g. 576"
+                        value={(form as any).cabinetHeightMm ?? ""}
+                        onChange={(e) => update("cabinetHeightMm", e.target.value ? Number(e.target.value) : "")} />
+                    </div>
+                    <div className="field">
+                      <div className="flbl">Cabinet Width (mm)</div>
+                      <input type="number" className="finp" min={1} placeholder="e.g. 576"
+                        value={(form as any).cabinetWidthMm ?? ""}
+                        onChange={(e) => update("cabinetWidthMm", e.target.value ? Number(e.target.value) : "")} />
+                    </div>
+                    <div className="field">
+                      <div className="flbl">Total Cabinets</div>
+                      <input type="number" className="finp" min={0} placeholder="e.g. 100"
+                        value={(form as any).totalCabinets ?? ""}
+                        onChange={(e) => update("totalCabinets", e.target.value ? Number(e.target.value) : "")} />
+                    </div>
+                    {/* Live preview */}
+                    <div className="field">
+                      <div className="flbl">Preview</div>
+                      <div style={{ background: "var(--s2)", border: "1px solid var(--b1)", borderRadius: 8, padding: "10px 12px", fontSize: 12, display: "flex", flexDirection: "column", gap: 4 }}>
+                        {(() => {
+                          const tc = Number((form as any).totalCabinets) || 0;
+                          const cpb = Number((form as any).cabinetsPerBox) || 0;
+                          const hmm = Number((form as any).cabinetHeightMm) || 0;
+                          const wmm = Number((form as any).cabinetWidthMm) || 0;
+                          const sqft = tc * 4;
+                          const boxes = cpb > 0 ? Math.ceil(tc / cpb) : 0;
+                          const h8 = hmm > 0 ? Math.round((8 * 304.8) / hmm) : 0;
+                          const w14 = wmm > 0 ? Math.round((14 * 304.8) / wmm) : 0;
+                          return (
+                            <>
+                              <div><span style={{ color: "var(--tx3)" }}>Sq.ft for pricing:</span> <strong>{sqft}</strong></div>
+                              <div><span style={{ color: "var(--tx3)" }}>Total boxes:</span> <strong>{boxes}</strong></div>
+                              <div style={{ borderTop: "1px solid var(--b1)", paddingTop: 6, marginTop: 2, fontSize: 11, color: "var(--tx3)" }}>
+                                8×14 ft screen example:<br />
+                                H: {h8} cabs = {h8 * hmm}mm &nbsp;|&nbsp; W: {w14} cabs = {w14 * wmm}mm
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

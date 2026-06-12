@@ -1,0 +1,280 @@
+
+<h2 class="sr-only">BK Media CRM — LED Department Client Requirements PDF with staff list, power requirements, structural support and day-wise schedule</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.two-col{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.internal-note{background:var(--color-background-info);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-info);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.pdf-wrap{background:#fff;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:26px 30px;color:#1a1a1a;font-family:var(--font-sans)}
+.pdf-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #1a1a1a}
+.pdf-company{font-size:18px;font-weight:500;color:#1a1a1a}
+.pdf-company-sub{font-size:11px;color:#666;margin-top:3px;line-height:1.6}
+.pdf-doc-block{text-align:right}
+.pdf-doc-title{font-size:14px;font-weight:500;color:#1a1a1a}
+.pdf-doc-sub{font-size:11px;color:#666;margin-top:3px}
+.pdf-to{margin-bottom:16px}
+.pdf-to-label{font-size:10px;color:#999;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px}
+.pdf-to-name{font-size:14px;font-weight:500;color:#1a1a1a}
+.pdf-to-sub{font-size:11px;color:#555;margin-top:2px}
+.pdf-event-strip{background:#f5f5f5;border-radius:8px;padding:10px 14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pdf-ei{display:flex;flex-direction:column;gap:2px}
+.pdf-ei-label{font-size:9px;color:#999;letter-spacing:0.08em;text-transform:uppercase}
+.pdf-ei-val{font-size:12px;font-weight:500;color:#1a1a1a}
+.pdf-section-title{font-size:12px;font-weight:500;color:#1a1a1a;padding:6px 0;border-bottom:1px solid #1a1a1a;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.pdf-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px;table-layout:fixed}
+.pdf-table th{text-align:left;font-size:10px;color:#999;padding:0 7px 6px;border-bottom:0.5px solid #ddd;letter-spacing:0.05em;text-transform:uppercase;font-weight:500}
+.pdf-table td{padding:7px 7px;border-bottom:0.5px solid #f0f0f0;color:#333;vertical-align:middle}
+.pdf-table tr:last-child td{border-bottom:none}
+.pdf-table .ctr{text-align:center}
+.req-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.req-box{background:#f5f5f5;border-radius:6px;padding:10px 12px}
+.req-box-label{font-size:9px;color:#999;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px}
+.req-box-val{font-size:14px;font-weight:500;color:#1a1a1a}
+.req-box-sub{font-size:10px;color:#666;margin-top:2px;line-height:1.5}
+.pdf-note{font-size:11px;color:#777;border-top:0.5px solid #e0e0e0;padding-top:12px;margin-top:12px;line-height:1.7}
+.pdf-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px;padding-top:12px;border-top:0.5px solid #e0e0e0}
+.pdf-sign{text-align:center;min-width:120px}
+.pdf-sign-line{height:1px;background:#1a1a1a;margin-bottom:5px}
+.pdf-sign-label{font-size:10px;color:#999}
+.pdf-stamp{width:52px;height:52px;border-radius:50%;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#1a1a1a;text-align:center;line-height:1.3}
+.aadhar-box{display:inline-block;font-size:10px;padding:2px 7px;background:#f0f0f0;border-radius:4px;color:#555;letter-spacing:0.04em}
+.checklist-item{display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer}
+.checklist-item:last-child{border-bottom:none}
+.chk{width:16px;height:16px;border-radius:4px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.chk.done{background:var(--color-background-success);border-color:transparent}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED Department operator assignment screen બતાવો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Operator assignment
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Client requirements list — LED</span>
+    </div>
+    <span class="badge" style="background:#FAEEDA;color:#633806">LED dept</span>
+  </div>
+
+  <div class="internal-note">
+    <i class="ti ti-info-circle" style="font-size:14px" aria-hidden="true"></i>
+    આ document client ને send થાય — LED screen installation, power, structural support arrangement માટે
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="pdf-wrap">
+        <div class="pdf-header">
+          <div>
+            <div class="pdf-company">BK Media</div>
+            <div class="pdf-company-sub">Media Production Services · Vadodara, Gujarat<br>+91 98250 00000 · info@bkmedia.in</div>
+          </div>
+          <div class="pdf-doc-block">
+            <div class="pdf-doc-title">Requirements list — LED</div>
+            <div class="pdf-doc-sub">Ref: BKM/26-27/05/14</div>
+            <div class="pdf-doc-sub">Date: 09 May 2026</div>
+          </div>
+        </div>
+
+        <div class="pdf-to">
+          <div class="pdf-to-label">Submitted to</div>
+          <div class="pdf-to-name">શ્રી મદનમોહનજી મહારાજ ટ્રસ્ટ</div>
+          <div class="pdf-to-sub">ધોલેરાધામ, ગુજરાત</div>
+        </div>
+
+        <div class="pdf-event-strip">
+          <div class="pdf-ei"><span class="pdf-ei-label">Event</span><span class="pdf-ei-val">દ્વિશતાબ્દી મહોત્સવ</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Dates</span><span class="pdf-ei-val">15–20 May 2026</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Days</span><span class="pdf-ei-val">5 days</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Venue</span><span class="pdf-ei-val">ધોલેરાધામ</span></div>
+        </div>
+
+        <div class="pdf-section-title">Section 1 — LED setup overview (place-wise)</div>
+        <table class="pdf-table">
+          <thead>
+            <tr>
+              <th style="width:110px">Place</th>
+              <th style="width:130px">Location</th>
+              <th style="width:52px">Type</th>
+              <th style="width:64px">H×W (ft)</th>
+              <th style="width:32px" class="ctr">Nos</th>
+              <th style="width:58px" class="ctr">Sq.ft</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td rowspan="5" style="font-weight:500;vertical-align:top;padding-top:10px">Sabha Mandap</td><td>On Stage</td><td>P4</td><td>16×28</td><td class="ctr">2</td><td class="ctr">896</td></tr>
+            <tr><td>Center Dom</td><td>P4</td><td>8×14</td><td class="ctr">10</td><td class="ctr">1,120</td></tr>
+            <tr><td>Left Side Dom</td><td>P4</td><td>8×14</td><td class="ctr">10</td><td class="ctr">1,120</td></tr>
+            <tr><td>Right Side Dom</td><td>P4</td><td>8×14</td><td class="ctr">10</td><td class="ctr">1,120</td></tr>
+            <tr><td>On Stage</td><td>P4</td><td>8×14</td><td class="ctr">2</td><td class="ctr">224</td></tr>
+            <tr><td rowspan="6" style="font-weight:500;vertical-align:top;padding-top:10px">OutDoor Campus</td><td>Utsav Gate</td><td>P4</td><td>10×18</td><td class="ctr">2</td><td class="ctr">360</td></tr>
+            <tr><td>VIP Bhojnalay</td><td>P4</td><td>8×14</td><td class="ctr">2</td><td class="ctr">224</td></tr>
+            <tr><td>Rasodu</td><td>P4</td><td>8×14</td><td class="ctr">2</td><td class="ctr">224</td></tr>
+            <tr><td>Yagnshala</td><td>P4</td><td>8×14</td><td class="ctr">2</td><td class="ctr">224</td></tr>
+            <tr><td>Welcome</td><td>P4</td><td>8×14</td><td class="ctr">2</td><td class="ctr">224</td></tr>
+            <tr><td>Add Mate Led</td><td>P4</td><td>8×14</td><td class="ctr">5</td><td class="ctr">560</td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:10px;color:#888;margin-bottom:14px">* Total 6,300 sq.ft per day · 31,500 sq.ft across 5 days</div>
+
+        <div class="pdf-section-title">Section 2 — Staff list (accommodation required)</div>
+        <table class="pdf-table">
+          <thead>
+            <tr>
+              <th style="width:24px">No.</th>
+              <th>Name</th>
+              <th style="width:110px">Role</th>
+              <th style="width:120px">Aadhar no.</th>
+              <th style="width:75px">Arrival</th>
+              <th style="width:75px">Departure</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>Rishi Kumar</td><td>LED operator</td><td><span class="aadhar-box">4521 8734 2190</span></td><td>14 May</td><td>21 May</td></tr>
+            <tr><td>2</td><td>Dev Vora</td><td>LED technician</td><td><span class="aadhar-box">7832 1045 6723</span></td><td>14 May</td><td>21 May</td></tr>
+            <tr><td>3</td><td>Mehul Shah</td><td>LED operator</td><td><span class="aadhar-box">3219 5567 8841</span></td><td>14 May</td><td>21 May</td></tr>
+            <tr><td>4</td><td>Priya Joshi</td><td>LED controller</td><td><span class="aadhar-box">6104 3328 9972</span></td><td>14 May</td><td>21 May</td></tr>
+            <tr><td>5</td><td>Karan Patel</td><td>LED operator</td><td><span class="aadhar-box">8843 2210 4456</span></td><td>14 May</td><td>21 May</td></tr>
+            <tr><td>6</td><td>Nirav Parmar</td><td>LED technician</td><td><span class="aadhar-box">2290 7743 1185</span></td><td>14 May</td><td>21 May</td></tr>
+            <tr><td>7</td><td>Jignesh Rao</td><td>LED operator</td><td><span class="aadhar-box">9934 2211 7780</span></td><td>14 May</td><td>20 May</td></tr>
+            <tr><td>8</td><td>Viral Desai</td><td>LED controller</td><td><span class="aadhar-box">4467 8823 5590</span></td><td>14 May</td><td>20 May</td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:10px;color:#888;margin-bottom:14px">* Total 8 staff · 6 in-house · 2 external · Arrival 1 day before for setup</div>
+
+        <div class="pdf-section-title">Section 3 — Technical & structural requirements</div>
+        <div class="req-grid">
+          <div class="req-box">
+            <div class="req-box-label">Power required</div>
+            <div class="req-box-val">60 KVA</div>
+            <div class="req-box-sub">Dedicated supply · 3 separate circuits<br>Sabha Mandap: 30 KVA<br>OutDoor Campus: 20 KVA<br>Pradarshan: 10 KVA</div>
+          </div>
+          <div class="req-box">
+            <div class="req-box-label">Structural support</div>
+            <div class="req-box-val">Truss / rigging</div>
+            <div class="req-box-sub">Heavy duty truss required for Dom screens<br>On Stage: floor stand structure<br>Gate screens: standalone structure<br>Load bearing: min 8 kg/sq.ft</div>
+          </div>
+          <div class="req-box">
+            <div class="req-box-label">Ground clearance</div>
+            <div class="req-box-val">Level surface</div>
+            <div class="req-box-sub">Flat ground for screen installation<br>No obstruction within 3 ft perimeter<br>Access from rear for cable management</div>
+          </div>
+          <div class="req-box">
+            <div class="req-box-label">Cable management</div>
+            <div class="req-box-val">Conduit / tray</div>
+            <div class="req-box-sub">Signal + power cables separately<br>Min 2" conduit per screen location<br>Control room to all screen locations</div>
+          </div>
+        </div>
+        <div style="background:#f5f5f5;border-radius:6px;padding:10px 12px;font-size:11px;color:#555;line-height:1.7;margin-bottom:12px">
+          <strong>Control room requirement:</strong> Minimum 20×12 ft covered indoor area near Sabha Mandap for LED controllers, processors, signal distribution equipment and monitoring stations. AC preferred. Stable power supply essential.
+        </div>
+
+        <div class="pdf-section-title">Section 4 — Day-wise schedule</div>
+        <table class="pdf-table">
+          <thead>
+            <tr>
+              <th style="width:80px">Date</th>
+              <th style="width:55px">Staff</th>
+              <th>Activity</th>
+              <th style="width:75px">Start time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="font-weight:500">14 May</td><td>8</td><td>Arrival + full setup — all screens · cable laying · testing</td><td>8:00 AM</td></tr>
+            <tr><td style="font-weight:500">15 May</td><td>8</td><td>Day 1 — full event · all 21 positions active · live monitoring</td><td>6:00 AM</td></tr>
+            <tr><td style="font-weight:500">16 May</td><td>8</td><td>Day 2 — full event · all positions · content updates</td><td>6:00 AM</td></tr>
+            <tr><td style="font-weight:500">17 May</td><td>8</td><td>Day 3 — full event · all positions</td><td>6:00 AM</td></tr>
+            <tr><td style="font-weight:500">18 May</td><td>8</td><td>Day 4 — full event · all positions</td><td>6:00 AM</td></tr>
+            <tr><td style="font-weight:500">19 May</td><td>8</td><td>Day 5 — full event · wrap-up · de-installation begins</td><td>6:00 AM</td></tr>
+            <tr><td style="font-weight:500">20 May</td><td>6</td><td>Full de-installation · packing · equipment return</td><td>7:00 AM</td></tr>
+          </tbody>
+        </table>
+
+        <div class="pdf-note">
+          <strong>Note:</strong> Client to arrange accommodation for all 8 staff from 13 May evening (pre-arrival) to 21 May morning. Meals during working hours at venue. Power connection must be ready by 13 May evening for testing. Any structural work (truss, rigging, ground leveling) to be completed before 14 May. For queries: +91 98250 00000.
+        </div>
+
+        <div class="pdf-footer">
+          <div>
+            <div style="font-size:11px;color:#999;margin-bottom:8px">For BK Media</div>
+            <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-label">Operations manager</div></div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:11px;color:#999;margin-bottom:4px">BK Media</div>
+            <div class="pdf-stamp">BK<br>MEDIA</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#999;margin-bottom:8px">Acknowledged by</div>
+            <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-label">Client representative</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button onclick="sendPrompt('LED requirements PDF download કરો')"><i class="ti ti-download" style="font-size:13px" aria-hidden="true"></i> Download PDF ↗</button>
+        <button onclick="sendPrompt('LED requirements WhatsApp send કરો')"><i class="ti ti-brand-whatsapp" style="font-size:13px" aria-hidden="true"></i> WhatsApp ↗</button>
+        <button onclick="sendPrompt('LED requirements Email send કરો')"><i class="ti ti-mail" style="font-size:13px" aria-hidden="true"></i> Email ↗</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-checklist" style="font-size:14px" aria-hidden="true"></i> Send checklist</div>
+        <div id="checklist">
+          <div class="checklist-item" onclick="toggleChk(this)"><div class="chk"></div><span style="color:var(--color-text-primary)">LED setup overview review</span></div>
+          <div class="checklist-item" onclick="toggleChk(this)"><div class="chk"></div><span style="color:var(--color-text-primary)">Staff list + Aadhar verify</span></div>
+          <div class="checklist-item" onclick="toggleChk(this)"><div class="chk"></div><span style="color:var(--color-text-primary)">Power (60 KVA) confirmed</span></div>
+          <div class="checklist-item" onclick="toggleChk(this)"><div class="chk"></div><span style="color:var(--color-text-primary)">Structural support confirmed</span></div>
+          <div class="checklist-item" onclick="toggleChk(this)"><div class="chk"></div><span style="color:var(--color-text-primary)">Control room space confirmed</span></div>
+          <div class="checklist-item" onclick="toggleChk(this)"><div class="chk"></div><span style="color:var(--color-text-primary)">Cable management confirmed</span></div>
+          <div class="checklist-item" onclick="toggleChk(this)"><div class="chk"></div><span style="color:var(--color-text-primary)">Day-wise schedule review</span></div>
+          <div class="checklist-item" onclick="toggleChk(this)"><div class="chk"></div><span style="color:var(--color-text-primary)">PDF client ને send કર્યું</span></div>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--color-text-secondary)" id="chk-prog">0 / 8 complete</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-device-tv" style="font-size:14px" aria-hidden="true"></i> LED summary</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="color:var(--color-text-secondary)">Total positions</span><span style="font-weight:500">21</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="color:var(--color-text-secondary)">Places</span><span style="font-weight:500">3</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="color:var(--color-text-secondary)">Per day sq.ft</span><span style="font-weight:500">6,300</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="color:var(--color-text-secondary)">Total staff</span><span style="font-weight:500">8 (6 in-house + 2 ext)</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0"><span style="color:var(--color-text-secondary)">Power needed</span><span style="font-weight:500">60 KVA</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-arrow-right" style="font-size:14px" aria-hidden="true"></i> Next step</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px">Requirements send થઈ ગયા પછી dispatch planning</div>
+        <button style="width:100%;font-size:12px" onclick="sendPrompt('LED dispatch list ready કરો — vehicle assignment')"><i class="ti ti-truck" style="font-size:13px" aria-hidden="true"></i> Dispatch list ↗</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleChk(item){
+  const chk=item.querySelector('.chk');
+  const span=item.querySelector('span');
+  const done=chk.classList.toggle('done');
+  chk.innerHTML=done?'<i class="ti ti-check" style="font-size:10px;color:var(--color-text-success)" aria-hidden="true"></i>':'';
+  span.style.color=done?'var(--color-text-secondary)':'var(--color-text-primary)';
+  span.style.textDecoration=done?'line-through':'none';
+  const total=document.querySelectorAll('.chk').length;
+  const doneCount=document.querySelectorAll('.chk.done').length;
+  const prog=document.getElementById('chk-prog');
+  prog.textContent=doneCount+' / '+total+' complete';
+  prog.style.color=doneCount===total?'var(--color-text-success)':'var(--color-text-secondary)';
+}
+</script>

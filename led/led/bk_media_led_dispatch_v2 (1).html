@@ -1,0 +1,294 @@
+
+<h2 class="sr-only">BK Media CRM — LED Dispatch with manual box loading entry per company per vehicle, cabinet count tracking</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.br{background:var(--color-background-danger);color:var(--color-text-danger)}
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+.two-col{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.einfo{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap}
+.ei{font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px}
+.ei span{color:var(--color-text-primary);font-weight:500}
+.v-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:12px}
+.v-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.v-name{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:7px}
+.v-num{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.vb-t{background:#E6F1FB;color:#0C447C;font-size:10px;padding:2px 8px;border-radius:20px}
+.vb-v{background:#E1F5EE;color:#085041;font-size:10px;padding:2px 8px;border-radius:20px}
+.vb-c{background:#FAEEDA;color:#633806;font-size:10px;padding:2px 8px;border-radius:20px}
+.staff-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.s-chip{font-size:11px;padding:3px 9px;border-radius:20px;background:var(--color-background-info);color:var(--color-text-info);display:flex;align-items:center;gap:4px;cursor:pointer}
+.s-chip:hover{background:var(--color-background-danger);color:var(--color-text-danger)}
+.box-entry-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
+.box-entry-table th{font-size:10px;color:var(--color-text-secondary);padding:0 8px 6px;border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500;text-align:left}
+.box-entry-table td{padding:6px 8px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle}
+.box-entry-table tr:last-child td{border-bottom:none}
+.del-btn{width:22px;height:22px;border-radius:var(--border-radius-md);background:none;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.del-btn:hover{background:var(--color-background-danger);color:var(--color-text-danger);border-color:transparent}
+.add-box-row{display:grid;grid-template-columns:1fr 70px 70px 70px auto;gap:6px;align-items:center;margin-top:8px}
+.add-box-row input, .add-box-row select{font-size:11px}
+.total-cab{font-size:11px;color:var(--color-text-info);font-weight:500;text-align:center}
+.pbar{height:4px;background:var(--color-border-tertiary);border-radius:2px;margin-top:4px}
+.pbar-fill{height:100%;border-radius:2px;background:var(--color-text-success);transition:width .3s}
+.pool-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:12px;cursor:pointer;border:0.5px solid transparent;transition:all .15s;margin-bottom:4px}
+.pool-item:hover{border-color:var(--color-border-info);background:var(--color-background-info)}
+.pool-item.done{opacity:0.38;pointer-events:none}
+.src-in{background:var(--color-background-success);color:var(--color-text-success);font-size:10px;padding:2px 7px;border-radius:20px}
+.src-out{background:var(--color-background-warning);color:var(--color-text-warning);font-size:10px;padding:2px 7px;border-radius:20px}
+.action-bar{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+.summary-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.summary-row:last-child{border-bottom:none}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED client requirements list PDF generate કરો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Requirements list
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">LED dispatch — vehicle assignment</span>
+    </div>
+    <span class="badge" style="background:#FAEEDA;color:#633806">Warehouse</span>
+  </div>
+
+  <div class="einfo">
+    <div class="ei"><i class="ti ti-calendar" style="font-size:12px" aria-hidden="true"></i> Dispatch: <span>14 May 2026 — 5:00 AM</span></div>
+    <div class="ei"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i> To: <span>ધોલેરાધામ (220 km)</span></div>
+    <div class="ei"><i class="ti ti-device-tv" style="font-size:12px" aria-hidden="true"></i> Total LED: <span>6,300 sq.ft</span></div>
+    <div class="ei"><i class="ti ti-box" style="font-size:12px" aria-hidden="true"></i> Total boxes: <span id="ei-boxes">0</span></div>
+  </div>
+
+  <div class="sgrid">
+    <div class="metric"><div class="metric-label">Total vehicles</div><div class="metric-value">3</div></div>
+    <div class="metric"><div class="metric-label">Staff assigned</div><div class="metric-value" style="color:var(--color-text-success)" id="m-s">0/8</div></div>
+    <div class="metric"><div class="metric-label">Total boxes loaded</div><div class="metric-value" style="color:var(--color-text-info)" id="m-boxes">0</div></div>
+    <div class="metric"><div class="metric-label">Total cabinets</div><div class="metric-value" style="color:var(--color-text-warning)" id="m-cabs">0</div></div>
+  </div>
+
+  <div class="two-col">
+    <div id="v-container"></div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-users" style="font-size:14px" aria-hidden="true"></i> Staff pool</div>
+        <div id="staff-pool"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-chart-bar" style="font-size:14px" aria-hidden="true"></i> Loading summary</div>
+        <div id="load-summary"><div style="font-size:12px;color:var(--color-text-tertiary)">Box entries add થઈ ગયા પછી summary આવશે</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-building" style="font-size:14px" aria-hidden="true"></i> Company-wise totals</div>
+        <div id="company-totals"><div style="font-size:12px;color:var(--color-text-tertiary)">Company boxes add થઈ ગયા પછી દેખાશે</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button onclick="sendPrompt('LED dispatch PDF download કરો')" style="background:var(--color-background-success);color:var(--color-text-success);border-color:transparent"><i class="ti ti-file-export" style="font-size:13px" aria-hidden="true"></i> Dispatch PDF ↗</button>
+    <button onclick="sendPrompt('LED event execution screen બતાવો')"><i class="ti ti-arrow-right" style="font-size:13px" aria-hidden="true"></i> Event execution ↗</button>
+  </div>
+</div>
+
+<script>
+const vehicles=[
+  {id:'v1',name:'Large truck 1',num:'GJ-06-AB-1234',type:'t',staff:[],boxes:[]},
+  {id:'v2',name:'Large truck 2',num:'GJ-06-CD-5678',type:'t',staff:[],boxes:[]},
+  {id:'v3',name:'Tempo traveller + car',num:'GJ-06-EF-9012',type:'v',staff:[],boxes:[]},
+];
+
+const staffPool=[
+  {id:'s1',name:'Rishi Kumar',role:'LED operator',source:'in'},
+  {id:'s2',name:'Dev Vora',role:'LED technician',source:'in'},
+  {id:'s3',name:'Mehul Shah',role:'LED operator',source:'in'},
+  {id:'s4',name:'Priya Joshi',role:'LED controller',source:'in'},
+  {id:'s5',name:'Karan Patel',role:'LED operator',source:'in'},
+  {id:'s6',name:'Nirav Parmar',role:'LED technician',source:'in'},
+  {id:'s7',name:'Jignesh Rao',role:'LED operator',source:'ext'},
+  {id:'s8',name:'Viral Desai',role:'LED controller',source:'ext'},
+];
+
+const companies=['NVS','VCORE','Star LED','Other'];
+let boxId=1, activeStaffV=null;
+
+function vbClass(t){return t==='t'?'vb-t':t==='v'?'vb-v':'vb-c';}
+function vbLabel(t){return t==='t'?'Truck':t==='v'?'Tempo / Car':'Car';}
+function vIcon(t){return t==='t'?'ti-truck':t==='v'?'ti-bus':'ti-car';}
+
+function allAssignedStaff(){return vehicles.flatMap(v=>v.staff);}
+
+function totalBoxes(){return vehicles.flatMap(v=>v.boxes);}
+function totalCabs(){return totalBoxes().reduce((a,b)=>a+(b.boxes*b.cabs),0);}
+
+function render(){
+  const vc=document.getElementById('v-container');
+  const assignedStaff=allAssignedStaff();
+
+  vc.innerHTML=vehicles.map(v=>{
+    const staffChips=v.staff.map(id=>{
+      const s=staffPool.find(x=>x.id===id);
+      return s?`<span class="s-chip" onclick="removeStaff('${v.id}','${id}')">${s.name} <i class="ti ti-x" style="font-size:9px" aria-hidden="true"></i></span>`:'';
+    }).join('');
+
+    const boxRows=v.boxes.map(b=>`
+      <tr>
+        <td style="font-weight:500">${b.company}</td>
+        <td style="text-align:center">${b.boxes}</td>
+        <td style="text-align:center">${b.cabs}/box</td>
+        <td style="text-align:center;font-weight:500;color:var(--color-text-info)">${b.boxes*b.cabs}</td>
+        <td><button class="del-btn" onclick="removeBox('${v.id}',${b.id})"><i class="ti ti-x" style="font-size:10px" aria-hidden="true"></i></button></td>
+      </tr>
+    `).join('');
+
+    const totalVCabs=v.boxes.reduce((a,b)=>a+(b.boxes*b.cabs),0);
+    const totalVBoxes=v.boxes.reduce((a,b)=>a+b.boxes,0);
+
+    return`<div class="v-card">
+      <div class="v-header">
+        <div>
+          <div class="v-name"><i class="ti ${vIcon(v.type)}" style="font-size:15px" aria-hidden="true"></i>${v.name}<span class="${vbClass(v.type)}">${vbLabel(v.type)}</span></div>
+          <div class="v-num">${v.num}</div>
+        </div>
+        <button style="font-size:11px;padding:4px 10px;${activeStaffV===v.id?'background:var(--color-background-info);color:var(--color-text-info);border-color:transparent':''}" onclick="setStaffV('${v.id}')">
+          <i class="ti ti-user-plus" style="font-size:11px" aria-hidden="true"></i> Staff assign
+        </button>
+      </div>
+
+      <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px;display:flex;align-items:center;gap:5px">
+        <i class="ti ti-users" style="font-size:11px" aria-hidden="true"></i> Staff (${v.staff.length})
+      </div>
+      <div class="staff-chips" style="margin-bottom:12px">${staffChips||'<span style="font-size:11px;color:var(--color-text-tertiary)">Staff assign button tap → pool માંથી select</span>'}</div>
+
+      <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:5px"><i class="ti ti-box" style="font-size:11px" aria-hidden="true"></i> LED boxes manual entry</span>
+        ${totalVBoxes>0?`<span style="color:var(--color-text-info);font-size:11px">${totalVBoxes} boxes · ${totalVCabs} cabinets</span>`:''}
+      </div>
+
+      ${v.boxes.length?`<table class="box-entry-table">
+        <thead><tr>
+          <th>Company</th><th style="text-align:center">Boxes</th><th style="text-align:center">Cabs/box</th><th style="text-align:center">Total cabs</th><th style="width:28px"></th>
+        </tr></thead>
+        <tbody>${boxRows}</tbody>
+      </table>`:''}
+
+      <div class="add-box-row">
+        <select id="co-${v.id}" style="font-size:11px">
+          ${companies.map(c=>`<option>${c}</option>`).join('')}
+        </select>
+        <input type="number" id="bx-${v.id}" placeholder="Boxes" min="1" style="font-size:11px">
+        <input type="number" id="cb-${v.id}" placeholder="Cabs/box" min="1" value="4" style="font-size:11px">
+        <div class="total-cab" id="tc-${v.id}">—</div>
+        <button style="font-size:11px;padding:4px 10px;white-space:nowrap" onclick="addBox('${v.id}')">
+          <i class="ti ti-plus" style="font-size:11px" aria-hidden="true"></i> Add
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  updateSummaries();
+  renderStaffPool();
+
+  vehicles.forEach(v=>{
+    const bx=document.getElementById(`bx-${v.id}`);
+    const cb=document.getElementById(`cb-${v.id}`);
+    if(bx&&cb){
+      const calc=()=>{
+        const b=parseInt(bx.value)||0;
+        const c=parseInt(cb.value)||0;
+        const tc=document.getElementById(`tc-${v.id}`);
+        if(tc) tc.textContent=b&&c?(b*c)+' cabs':'—';
+      };
+      bx.addEventListener('input',calc);
+      cb.addEventListener('input',calc);
+    }
+  });
+}
+
+function renderStaffPool(){
+  const assigned=allAssignedStaff();
+  document.getElementById('staff-pool').innerHTML=staffPool.map(s=>{
+    const done=assigned.includes(s.id);
+    const canAdd=activeStaffV&&!done;
+    return`<div class="pool-item${done?' done':''}" onclick="${canAdd?`assignStaff('${s.id}')`:''}" style="${!canAdd&&!done?'cursor:default':''}">
+      <div>
+        <span style="font-weight:500;color:var(--color-text-primary)">${s.name}</span>
+        <span style="color:var(--color-text-secondary);font-size:11px;margin-left:5px">${s.role}</span>
+        <span class="${s.source==='in'?'src-in':'src-out'}" style="margin-left:4px">${s.source==='in'?'In-house':'External'}</span>
+      </div>
+      ${done?'<i class="ti ti-check" style="font-size:13px;color:var(--color-text-success)" aria-hidden="true"></i>':canAdd?'<i class="ti ti-plus" style="font-size:13px;color:var(--color-text-info)" aria-hidden="true"></i>':''}
+    </div>`;
+  }).join('');
+}
+
+function updateSummaries(){
+  const allBoxes=vehicles.flatMap(v=>v.boxes);
+  const totalB=allBoxes.reduce((a,b)=>a+b.boxes,0);
+  const totalC=allBoxes.reduce((a,b)=>a+(b.boxes*b.cabs),0);
+  const assignedS=allAssignedStaff().length;
+
+  document.getElementById('ei-boxes').textContent=totalB;
+  document.getElementById('m-s').textContent=assignedS+'/'+staffPool.length;
+  document.getElementById('m-boxes').textContent=totalB;
+  document.getElementById('m-cabs').textContent=totalC;
+
+  const loadSummary=document.getElementById('load-summary');
+  if(!allBoxes.length){loadSummary.innerHTML='<div style="font-size:12px;color:var(--color-text-tertiary)">Box entries add થઈ ગયા પછી summary આવશે</div>';return;}
+  loadSummary.innerHTML=vehicles.map(v=>{
+    const vBoxes=v.boxes.reduce((a,b)=>a+b.boxes,0);
+    const vCabs=v.boxes.reduce((a,b)=>a+(b.boxes*b.cabs),0);
+    if(!vBoxes) return'';
+    return`<div class="summary-row">
+      <span style="color:var(--color-text-secondary);display:flex;align-items:center;gap:5px"><i class="ti ${vIcon(v.type)}" style="font-size:11px" aria-hidden="true"></i>${v.name}</span>
+      <span style="font-weight:500">${vBoxes} boxes · ${vCabs} cabs</span>
+    </div>`;
+  }).join('')+`<div style="display:flex;justify-content:space-between;font-size:13px;font-weight:500;padding:8px 0 0;border-top:0.5px solid var(--color-border-secondary);margin-top:4px"><span>Total</span><span style="color:var(--color-text-info)">${totalB} boxes · ${totalC} cabs</span></div>`;
+
+  const coMap={};
+  allBoxes.forEach(b=>{
+    if(!coMap[b.company]) coMap[b.company]={boxes:0,cabs:0};
+    coMap[b.company].boxes+=b.boxes;
+    coMap[b.company].cabs+=b.boxes*b.cabs;
+  });
+  document.getElementById('company-totals').innerHTML=Object.entries(coMap).map(([co,d])=>`
+    <div class="summary-row">
+      <span style="color:var(--color-text-secondary);font-weight:500">${co}</span>
+      <span style="font-weight:500">${d.boxes} boxes · ${d.cabs} cabinets</span>
+    </div>
+  `).join('')||'<div style="font-size:12px;color:var(--color-text-tertiary)">No boxes yet</div>';
+}
+
+function setStaffV(vid){activeStaffV=activeStaffV===vid?null:vid;render();}
+function assignStaff(sid){if(!activeStaffV)return;const v=vehicles.find(x=>x.id===activeStaffV);if(v&&!v.staff.includes(sid)){v.staff.push(sid);render();}}
+function removeStaff(vid,sid){const v=vehicles.find(x=>x.id===vid);if(v){v.staff=v.staff.filter(x=>x!==sid);render();}}
+
+function addBox(vid){
+  const v=vehicles.find(x=>x.id===vid);
+  if(!v)return;
+  const co=document.getElementById(`co-${vid}`).value;
+  const bx=parseInt(document.getElementById(`bx-${vid}`).value)||0;
+  const cb=parseInt(document.getElementById(`cb-${vid}`).value)||0;
+  if(!bx||!cb)return;
+  v.boxes.push({id:boxId++,company:co,boxes:bx,cabs:cb});
+  document.getElementById(`bx-${vid}`).value='';
+  render();
+}
+
+function removeBox(vid,id){const v=vehicles.find(x=>x.id===vid);if(v){v.boxes=v.boxes.filter(x=>x.id!==id);render();}}
+
+render();
+</script>

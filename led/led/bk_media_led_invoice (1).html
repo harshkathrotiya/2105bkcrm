@@ -1,0 +1,325 @@
+
+<h2 class="sr-only">BK Media CRM — LED Department Invoice with LED screen service line only, payment tracking and delivery status</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.br{background:var(--color-background-danger);color:var(--color-text-danger)}
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:17px;font-weight:500;color:var(--color-text-primary)}
+.two-col{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.internal-note{background:var(--color-background-info);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-info);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.pdf-wrap{background:#fff;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:26px 30px;color:#1a1a1a;font-family:var(--font-sans)}
+.pdf-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #1a1a1a}
+.pdf-company{font-size:18px;font-weight:500;color:#1a1a1a}
+.pdf-company-sub{font-size:11px;color:#666;margin-top:3px;line-height:1.6}
+.pdf-inv-block{text-align:right}
+.pdf-inv-label{font-size:10px;color:#999;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px}
+.pdf-inv-num{font-size:15px;font-weight:500;color:#1a1a1a}
+.pdf-inv-date{font-size:11px;color:#666;margin-top:3px}
+.pdf-to{margin-bottom:16px}
+.pdf-to-label{font-size:10px;color:#999;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px}
+.pdf-to-name{font-size:14px;font-weight:500;color:#1a1a1a}
+.pdf-to-sub{font-size:11px;color:#555;margin-top:2px}
+.pdf-event-strip{background:#f5f5f5;border-radius:8px;padding:10px 14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pdf-ei{display:flex;flex-direction:column;gap:2px}
+.pdf-ei-label{font-size:9px;color:#999;letter-spacing:0.08em;text-transform:uppercase}
+.pdf-ei-val{font-size:12px;font-weight:500;color:#1a1a1a}
+.pdf-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px;table-layout:fixed}
+.pdf-table th{text-align:left;font-size:10px;color:#999;padding:0 8px 7px;border-bottom:0.5px solid #ddd;letter-spacing:0.06em;text-transform:uppercase;font-weight:500}
+.pdf-table td{padding:10px 8px;border-bottom:0.5px solid #f0f0f0;color:#333;vertical-align:middle}
+.pdf-table tr:last-child td{border-bottom:none}
+.pdf-table .num{text-align:right}
+.pdf-totals{display:flex;justify-content:flex-end;margin-bottom:14px}
+.pdf-totals-box{min-width:220px}
+.pdf-total-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:#555}
+.pdf-total-row span:last-child{color:#1a1a1a}
+.pdf-advance-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:#1a9e75}
+.pdf-total-final{display:flex;justify-content:space-between;font-size:15px;font-weight:500;padding:10px 0 0;margin-top:6px;border-top:2px solid #1a1a1a;color:#1a1a1a}
+.pdf-note{font-size:11px;color:#777;border-top:0.5px solid #e0e0e0;padding-top:12px;line-height:1.7}
+.pdf-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px;padding-top:12px;border-top:0.5px solid #e0e0e0}
+.pdf-sign{text-align:center;min-width:120px}
+.pdf-sign-line{height:1px;background:#1a1a1a;margin-bottom:5px}
+.pdf-sign-label{font-size:10px;color:#999}
+.pdf-stamp{width:52px;height:52px;border-radius:50%;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#1a1a1a;text-align:center;line-height:1.3}
+.pay-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);margin-bottom:8px;border:0.5px solid transparent;transition:all .15s}
+.pay-item.paid{border-color:var(--color-border-success)}
+.tl-item{display:flex;gap:10px;padding-bottom:10px}
+.tl-item:last-child{padding-bottom:0}
+.tl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.tl-line{width:1px;flex:1;background:var(--color-border-tertiary);margin-top:3px}
+.tl-title{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.tl-time{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.summary-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.summary-row:last-child{border-bottom:none}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED event expense report generate કરો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Expense report
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Invoice — BKM-INV-26-27/05/09</span>
+      <span class="badge ba" id="inv-status">Partial paid</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="sendPrompt('LED invoice WhatsApp send કરો')"><i class="ti ti-brand-whatsapp" style="font-size:13px" aria-hidden="true"></i> WhatsApp ↗</button>
+      <button onclick="sendPrompt('LED invoice Email send કરો')"><i class="ti ti-mail" style="font-size:13px" aria-hidden="true"></i> Email ↗</button>
+    </div>
+  </div>
+
+  <div class="internal-note">
+    <i class="ti ti-info-circle" style="font-size:14px" aria-hidden="true"></i>
+    Client ને ફક્ત "LED screen service" — rate/sq.ft, vendor details, staff cost — કંઈ દેખાતું નથી
+  </div>
+
+  <div class="sgrid">
+    <div class="metric"><div class="metric-label">Invoice total</div><div class="metric-value">₹18,58,750</div></div>
+    <div class="metric"><div class="metric-label">Advance received</div><div class="metric-value" style="color:var(--color-text-success)">₹9,29,375</div></div>
+    <div class="metric"><div class="metric-label">Balance due</div><div class="metric-value" style="color:var(--color-text-warning)" id="m-bal">₹9,29,375</div></div>
+    <div class="metric"><div class="metric-label">Equipment return</div><div class="metric-value" style="font-size:13px;padding-top:6px" id="m-eq"><span class="badge ba">Pending</span></div></div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="pdf-wrap">
+        <div class="pdf-header">
+          <div>
+            <div class="pdf-company">BK Media</div>
+            <div class="pdf-company-sub">Media Production Services · Vadodara, Gujarat<br>+91 98250 00000 · info@bkmedia.in · GST: 24XXXXX1234X1ZX</div>
+          </div>
+          <div class="pdf-inv-block">
+            <div class="pdf-inv-label">Tax invoice</div>
+            <div class="pdf-inv-num">BKM-INV-26-27/05/09</div>
+            <div class="pdf-inv-date">Invoice date: 21 May 2026</div>
+            <div class="pdf-inv-date">Due date: 28 May 2026</div>
+          </div>
+        </div>
+
+        <div class="pdf-to">
+          <div class="pdf-to-label">Bill to</div>
+          <div class="pdf-to-name">શ્રી મદનમોહનજી મહારાજ ટ્રસ્ટ</div>
+          <div class="pdf-to-sub">ધોલેરાધામ, ગુજરાત &nbsp;·&nbsp; Ref: BKM/26-27/05/14</div>
+        </div>
+
+        <div class="pdf-event-strip">
+          <div class="pdf-ei"><span class="pdf-ei-label">Event</span><span class="pdf-ei-val">દ્વિશતાબ્દી મહોત્સવ</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Dates</span><span class="pdf-ei-val">15–20 May 2026</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Days</span><span class="pdf-ei-val">5 days</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Venue</span><span class="pdf-ei-val">ધોલેરાધામ</span></div>
+        </div>
+
+        <table class="pdf-table">
+          <thead>
+            <tr>
+              <th style="width:32px">No.</th>
+              <th>Service description</th>
+              <th style="width:48px" class="ctr">Days</th>
+              <th style="width:90px" class="num">Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color:#999">1</td>
+              <td>
+                <div style="font-weight:500;color:#1a1a1a;margin-bottom:3px">LED screen services</div>
+                <div style="font-size:11px;color:#777">Professional LED screen setup, operation and management for દ્વિશતાબ્દી મહોત્સવ · Sabha Mandap, OutDoor Campus & Pradarshan venues · ધોલેરાધામ</div>
+              </td>
+              <td class="ctr">5</td>
+              <td class="num" style="font-weight:500">15,75,000</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pdf-totals">
+          <div class="pdf-totals-box">
+            <div class="pdf-total-row"><span>Amount before tax</span><span>₹15,75,000</span></div>
+            <div class="pdf-total-row"><span>CGST @ 9%</span><span>₹1,41,750</span></div>
+            <div class="pdf-total-row"><span>SGST @ 9%</span><span>₹1,41,750</span></div>
+            <div style="height:0.5px;background:#e0e0e0;margin:6px 0"></div>
+            <div class="pdf-total-row" style="font-weight:500;color:#1a1a1a"><span>Gross total</span><span>₹18,58,500</span></div>
+            <div class="pdf-advance-row"><span>Less: Advance received (50%)</span><span>— ₹9,29,250</span></div>
+            <div class="pdf-total-final"><span>Balance payable</span><span id="pdf-bal">₹9,29,250</span></div>
+          </div>
+        </div>
+
+        <div style="background:#f5f5f5;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:#555;line-height:1.7">
+          <strong>Bank details:</strong> BK Media · HDFC Bank · A/c: XXXX XXXX 1234 · IFSC: HDFC0001234 · Branch: Vadodara
+        </div>
+
+        <div class="pdf-note">
+          <strong>Terms:</strong> Payment due within 7 days of invoice date. LED equipment (screens, controllers, cables, truss) will be de-installed only after receipt of full payment clearance. Equipment damage or loss during event period is client's responsibility. For queries: +91 98250 00000.
+        </div>
+
+        <div class="pdf-footer">
+          <div>
+            <div style="font-size:11px;color:#999;margin-bottom:8px">For BK Media</div>
+            <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-label">Authorised signatory</div></div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:11px;color:#999;margin-bottom:4px">BK Media</div>
+            <div class="pdf-stamp">BK<br>MEDIA</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#999;margin-bottom:8px">Received by</div>
+            <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-label">Client signature</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button onclick="sendPrompt('LED invoice PDF download કરો')"><i class="ti ti-download" style="font-size:13px" aria-hidden="true"></i> Download PDF ↗</button>
+        <button onclick="sendPrompt('LED invoice WhatsApp send કરો')"><i class="ti ti-brand-whatsapp" style="font-size:13px" aria-hidden="true"></i> WhatsApp ↗</button>
+        <button onclick="sendPrompt('LED invoice Email send કરો')"><i class="ti ti-mail" style="font-size:13px" aria-hidden="true"></i> Email ↗</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-cash" style="font-size:14px" aria-hidden="true"></i> Payment tracking</div>
+        <div class="pay-item paid">
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Advance — 50%</div>
+            <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">Received: 02 May 2026 · UPI</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:14px;font-weight:500;color:var(--color-text-success)">₹9,29,250</div>
+            <span class="badge bg">Received</span>
+          </div>
+        </div>
+        <div class="pay-item" id="bal-item">
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">Balance — 50%</div>
+            <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px" id="bal-sub">Due: 28 May 2026</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:14px;font-weight:500;color:var(--color-text-warning)">₹9,29,250</div>
+            <span class="badge ba" id="bal-badge">Pending</span>
+          </div>
+        </div>
+        <button style="width:100%;margin-top:8px;font-size:12px;background:var(--color-background-success);color:var(--color-text-success);border-color:transparent" id="mark-btn" onclick="markPaid()">
+          <i class="ti ti-check" style="font-size:12px" aria-hidden="true"></i> Mark balance received ↗
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-device-tv" style="font-size:14px" aria-hidden="true"></i> Equipment de-installation</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+            <span style="color:var(--color-text-secondary)">Total screens</span>
+            <span style="font-weight:500">21 screens</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+            <span style="color:var(--color-text-secondary)">Total LED sq.ft</span>
+            <span style="font-weight:500">6,300 sq.ft/day</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0">
+            <span style="color:var(--color-text-secondary)">De-installation status</span>
+            <span class="badge ba" id="deinstall-badge">After payment</span>
+          </div>
+        </div>
+        <button style="width:100%;font-size:12px" id="deinstall-btn" onclick="markDeinstall()">
+          <i class="ti ti-package" style="font-size:12px" aria-hidden="true"></i> Mark de-installation complete ↗
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-timeline" style="font-size:14px" aria-hidden="true"></i> Timeline</div>
+        <div>
+          <div class="tl-item">
+            <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" style="background:var(--color-text-success)"></div><div class="tl-line"></div></div>
+            <div><div class="tl-title">Quotation approved</div><div class="tl-time">02 May 2026</div></div>
+          </div>
+          <div class="tl-item">
+            <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" style="background:var(--color-text-success)"></div><div class="tl-line"></div></div>
+            <div><div class="tl-title">Advance received — ₹9,29,250</div><div class="tl-time">02 May 2026</div></div>
+          </div>
+          <div class="tl-item">
+            <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" style="background:var(--color-text-success)"></div><div class="tl-line"></div></div>
+            <div><div class="tl-title">Setup complete — 14 May</div><div class="tl-time">14 May 2026</div></div>
+          </div>
+          <div class="tl-item">
+            <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" style="background:var(--color-text-success)"></div><div class="tl-line"></div></div>
+            <div><div class="tl-title">Event completed</div><div class="tl-time">20 May 2026</div></div>
+          </div>
+          <div class="tl-item">
+            <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" style="background:var(--color-text-success)"></div><div class="tl-line"></div></div>
+            <div><div class="tl-title">Invoice sent</div><div class="tl-time">21 May 2026</div></div>
+          </div>
+          <div class="tl-item">
+            <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" id="tl-bal" style="background:var(--color-border-secondary)"></div><div class="tl-line"></div></div>
+            <div><div class="tl-title" id="tl-bal-t" style="color:var(--color-text-secondary)">Balance payment pending</div><div class="tl-time" id="tl-bal-d">Due 28 May</div></div>
+          </div>
+          <div class="tl-item">
+            <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" id="tl-eq" style="background:var(--color-border-secondary)"></div></div>
+            <div><div class="tl-title" id="tl-eq-t" style="color:var(--color-text-secondary)">De-installation</div><div class="tl-time" id="tl-eq-d">After full payment</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let paid=false, deinstalled=false;
+function fmt(n){return n.toLocaleString('en-IN');}
+
+function markPaid(){
+  if(paid)return;
+  paid=true;
+  document.getElementById('bal-item').className='pay-item paid';
+  document.getElementById('bal-sub').textContent='Received: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('bal-badge').className='badge bg';
+  document.getElementById('bal-badge').textContent='Received';
+  document.getElementById('m-bal').textContent='₹0';
+  document.getElementById('m-bal').style.color='var(--color-text-success)';
+  document.getElementById('pdf-bal').textContent='₹0 (Paid)';
+  document.getElementById('mark-btn').disabled=true;
+  document.getElementById('mark-btn').innerHTML='<i class="ti ti-check" style="font-size:12px"></i> Balance received';
+  document.getElementById('inv-status').className='badge bg';
+  document.getElementById('inv-status').textContent='Fully paid';
+  document.getElementById('tl-bal').style.background='var(--color-text-success)';
+  document.getElementById('tl-bal-t').textContent='Balance received — ₹9,29,250';
+  document.getElementById('tl-bal-t').style.color='var(--color-text-primary)';
+  document.getElementById('tl-bal-d').textContent=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('deinstall-badge').className='badge bb';
+  document.getElementById('deinstall-badge').textContent='Ready';
+  document.getElementById('m-eq').innerHTML='<span class="badge bb">Ready</span>';
+  document.getElementById('deinstall-btn').style.cssText='width:100%;font-size:12px;background:var(--color-background-info);color:var(--color-text-info);border-color:transparent';
+}
+
+function markDeinstall(){
+  if(!paid){
+    const btn=document.getElementById('deinstall-btn');
+    btn.style.borderColor='var(--color-border-danger)';
+    btn.textContent='Payment first!';
+    setTimeout(()=>{btn.style.borderColor='';btn.innerHTML='<i class="ti ti-package" style="font-size:12px"></i> Mark de-installation complete ↗';},1800);
+    return;
+  }
+  deinstalled=true;
+  document.getElementById('deinstall-badge').className='badge bg';
+  document.getElementById('deinstall-badge').textContent='Complete';
+  document.getElementById('m-eq').innerHTML='<span class="badge bg">Complete</span>';
+  const btn=document.getElementById('deinstall-btn');
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-check" style="font-size:12px"></i> De-installation complete';
+  btn.style.cssText='width:100%;font-size:12px;background:var(--color-background-success);color:var(--color-text-success);border-color:transparent';
+  document.getElementById('tl-eq').style.background='var(--color-text-success)';
+  document.getElementById('tl-eq-t').textContent='De-installation complete';
+  document.getElementById('tl-eq-t').style.color='var(--color-text-primary)';
+  document.getElementById('tl-eq-d').textContent=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
+</script>

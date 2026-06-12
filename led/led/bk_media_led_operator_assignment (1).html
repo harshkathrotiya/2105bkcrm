@@ -1,0 +1,288 @@
+
+<h2 class="sr-only">BK Media CRM — LED Department Operator Assignment with place-wise position selection, in-house and external staff dropdown and payment summary</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+.two-col{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:14px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.einfo{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap}
+.ei{font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px}
+.ei span{color:var(--color-text-primary);font-weight:500}
+.place-section{margin-bottom:14px}
+.place-header{font-size:12px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:6px;padding:8px 0 8px;border-bottom:0.5px solid var(--color-border-secondary);margin-bottom:6px}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+th{text-align:left;font-size:11px;color:var(--color-text-secondary);padding:0 8px 8px;border-bottom:0.5px solid var(--color-border-tertiary);font-weight:500}
+td{padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--color-background-secondary)}
+.src-in{background:var(--color-background-success);color:var(--color-text-success);font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;white-space:nowrap}
+.src-out{background:var(--color-background-warning);color:var(--color-text-warning);font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;white-space:nowrap}
+.pay-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.pay-row:last-child{border-bottom:none}
+.total-pay{display:flex;justify-content:space-between;font-size:14px;font-weight:500;padding-top:10px;margin-top:6px;border-top:0.5px solid var(--color-border-secondary)}
+.pool-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:12px;margin-bottom:4px}
+.action-bar{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED warehouse availability check screen બતાવો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Warehouse
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">LED operator assignment</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="sendPrompt('BK Media LED external staff add કરો')"><i class="ti ti-user-plus" style="font-size:13px" aria-hidden="true"></i> External staff ↗</button>
+      <span class="badge" style="background:#FAEEDA;color:#633806">LED dept</span>
+    </div>
+  </div>
+
+  <div class="einfo">
+    <div class="ei"><i class="ti ti-file-invoice" style="font-size:12px" aria-hidden="true"></i> <span>BKM/26-27/05/14</span></div>
+    <div class="ei"><i class="ti ti-calendar" style="font-size:12px" aria-hidden="true"></i> <span>15–20 May 2026 · 5 days</span></div>
+    <div class="ei"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i> <span>ધોલેરાધામ</span></div>
+    <div class="ei"><i class="ti ti-device-tv" style="font-size:12px" aria-hidden="true"></i> Positions: <span>21</span></div>
+  </div>
+
+  <div class="sgrid">
+    <div class="metric"><div class="metric-label">Total positions</div><div class="metric-value">21</div></div>
+    <div class="metric"><div class="metric-label">Assigned</div><div class="metric-value" style="color:var(--color-text-success)" id="m-assigned">0</div></div>
+    <div class="metric"><div class="metric-label">In-house</div><div class="metric-value" style="color:var(--color-text-info)" id="m-inhouse">0</div></div>
+    <div class="metric"><div class="metric-label">External</div><div class="metric-value" style="color:var(--color-text-warning)" id="m-external">0</div></div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-users" style="font-size:14px" aria-hidden="true"></i> Place-wise operator selection</div>
+        <div id="positions-container"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-calculator" style="font-size:14px" aria-hidden="true"></i> Staff payment summary</div>
+        <div id="pay-summary"><div style="font-size:12px;color:var(--color-text-tertiary);padding:6px 0">Operator select થઈ ગયા પછી payment calculate થશે</div></div>
+        <div class="total-pay">
+          <span>Total staff payment (5 days)</span>
+          <span style="color:var(--color-text-info)" id="total-pay-val">₹0</span>
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button onclick="sendPrompt('LED client requirements list PDF generate કરો')"><i class="ti ti-file-export" style="font-size:13px" aria-hidden="true"></i> Client requirements PDF ↗</button>
+        <button onclick="sendPrompt('LED dispatch list ready કરો')"><i class="ti ti-truck" style="font-size:13px" aria-hidden="true"></i> Dispatch list ↗</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-list" style="font-size:14px" aria-hidden="true"></i> Staff pool</div>
+        <div id="pool-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-chart-bar" style="font-size:14px" aria-hidden="true"></i> Assignment status</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+            <span style="color:var(--color-text-secondary)">Assigned</span>
+            <span style="font-weight:500;color:var(--color-text-success)" id="s-assigned">0 / 21</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+            <span style="color:var(--color-text-secondary)">In-house</span>
+            <span style="font-weight:500;color:var(--color-text-info)" id="s-inhouse">0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+            <span style="color:var(--color-text-secondary)">External</span>
+            <span style="font-weight:500;color:var(--color-text-warning)" id="s-external">0</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0">
+            <span style="color:var(--color-text-secondary)">Remaining</span>
+            <span style="font-weight:500;color:var(--color-text-secondary)" id="s-remaining">21</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS = 5;
+
+const staffPool = [
+  {id:1, name:'Rishi Kumar',   role:'LED operator',  rate:1500, source:'in'},
+  {id:2, name:'Dev Vora',      role:'LED technician',rate:1500, source:'in'},
+  {id:3, name:'Mehul Shah',    role:'LED operator',  rate:1200, source:'in'},
+  {id:4, name:'Priya Joshi',   role:'LED controller',rate:1500, source:'in'},
+  {id:5, name:'Karan Patel',   role:'LED operator',  rate:1200, source:'in'},
+  {id:6, name:'Nirav Parmar',  role:'LED technician',rate:1200, source:'in'},
+  {id:7, name:'Jignesh Rao',   role:'LED operator',  rate:1000, source:'ext'},
+  {id:8, name:'Viral Desai',   role:'LED controller',rate:1200, source:'ext'},
+];
+
+const places = [
+  {
+    name:'Sabha Mandap',
+    positions:[
+      {no:1, loc:'On Stage',          type:'P4', h:16, w:28, nos:2},
+      {no:2, loc:'Center Dom',        type:'P4', h:8,  w:14, nos:10},
+      {no:3, loc:'Left Side Dom',     type:'P4', h:8,  w:14, nos:10},
+      {no:4, loc:'Right Side Dom',    type:'P4', h:8,  w:14, nos:10},
+      {no:5, loc:'On Stage',          type:'P4', h:8,  w:14, nos:2},
+    ]
+  },
+  {
+    name:'OutDoor Campus',
+    positions:[
+      {no:6,  loc:'Utsav Gate',      type:'P4', h:10, w:18, nos:2},
+      {no:7,  loc:'VIP Bhojnalay',   type:'P4', h:8,  w:14, nos:2},
+      {no:8,  loc:'Rasodu',          type:'P4', h:8,  w:14, nos:2},
+      {no:9,  loc:'Yagnshala',       type:'P4', h:8,  w:14, nos:2},
+      {no:10, loc:'Welcome',         type:'P4', h:8,  w:14, nos:2},
+      {no:11, loc:'Add Mate Led',    type:'P4', h:8,  w:14, nos:5},
+    ]
+  },
+  {
+    name:'Pradarshan',
+    positions:[
+      {no:12, loc:'Swaminarayan Darshanam', type:'P4',       h:20, w:12, nos:1},
+      {no:13, loc:'Swaminarayan Darshanam', type:'Floor Led', h:10, w:10, nos:1},
+      {no:14, loc:'Swaminarayan Darshanam', type:'P4 Curved', h:20, w:12, nos:1},
+      {no:15, loc:'Manki Circle',           type:'P3',        h:12, w:8,  nos:1},
+      {no:16, loc:'Akshardham Darshan',     type:'P2',        h:8,  w:6,  nos:6},
+      {no:17, loc:'Light And Sound Show',   type:'P4',        h:100,w:18, nos:1},
+      {no:18, loc:'Short Films',            type:'P4',        h:60, w:18, nos:1},
+      {no:19, loc:'Book Projection',        type:'P4',        h:60, w:20, nos:1},
+      {no:20, loc:'Main stage',             type:'P4',        h:10, w:10, nos:1},
+      {no:21, loc:'Entry gate',             type:'P4',        h:20, w:10, nos:1},
+    ]
+  }
+];
+
+function staffOptions(){
+  const inhouse = staffPool.filter(s=>s.source==='in');
+  const external = staffPool.filter(s=>s.source==='ext');
+  let o = '<option value="">— Select operator —</option>';
+  if(inhouse.length) o += '<optgroup label="In-house staff">'+inhouse.map(s=>`<option value="${s.id}">${s.name} (${s.role})</option>`).join('')+'</optgroup>';
+  if(external.length) o += '<optgroup label="External staff">'+external.map(s=>`<option value="${s.id}">${s.name} (${s.role})</option>`).join('')+'</optgroup>';
+  return o;
+}
+
+function onSelect(posNo, staffId){
+  const srcCell = document.getElementById(`src-${posNo}`);
+  const payCell = document.getElementById(`pay-${posNo}`);
+  if(!staffId){ srcCell.innerHTML='<span style="font-size:11px;color:var(--color-text-tertiary)">—</span>'; payCell.textContent='—'; payCell.style.color='var(--color-text-secondary)'; }
+  else {
+    const s = staffPool.find(x=>x.id==staffId);
+    if(s){ srcCell.innerHTML=`<span class="${s.source==='in'?'src-in':'src-out'}">${s.source==='in'?'In-house':'External'}</span>`; payCell.textContent='₹'+s.rate.toLocaleString('en-IN'); payCell.style.color='var(--color-text-success)'; }
+  }
+  updateSummary();
+  renderPool();
+}
+
+function renderPositions(){
+  const container = document.getElementById('positions-container');
+  container.innerHTML = places.map(place=>`
+    <div class="place-section">
+      <div class="place-header"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i>${place.name}</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th style="width:28px">No.</th>
+            <th style="width:140px">Location</th>
+            <th style="width:72px">Type</th>
+            <th style="width:60px">H×W</th>
+            <th style="width:36px">Nos</th>
+            <th>Operator</th>
+            <th style="width:72px">Source</th>
+            <th style="width:70px">Pay/day</th>
+          </tr></thead>
+          <tbody>
+            ${place.positions.map(p=>`<tr id="row-${p.no}">
+              <td style="color:var(--color-text-secondary)">${p.no}</td>
+              <td style="font-size:11px;font-weight:500">${p.loc}</td>
+              <td><span class="badge bb" style="font-size:10px">${p.type}</span></td>
+              <td style="font-size:11px;color:var(--color-text-secondary)">${p.h}×${p.w}</td>
+              <td style="font-size:11px;text-align:center">${p.nos}</td>
+              <td><select style="font-size:11px;width:100%" onchange="onSelect(${p.no},this.value)" id="sel-${p.no}">${staffOptions()}</select></td>
+              <td id="src-${p.no}"><span style="font-size:11px;color:var(--color-text-tertiary)">—</span></td>
+              <td id="pay-${p.no}" style="font-size:12px;color:var(--color-text-secondary)">—</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderPool(){
+  const pool = document.getElementById('pool-list');
+  const allPositions = places.flatMap(p=>p.positions);
+  pool.innerHTML = staffPool.map(s=>{
+    const count = allPositions.filter(p=>{ const sel=document.getElementById(`sel-${p.no}`); return sel&&sel.value==s.id; }).length;
+    return `<div class="pool-item">
+      <div>
+        <span style="font-weight:500;color:var(--color-text-primary)">${s.name}</span>
+        <span style="color:var(--color-text-secondary);margin-left:4px;font-size:11px">${s.role}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="color:var(--color-text-secondary);font-size:12px">₹${s.rate.toLocaleString('en-IN')}/day</span>
+        <span class="${s.source==='in'?'src-in':'src-out'}">${s.source==='in'?'In-house':'External'}</span>
+        ${count>0?`<span class="badge bb" style="font-size:10px">${count} pos</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateSummary(){
+  const allPositions = places.flatMap(p=>p.positions);
+  let assigned=0, inhouse=0, external=0;
+  const staffTotals = {};
+  allPositions.forEach(p=>{
+    const sel=document.getElementById(`sel-${p.no}`);
+    if(!sel||!sel.value) return;
+    const s=staffPool.find(x=>x.id==sel.value);
+    if(!s) return;
+    assigned++;
+    if(s.source==='in') inhouse++; else external++;
+    if(!staffTotals[s.id]) staffTotals[s.id]={name:s.name,rate:s.rate,source:s.source,count:0};
+    staffTotals[s.id].count++;
+  });
+  document.getElementById('m-assigned').textContent=assigned;
+  document.getElementById('m-inhouse').textContent=inhouse;
+  document.getElementById('m-external').textContent=external;
+  document.getElementById('s-assigned').textContent=assigned+' / '+allPositions.length;
+  document.getElementById('s-inhouse').textContent=inhouse;
+  document.getElementById('s-external').textContent=external;
+  document.getElementById('s-remaining').textContent=(allPositions.length-assigned);
+
+  let totalPay=0;
+  const entries=Object.values(staffTotals);
+  const payDiv=document.getElementById('pay-summary');
+  if(!entries.length){ payDiv.innerHTML='<div style="font-size:12px;color:var(--color-text-tertiary);padding:6px 0">Operator select થઈ ગયા પછી payment calculate થશે</div>'; document.getElementById('total-pay-val').textContent='₹0'; return; }
+  payDiv.innerHTML=entries.map(e=>{
+    const pay=e.rate*DAYS;
+    totalPay+=pay;
+    return `<div class="pay-row">
+      <span style="color:var(--color-text-secondary)">${e.name} <span class="${e.source==='in'?'src-in':'src-out'}">${e.source==='in'?'In-house':'Ext'}</span> · ${e.count} pos</span>
+      <span style="font-weight:500;color:var(--color-text-primary)">₹${e.rate.toLocaleString('en-IN')} × ${DAYS} = ₹${pay.toLocaleString('en-IN')}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('total-pay-val').textContent='₹'+totalPay.toLocaleString('en-IN');
+}
+
+renderPositions();
+renderPool();
+</script>

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
-import Screen13EquipmentList from "@/components/screens/Screen13EquipmentList";
+import EquipmentTabs from "@/components/screens/EquipmentTabs";
 import DeptEquipment from "@/components/screens/dept/DeptEquipment";
+import LedStockScreen from "@/components/screens/led/LedStockScreen";
 import RoleRouter from "@/components/screens/dept/RoleRouter";
 import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 
@@ -12,8 +13,9 @@ export default function EquipmentMasterPage() {
       </div>
     }>
       <RoleRouter
-        admin={<Screen13EquipmentList />}
+        admin={<EquipmentTabs />}
         dept={<DeptEquipment />}
+        ledDept={<LedStockScreen />}
       />
     </Suspense>
   );

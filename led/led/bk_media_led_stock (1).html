@@ -1,0 +1,283 @@
+
+<h2 class="sr-only">BK Media CRM — LED Warehouse Stock Management with company-wise cabinet inventory, cabinet size, boxes per company and auto sq.ft calculation</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:20px;font-weight:500;color:var(--color-text-primary)}
+.two-col{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.co-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:12px}
+.co-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.co-name{font-size:14px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px}
+.co-meta{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.info-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;text-align:center}
+.info-label{font-size:10px;color:var(--color-text-secondary);margin-bottom:4px}
+.info-val{font-size:15px;font-weight:500;color:var(--color-text-primary)}
+.info-sub{font-size:10px;color:var(--color-text-secondary);margin-top:2px}
+.detail-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.detail-row:last-child{border-bottom:none}
+.detail-label{color:var(--color-text-secondary)}
+.detail-val{font-weight:500;color:var(--color-text-primary)}
+.del-btn{width:26px;height:26px;border-radius:var(--border-radius-md);background:none;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.del-btn:hover{background:var(--color-background-danger);color:var(--color-text-danger);border-color:transparent}
+.add-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:5px}
+.flabel{font-size:11px;color:var(--color-text-secondary)}
+.calc-preview{background:var(--color-background-info);border-radius:var(--border-radius-md);padding:10px 14px;margin-top:10px;font-size:12px;color:var(--color-text-info)}
+.pbar{height:5px;background:var(--color-border-tertiary);border-radius:3px;margin-top:6px}
+.pbar-fill{height:100%;border-radius:3px;transition:width .3s}
+.summary-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.summary-row:last-child{border-bottom:none}
+.led-type-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED warehouse availability check screen બતાવો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Warehouse
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">LED stock management</span>
+    </div>
+    <span class="badge" style="background:#FAEEDA;color:#633806">Warehouse</span>
+  </div>
+
+  <div class="sgrid">
+    <div class="metric"><div class="metric-label">Companies</div><div class="metric-value" id="m-co">2</div></div>
+    <div class="metric"><div class="metric-label">Total cabinets</div><div class="metric-value" style="color:var(--color-text-info)" id="m-cabs">0</div></div>
+    <div class="metric"><div class="metric-label">Total sq.ft</div><div class="metric-value" style="color:var(--color-text-success)" id="m-sqft">0</div></div>
+    <div class="metric"><div class="metric-label">Total boxes</div><div class="metric-value" style="color:var(--color-text-warning)" id="m-boxes">0</div></div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div id="company-list"></div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-plus" style="font-size:14px" aria-hidden="true"></i> New company stock add</div>
+        <div class="add-form">
+          <div class="field">
+            <span class="flabel">Company name *</span>
+            <input type="text" id="f-name" placeholder="NVS, VCORE..." oninput="updateCalc()">
+          </div>
+          <div class="field">
+            <span class="flabel">LED type</span>
+            <select id="f-type" onchange="updateCalc()">
+              <option>P4</option><option>P3</option><option>P2</option>
+              <option>Floor Led</option><option>P4 Curved</option><option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <span class="flabel">Cabinet height (mm) *</span>
+            <input type="number" id="f-ch" placeholder="576" value="576" oninput="updateCalc()">
+          </div>
+          <div class="field">
+            <span class="flabel">Cabinet width (mm) *</span>
+            <input type="number" id="f-cw" placeholder="576" value="576" oninput="updateCalc()">
+          </div>
+          <div class="field">
+            <span class="flabel">Cabinets per box *</span>
+            <input type="number" id="f-cpb" placeholder="5" value="5" min="1" oninput="updateCalc()">
+          </div>
+          <div class="field">
+            <span class="flabel">Total cabinets *</span>
+            <input type="number" id="f-tc" placeholder="250" oninput="updateCalc()">
+          </div>
+        </div>
+
+        <div class="calc-preview" id="calc-preview">
+          <i class="ti ti-calculator" style="font-size:12px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>
+          Details ભરો — auto calculation અહીં દેખાશે
+        </div>
+
+        <button style="width:100%;margin-top:10px;font-size:13px" onclick="addCompany()">
+          <i class="ti ti-plus" style="font-size:13px" aria-hidden="true"></i> Stock add ↗
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-chart-bar" style="font-size:14px" aria-hidden="true"></i> Overall summary</div>
+        <div id="overall-summary"><div style="font-size:12px;color:var(--color-text-tertiary)">Company add થઈ ગયા પછી summary આવશે</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-info-circle" style="font-size:14px" aria-hidden="true"></i> Pricing logic</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.7">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span>1 cabinet</span><span style="font-weight:500;color:var(--color-text-primary)">= 4 sq.ft (fixed)</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span>Pricing</span><span style="font-weight:500;color:var(--color-text-primary)">cabinets × 4 sq.ft</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span>Cabinet mm size</span><span style="font-weight:500;color:var(--color-text-primary)">actual measurement</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Client clear size</span><span style="font-weight:500;color:var(--color-text-primary)">mm calculation</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SQFT_PER_CAB = 4;
+let companies = [
+  {id:'c1', name:'NVS', type:'P4', cabH:576, cabW:576, cpb:5, totalCabs:250},
+  {id:'c2', name:'VCORE', type:'P4', cabH:576, cabW:576, cpb:5, totalCabs:250},
+];
+let coId = 3;
+
+function sqft(c){ return c.totalCabs * SQFT_PER_CAB; }
+function boxes(c){ return Math.ceil(c.totalCabs / c.cpb); }
+function actualMM(c, targetFt, dim){
+  const cabsNeeded = Math.round((targetFt * 304.8) / (dim === 'h' ? c.cabH : c.cabW));
+  const actualMm = cabsNeeded * (dim === 'h' ? c.cabH : c.cabW);
+  const actualFt = (actualMm / 304.8).toFixed(2);
+  return {cabs: cabsNeeded, mm: actualMm, ft: actualFt};
+}
+
+function typeColor(t){
+  if(t==='P4') return 'background:#E6F1FB;color:#0C447C';
+  if(t==='P3') return 'background:#E1F5EE;color:#085041';
+  if(t==='P2') return 'background:#FAEEDA;color:#633806';
+  if(t==='Floor Led') return 'background:#FAECE7;color:#712B13';
+  return 'background:#F1EFE8;color:#444441';
+}
+
+function render(){
+  const totalCabs = companies.reduce((a,c)=>a+c.totalCabs,0);
+  const totalSqft = companies.reduce((a,c)=>a+sqft(c),0);
+  const totalBoxes = companies.reduce((a,c)=>a+boxes(c),0);
+  document.getElementById('m-co').textContent = companies.length;
+  document.getElementById('m-cabs').textContent = totalCabs.toLocaleString('en-IN');
+  document.getElementById('m-sqft').textContent = totalSqft.toLocaleString('en-IN');
+  document.getElementById('m-boxes').textContent = totalBoxes.toLocaleString('en-IN');
+
+  document.getElementById('company-list').innerHTML = companies.map(c=>{
+    const s = sqft(c);
+    const b = boxes(c);
+    const pct = Math.round((s / Math.max(totalSqft,1)) * 100);
+    const exH = actualMM(c, 8, 'h');
+    const exW = actualMM(c, 14, 'w');
+    return `<div class="co-card">
+      <div class="co-header">
+        <div>
+          <div class="co-name">
+            <i class="ti ti-building" style="font-size:14px" aria-hidden="true"></i>
+            ${c.name}
+            <span class="led-type-badge" style="${typeColor(c.type)}">${c.type}</span>
+          </div>
+          <div class="co-meta">Cabinet: ${c.cabH}mm × ${c.cabW}mm &nbsp;·&nbsp; ${c.cpb} cabs/box</div>
+        </div>
+        <button class="del-btn" onclick="removeCo('${c.id}')"><i class="ti ti-x" style="font-size:12px" aria-hidden="true"></i></button>
+      </div>
+      <div class="info-grid">
+        <div class="info-box">
+          <div class="info-label">Total cabinets</div>
+          <div class="info-val">${c.totalCabs.toLocaleString('en-IN')}</div>
+          <div class="info-sub">cabinets</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">Pricing sq.ft</div>
+          <div class="info-val" style="color:var(--color-text-success)">${s.toLocaleString('en-IN')}</div>
+          <div class="info-sub">× ₹50/sq.ft/day</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">Total boxes</div>
+          <div class="info-val" style="color:var(--color-text-warning)">${b}</div>
+          <div class="info-sub">${c.cpb} cabs each</div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+          <span style="color:var(--color-text-secondary)">Share of total inventory</span>
+          <span style="font-weight:500;color:var(--color-text-secondary)">${pct}%</span>
+        </div>
+        <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:var(--color-text-info)"></div></div>
+      </div>
+      <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px">
+        <div style="font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px"><i class="ti ti-ruler" style="font-size:11px;vertical-align:-1px;margin-right:3px" aria-hidden="true"></i>Clear size example — 8×14 ft screen</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
+          <div style="background:var(--color-background-primary);border-radius:var(--border-radius-md);padding:7px 10px;border:0.5px solid var(--color-border-tertiary)">
+            <div style="color:var(--color-text-secondary);margin-bottom:2px">Height (target 8 ft)</div>
+            <div style="font-weight:500;color:var(--color-text-primary)">${exH.cabs} cabs × ${c.cabH}mm</div>
+            <div style="color:var(--color-text-info);margin-top:1px">${exH.mm.toLocaleString('en-IN')}mm = ${exH.ft} ft clear</div>
+          </div>
+          <div style="background:var(--color-background-primary);border-radius:var(--border-radius-md);padding:7px 10px;border:0.5px solid var(--color-border-tertiary)">
+            <div style="color:var(--color-text-secondary);margin-bottom:2px">Width (target 14 ft)</div>
+            <div style="font-weight:500;color:var(--color-text-primary)">${exW.cabs} cabs × ${c.cabW}mm</div>
+            <div style="color:var(--color-text-info);margin-top:1px">${exW.mm.toLocaleString('en-IN')}mm = ${exW.ft} ft clear</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--color-text-tertiary);padding:12px 0;text-align:center">No companies added yet — right side form use કરો</div>';
+
+  document.getElementById('overall-summary').innerHTML = companies.length ? `
+    ${companies.map(c=>`
+      <div class="summary-row">
+        <span style="color:var(--color-text-secondary);display:flex;align-items:center;gap:6px">
+          <span class="led-type-badge" style="${typeColor(c.type)}">${c.type}</span>${c.name}
+        </span>
+        <span style="font-weight:500;color:var(--color-text-primary)">${sqft(c).toLocaleString('en-IN')} sq.ft · ${boxes(c)} boxes</span>
+      </div>
+    `).join('')}
+    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:500;padding:8px 0 0;border-top:0.5px solid var(--color-border-secondary);margin-top:4px">
+      <span>Total inventory</span>
+      <span style="color:var(--color-text-success)">${companies.reduce((a,c)=>a+sqft(c),0).toLocaleString('en-IN')} sq.ft</span>
+    </div>
+  ` : '<div style="font-size:12px;color:var(--color-text-tertiary)">No companies yet</div>';
+}
+
+function updateCalc(){
+  const name = document.getElementById('f-name').value.trim();
+  const ch = parseInt(document.getElementById('f-ch').value)||0;
+  const cw = parseInt(document.getElementById('f-cw').value)||0;
+  const cpb = parseInt(document.getElementById('f-cpb').value)||0;
+  const tc = parseInt(document.getElementById('f-tc').value)||0;
+  const prev = document.getElementById('calc-preview');
+  if(!tc||!cpb||!ch||!cw){ prev.innerHTML='<i class="ti ti-calculator" style="font-size:12px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>Details ભરો — auto calculation અહીં દેખાશે'; return; }
+  const sq = tc * SQFT_PER_CAB;
+  const bx = Math.ceil(tc / cpb);
+  const cabArea = (ch * cw / 1000000).toFixed(4);
+  prev.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+      <div><div style="font-size:10px;opacity:0.8;margin-bottom:2px">Pricing sq.ft</div><div style="font-size:16px;font-weight:500">${sq.toLocaleString('en-IN')}</div></div>
+      <div><div style="font-size:10px;opacity:0.8;margin-bottom:2px">Total boxes</div><div style="font-size:16px;font-weight:500">${bx}</div></div>
+      <div><div style="font-size:10px;opacity:0.8;margin-bottom:2px">Cabinet area</div><div style="font-size:16px;font-weight:500">${cabArea} m²</div></div>
+    </div>
+    <div style="font-size:11px;opacity:0.8;margin-top:8px;text-align:center">${tc} cabinets × 4 sq.ft = ${sq.toLocaleString('en-IN')} sq.ft &nbsp;·&nbsp; ${bx} boxes of ${cpb}</div>
+  `;
+}
+
+function addCompany(){
+  const name = document.getElementById('f-name').value.trim();
+  const type = document.getElementById('f-type').value;
+  const ch = parseInt(document.getElementById('f-ch').value)||0;
+  const cw = parseInt(document.getElementById('f-cw').value)||0;
+  const cpb = parseInt(document.getElementById('f-cpb').value)||0;
+  const tc = parseInt(document.getElementById('f-tc').value)||0;
+  if(!name||!ch||!cw||!cpb||!tc){ alert('બધા fields ભરો'); return; }
+  companies.push({id:'c'+coId++, name, type, cabH:ch, cabW:cw, cpb, totalCabs:tc});
+  document.getElementById('f-name').value='';
+  document.getElementById('f-tc').value='';
+  document.getElementById('f-ch').value='576';
+  document.getElementById('f-cw').value='576';
+  document.getElementById('f-cpb').value='5';
+  document.getElementById('calc-preview').innerHTML='<i class="ti ti-calculator" style="font-size:12px;vertical-align:-1px;margin-right:4px" aria-hidden="true"></i>Details ભરો — auto calculation અહીં દેખાશે';
+  render();
+}
+
+function removeCo(id){ companies=companies.filter(x=>x.id!==id); render(); }
+
+render();
+</script>

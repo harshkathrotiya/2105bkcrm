@@ -262,4 +262,167 @@ export interface StaffPayment {
   notes?: string | null;
 }
 
+// ── LED Department Types ──────────────────────────────────────────────────────
 
+export type LedType = "P4" | "P3" | "P2" | "FLOOR" | "P4_CURVED";
+export type LedOperatorSource = "IN_HOUSE" | "EXTERNAL";
+export type LedScreenStatus = "OFF" | "SETUP" | "LIVE" | "ISSUE";
+export type LedExpenseCategory = "TRANSPORT" | "FOOD" | "MISC" | "CUSTOM";
+
+export interface LedCompanyLot {
+  id: number;
+  name: string;
+  ledType: LedType;
+  cabinetHeightMm: number;
+  cabinetWidthMm: number;
+  cabinetsPerBox: number;
+  totalCabinets: number;
+  createdAt: string;
+  updatedAt?: string | null;
+  // derived (never stored)
+  sqftForPricing?: number;   // totalCabinets × 4
+  totalBoxes?: number;       // ceil(totalCabinets / cabinetsPerBox)
+}
+
+export interface LedWarehouseAllocation {
+  id: number;
+  inquiryId: string;
+  lotId: number;
+  lot?: LedCompanyLot;
+  allocatedSqft: number;
+  createdAt: string;
+}
+
+export interface LedVendorArrangement {
+  id: number;
+  inquiryId: string;
+  vendorName: string;
+  ledType: LedType;
+  sqft: number;
+  ratePerSqftPerDay: number;
+  createdAt: string;
+  // derived
+  vendorCost?: number; // sqft × ratePerSqftPerDay × eventDays
+}
+
+export interface LedScreenPosition {
+  id: number;
+  inquiryId: string;
+  positionNo: number;
+  place: string;
+  location: string;
+  ledType: LedType;
+  targetHeightFt: number;
+  targetWidthFt: number;
+  quantity: number;
+  cabinetHeightMm: number;
+  cabinetWidthMm: number;
+  operatorStaffId?: number | null;
+  operatorStaff?: Staff | null;
+  operatorSource?: LedOperatorSource | null;
+  createdAt: string;
+  // derived (computed server-side)
+  sqftPerScreen?: number;
+  totalSqft?: number;
+  hCabs?: number;
+  wCabs?: number;
+  clearHeightMm?: number;
+  clearHeightFt?: number;
+  clearWidthMm?: number;
+  clearWidthFt?: number;
+}
+
+export interface LedDayStatus {
+  id: number;
+  inquiryId: string;
+  positionNo: number;
+  dayIndex: number;
+  status: LedScreenStatus;
+  notes: string;
+  dayDone: boolean;
+}
+
+export interface LedIssueLog {
+  id: number;
+  inquiryId: string;
+  text: string;
+  loggedAt: string;
+}
+
+export interface LedOperationsLog {
+  id: number;
+  inquiryId: string;
+  logTime: string;
+  text: string;
+  loggedAt: string;
+}
+
+export interface LedExpense {
+  id: number;
+  inquiryId: string;
+  category: LedExpenseCategory;
+  label: string;
+  amount: number;
+  createdAt: string;
+}
+
+export interface LedWarehouseView {
+  requiredSqft: number;
+  eventDays: number;
+  ratePerSqft: number;
+  clientBilling: number;
+  lots: Array<{
+    lot: LedCompanyLot;
+    allocatedSqft: number;
+    remainingSqft: number;
+    usagePct: number;
+    allocationId: number | null;
+  }>;
+  vendors: LedVendorArrangement[];
+  bkMediaTotal: number;
+  vendorTotal: number;
+  shortfall: number;
+  coveragePct: number;
+  vendorCost: number;
+  netMargin: number;
+}
+
+export interface LedPositionsSummary {
+  positions: LedScreenPosition[];
+  summary: {
+    totalPositions: number;
+    totalSqftPerDay: number;
+    places: string[];
+  };
+}
+
+export interface LedExpensePnL {
+  clientBilling: number;
+  staffCost: number;
+  vendorCost: number;
+  transport: number;
+  food: number;
+  misc: number;
+  extraTotal: number;
+  totalExpenses: number;
+  netProfit: number;
+  profitMargin: number;
+  expenses: LedExpense[];
+  expenseBreakdown: {
+    vendorPct: number;
+    staffPct: number;
+    transportPct: number;
+    foodPct: number;
+    miscPct: number;
+    extraPct: number;
+  };
+}
+
+export interface LedExecutionView {
+  positions: LedScreenPosition[];
+  dayStatuses: LedDayStatus[];
+  issues: LedIssueLog[];
+  logs: LedOperationsLog[];
+  eventDays: number;
+  startDate: string;
+}

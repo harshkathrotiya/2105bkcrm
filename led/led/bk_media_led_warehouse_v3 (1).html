@@ -1,0 +1,82 @@
+
+<h2 class="sr-only">BK Media CRM — LED Warehouse with per day per sqft pricing for both client billing and vendor payment</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.br{background:var(--color-background-danger);color:var(--color-text-danger)}
+.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+.two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.event-info{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:16px;display:flex;gap:20px;flex-wrap:wrap}
+.ei{font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:5px}
+.ei span{color:var(--color-text-primary);font-weight:500}
+.company-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:10px}
+.company-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.company-name{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px}
+.progress-bar{height:5px;background:var(--color-border-tertiary);border-radius:3px;margin-top:6px}
+.progress-fill{height:100%;border-radius:3px;transition:width .3s}
+.vendor-row{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;margin-bottom:6px;font-size:12px}
+.vendor-row-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.vendor-name{font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:6px}
+.vendor-calc{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:11px}
+.vc-item{display:flex;flex-direction:column;gap:2px}
+.vc-label{color:var(--color-text-secondary)}
+.vc-val{font-weight:500;color:var(--color-text-primary)}
+.del-btn{width:24px;height:24px;border-radius:var(--border-radius-md);background:none;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.del-btn:hover{background:var(--color-background-danger);color:var(--color-text-danger);border-color:transparent}
+.add-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;padding:12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md)}
+.field{display:flex;flex-direction:column;gap:4px}
+.flabel{font-size:11px;color:var(--color-text-secondary)}
+.pnl-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.pnl-row:last-child{border-bottom:none}
+.action-bar{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED Quotation PDF screen બતાવો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Quotation
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">LED warehouse — availability check</span>
+    </div>
+    <span class="badge bb">Warehouse</span>
+  </div>
+
+  <div class="event-info">
+    <div class="ei"><i class="ti ti-file-invoice" style="font-size:12px" aria-hidden="true"></i> Ref: <span>BKM/26-27/05/14</span></div>
+    <div class="ei"><i class="ti ti-calendar" style="font-size:12px" aria-hidden="true"></i> <span>15–20 May 2026</span></div>
+    <div class="ei"><i class="ti ti-clock" style="font-size:12px" aria-hidden="true"></i> <span id="ei-days">5 days</span></div>
+    <div class="ei"><i class="ti ti-stack" style="font-size:12px" aria-hidden="true"></i> Required: <span>6,300 sq.ft/day</span></div>
+  </div>
+
+  <div style="background:var(--color-background-info);border-radius:var(--border-radius-md);padding:10px 14px;font-size:12px;color:var(--color-text-info);margin-bottom:16px;display:flex;align-items:center;gap:8px">
+    <i class="ti ti-info-circle" style="font-size:13px" aria-hidden="true"></i>
+    Pricing: Client → ₹50/sq.ft/day &nbsp;|&nbsp; Vendor cost per day × sq.ft × days = total payable
+  </div>
+
+  <div class="summary-grid">
+    <div class="metric"><div class="metric-label">Required (per day)</div><div class="metric-value">6,300 sq.ft</div></div>
+    <div class="metric"><div class="metric-label">BK Media allocated</div><div class="metric-value" style="color:var(--color-text-success)" id="m-avail">0 sq.ft</div></div>
+    <div class="metric"><div class="metric-label">Vendor arranged</div><div class="metric-value" style="color:var(--color-text-warning)" id="m-vendor">0 sq.ft</div></div>
+    <div class="metric"><div class="metric-label">Shortfall</div><div class="metric-value" style="color:var(--color-text-danger)" id="m-short">6,300 sq.ft</div></div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-building-warehouse" style="font-size:14px" aria-hidden="true"></i> BK Media — LED panel lots</div>
+        <div id="company-list"></div>
+        <button style="width:100%;margin-top:8px;font-size:12px" onclick="toggleAddCo()"><i class="ti ti-plus" style="font-size:12px" aria-hidden="true"></i> New company lot add ↗

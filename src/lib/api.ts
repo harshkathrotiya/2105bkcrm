@@ -732,7 +732,7 @@ export function deleteClientRate(clientId: string, equipmentId: number): Promise
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
-export function login(username: string, password: string): Promise<{ user: { id: string; username: string; name: string; role: string } }> {
+export function login(username: string, password: string): Promise<{ user: { id: string; username: string; name: string; role: string; department?: string } }> {
   return request("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ username, password }),
@@ -757,6 +757,142 @@ export function saveClientRequirements(
     method: "POST",
     body: JSON.stringify({ inquiryId, ...data }),
   });
+}
+
+// ── LED Department ────────────────────────────────────────────────────────────
+
+import type {
+  LedCompanyLot, LedWarehouseAllocation, LedVendorArrangement,
+  LedScreenPosition, LedDayStatus, LedIssueLog, LedOperationsLog,
+  LedExpense, LedWarehouseView, LedPositionsSummary, LedExpensePnL,
+  LedExecutionView,
+} from "./types";
+
+// Company lots (warehouse stock)
+export function fetchLedLots(): Promise<LedCompanyLot[]> {
+  return request("/api/led/lots");
+}
+export function createLedLot(data: Omit<LedCompanyLot, "id" | "createdAt" | "updatedAt" | "sqftForPricing" | "totalBoxes">): Promise<LedCompanyLot> {
+  return request("/api/led/lots", { method: "POST", body: JSON.stringify(data) });
+}
+export function updateLedLot(id: number, data: Partial<Omit<LedCompanyLot, "id" | "createdAt" | "sqftForPricing" | "totalBoxes">>): Promise<LedCompanyLot> {
+  return request(`/api/led/lots/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+export function deleteLedLot(id: number): Promise<void> {
+  return request(`/api/led/lots/${id}`, { method: "DELETE" });
+}
+
+// Warehouse availability for an event
+export function fetchLedWarehouse(inquiryId: string): Promise<LedWarehouseView> {
+  return request(`/api/led/inquiries/${inquiryId}/warehouse`);
+}
+export function upsertLedAllocation(inquiryId: string, lotId: number, allocatedSqft: number): Promise<LedWarehouseAllocation> {
+  return request(`/api/led/inquiries/${inquiryId}/warehouse/lots`, {
+    method: "POST",
+    body: JSON.stringify({ lotId, allocatedSqft }),
+  });
+}
+export function deleteLedAllocation(inquiryId: string, allocationId: number): Promise<void> {
+  return request(`/api/led/inquiries/${inquiryId}/warehouse/lots/${allocationId}`, { method: "DELETE" });
+}
+export function createLedVendor(inquiryId: string, data: Omit<LedVendorArrangement, "id" | "inquiryId" | "createdAt" | "vendorCost">): Promise<LedVendorArrangement> {
+  return request(`/api/led/inquiries/${inquiryId}/warehouse/vendors`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+export function updateLedVendor(inquiryId: string, vendorId: number, data: Partial<Omit<LedVendorArrangement, "id" | "inquiryId" | "createdAt" | "vendorCost">>): Promise<LedVendorArrangement> {
+  return request(`/api/led/inquiries/${inquiryId}/warehouse/vendors/${vendorId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+export function deleteLedVendor(inquiryId: string, vendorId: number): Promise<void> {
+  return request(`/api/led/inquiries/${inquiryId}/warehouse/vendors/${vendorId}`, { method: "DELETE" });
+}
+
+// Screen positions
+export function fetchLedPositions(inquiryId: string): Promise<LedPositionsSummary> {
+  return request(`/api/led/inquiries/${inquiryId}/positions`);
+}
+export function createLedPosition(inquiryId: string, data: Omit<LedScreenPosition, "id" | "inquiryId" | "createdAt" | "sqftPerScreen" | "totalSqft" | "hCabs" | "wCabs" | "clearHeightMm" | "clearHeightFt" | "clearWidthMm" | "clearWidthFt" | "operatorStaff">): Promise<LedScreenPosition> {
+  return request(`/api/led/inquiries/${inquiryId}/positions`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+export function updateLedPosition(inquiryId: string, posId: number, data: Partial<Omit<LedScreenPosition, "id" | "inquiryId" | "createdAt" | "operatorStaff">>): Promise<LedScreenPosition> {
+  return request(`/api/led/inquiries/${inquiryId}/positions/${posId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+export function deleteLedPosition(inquiryId: string, posId: number): Promise<void> {
+  return request(`/api/led/inquiries/${inquiryId}/positions/${posId}`, { method: "DELETE" });
+}
+export function assignLedOperator(inquiryId: string, posId: number, staffId: number | null, operatorSource: "IN_HOUSE" | "EXTERNAL"): Promise<LedScreenPosition> {
+  return request(`/api/led/inquiries/${inquiryId}/positions/${posId}/operator`, {
+    method: "PATCH",
+    body: JSON.stringify({ staffId, operatorSource }),
+  });
+}
+
+// Event execution
+export function fetchLedExecution(inquiryId: string): Promise<LedExecutionView> {
+  return request(`/api/led/inquiries/${inquiryId}/execution`);
+}
+export function updateLedScreenStatus(inquiryId: string, positionNo: number, dayIndex: number, status: string, notes?: string): Promise<LedDayStatus> {
+  return request(`/api/led/inquiries/${inquiryId}/execution/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ positionNo, dayIndex, status, notes }),
+  });
+}
+export function setAllLedScreensLive(inquiryId: string, dayIndex: number): Promise<void> {
+  return request(`/api/led/inquiries/${inquiryId}/execution/status/bulk`, {
+    method: "POST",
+    body: JSON.stringify({ dayIndex }),
+  });
+}
+export function toggleLedDayDone(inquiryId: string, dayIndex: number): Promise<void> {
+  return request(`/api/led/inquiries/${inquiryId}/execution/day-done`, {
+    method: "POST",
+    body: JSON.stringify({ dayIndex }),
+  });
+}
+export function addLedIssue(inquiryId: string, text: string): Promise<LedIssueLog> {
+  return request(`/api/led/inquiries/${inquiryId}/execution/issues`, {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+}
+export function deleteLedIssue(inquiryId: string, issueId: number): Promise<void> {
+  return request(`/api/led/inquiries/${inquiryId}/execution/issues/${issueId}`, { method: "DELETE" });
+}
+export function addLedLog(inquiryId: string, text: string): Promise<LedOperationsLog> {
+  return request(`/api/led/inquiries/${inquiryId}/execution/logs`, {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
+}
+
+// Expenses & P&L
+export function fetchLedExpenses(inquiryId: string): Promise<LedExpensePnL> {
+  return request(`/api/led/inquiries/${inquiryId}/expenses`);
+}
+export function createLedExpense(inquiryId: string, data: Omit<LedExpense, "id" | "inquiryId" | "createdAt">): Promise<LedExpense> {
+  return request(`/api/led/inquiries/${inquiryId}/expenses`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+export function updateLedExpense(inquiryId: string, expId: number, data: Partial<Omit<LedExpense, "id" | "inquiryId" | "createdAt">>): Promise<LedExpense> {
+  return request(`/api/led/inquiries/${inquiryId}/expenses/${expId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+export function deleteLedExpense(inquiryId: string, expId: number): Promise<void> {
+  return request(`/api/led/inquiries/${inquiryId}/expenses/${expId}`, { method: "DELETE" });
 }
 
 export function fetchExpenseReport(inquiryId: string): Promise<Record<string, unknown>> {

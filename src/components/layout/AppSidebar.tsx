@@ -18,6 +18,7 @@ import {
   UserCheck,
   Building2,
   Settings,
+  Monitor,
 } from "lucide-react";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { NAV_ITEMS } from "@/lib/permissions";
@@ -36,6 +37,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   UserCheck,
   Building2,
   Settings,
+  Monitor,
 };
 
 export default function AppSidebar() {
@@ -53,21 +55,17 @@ export default function AppSidebar() {
     lastNavTime.current[path] = now;
   }
 
-  const isActive = (path: string, exact = false) => {
-    if (exact) return pathname === path;
-    if (path.startsWith("/settings")) {
-      return pathname.startsWith("/settings");
-    }
+  const isActive = (path: string) => {
+    if (path.startsWith("/settings")) return pathname.startsWith("/settings");
     return pathname === path || pathname.startsWith(path + "/");
   };
 
   const visibleItems = loading
-    ? [] // show nothing while loading — avoids flicker of forbidden items
+    ? []
     : NAV_ITEMS.filter((item) => item.alwaysVisible || can(item.permission));
 
   return (
     <aside className="app-sidebar">
-      {/* Brand — top of sidebar */}
       <Link href="/" className="app-sidebar-brand">
         <Image
           src="/bkcrmdarkmode.png"
@@ -80,19 +78,14 @@ export default function AppSidebar() {
           unoptimized
         />
       </Link>
+
       <nav className="app-sidebar-nav">
         {loading ? (
           Array.from({ length: 12 }).map((_, i) => (
             <div
               key={i}
               className="app-nav-item"
-              style={{
-                pointerEvents: "none",
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "8px 12px",
-              }}
+              style={{ pointerEvents: "none", display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px" }}
             >
               <ShimmerBar width={15} height={15} radius="4px" style={{ opacity: 0.7 }} />
               <ShimmerBar width={50 + (i % 4) * 12} height={11} radius="3px" style={{ opacity: 0.6 }} />

@@ -1,0 +1,209 @@
+
+<h2 class="sr-only">BK Media CRM — LED Department Dispatch list with vehicle assignment for staff and LED panel equipment loading</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.metric{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+.two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.einfo{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:14px;display:flex;gap:16px;flex-wrap:wrap}
+.ei{font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px}
+.ei span{color:var(--color-text-primary);font-weight:500}
+.v-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:12px;transition:border-color .15s}
+.v-card.active{border-color:var(--color-border-info)}
+.v-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.v-name{font-size:14px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px}
+.v-num{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.vb-t{background:#E6F1FB;color:#0C447C;font-size:10px;padding:2px 8px;border-radius:20px}
+.vb-v{background:#E1F5EE;color:#085041;font-size:10px;padding:2px 8px;border-radius:20px}
+.vb-c{background:#FAEEDA;color:#633806;font-size:10px;padding:2px 8px;border-radius:20px}
+.slot-label{font-size:11px;color:var(--color-text-secondary);font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;min-height:26px}
+.chip{font-size:11px;padding:3px 9px;border-radius:20px;display:flex;align-items:center;gap:4px;cursor:pointer;transition:all .15s}
+.s-chip{background:var(--color-background-info);color:var(--color-text-info);border:0.5px solid transparent}
+.s-chip:hover{background:var(--color-background-danger);color:var(--color-text-danger)}
+.e-chip{background:var(--color-background-secondary);color:var(--color-text-primary);border:0.5px solid var(--color-border-tertiary)}
+.e-chip:hover{background:var(--color-background-danger);color:var(--color-text-danger);border-color:transparent}
+.empty-hint{font-size:11px;color:var(--color-text-tertiary)}
+.btn-row{display:flex;gap:6px}
+.pool-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:12px;cursor:pointer;border:0.5px solid transparent;transition:all .15s;margin-bottom:4px}
+.pool-item:hover{border-color:var(--color-border-info);background:var(--color-background-info)}
+.pool-item.done{opacity:0.38;pointer-events:none}
+.pbar{height:5px;background:var(--color-border-tertiary);border-radius:3px;margin-top:5px}
+.pbar-fill{height:100%;border-radius:3px;background:var(--color-text-success);transition:width .3s}
+.sqft-chip{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--color-background-info);color:var(--color-text-info)}
+.action-bar{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('LED client requirements list PDF generate કરો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Requirements list
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">LED dispatch — vehicle assignment</span>
+    </div>
+    <span class="badge" style="background:#FAEEDA;color:#633806">Warehouse</span>
+  </div>
+
+  <div class="einfo">
+    <div class="ei"><i class="ti ti-calendar" style="font-size:12px" aria-hidden="true"></i> Dispatch: <span>14 May 2026 — 5:00 AM</span></div>
+    <div class="ei"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i> To: <span>ધોલેરાધામ (220 km)</span></div>
+    <div class="ei"><i class="ti ti-clock" style="font-size:12px" aria-hidden="true"></i> ETA: <span>~4 hrs</span></div>
+    <div class="ei"><i class="ti ti-device-tv" style="font-size:12px" aria-hidden="true"></i> Total LED: <span>6,300 sq.ft</span></div>
+  </div>
+
+  <div class="sgrid">
+    <div class="metric"><div class="metric-label">Total vehicles</div><div class="metric-value">4</div></div>
+    <div class="metric"><div class="metric-label">Staff assigned</div><div class="metric-value" style="color:var(--color-text-success)" id="m-s">0/8</div></div>
+    <div class="metric"><div class="metric-label">Equipment loaded</div><div class="metric-value" style="color:var(--color-text-info)" id="m-e">0/10</div></div>
+    <div class="metric"><div class="metric-label">Status</div><div class="metric-value" style="font-size:13px;padding-top:6px" id="m-st"><span class="badge ba">Pending</span></div></div>
+  </div>
+
+  <div class="two-col">
+    <div id="v-container"></div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-users" style="font-size:14px" aria-hidden="true"></i> Staff pool <span style="font-size:11px;color:var(--color-text-secondary);font-weight:400;margin-left:4px">— vehicle select → tap</span></div>
+        <div id="staff-pool"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-device-tv" style="font-size:14px" aria-hidden="true"></i> LED equipment pool <span style="font-size:11px;color:var(--color-text-secondary);font-weight:400;margin-left:4px">— vehicle select → tap</span></div>
+        <div id="equip-pool"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-chart-bar" style="font-size:14px" aria-hidden="true"></i> Loading progress</div>
+        <div id="progress"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button onclick="sendPrompt('LED dispatch PDF download કરો')" style="background:var(--color-background-success);color:var(--color-text-success);border-color:transparent"><i class="ti ti-file-export" style="font-size:13px" aria-hidden="true"></i> Dispatch PDF ↗</button>
+    <button onclick="sendPrompt('LED event execution screen બતાવો')"><i class="ti ti-arrow-right" style="font-size:13px" aria-hidden="true"></i> Event execution ↗</button>
+  </div>
+</div>
+
+<script>
+const vehicles=[
+  {id:'v1',name:'Large truck 1',num:'GJ-06-AB-1234',type:'t',s:[],e:[]},
+  {id:'v2',name:'Large truck 2',num:'GJ-06-CD-5678',type:'t',s:[],e:[]},
+  {id:'v3',name:'Tempo traveller',num:'GJ-06-EF-9012',type:'v',s:[],e:[]},
+  {id:'v4',name:'Management car',num:'GJ-06-GH-3456',type:'c',s:[],e:[]},
+];
+
+const staff=[
+  {id:'s1',name:'Rishi Kumar',role:'LED operator'},
+  {id:'s2',name:'Dev Vora',role:'LED technician'},
+  {id:'s3',name:'Mehul Shah',role:'LED operator'},
+  {id:'s4',name:'Priya Joshi',role:'LED controller'},
+  {id:'s5',name:'Karan Patel',role:'LED operator'},
+  {id:'s6',name:'Nirav Parmar',role:'LED technician'},
+  {id:'s7',name:'Jignesh Rao',role:'LED operator'},
+  {id:'s8',name:'Viral Desai',role:'LED controller'},
+];
+
+const equip=[
+  {id:'e1',name:'P4 panels — Sabha Mandap',detail:'4,480 sq.ft · NVS + VCORE lots'},
+  {id:'e2',name:'P4 panels — OutDoor Campus',detail:'1,820 sq.ft · vendor lot'},
+  {id:'e3',name:'LED controllers x4',detail:'Signal processors + backup'},
+  {id:'e4',name:'Video processors x2',detail:'Main + backup unit'},
+  {id:'e5',name:'Power distribution boxes',detail:'3 units · 60 KVA total'},
+  {id:'e6',name:'Signal cables (fiber)',detail:'500m fiber optic cable'},
+  {id:'e7',name:'Power cables + conduit',detail:'Heavy duty 3-phase wiring'},
+  {id:'e8',name:'Truss + rigging hardware',detail:'For Dom screens + On Stage'},
+  {id:'e9',name:'Tools + spare parts kit',detail:'Spare panels, connectors, fuses'},
+  {id:'e10',name:'Control desk + laptops',detail:'2 laptops + LED control software'},
+];
+
+let activeV=null, activeType=null;
+
+function allAssigned(type){return vehicles.flatMap(v=>type==='s'?v.s:v.e);}
+function vbClass(t){return t==='t'?'vb-t':t==='v'?'vb-v':'vb-c';}
+function vbLabel(t){return t==='t'?'Truck':t==='v'?'Tempo traveller':'Car';}
+function vIcon(t){return t==='t'?'ti-truck':t==='v'?'ti-bus':'ti-car';}
+
+function render(){
+  const vc=document.getElementById('v-container');
+  vc.innerHTML=vehicles.map(v=>{
+    const isAct=activeV===v.id;
+    const sc=v.s.map(id=>{const x=staff.find(s=>s.id===id);return x?`<span class="chip s-chip" onclick="remove('${v.id}','${id}','s')" title="Remove">${x.name} <i class="ti ti-x" style="font-size:9px" aria-hidden="true"></i></span>`:''}).join('');
+    const ec=v.e.map(id=>{const x=equip.find(e=>e.id===id);return x?`<span class="chip e-chip" onclick="remove('${v.id}','${id}','e')" title="Remove">${x.name} <i class="ti ti-x" style="font-size:9px" aria-hidden="true"></i></span>`:''}).join('');
+    return`<div class="v-card${isAct?' active':''}">
+      <div class="v-header">
+        <div>
+          <div class="v-name"><i class="ti ${vIcon(v.type)}" style="font-size:16px" aria-hidden="true"></i>${v.name}<span class="${vbClass(v.type)}">${vbLabel(v.type)}</span></div>
+          <div class="v-num">${v.num}</div>
+        </div>
+        <div class="btn-row">
+          <button style="font-size:11px;padding:4px 10px;${isAct&&activeType==='s'?'background:var(--color-background-info);color:var(--color-text-info);border-color:transparent':''}" onclick="setActive('${v.id}','s')"><i class="ti ti-user-plus" style="font-size:11px" aria-hidden="true"></i> Staff</button>
+          <button style="font-size:11px;padding:4px 10px;${isAct&&activeType==='e'?'background:var(--color-background-info);color:var(--color-text-info);border-color:transparent':''}" onclick="setActive('${v.id}','e')"><i class="ti ti-device-tv" style="font-size:11px" aria-hidden="true"></i> LED equipment</button>
+        </div>
+      </div>
+      <div class="slot-label"><i class="ti ti-users" style="font-size:11px" aria-hidden="true"></i>Staff (${v.s.length})</div>
+      <div class="chips">${sc||'<span class="empty-hint">Staff button tap → pool માંથી select</span>'}</div>
+      <div class="slot-label"><i class="ti ti-device-tv" style="font-size:11px" aria-hidden="true"></i>LED equipment (${v.e.length})</div>
+      <div class="chips" style="margin-bottom:0">${ec||'<span class="empty-hint">LED equipment button tap → pool માંથી select</span>'}</div>
+    </div>`;
+  }).join('');
+
+  const as=allAssigned('s'), ae=allAssigned('e');
+
+  document.getElementById('staff-pool').innerHTML=staff.map(s=>{
+    const done=as.includes(s.id);
+    const canAdd=activeType==='s'&&!done;
+    return`<div class="pool-item${done?' done':''}" onclick="${canAdd?`add('${s.id}','s')`:''}" style="${!canAdd&&!done?'cursor:default':''}">
+      <div><span style="font-weight:500;color:var(--color-text-primary)">${s.name}</span><span style="color:var(--color-text-secondary);font-size:11px;margin-left:5px">${s.role}</span></div>
+      ${done?'<i class="ti ti-check" style="font-size:13px;color:var(--color-text-success)" aria-hidden="true"></i>':canAdd?'<i class="ti ti-plus" style="font-size:13px;color:var(--color-text-info)" aria-hidden="true"></i>':''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('equip-pool').innerHTML=equip.map(e=>{
+    const done=ae.includes(e.id);
+    const canAdd=activeType==='e'&&!done;
+    return`<div class="pool-item${done?' done':''}" onclick="${canAdd?`add('${e.id}','e')`:''}" style="${!canAdd&&!done?'cursor:default':''}">
+      <div>
+        <div style="font-weight:500;color:var(--color-text-primary)">${e.name}</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px">${e.detail}</div>
+      </div>
+      ${done?'<i class="ti ti-check" style="font-size:13px;color:var(--color-text-success)" aria-hidden="true"></i>':canAdd?'<i class="ti ti-plus" style="font-size:13px;color:var(--color-text-info)" aria-hidden="true"></i>':''}
+    </div>`;
+  }).join('');
+
+  const sc=as.length, ec=ae.length;
+  const sp=Math.round(sc/staff.length*100), ep=Math.round(ec/equip.length*100);
+  const allDone=sc===staff.length&&ec===equip.length;
+  document.getElementById('m-s').textContent=sc+'/'+staff.length;
+  document.getElementById('m-e').textContent=ec+'/'+equip.length;
+  document.getElementById('m-st').innerHTML=allDone?'<span class="badge bg">Ready!</span>':'<span class="badge ba">Pending</span>';
+  document.getElementById('progress').innerHTML=`
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--color-text-secondary)">Staff</span><span style="font-weight:500">${sc} / ${staff.length}</span></div>
+      <div class="pbar"><div class="pbar-fill" style="width:${sp}%"></div></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--color-text-secondary)">LED equipment</span><span style="font-weight:500">${ec} / ${equip.length}</span></div>
+      <div class="pbar"><div class="pbar-fill" style="width:${ep}%"></div></div>
+    </div>
+    <div style="font-size:12px;color:${allDone?'var(--color-text-success)':'var(--color-text-tertiary)'}">${allDone?'<i class="ti ti-circle-check" style="font-size:12px;vertical-align:-1px" aria-hidden="true"></i> Dispatch ready!':'Vehicle select → pool items tap'}</div>`;
+}
+
+function setActive(vid,type){activeV=vid;activeType=type;render();}
+function add(id,type){if(!activeV)return;const v=vehicles.find(x=>x.id===activeV);if(!v)return;const arr=type==='s'?v.s:v.e;if(!arr.includes(id))arr.push(id);render();}
+function remove(vid,id,type){const v=vehicles.find(x=>x.id===vid);if(!v)return;if(type==='s')v.s=v.s.filter(x=>x!==id);else v.e=v.e.filter(x=>x!==id);render();}
+
+render();
+</script>

@@ -1,0 +1,291 @@
+
+<h2 class="sr-only">BK Media CRM — LED Department Quotation PDF with place-wise breakdown showing location, type, dimensions, sqft, days, rate and amount</h2>
+<style>
+*{box-sizing:border-box}
+.pg{font-family:var(--font-sans)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:16px}
+.back-btn{font-size:13px;color:var(--color-text-secondary);background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--color-text-primary)}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.ba{background:var(--color-background-warning);color:var(--color-text-warning)}
+.bg{background:var(--color-background-success);color:var(--color-text-success)}
+.bb{background:var(--color-background-info);color:var(--color-text-info)}
+.two-col{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.internal-note{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;color:var(--color-text-secondary);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.pdf-wrap{background:#fff;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:26px 30px;color:#1a1a1a;font-family:var(--font-sans)}
+.pdf-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #1a1a1a}
+.pdf-company{font-size:18px;font-weight:500;color:#1a1a1a}
+.pdf-company-sub{font-size:11px;color:#666;margin-top:3px;line-height:1.6}
+.pdf-quot-block{text-align:right}
+.pdf-quot-label{font-size:10px;color:#999;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px}
+.pdf-quot-num{font-size:15px;font-weight:500;color:#1a1a1a}
+.pdf-quot-date{font-size:11px;color:#666;margin-top:3px}
+.pdf-to{margin-bottom:16px}
+.pdf-to-label{font-size:10px;color:#999;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:5px}
+.pdf-to-name{font-size:14px;font-weight:500;color:#1a1a1a}
+.pdf-to-sub{font-size:11px;color:#555;margin-top:2px}
+.pdf-event-strip{background:#f5f5f5;border-radius:8px;padding:10px 14px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pdf-ei{display:flex;flex-direction:column;gap:2px}
+.pdf-ei-label{font-size:9px;color:#999;letter-spacing:0.08em;text-transform:uppercase}
+.pdf-ei-val{font-size:12px;font-weight:500;color:#1a1a1a}
+.place-header{font-size:12px;font-weight:500;color:#1a1a1a;padding:10px 0 6px;border-bottom:1px solid #1a1a1a;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.place-header:not(:first-of-type){margin-top:14px}
+.pdf-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:4px;table-layout:fixed}
+.pdf-table th{text-align:left;font-size:10px;color:#999;padding:0 6px 6px;border-bottom:0.5px solid #ddd;letter-spacing:0.05em;text-transform:uppercase;font-weight:500}
+.pdf-table td{padding:7px 6px;border-bottom:0.5px solid #f0f0f0;color:#333;vertical-align:middle}
+.pdf-table tr:last-child td{border-bottom:none}
+.pdf-table .num{text-align:right}
+.pdf-table .ctr{text-align:center}
+.place-subtotal{display:flex;justify-content:flex-end;padding:6px 0;font-size:11px;color:#555;border-top:0.5px solid #e0e0e0;margin-top:2px}
+.place-subtotal span:last-child{font-weight:500;color:#1a1a1a;margin-left:8px}
+.sqft-strip{background:#f5f5f5;border-radius:6px;padding:8px 12px;margin:12px 0;display:flex;justify-content:space-between;align-items:center;font-size:11px}
+.sqft-strip-item{text-align:center}
+.sqft-strip-label{color:#999;margin-bottom:2px}
+.sqft-strip-val{font-weight:500;color:#1a1a1a}
+.pdf-totals{display:flex;justify-content:flex-end;margin-bottom:14px}
+.pdf-totals-box{min-width:210px}
+.pdf-total-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:#555}
+.pdf-total-row span:last-child{color:#1a1a1a}
+.pdf-total-final{display:flex;justify-content:space-between;font-size:15px;font-weight:500;padding:10px 0 0;margin-top:6px;border-top:2px solid #1a1a1a;color:#1a1a1a}
+.pdf-note{font-size:11px;color:#777;border-top:0.5px solid #e0e0e0;padding-top:12px;line-height:1.7}
+.pdf-footer{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px;padding-top:12px;border-top:0.5px solid #e0e0e0}
+.pdf-sign{text-align:center;min-width:120px}
+.pdf-sign-line{height:1px;background:#1a1a1a;margin-bottom:5px}
+.pdf-sign-label{font-size:10px;color:#999}
+.pdf-stamp{width:52px;height:52px;border-radius:50%;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#1a1a1a;text-align:center;line-height:1.3}
+.tl-item{display:flex;gap:10px;padding-bottom:10px}
+.tl-item:last-child{padding-bottom:0}
+.tl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.tl-line{width:1px;flex:1;background:var(--color-border-tertiary);margin-top:3px}
+.tl-title{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.tl-time{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+.rev-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:12px;margin-bottom:6px}
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="back-btn" onclick="sendPrompt('BK Media LED Department inquiry form બતાવો')">
+        <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Inquiry
+      </button>
+      <span style="font-size:13px;color:var(--color-text-tertiary)">/</span>
+      <span style="font-size:14px;font-weight:500;color:var(--color-text-primary)">Quotation — BKM/26-27/05/14</span>
+      <span class="badge ba" id="status-badge">Sent</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="addRevision()"><i class="ti ti-edit" style="font-size:13px" aria-hidden="true"></i> Revise ↗</button>
+      <button onclick="markApproved()" id="approve-btn" style="background:var(--color-background-success);color:var(--color-text-success);border-color:transparent"><i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> Mark approved ↗</button>
+    </div>
+  </div>
+
+  <div class="internal-note">
+    <i class="ti ti-info-circle" style="font-size:14px" aria-hidden="true"></i>
+    LED quotation — client ને rate/sq.ft સાથે full breakdown દેખાય છે
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="pdf-wrap">
+        <div class="pdf-header">
+          <div>
+            <div class="pdf-company">BK Media</div>
+            <div class="pdf-company-sub">Media Production Services · Vadodara, Gujarat<br>+91 98250 00000 · info@bkmedia.in · GST: 24XXXXX1234X1ZX</div>
+          </div>
+          <div class="pdf-quot-block">
+            <div class="pdf-quot-label">Quotation</div>
+            <div class="pdf-quot-num" id="qnum">BKM/26-27/05/14</div>
+            <div class="pdf-quot-date">Date: 09 May 2026</div>
+            <div class="pdf-quot-date">Valid for 15 days</div>
+          </div>
+        </div>
+
+        <div class="pdf-to">
+          <div class="pdf-to-label">Quotation for</div>
+          <div class="pdf-to-name">શ્રી મદનમોહનજી મહારાજ ટ્રસ્ટ</div>
+          <div class="pdf-to-sub">ધોલેરાધામ, ગુજરાત &nbsp;·&nbsp; Attn: Trustee</div>
+        </div>
+
+        <div class="pdf-event-strip">
+          <div class="pdf-ei"><span class="pdf-ei-label">Event</span><span class="pdf-ei-val">દ્વિશતાબ્દી મહોત્સવ</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Dates</span><span class="pdf-ei-val">15–20 May 2026</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Days</span><span class="pdf-ei-val">5 days</span></div>
+          <div class="pdf-ei"><span class="pdf-ei-label">Venue</span><span class="pdf-ei-val">ધોલેરાધામ</span></div>
+        </div>
+
+        <div class="place-header"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i> Sabha Mandap</div>
+        <table class="pdf-table">
+          <thead>
+            <tr>
+              <th style="width:28px">No.</th>
+              <th style="width:120px">Location</th>
+              <th style="width:52px">Type</th>
+              <th style="width:72px">H × W (ft)</th>
+              <th style="width:32px" class="ctr">Nos</th>
+              <th style="width:60px" class="num">Sq.ft</th>
+              <th style="width:38px" class="ctr">Days</th>
+              <th style="width:68px" class="num">Rate/sq.ft</th>
+              <th style="width:72px" class="num">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>On Stage</td><td>P4</td><td>16 × 28</td><td class="ctr">2</td><td class="num">896</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹2,24,000</td></tr>
+            <tr><td>2</td><td>Center Dom</td><td>P4</td><td>8 × 14</td><td class="ctr">10</td><td class="num">1,120</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹28,00,000</td></tr>
+            <tr><td>3</td><td>Left Side Dom</td><td>P4</td><td>8 × 14</td><td class="ctr">10</td><td class="num">1,120</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹28,00,000</td></tr>
+            <tr><td>4</td><td>Right Side Dom</td><td>P4</td><td>8 × 14</td><td class="ctr">10</td><td class="num">1,120</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹28,00,000</td></tr>
+            <tr><td>5</td><td>On Stage</td><td>P4</td><td>8 × 14</td><td class="ctr">2</td><td class="num">224</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹5,60,000</td></tr>
+          </tbody>
+        </table>
+        <div class="place-subtotal"><span>Sabha Mandap subtotal</span><span>₹91,84,000</span></div>
+
+        <div class="place-header"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i> OutDoor Campus</div>
+        <table class="pdf-table">
+          <thead>
+            <tr>
+              <th style="width:28px">No.</th>
+              <th style="width:120px">Location</th>
+              <th style="width:52px">Type</th>
+              <th style="width:72px">H × W (ft)</th>
+              <th style="width:32px" class="ctr">Nos</th>
+              <th style="width:60px" class="num">Sq.ft</th>
+              <th style="width:38px" class="ctr">Days</th>
+              <th style="width:68px" class="num">Rate/sq.ft</th>
+              <th style="width:72px" class="num">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>Utsav Gate</td><td>P4</td><td>10 × 18</td><td class="ctr">2</td><td class="num">360</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹9,00,000</td></tr>
+            <tr><td>2</td><td>VIP Bhojnalay</td><td>P4</td><td>8 × 14</td><td class="ctr">2</td><td class="num">224</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹5,60,000</td></tr>
+            <tr><td>3</td><td>Rasodu</td><td>P4</td><td>8 × 14</td><td class="ctr">2</td><td class="num">224</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹5,60,000</td></tr>
+            <tr><td>4</td><td>Yagnshala</td><td>P4</td><td>8 × 14</td><td class="ctr">2</td><td class="num">224</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹5,60,000</td></tr>
+            <tr><td>5</td><td>Welcome</td><td>P4</td><td>8 × 14</td><td class="ctr">2</td><td class="num">224</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹5,60,000</td></tr>
+            <tr><td>6</td><td>Add Mate Led</td><td>P4</td><td>8 × 14</td><td class="ctr">5</td><td class="num">560</td><td class="ctr">5</td><td class="num">₹50</td><td class="num">₹14,00,000</td></tr>
+          </tbody>
+        </table>
+        <div class="place-subtotal"><span>OutDoor Campus subtotal</span><span>₹45,40,000</span></div>
+
+        <div class="sqft-strip">
+          <div class="sqft-strip-item"><div class="sqft-strip-label">Total sq.ft (per day)</div><div class="sqft-strip-val">6,300 sq.ft</div></div>
+          <div style="width:0.5px;background:#ddd"></div>
+          <div class="sqft-strip-item"><div class="sqft-strip-label">Event days</div><div class="sqft-strip-val">5 days</div></div>
+          <div style="width:0.5px;background:#ddd"></div>
+          <div class="sqft-strip-item"><div class="sqft-strip-label">Total event sq.ft</div><div class="sqft-strip-val" style="color:#185FA5">31,500 sq.ft</div></div>
+        </div>
+
+        <div class="pdf-totals">
+          <div class="pdf-totals-box">
+            <div class="pdf-total-row"><span>Amount before tax</span><span>₹1,37,24,000</span></div>
+            <div class="pdf-total-row"><span>CGST @ 9%</span><span>₹12,35,160</span></div>
+            <div class="pdf-total-row"><span>SGST @ 9%</span><span>₹12,35,160</span></div>
+            <div class="pdf-total-final"><span>Total amount</span><span>₹1,61,94,320</span></div>
+          </div>
+        </div>
+
+        <div style="background:#f5f5f5;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:#555;line-height:1.7">
+          <strong>Bank details:</strong> BK Media · HDFC Bank · A/c: XXXX XXXX 1234 · IFSC: HDFC0001234 · Branch: Vadodara
+        </div>
+
+        <div class="pdf-note">
+          <strong>Terms &amp; conditions:</strong> 50% advance payment required before event. Balance within 7 days after event. LED screens and equipment remain property of BK Media until full payment. Installation and de-installation included. This quotation is valid for 15 days from date of issue.
+        </div>
+
+        <div class="pdf-footer">
+          <div>
+            <div style="font-size:11px;color:#999;margin-bottom:8px">For BK Media</div>
+            <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-label">Authorised signatory</div></div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:11px;color:#999;margin-bottom:4px">BK Media</div>
+            <div class="pdf-stamp">BK<br>MEDIA</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#999;margin-bottom:8px">Client acceptance</div>
+            <div class="pdf-sign"><div class="pdf-sign-line"></div><div class="pdf-sign-label">Signature &amp; stamp</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button onclick="sendPrompt('LED Quotation PDF download કરો')"><i class="ti ti-download" style="font-size:13px" aria-hidden="true"></i> Download PDF ↗</button>
+        <button onclick="sendPrompt('LED Quotation WhatsApp send કરો')"><i class="ti ti-brand-whatsapp" style="font-size:13px" aria-hidden="true"></i> WhatsApp ↗</button>
+        <button onclick="sendPrompt('LED Quotation Email send કરો')"><i class="ti ti-mail" style="font-size:13px" aria-hidden="true"></i> Email ↗</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-timeline" style="font-size:14px" aria-hidden="true"></i> Status timeline</div>
+        <div class="tl-item">
+          <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" style="background:var(--color-text-success)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-title">Quotation created</div><div class="tl-time">09 May · 2:00 PM</div></div>
+        </div>
+        <div class="tl-item">
+          <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" style="background:var(--color-text-success)"></div><div class="tl-line"></div></div>
+          <div><div class="tl-title">PDF sent to client</div><div class="tl-time">09 May · 2:30 PM</div></div>
+        </div>
+        <div class="tl-item">
+          <div style="display:flex;flex-direction:column;align-items:center"><div class="tl-dot" id="dot3" style="background:var(--color-border-secondary)"></div></div>
+          <div><div class="tl-title" id="tl3" style="color:var(--color-text-secondary)">Awaiting approval</div><div class="tl-time" id="tl3t">Pending</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-history" style="font-size:14px" aria-hidden="true"></i> Revision history</div>
+        <div id="rev-list">
+          <div class="rev-item">
+            <div><div style="font-weight:500;color:var(--color-text-primary)">BKM/26-27/05/14</div><div style="color:var(--color-text-secondary);margin-top:2px">Original · 09 May 2026</div></div>
+            <span class="badge bb">Current</span>
+          </div>
+        </div>
+        <button style="width:100%;margin-top:4px;font-size:12px" onclick="addRevision()"><i class="ti ti-plus" style="font-size:12px" aria-hidden="true"></i> Add revision ↗</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-calculator" style="font-size:14px" aria-hidden="true"></i> Price summary</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="color:var(--color-text-secondary)">Sabha Mandap</span><span style="font-weight:500">₹91,84,000</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="color:var(--color-text-secondary)">OutDoor Campus</span><span style="font-weight:500">₹45,40,000</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary)"><span style="color:var(--color-text-secondary)">GST 18%</span><span style="font-weight:500">₹24,70,320</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;padding:8px 0 0;font-weight:500"><span>Total</span><span style="color:var(--color-text-info)">₹1,61,94,320</span></div>
+        </div>
+      </div>
+
+      <div class="card" id="approved-card" style="display:none;border-color:var(--color-border-success)">
+        <div class="card-title" style="color:var(--color-text-success)"><i class="ti ti-circle-check" style="font-size:14px" aria-hidden="true"></i> Approved!</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px">Signed copy received. Warehouse અને LED dept ને auto-notify થઈ ગયું.</div>
+        <button onclick="sendPrompt('LED Department warehouse equipment check screen બતાવો')" style="width:100%;font-size:12px;background:var(--color-background-success);color:var(--color-text-success);border-color:transparent"><i class="ti ti-arrow-right" style="font-size:12px" aria-hidden="true"></i> Warehouse check ↗</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let revCount=0;
+function markApproved(){
+  document.getElementById('status-badge').textContent='Approved';
+  document.getElementById('status-badge').className='badge bg';
+  document.getElementById('approve-btn').disabled=true;
+  document.getElementById('approve-btn').innerHTML='<i class="ti ti-check" style="font-size:13px"></i> Approved';
+  document.getElementById('dot3').style.background='var(--color-text-success)';
+  document.getElementById('tl3').textContent='Client approved';
+  document.getElementById('tl3').style.color='var(--color-text-primary)';
+  const now=new Date();
+  document.getElementById('tl3t').textContent=now.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+' · '+now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('approved-card').style.display='block';
+}
+function addRevision(){
+  revCount++;
+  const list=document.getElementById('rev-list');
+  list.querySelectorAll('.badge.bb').forEach(b=>{b.className='badge';b.style.background='var(--color-background-secondary)';b.style.color='var(--color-text-secondary)';b.textContent='Previous';});
+  const base=document.getElementById('qnum').textContent.split('-')[0];
+  const div=document.createElement('div');
+  div.className='rev-item';
+  div.innerHTML=`<div><div style="font-weight:500;color:var(--color-text-primary)">${base}-${revCount}</div><div style="color:var(--color-text-secondary);margin-top:2px">Revision ${revCount} · ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div></div><span class="badge bb">Current</span>`;
+  list.appendChild(div);
+  document.getElementById('qnum').textContent=`${base}-${revCount}`;
+  document.getElementById('status-badge').textContent='Revised';
+  document.getElementById('status-badge').className='badge ba';
+}
+</script>
