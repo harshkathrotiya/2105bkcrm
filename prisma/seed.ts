@@ -619,6 +619,271 @@ async function main() {
   }
   console.log(`     ✓ ${staffCount} staff\n`);
 
+  // ── 9. TEST INQUIRIES + QUOTATIONS + INVOICES + ASSIGNMENTS + PAYMENTS ────────
+  console.log("  → test orders (5 full end-to-end inquiries)");
+
+  // Grab staff IDs we just created (by name)
+  const allStaff = await prisma.staff.findMany({ select: { id: true, name: true } });
+  function sid(name: string) {
+    const s = allStaff.find(x => x.name === name);
+    if (!s) throw new Error(`Staff not found: ${name}`);
+    return s.id;
+  }
+
+  // ── ORDER 1: New inquiry, no quotation yet ────────────────────────────────────
+  await prisma.inquiry.create({ data: {
+    id: "inq-test-001",
+    client_id: "c-VDL",
+    event_type: "Mahotsav",
+    event_name: "Vadtal Swaminarayan Mahotsav 2026",
+    start_date: "2026-07-10",
+    end_date: "2026-07-12",
+    start_time: "08:00 AM",
+    end_time: "10:00 PM",
+    venue: "Shree Swaminarayan Mandir, Vadtal",
+    notes: "3-day event, need 6 camera setup with full mixer",
+    status: "New",
+    department: "VIDEO",
+    created_at: NOW,
+  }});
+
+  // ── ORDER 2: Quoted ───────────────────────────────────────────────────────────
+  await prisma.inquiry.create({ data: {
+    id: "inq-test-002",
+    client_id: "c-SLG",
+    event_type: "Shibir",
+    event_name: "Salangpur Shibir July 2026",
+    start_date: "2026-07-20",
+    end_date: "2026-07-22",
+    start_time: "07:00 AM",
+    end_time: "09:00 PM",
+    venue: "Kashtabhanjan Dev Mandir, Salangpur",
+    notes: "2-day youth shibir, single camera + drone",
+    status: "Quoted",
+    department: "VIDEO",
+    created_at: NOW,
+  }});
+  await prisma.quotation.create({ data: {
+    id: "quote-test-002",
+    inquiry_id: "inq-test-002",
+    client_name: "Salangpur",
+    event_name: "Salangpur Shibir July 2026",
+    quote_no: "BKM/2026/001",
+    start_date: "2026-07-20",
+    end_date: "2026-07-22",
+    days: 2,
+    venue: "Kashtabhanjan Dev Mandir, Salangpur",
+    status: "Sent",
+    equipment: JSON.stringify([
+      { position: "Center Tally", equipment: "SONY Z150", rate: 4000, days: 2, amount: 8000 },
+      { position: "Drone",        equipment: "DJI Drone",  rate: 5000, days: 2, amount: 10000 },
+      { position: "Editor",       equipment: "",           rate: 3000, days: 2, amount: 6000 },
+    ]),
+    subtotal: 24000,
+    cgst: 2160,
+    sgst: 2160,
+    total: 28320,
+    revision_number: 0,
+    created_at: NOW,
+    sent_at: NOW,
+  }});
+
+  // ── ORDER 3: Confirmed + staff assigned ───────────────────────────────────────
+  await prisma.inquiry.create({ data: {
+    id: "inq-test-003",
+    client_id: "c-BKK",
+    event_type: "Wedding",
+    event_name: "Kaushikbhai Wedding Coverage",
+    start_date: "2026-06-25",
+    end_date: "2026-06-26",
+    start_time: "09:00 AM",
+    end_time: "11:00 PM",
+    venue: "Hotel Surya Palace, Vadodara",
+    notes: "Full wedding coverage — ceremony + reception",
+    status: "Confirmed",
+    department: "VIDEO",
+    created_at: NOW,
+  }});
+  await prisma.quotation.create({ data: {
+    id: "quote-test-003",
+    inquiry_id: "inq-test-003",
+    client_name: "BK Media",
+    event_name: "Kaushikbhai Wedding Coverage",
+    quote_no: "BKM/2026/002",
+    start_date: "2026-06-25",
+    end_date: "2026-06-26",
+    days: 2,
+    venue: "Hotel Surya Palace, Vadodara",
+    status: "Approved",
+    equipment: JSON.stringify([
+      { position: "Center Tally",     equipment: "Sony FX6",     rate: 8000, days: 2, amount: 16000 },
+      { position: "Center Semi Wide", equipment: "SONY Z150-01", rate: 4000, days: 2, amount: 8000 },
+      { position: "Wireless 1",       equipment: "SONY Z150-02", rate: 4000, days: 2, amount: 8000 },
+      { position: "Photo 1",          equipment: "Sony A7IV",    rate: 3500, days: 2, amount: 7000 },
+      { position: "Drone",            equipment: "DJI Drone",    rate: 5000, days: 2, amount: 10000 },
+    ]),
+    subtotal: 49000,
+    cgst: 4410,
+    sgst: 4410,
+    total: 57820,
+    revision_number: 1,
+    created_at: NOW,
+    sent_at: NOW,
+    approved_at: NOW,
+  }});
+  // Staff assignments for order 3
+  const s3_keyur  = sid("Visavadiya Keyur N.");
+  const s3_aryan  = sid("Aryan Savaliya");
+  const s3_anikesh = sid("Anikesh Kalubhai Lakhani");
+  const s3_raj    = sid("Raj Gondaliya");
+  await prisma.staffAssignment.createMany({ data: [
+    { staff_id: s3_keyur,   inquiry_id: "inq-test-003", position_no: 1, position_name: "Center Tally",     days_assigned: 2, rate_per_day: 2500, with_equipment: 0, equipment_rate_per_day: 0, total_amount: 5000,  reporting_time: "08:00 AM", created_at: NOW },
+    { staff_id: s3_aryan,   inquiry_id: "inq-test-003", position_no: 2, position_name: "Center Semi Wide", days_assigned: 2, rate_per_day: 2000, with_equipment: 0, equipment_rate_per_day: 0, total_amount: 4000,  reporting_time: "08:00 AM", created_at: NOW },
+    { staff_id: s3_anikesh, inquiry_id: "inq-test-003", position_no: 3, position_name: "Photo 1",          days_assigned: 2, rate_per_day: 2000, with_equipment: 0, equipment_rate_per_day: 0, total_amount: 4000,  reporting_time: "08:00 AM", created_at: NOW },
+    { staff_id: s3_raj,     inquiry_id: "inq-test-003", position_no: 4, position_name: "Drone",            days_assigned: 2, rate_per_day: 2500, with_equipment: 0, equipment_rate_per_day: 0, total_amount: 5000,  reporting_time: "08:00 AM", created_at: NOW },
+  ]});
+
+  // ── ORDER 4: Completed + invoice paid ─────────────────────────────────────────
+  await prisma.inquiry.create({ data: {
+    id: "inq-test-004",
+    client_id: "c-GDD",
+    event_type: "Patotsav",
+    event_name: "Gadhda Patotsav 2026",
+    start_date: "2026-05-15",
+    end_date: "2026-05-17",
+    start_time: "06:00 AM",
+    end_time: "11:00 PM",
+    venue: "Swaminarayan Mandir, Gadhda",
+    notes: "Annual Patotsav — 3 days, full crew",
+    status: "Confirmed",
+    department: "VIDEO",
+    created_at: NOW,
+  }});
+  await prisma.quotation.create({ data: {
+    id: "quote-test-004",
+    inquiry_id: "inq-test-004",
+    client_name: "Gadhda",
+    event_name: "Gadhda Patotsav 2026",
+    quote_no: "BKM/2026/003",
+    start_date: "2026-05-15",
+    end_date: "2026-05-17",
+    days: 3,
+    venue: "Swaminarayan Mandir, Gadhda",
+    status: "Approved",
+    equipment: JSON.stringify([
+      { position: "Center Tally",   equipment: "Sony FX6",     rate: 8000, days: 3, amount: 24000 },
+      { position: "Wireless 1",     equipment: "SONY Z150-01", rate: 4000, days: 3, amount: 12000 },
+      { position: "Wireless 2",     equipment: "SONY Z150-02", rate: 4000, days: 3, amount: 12000 },
+      { position: "Wireless 3",     equipment: "SONY Z150-03", rate: 4000, days: 3, amount: 12000 },
+      { position: "LED Operator",   equipment: "",             rate: 3000, days: 3, amount: 9000 },
+      { position: "Audio Operator", equipment: "",             rate: 2500, days: 3, amount: 7500 },
+    ]),
+    subtotal: 76500,
+    cgst: 6885,
+    sgst: 6885,
+    total: 90270,
+    revision_number: 0,
+    created_at: NOW,
+    sent_at: NOW,
+    approved_at: NOW,
+  }});
+  await prisma.invoice.create({ data: {
+    id: "inv-test-004",
+    quotation_id: "quote-test-004",
+    invoice_no: "BKM-INV-2026-001",
+    client_name: "Gadhda",
+    event_name: "Gadhda Patotsav 2026",
+    start_date: "2026-05-15",
+    end_date: "2026-05-17",
+    venue: "Swaminarayan Mandir, Gadhda",
+    videography_amount: 90270,
+    photography_amount: 0,
+    advance: 45000,
+    balance: 45270,
+    status: "Partial",
+    advance_received: 1,
+    advance_received_at: "2026-05-10",
+    advance_ref: "UPI-874561",
+    advance_method: "UPI",
+    balance_received: 0,
+    hdd_delivered: 0,
+    deinstall_done: 1,
+    created_at: NOW,
+    due_date: "2026-06-15",
+  }});
+  // Staff assignments + partial payments for order 4
+  const s4_keyur  = sid("Visavadiya Keyur N.");
+  const s4_harsh  = sid("Patel Harsh");
+  const s4_vikas  = sid("Vikas Dangodara");
+  const s4_mayur  = sid("Mayur Senjaliya");
+  const [a4k, a4h, a4v, a4m] = await Promise.all([
+    prisma.staffAssignment.create({ data: { staff_id: s4_keyur, inquiry_id: "inq-test-004", position_no: 1, position_name: "Center Tally",   days_assigned: 3, rate_per_day: 2500, with_equipment: 0, equipment_rate_per_day: 0, total_amount: 7500, reporting_time: "06:00 AM", created_at: NOW }}),
+    prisma.staffAssignment.create({ data: { staff_id: s4_harsh, inquiry_id: "inq-test-004", position_no: 2, position_name: "Mixer Operator", days_assigned: 3, rate_per_day: 2000, with_equipment: 0, equipment_rate_per_day: 0, total_amount: 6000, reporting_time: "06:00 AM", created_at: NOW }}),
+    prisma.staffAssignment.create({ data: { staff_id: s4_vikas, inquiry_id: "inq-test-004", position_no: 3, position_name: "Wireless 1",     days_assigned: 3, rate_per_day: 1800, with_equipment: 0, equipment_rate_per_day: 0, total_amount: 5400, reporting_time: "06:00 AM", created_at: NOW }}),
+    prisma.staffAssignment.create({ data: { staff_id: s4_mayur, inquiry_id: "inq-test-004", position_no: 4, position_name: "Wireless 2",     days_assigned: 3, rate_per_day: 2000, with_equipment: 1, equipment_rate_per_day: 500, total_amount: 7500, reporting_time: "06:00 AM", created_at: NOW }}),
+  ]);
+  await prisma.staffPayment.createMany({ data: [
+    { staff_id: s4_keyur, assignment_id: a4k.id, inquiry_id: "inq-test-004", amount: 7500, payment_type: "Event", payment_method: "Cash", paid_at: "2026-05-18", paid_by_id: "admin-user", notes: "Full payment after event" },
+    { staff_id: s4_harsh, assignment_id: a4h.id, inquiry_id: "inq-test-004", amount: 6000, payment_type: "Event", payment_method: "UPI",  paid_at: "2026-05-18", paid_by_id: "admin-user", reference_no: "UPI-112233" },
+    { staff_id: s4_vikas, assignment_id: a4v.id, inquiry_id: "inq-test-004", amount: 3000, payment_type: "Event", payment_method: "Cash", paid_at: "2026-05-18", paid_by_id: "admin-user", notes: "Partial — balance pending" },
+    { staff_id: s4_mayur, assignment_id: a4m.id, inquiry_id: "inq-test-004", amount: 7500, payment_type: "Event", payment_method: "Cash", paid_at: "2026-05-18", paid_by_id: "admin-user" },
+  ]});
+
+  // ── ORDER 5: LED department inquiry with dispatch ─────────────────────────────
+  await prisma.inquiry.create({ data: {
+    id: "inq-test-005",
+    client_id: "c-DHLR",
+    event_type: "Inauguration",
+    event_name: "Dholera Smart City Inauguration",
+    start_date: "2026-08-05",
+    end_date: "2026-08-05",
+    start_time: "10:00 AM",
+    end_time: "08:00 PM",
+    venue: "Dholera SIR, Ahmedabad",
+    notes: "P4 outdoor LED wall — 24x10 ft main stage backdrop",
+    status: "Quoted",
+    department: "LED",
+    screen_width: 24,
+    screen_height: 10,
+    screen_area_sqft: 240,
+    total_cabinets: 96,
+    led_type: "P4",
+    rate_per_sqft: 350,
+    location: "OUTDOOR",
+    stage_type: "Main stage",
+    dispatch_date: "2026-08-04",
+    dispatch_time: "06:00 AM",
+    vehicle1_number: "GJ06XX1234",
+    vehicle1_driver: "Rameshbhai",
+    created_at: NOW,
+  }});
+  await prisma.quotation.create({ data: {
+    id: "quote-test-005",
+    inquiry_id: "inq-test-005",
+    client_name: "Dholera",
+    event_name: "Dholera Smart City Inauguration",
+    quote_no: "BKM/2026/004",
+    start_date: "2026-08-05",
+    end_date: "2026-08-05",
+    days: 1,
+    venue: "Dholera SIR, Ahmedabad",
+    status: "Sent",
+    equipment: JSON.stringify([
+      { position: "P4 LED Wall 24x10ft", equipment: "P4 LED Cabinets (96 pcs)", rate: 84000, days: 1, amount: 84000 },
+      { position: "LED Operator",        equipment: "",                          rate: 3000,  days: 1, amount: 3000  },
+      { position: "Processor",           equipment: "Novastar MSD300",           rate: 5000,  days: 1, amount: 5000  },
+    ]),
+    subtotal: 92000,
+    cgst: 8280,
+    sgst: 8280,
+    total: 108560,
+    revision_number: 0,
+    created_at: NOW,
+    sent_at: NOW,
+  }});
+
+  console.log("     ✓ 5 test orders created\n");
+
   console.log("✅ Seed complete!");
   console.log(`   • 1 user (admin/admin)`);
   console.log(`   • ${rpData.length} role-permission rows (Admin, Manager, Operator, Department Head, Staff)`);
@@ -628,6 +893,7 @@ async function main() {
   console.log(`   • ${uniqueKitNames.length} kits`);
   console.log(`   • ${eqCount} equipment items`);
   console.log(`   • ${staffCount} staff`);
+  console.log(`   • 5 test orders (inquiries + quotations + invoice + staff assignments + payments)`);
 }
 
 main()

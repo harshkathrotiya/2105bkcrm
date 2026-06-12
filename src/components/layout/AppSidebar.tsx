@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useRef } from "react";
+import { useTheme } from "@/lib/theme-context";
 import {
   LayoutDashboard,
   Users,
@@ -40,6 +41,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
 export default function AppSidebar() {
   const pathname = usePathname();
   const { can, loading } = useCurrentUser();
+  const { theme } = useTheme();
   const lastNavTime = useRef<Record<string, number>>({});
 
   function throttledNav(path: string, e: React.MouseEvent) {
@@ -68,11 +70,12 @@ export default function AppSidebar() {
       {/* Brand — top of sidebar */}
       <Link href="/" className="app-sidebar-brand">
         <Image
-          src="/bkmlogo.jpeg?v=4"
+          src="/bkcrmdarkmode.png"
           alt="BK Media"
           width={110}
           height={110}
           className="app-sidebar-brand-logo"
+          style={{ filter: theme === "dark" ? "none" : "invert(1)" }}
           priority
           unoptimized
         />

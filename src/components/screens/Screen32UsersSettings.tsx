@@ -406,7 +406,17 @@ export default function Screen32UsersSettings() {
               {newRole === "Staff" && (
                 <div className="field">
                   <div className="flbl">Link to Staff Record *</div>
-                  <select className="fsel" value={newStaffId} onChange={(e) => setNewStaffId(e.target.value ? Number(e.target.value) : "")}>
+                  <select className="fsel" value={newStaffId} onChange={(e) => {
+                    const id = e.target.value ? Number(e.target.value) : "";
+                    setNewStaffId(id);
+                    if (id) {
+                      const s = staffList.find((x) => x.id === id);
+                      if (s) {
+                        if (!newName.trim()) setNewName(s.name);
+                        if (!newUsername.trim()) setNewUsername(s.name.split(" ")[0].toLowerCase());
+                      }
+                    }
+                  }}>
                     <option value="">— Select staff member —</option>
                     {staffList.map((s) => (
                       <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
