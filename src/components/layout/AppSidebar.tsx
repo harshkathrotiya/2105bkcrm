@@ -20,8 +20,24 @@ import {
   Settings,
 } from "lucide-react";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { useLang } from "@/lib/lang-context";
 import { NAV_ITEMS } from "@/lib/permissions";
 import { ShimmerBar } from "../ui/LoadingSkeleton";
+
+const NAV_LABEL_KEY: Record<string, string> = {
+  "Dashboard":  "nav_dashboard",
+  "Clients":    "nav_clients",
+  "Inquiries":  "nav_inquiries",
+  "Quotations": "nav_quotations",
+  "Invoices":   "nav_invoices",
+  "Calendar":   "nav_calendar",
+  "Warehouse":  "nav_warehouse",
+  "Equipment":  "nav_equipment",
+  "Kits":       "nav_kits",
+  "Vendors":    "nav_vendors",
+  "Staff":      "nav_staff",
+  "Settings":   "nav_settings",
+};
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard,
@@ -42,6 +58,7 @@ export default function AppSidebar() {
   const pathname = usePathname();
   const { can, loading } = useCurrentUser();
   const { theme } = useTheme();
+  const { t } = useLang();
   const lastNavTime = useRef<Record<string, number>>({});
 
   function throttledNav(path: string, e: React.MouseEvent) {
@@ -114,7 +131,7 @@ export default function AppSidebar() {
                 <span className="app-nav-icon" aria-hidden="true">
                   <Icon size={15} strokeWidth={1.8} />
                 </span>
-                <span className="app-nav-label">{item.label}</span>
+                <span className="app-nav-label">{NAV_LABEL_KEY[item.label] ? t(NAV_LABEL_KEY[item.label] as any) : item.label}</span>
               </Link>
             );
           })

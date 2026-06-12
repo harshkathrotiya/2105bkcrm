@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { TextField } from "../ui/Field";
 import Button from "../ui/Button";
+import { useLang } from "@/lib/lang-context";
 import * as api from "@/lib/api";
 
 export default function Screen31Login() {
+  const { t } = useLang();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/clients";
@@ -20,7 +22,7 @@ export default function Screen31Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim() || !password.trim()) {
-      setError("Please fill in all fields.");
+      setError(t("login_fill_fields"));
       return;
     }
 
@@ -77,10 +79,10 @@ export default function Screen31Login() {
             <span style={{ fontSize: "16px", fontWeight: "bold", color: "#fff" }}>BK</span>
           </div>
           <h2 style={{ fontSize: "20px", fontWeight: 600, color: "var(--tx)", margin: 0 }}>
-            Welcome to BK Media
+            {t("login_welcome")}
           </h2>
           <p style={{ fontSize: "11.5px", color: "var(--tx3)", marginTop: "4px", margin: 0 }}>
-            Sign in to access Video Department CRM
+            {t("login_subtitle")}
           </p>
         </div>
 
@@ -107,9 +109,9 @@ export default function Screen31Login() {
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <TextField
-            label="Username"
+            label={t("login_username")}
             type="text"
-            placeholder="e.g. admin"
+            placeholder={t("login_placeholder_user")}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             disabled={loading}
@@ -118,7 +120,7 @@ export default function Screen31Login() {
           />
 
           <TextField
-            label="Password"
+            label={t("login_password")}
             type="password"
             placeholder="••••••••"
             value={password}
@@ -141,7 +143,7 @@ export default function Screen31Login() {
               fontWeight: 500,
             }}
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? t("login_signing_in") : t("login_btn")}
           </Button>
         </form>
 

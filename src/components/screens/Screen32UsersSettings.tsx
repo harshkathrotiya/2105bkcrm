@@ -8,19 +8,30 @@ import ScreenFrame from "../ui/ScreenFrame";
 import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { useTheme } from "@/lib/theme-context";
+import { useLang } from "@/lib/lang-context";
 import * as api from "@/lib/api";
 import type { UserRow } from "@/lib/api";
 
-const ROLE_COLOR: Record<string, { bg: string; dot: string; text: string }> = {
-  Admin:             { bg: "#FEE2E2", dot: "#EF4444", text: "#DC2626" },
-  Manager:           { bg: "#EFF6FF", dot: "#3B82F6", text: "#1D4ED8" },
-  Operator:          { bg: "#F0FDF4", dot: "#22C55E", text: "#15803D" },
-  "Department Head": { bg: "#FEF3C7", dot: "#F59E0B", text: "#B45309" },
-  Staff:             { bg: "#F5F3FF", dot: "#8B5CF6", text: "#6D28D9" },
-};
-
 function RolePill({ role }: { role: string }) {
-  const c = ROLE_COLOR[role] ?? { bg: "#F1F5F9", dot: "#94A3B8", text: "#475569" };
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const roleColors = isDark ? {
+    Admin:             { bg: "rgba(255, 255, 255, 0.08)", dot: "#e2e8f0", text: "#e2e8f0" },
+    Manager:           { bg: "rgba(255, 255, 255, 0.06)", dot: "#cbd5e1", text: "#cbd5e1" },
+    Operator:          { bg: "rgba(255, 255, 255, 0.04)", dot: "#94a3b8", text: "#94a3b8" },
+    "Department Head": { bg: "rgba(255, 255, 255, 0.04)", dot: "#94a3b8", text: "#94a3b8" },
+    Staff:             { bg: "rgba(255, 255, 255, 0.02)", dot: "#737373", text: "#94a3b8" },
+  } : {
+    Admin:             { bg: "#FEE2E2", dot: "#EF4444", text: "#DC2626" },
+    Manager:           { bg: "#EFF6FF", dot: "#3B82F6", text: "#1D4ED8" },
+    Operator:          { bg: "#F0FDF4", dot: "#22C55E", text: "#15803D" },
+    "Department Head": { bg: "#FEF3C7", dot: "#F59E0B", text: "#B45309" },
+    Staff:             { bg: "#F5F3FF", dot: "#8B5CF6", text: "#6D28D9" },
+  };
+
+  const c = roleColors[role as keyof typeof roleColors] ?? (isDark ? { bg: "rgba(255,255,255,0.04)", dot: "#94a3b8", text: "#94a3b8" } : { bg: "#F1F5F9", dot: "#94A3B8", text: "#475569" });
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: c.bg, color: c.text, borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 500 }}>
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.dot, flexShrink: 0 }} />
@@ -30,6 +41,19 @@ function RolePill({ role }: { role: string }) {
 }
 
 function StatusPill({ active }: { active: boolean }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  if (isDark) {
+    return active
+      ? <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255, 255, 255, 0.08)", color: "#e2e8f0", borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 500 }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#e2e8f0", flexShrink: 0 }} /> Active
+        </span>
+      : <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255, 255, 255, 0.02)", color: "#94a3b8", borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 500 }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#737373", flexShrink: 0 }} /> Inactive
+        </span>;
+  }
+
   return active
     ? <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "#F0FDF4", color: "#15803D", borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 500 }}>
         <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", flexShrink: 0 }} /> Active
@@ -39,16 +63,17 @@ function StatusPill({ active }: { active: boolean }) {
       </span>;
 }
 
-const ROLE_HINT: Record<string, string> = {
-  Admin: "Full access including user management.",
-  Manager: "Can create and edit all records. Cannot manage users or delete equipment.",
-  Operator: "Read-only access across all sections.",
-  "Department Head": "View and edit access scoped to their department.",
-  Staff: "See own assigned events, dates, and payments only.",
+const ROLE_HINT_KEY: Record<string, "role_hint_admin" | "role_hint_manager" | "role_hint_operator" | "role_hint_dept" | "role_hint_staff"> = {
+  Admin: "role_hint_admin",
+  Manager: "role_hint_manager",
+  Operator: "role_hint_operator",
+  "Department Head": "role_hint_dept",
+  Staff: "role_hint_staff",
 };
 
 export default function Screen32UsersSettings() {
   const { user: currentUser } = useCurrentUser();
+  const { t } = useLang();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -116,9 +141,9 @@ export default function Screen32UsersSettings() {
 
   const handleCreate = async () => {
     setCreateError("");
-    if (!newUsername.trim() || !newPassword.trim()) { setCreateError("Username and password are required."); return; }
-    if (newPassword.length < 6) { setCreateError("Password must be at least 6 characters."); return; }
-    if (newRole === "Staff" && !newStaffId) { setCreateError("Please select which staff member this account belongs to."); return; }
+    if (!newUsername.trim() || !newPassword.trim()) { setCreateError(t("users_err_required")); return; }
+    if (newPassword.length < 6) { setCreateError(t("users_err_passlen")); return; }
+    if (newRole === "Staff" && !newStaffId) { setCreateError(t("users_err_staff")); return; }
     setCreating(true);
     try {
       await api.createUser({
@@ -132,7 +157,7 @@ export default function Screen32UsersSettings() {
       setShowCreate(false);
       resetCreate();
       load();
-      toast.success("User created successfully.");
+      toast.success(t("users_success_created"));
     } catch (err: unknown) {
       setCreateError(err instanceof Error ? err.message : "Failed to create user");
     } finally {
@@ -156,7 +181,7 @@ export default function Screen32UsersSettings() {
       await api.updateUser(editUser.id, body);
       setEditUser(null);
       load();
-      toast.success("User updated.");
+      toast.success(t("users_success_updated"));
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -171,7 +196,7 @@ export default function Screen32UsersSettings() {
     try {
       await api.deleteUser(u.id);
       load();
-      toast.success("User deleted.");
+      toast.success(t("users_success_deleted"));
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to delete");
     } finally {
@@ -184,18 +209,53 @@ export default function Screen32UsersSettings() {
     return n.split(" ").map((x) => x[0]).join("").toUpperCase().slice(0, 2);
   };
 
-  const AVATAR_COLORS = ["#EFF6FF", "#F0FDF4", "#FEF3C7", "#F5F3FF", "#FFF1F2", "#ECFDF5"];
-  const AVATAR_TEXT   = ["#1D4ED8", "#15803D", "#B45309", "#6D28D9", "#BE123C", "#065F46"];
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  const roleColors = isDark ? {
+    Admin:             { bg: "rgba(255, 255, 255, 0.08)", dot: "#e2e8f0", text: "#e2e8f0" },
+    Manager:           { bg: "rgba(255, 255, 255, 0.06)", dot: "#cbd5e1", text: "#cbd5e1" },
+    Operator:          { bg: "rgba(255, 255, 255, 0.04)", dot: "#94a3b8", text: "#94a3b8" },
+    "Department Head": { bg: "rgba(255, 255, 255, 0.04)", dot: "#94a3b8", text: "#94a3b8" },
+    Staff:             { bg: "rgba(255, 255, 255, 0.02)", dot: "#737373", text: "#94a3b8" },
+  } : {
+    Admin:             { bg: "#FEE2E2", dot: "#EF4444", text: "#DC2626" },
+    Manager:           { bg: "#EFF6FF", dot: "#3B82F6", text: "#1D4ED8" },
+    Operator:          { bg: "#F0FDF4", dot: "#22C55E", text: "#15803D" },
+    "Department Head": { bg: "#FEF3C7", dot: "#F59E0B", text: "#B45309" },
+    Staff:             { bg: "#F5F3FF", dot: "#8B5CF6", text: "#6D28D9" },
+  };
+
   const getAvatar = (id: string) => {
+    if (isDark) {
+      const shadesBg = ["rgba(255,255,255,0.08)", "rgba(255,255,255,0.06)", "rgba(255,255,255,0.04)", "rgba(255,255,255,0.02)", "rgba(255,255,255,0.05)", "rgba(255,255,255,0.07)"];
+      const shadesText = ["#FFFFFF", "#e2e8f0", "#cbd5e1", "#94a3b8", "#e2e8f0", "#cbd5e1"];
+      const idx = id.charCodeAt(0) % shadesBg.length;
+      return { bg: shadesBg[idx], fg: shadesText[idx] };
+    }
+    const AVATAR_COLORS = ["#EFF6FF", "#F0FDF4", "#FEF3C7", "#F5F3FF", "#FFF1F2", "#ECFDF5"];
+    const AVATAR_TEXT   = ["#1D4ED8", "#15803D", "#B45309", "#6D28D9", "#BE123C", "#065F46"];
     const idx = id.charCodeAt(0) % AVATAR_COLORS.length;
     return { bg: AVATAR_COLORS[idx], fg: AVATAR_TEXT[idx] };
   };
 
+  const kpis = isDark ? [
+    { label: t("users_total"), value: counts.total, icon: <Users size={18} color="#e2e8f0" />, iconBg: "rgba(255, 255, 255, 0.06)" },
+    { label: t("users_active"), value: counts.active, icon: <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#e2e8f0", display: "inline-block" }} />, iconBg: "rgba(255, 255, 255, 0.06)" },
+    { label: t("users_admins"), value: counts.admins, icon: <Shield size={18} color="#e2e8f0" />, iconBg: "rgba(255, 255, 255, 0.06)" },
+    { label: t("users_dept_heads"), value: counts.deptHeads, icon: <Shield size={18} color="#e2e8f0" />, iconBg: "rgba(255, 255, 255, 0.06)" },
+  ] : [
+    { label: t("users_total"), value: counts.total, icon: <Users size={18} color="#3B82F6" />, iconBg: "#EFF6FF" },
+    { label: t("users_active"), value: counts.active, icon: <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#22C55E", display: "inline-block" }} />, iconBg: "#F0FDF4" },
+    { label: t("users_admins"), value: counts.admins, icon: <Shield size={18} color="#EF4444" />, iconBg: "#FEE2E2" },
+    { label: t("users_dept_heads"), value: counts.deptHeads, icon: <Shield size={18} color="#F59E0B" />, iconBg: "#FEF3C7" },
+  ];
+
   return (
     <>
       <SectionHeader
-        title={<>Users & <strong>Roles</strong></>}
-        description="Manage user credentials, status, and system roles. Only Administrators have access."
+        title={<>{t("users_title")}</>}
+        description={t("users_desc")}
       />
       <ScreenFrame
         breadcrumbs={[{ label: "Settings" }, { label: "User Accounts" }]}
@@ -205,28 +265,23 @@ export default function Screen32UsersSettings() {
             style={{ display: "flex", alignItems: "center", gap: 6 }}
             onClick={() => { resetCreate(); setShowCreate(true); }}
           >
-            <UserPlus size={14} /> New User
+            <UserPlus size={14} /> {t("users_new_btn")}
           </button>
         }
       >
         {/* Tabs */}
         <div style={{ display: "flex", gap: "4px", borderBottom: "1px solid var(--b1)", marginBottom: 24 }}>
           <Link href="/settings/users" style={{ borderBottom: "2px solid var(--acc)", padding: "10px 16px", color: "var(--tx)", fontWeight: 600, fontSize: 13 }}>
-            User Accounts
+            {t("users_tab_accounts")}
           </Link>
           <Link href="/settings/permissions" style={{ borderBottom: "2px solid transparent", padding: "10px 16px", color: "var(--tx3)", fontSize: 13 }}>
-            Permissions Matrix
+            {t("users_tab_perms")}
           </Link>
         </div>
 
         {/* KPI cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
-          {[
-            { label: "Total Users", value: counts.total, icon: <Users size={18} color="#3B82F6" />, iconBg: "#EFF6FF" },
-            { label: "Active", value: counts.active, icon: <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#22C55E", display: "inline-block" }} />, iconBg: "#F0FDF4" },
-            { label: "Admins", value: counts.admins, icon: <Shield size={18} color="#EF4444" />, iconBg: "#FEE2E2" },
-            { label: "Dept Heads", value: counts.deptHeads, icon: <Shield size={18} color="#F59E0B" />, iconBg: "#FEF3C7" },
-          ].map((k) => (
+          {kpis.map((k) => (
             <div key={k.label} style={{ background: "var(--s1)", border: "1px solid var(--b1)", borderRadius: 12, padding: "16px 18px", display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, background: k.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 {k.icon}
@@ -244,14 +299,14 @@ export default function Screen32UsersSettings() {
           {/* Toolbar */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: "1px solid var(--b1)", gap: 12, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--tx)" }}>All Users</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--tx)" }}>{t("users_all")}</span>
               <span style={{ fontSize: 12, color: "var(--tx3)", background: "var(--alt2)", borderRadius: 999, padding: "2px 8px" }}>{filtered.length}</span>
             </div>
             <div style={{ position: "relative" }}>
               <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--tx3)" }} />
               <input
                 style={{ paddingLeft: 30, paddingRight: 12, height: 34, border: "1px solid var(--b1)", borderRadius: 8, fontSize: 12, color: "var(--tx)", background: "var(--s1)", outline: "none", width: 220 }}
-                placeholder="Search users…"
+                placeholder={t("users_search")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -263,7 +318,7 @@ export default function Screen32UsersSettings() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "var(--alt)" }}>
-                  {["User", "Role", "Department", "Status", "Created", "Actions"].map((h, i) => (
+                  {[t("name"), t("role"), t("department"), t("status"), t("created"), t("actions")].map((h, i) => (
                     <th key={h} style={{ padding: "11px 20px", textAlign: i === 5 ? "right" : "left", fontSize: 11, fontWeight: 600, color: "var(--tx3)", textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid var(--b1)", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -282,7 +337,7 @@ export default function Screen32UsersSettings() {
                 ) : error ? (
                   <tr><td colSpan={6} style={{ padding: "40px 20px", textAlign: "center", color: "var(--rd)", fontSize: 13 }}>{error}</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={6} style={{ padding: "48px 20px", textAlign: "center", color: "var(--tx3)", fontSize: 13 }}>No users found.</td></tr>
+                  <tr><td colSpan={6} style={{ padding: "48px 20px", textAlign: "center", color: "var(--tx3)", fontSize: 13 }}>{t("users_no_results")}</td></tr>
                 ) : (
                   filtered.map((u, idx) => {
                     const { bg, fg } = getAvatar(u.id);
@@ -314,9 +369,10 @@ export default function Screen32UsersSettings() {
                           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                             <button
                               onClick={() => openEdit(u)}
-                              style={{ background: "var(--bl)", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 500, cursor: "pointer" }}
+                              className="btn"
+                              style={{ padding: "6px 14px", fontSize: 12 }}
                             >
-                              Edit
+                              {t("edit")}
                             </button>
                             {u.id !== currentUser?.id && (
                               <button
@@ -347,12 +403,12 @@ export default function Screen32UsersSettings() {
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--b1)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 8, background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <UserPlus size={16} color="#3B82F6" />
+                <div style={{ width: 34, height: 34, borderRadius: 8, background: isDark ? "rgba(255, 255, 255, 0.08)" : "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <UserPlus size={16} color={isDark ? "#e2e8f0" : "#3B82F6"} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--tx)" }}>Create New User</div>
-                  <div style={{ fontSize: 11, color: "var(--tx3)" }}>Set credentials and assign a role</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--tx)" }}>{t("users_create_title")}</div>
+                  <div style={{ fontSize: 11, color: "var(--tx3)" }}>{t("users_create_sub")}</div>
                 </div>
               </div>
               <button onClick={() => setShowCreate(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--tx3)", display: "flex" }}><X size={16} /></button>
@@ -362,15 +418,15 @@ export default function Screen32UsersSettings() {
             <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div className="field span2" style={{ gridColumn: "span 2" }}>
-                  <div className="flbl">Full Name</div>
+                  <div className="flbl">{t("users_full_name")}</div>
                   <input className="finp" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Rahul Shah" />
                 </div>
                 <div className="field span2" style={{ gridColumn: "span 2" }}>
-                  <div className="flbl">Username *</div>
+                  <div className="flbl">{t("users_username")}</div>
                   <input className="finp" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} placeholder="e.g. rahul" autoCapitalize="none" autoComplete="off" />
                 </div>
                 <div className="field span2" style={{ gridColumn: "span 2" }}>
-                  <div className="flbl">Password * (min 6 chars)</div>
+                  <div className="flbl">{t("users_password")}</div>
                   <input className="finp" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password" />
                 </div>
               </div>
@@ -383,10 +439,10 @@ export default function Screen32UsersSettings() {
                     <button key={r} type="button" onClick={() => setNewRole(r)}
                       style={{ padding: "10px 12px", borderRadius: 8, border: `2px solid ${newRole === r ? "var(--bl)" : "var(--b1)"}`, background: newRole === r ? "var(--sem-bl-bg)" : "var(--s2)", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                        <span style={{ width: 7, height: 7, borderRadius: "50%", background: (ROLE_COLOR[r] ?? ROLE_COLOR["Operator"]).dot, flexShrink: 0 }} />
+                        <span style={{ width: 7, height: 7, borderRadius: "50%", background: (roleColors[r as keyof typeof roleColors] ?? roleColors["Operator"]).dot, flexShrink: 0 }} />
                         <span style={{ fontSize: 12, fontWeight: 600, color: newRole === r ? "var(--bl)" : "var(--tx)" }}>{r}</span>
                       </div>
-                      <div style={{ fontSize: 10, color: "var(--tx3)", lineHeight: 1.4 }}>{ROLE_HINT[r] ?? "Custom role"}</div>
+                      <div style={{ fontSize: 10, color: "var(--tx3)", lineHeight: 1.4 }}>{ROLE_HINT_KEY[r] ? t(ROLE_HINT_KEY[r]) : "Custom role"}</div>
                     </button>
                   ))}
                 </div>
@@ -405,7 +461,7 @@ export default function Screen32UsersSettings() {
 
               {newRole === "Staff" && (
                 <div className="field">
-                  <div className="flbl">Link to Staff Record *</div>
+                  <div className="flbl">{t("users_link_staff")}</div>
                   <select className="fsel" value={newStaffId} onChange={(e) => {
                     const id = e.target.value ? Number(e.target.value) : "";
                     setNewStaffId(id);
@@ -417,12 +473,12 @@ export default function Screen32UsersSettings() {
                       }
                     }
                   }}>
-                    <option value="">— Select staff member —</option>
+                    <option value="">{t("users_select_staff")}</option>
                     {staffList.map((s) => (
                       <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
                     ))}
                   </select>
-                  <div style={{ fontSize: 11, color: "var(--tx3)", marginTop: 4 }}>This staff member will see their own assigned events and payments when they log in.</div>
+                  <div style={{ fontSize: 11, color: "var(--tx3)", marginTop: 4 }}>{t("users_staff_note")}</div>
                 </div>
               )}
 
@@ -435,9 +491,9 @@ export default function Screen32UsersSettings() {
 
             {/* Footer */}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 20px", borderTop: "1px solid var(--b1)" }}>
-              <button className="btn" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button className="btn" onClick={() => setShowCreate(false)}>{t("cancel")}</button>
               <button className="btn btn-primary" disabled={creating} onClick={handleCreate} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                {creating ? "Creating…" : <><UserPlus size={13} /> Create User</>}
+                {creating ? t("users_creating") : <><UserPlus size={13} /> {t("users_create_btn")}</>}
               </button>
             </div>
           </div>
@@ -466,13 +522,13 @@ export default function Screen32UsersSettings() {
             {/* Body */}
             <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div className="field">
-                <div className="flbl">Full Name</div>
+                <div className="flbl">{t("users_full_name")}</div>
                 <input className="finp" value={editName} onChange={(e) => setEditName(e.target.value)} />
               </div>
 
               {/* Role selector */}
               <div>
-                <div className="flbl" style={{ marginBottom: 8 }}>Role *</div>
+                <div className="flbl" style={{ marginBottom: 8 }}>{t("role")} *</div>
                 {editUser.id === currentUser?.id && editUser.role === "Admin" ? (
                   <div style={{ padding: "10px 12px", borderRadius: 8, border: "2px solid var(--b1)", background: "var(--s2)", fontSize: 12, color: "var(--tx3)" }}>
                     Admin — <span style={{ color: "var(--tx3)" }}>Cannot demote your own role.</span>
@@ -483,10 +539,10 @@ export default function Screen32UsersSettings() {
                       <button key={r} type="button" onClick={() => setEditRole(r)}
                         style={{ padding: "10px 12px", borderRadius: 8, border: `2px solid ${editRole === r ? "var(--bl)" : "var(--b1)"}`, background: editRole === r ? "var(--sem-bl-bg)" : "var(--s2)", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: (ROLE_COLOR[r] ?? ROLE_COLOR["Operator"]).dot, flexShrink: 0 }} />
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: (roleColors[r as keyof typeof roleColors] ?? roleColors["Operator"]).dot, flexShrink: 0 }} />
                           <span style={{ fontSize: 12, fontWeight: 600, color: editRole === r ? "var(--bl)" : "var(--tx)" }}>{r}</span>
                         </div>
-                        <div style={{ fontSize: 10, color: "var(--tx3)", lineHeight: 1.4 }}>{ROLE_HINT[r] ?? "Custom role"}</div>
+                        <div style={{ fontSize: 10, color: "var(--tx3)", lineHeight: 1.4 }}>{ROLE_HINT_KEY[r] ? t(ROLE_HINT_KEY[r]) : "Custom role"}</div>
                       </button>
                     ))}
                   </div>
@@ -505,21 +561,35 @@ export default function Screen32UsersSettings() {
               )}
 
               <div className="field">
-                <div className="flbl">New Password (leave blank to keep current)</div>
+                <div className="flbl">{t("users_new_password")}</div>
                 <input className="finp" type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password" />
               </div>
 
               {editUser.id !== currentUser?.id && (
                 <div className="field">
-                  <div className="flbl">Account Status</div>
+                  <div className="flbl">{t("users_acct_status")}</div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button type="button" onClick={() => setEditActive(true)}
-                      style={{ flex: 1, padding: "9px", borderRadius: 8, border: `2px solid ${editActive ? "#22C55E" : "var(--b1)"}`, background: editActive ? "#F0FDF4" : "var(--s2)", color: editActive ? "#15803D" : "var(--tx3)", cursor: "pointer", fontSize: 12, fontWeight: 500, transition: "all 0.15s" }}>
-                      Active
+                      style={{
+                        flex: 1, padding: "9px", borderRadius: 8,
+                        border: `2px solid ${editActive ? (isDark ? "var(--tx2)" : "#22C55E") : "var(--b1)"}`,
+                        background: editActive ? (isDark ? "rgba(255, 255, 255, 0.08)" : "#F0FDF4") : "var(--s2)",
+                        color: editActive ? (isDark ? "var(--tx)" : "#15803D") : "var(--tx3)",
+                        cursor: "pointer", fontSize: 12, fontWeight: 500, transition: "all 0.15s"
+                      }}
+                    >
+                      {t("active")}
                     </button>
                     <button type="button" onClick={() => setEditActive(false)}
-                      style={{ flex: 1, padding: "9px", borderRadius: 8, border: `2px solid ${!editActive ? "#EF4444" : "var(--b1)"}`, background: !editActive ? "#FEE2E2" : "var(--s2)", color: !editActive ? "#DC2626" : "var(--tx3)", cursor: "pointer", fontSize: 12, fontWeight: 500, transition: "all 0.15s" }}>
-                      Inactive
+                      style={{
+                        flex: 1, padding: "9px", borderRadius: 8,
+                        border: `2px solid ${!editActive ? (isDark ? "var(--tx2)" : "#EF4444") : "var(--b1)"}`,
+                        background: !editActive ? (isDark ? "rgba(255, 255, 255, 0.08)" : "#FEE2E2") : "var(--s2)",
+                        color: !editActive ? (isDark ? "var(--tx)" : "#DC2626") : "var(--tx3)",
+                        cursor: "pointer", fontSize: 12, fontWeight: 500, transition: "all 0.15s"
+                      }}
+                    >
+                      {t("inactive")}
                     </button>
                   </div>
                 </div>
@@ -534,9 +604,9 @@ export default function Screen32UsersSettings() {
 
             {/* Footer */}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 20px", borderTop: "1px solid var(--b1)" }}>
-              <button className="btn" onClick={() => setEditUser(null)}>Cancel</button>
+              <button className="btn" onClick={() => setEditUser(null)}>{t("cancel")}</button>
               <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
-                {saving ? "Saving…" : "Save Changes"}
+                {saving ? t("users_saving") : t("users_save_changes")}
               </button>
             </div>
           </div>

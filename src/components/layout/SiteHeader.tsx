@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "@/lib/theme-context";
+import { useLang } from "@/lib/lang-context";
+import { LANGUAGES } from "@/lib/i18n";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { ROLE_COLORS } from "@/lib/constants";
 import GlobalSearch from "./GlobalSearch";
@@ -9,6 +11,7 @@ import * as api from "@/lib/api";
 
 export default function SiteHeader() {
   const { theme, toggleTheme } = useTheme();
+  const { lang, setLang, t } = useLang();
   const { user } = useCurrentUser();
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -113,7 +116,7 @@ export default function SiteHeader() {
             <div
               role="menu"
               aria-label="Account"
-              className="absolute right-0 mt-2 w-52 z-[200] rounded-lg border border-b1 bg-s1 shadow-lg"
+              className="absolute right-0 mt-2 w-56 z-[200] rounded-lg border border-b1 bg-s1 shadow-lg"
               style={{ padding: "6px" }}
             >
               <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--b1)", marginBottom: "4px" }}>
@@ -124,6 +127,33 @@ export default function SiteHeader() {
                   </div>
                 )}
               </div>
+
+              {/* Language picker */}
+              <div style={{ padding: "6px 12px 4px", borderBottom: "1px solid var(--b1)", marginBottom: "4px" }}>
+                <div className="text-[10px] text-tx3 mb-1.5" style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}>{t("language")}</div>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {LANGUAGES.map((l) => (
+                    <button
+                      key={l.code}
+                      onClick={() => setLang(l.code)}
+                      style={{
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        border: `1px solid ${lang === l.code ? "var(--bl)" : "var(--b1)"}`,
+                        background: lang === l.code ? "var(--sem-bl-bg)" : "transparent",
+                        color: lang === l.code ? "var(--bl)" : "var(--tx3)",
+                        fontSize: 11,
+                        fontWeight: lang === l.code ? 600 : 400,
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {l.nativeLabel}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <button
                 role="menuitem"
                 onClick={handleLogout}
@@ -136,7 +166,7 @@ export default function SiteHeader() {
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
-                {loggingOut ? "Signing out…" : "Sign out"}
+                {loggingOut ? t("signing_out") : t("sign_out")}
               </button>
             </div>
           )}

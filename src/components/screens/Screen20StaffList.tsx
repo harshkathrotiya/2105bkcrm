@@ -12,12 +12,14 @@ import LoadingSkeleton, { ShimmerBar } from "../ui/LoadingSkeleton";
 import Pagination from "../ui/Pagination";
 import { useStaff } from "@/lib/store";
 import { useCurrentUser } from "@/lib/use-current-user";
+import { useLang } from "@/lib/lang-context";
 import { getAvatarStyle } from "@/lib/constants";
 import type { Staff } from "@/lib/types";
 
 export default function Screen20StaffList() {
   const router = useRouter();
   const { can } = useCurrentUser();
+  const { t } = useLang();
   const canCreate = can("staff.create");
   const { staff, loading } = useStaff();
 
@@ -129,8 +131,8 @@ export default function Screen20StaffList() {
       <>
         <div className="no-print">
           <SectionHeader
-            title={<>Staff <strong>Directory</strong></>}
-            description="Manage in-house employees, external contractors, assign positions, check availability and record payments."
+            title={<>{t("staff_title")}</>}
+            description={t("staff_desc")}
           />
 
           {/* Metrics Loading State */}
@@ -170,12 +172,12 @@ export default function Screen20StaffList() {
                     <thead>
                       <tr>
                         <th style={{ width: "42px" }}></th>
-                        <th>Name</th>
-                        <th style={{ width: "100px" }}>Type</th>
-                        <th style={{ width: "140px" }}>Role</th>
-                        <th style={{ width: "140px" }}>Payment</th>
-                        <th style={{ width: "110px" }}>With Equip.</th>
-                        <th style={{ width: "100px" }}>Status</th>
+                        <th>{t("name")}</th>
+                        <th style={{ width: "100px" }}>{t("staff_type")}</th>
+                        <th style={{ width: "140px" }}>{t("role")}</th>
+                        <th style={{ width: "140px" }}>{t("staff_payment")}</th>
+                        <th style={{ width: "110px" }}>{t("staff_with_equip")}</th>
+                        <th style={{ width: "100px" }}>{t("status")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -230,26 +232,26 @@ export default function Screen20StaffList() {
     <>
       <div className="no-print">
         <SectionHeader
-          title={<>Staff <strong>Directory</strong></>}
-          description="Manage in-house employees, external contractors, assign positions, check availability and record payments."
+          title={<>{t("staff_title")}</>}
+          description={t("staff_desc")}
         />
 
       {/* Top metrics cards */}
       <div className="metrics" style={{ marginBottom: "20px" }}>
         <div className="met">
-          <div className="met-l">Total Staff</div>
+          <div className="met-l">{t("staff_total")}</div>
           <div className="met-v">{counts.total}</div>
         </div>
         <div className="met">
-          <div className="met-l">Available</div>
+          <div className="met-l">{t("staff_available")}</div>
           <div className="met-v g">{counts.available}</div>
         </div>
         <div className="met">
-          <div className="met-l">Deployed</div>
+          <div className="met-l">{t("staff_deployed")}</div>
           <div className="met-v b">{counts.deployed}</div>
         </div>
         <div className="met">
-          <div className="met-l">Pending Payment</div>
+          <div className="met-l">{t("staff_pending_pay")}</div>
           <div className="met-v a">₹{pendingPaymentsDue.toLocaleString("en-IN")}</div>
         </div>
       </div>
@@ -259,7 +261,7 @@ export default function Screen20StaffList() {
         actions={
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <Link href="/staff/explorer" className="btn">
-              <Network size={13} /> Org Explorer
+              <Network size={13} /> {t("nav_org_explorer")}
             </Link>
             <select
               className="fsel"
@@ -267,15 +269,15 @@ export default function Screen20StaffList() {
               value={sidebarFilter}
               onChange={(e) => { setSidebarFilter(e.target.value as any); setCurrentPage(1); }}
             >
-              <option value="ALL">All Staff ({counts.total})</option>
-              <option value="INHOUSE">In-house ({counts.inHouse})</option>
-              <option value="EXTERNAL">External ({counts.external})</option>
+              <option value="ALL">{t("staff_all")} ({counts.total})</option>
+              <option value="INHOUSE">{t("staff_inhouse")} ({counts.inHouse})</option>
+              <option value="EXTERNAL">{t("staff_external")} ({counts.external})</option>
             </select>
-            <Link href="/staff/reports" className="btn btn-primary">Salary Reports & Payroll <ArrowUpRight size={12} /></Link>
-            <Link href="/staff/inactive" className="btn">Inactive Staff <ArrowRight size={12} /></Link>
-            <button className="btn" onClick={handleExportCSV}>Export CSV</button>
-            <button className="btn" onClick={handleExportPDF}>Export PDF</button>
-            {canCreate && <Link href="/staff/new" className="btn btn-primary">+ Add Staff</Link>}
+            <Link href="/staff/reports" className="btn btn-primary">{t("nav_salary_reports")} <ArrowUpRight size={12} /></Link>
+            <Link href="/staff/inactive" className="btn">{t("nav_inactive_staff")} <ArrowRight size={12} /></Link>
+            <button className="btn" onClick={handleExportCSV}>{t("staff_export_csv")}</button>
+            <button className="btn" onClick={handleExportPDF}>{t("staff_export_pdf")}</button>
+            {canCreate && <Link href="/staff/new" className="btn btn-primary">{t("staff_add")}</Link>}
           </div>
         }
       >
@@ -287,7 +289,7 @@ export default function Screen20StaffList() {
               <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
                 <input
                   type="text"
-                  placeholder="Search staff by name, role, mobile number..."
+                  placeholder={t("staff_search")}
                   className="finp"
                   style={{ flex: 1, fontSize: "12px" }}
                   value={searchQuery}
@@ -299,9 +301,9 @@ export default function Screen20StaffList() {
                   value={statusFilter}
                   onChange={(e) => { setStatusFilter(e.target.value as any); setCurrentPage(1); }}
                 >
-                  <option value="ALL">All Statuses</option>
-                  <option value="Available">Available</option>
-                  <option value="Deployed">Deployed</option>
+                  <option value="ALL">{t("staff_all_status")}</option>
+                  <option value="Available">{t("staff_available")}</option>
+                  <option value="Deployed">{t("staff_deployed")}</option>
                 </select>
                 <select
                   className="fsel"
@@ -309,9 +311,9 @@ export default function Screen20StaffList() {
                   value={paymentFilter}
                   onChange={(e) => { setPaymentFilter(e.target.value as any); setCurrentPage(1); }}
                 >
-                  <option value="ALL">All Payments</option>
-                  <option value="PER_DAY">Per Day</option>
-                  <option value="MONTHLY">Monthly Fixed</option>
+                  <option value="ALL">{t("staff_all_payments")}</option>
+                  <option value="PER_DAY">{t("staff_per_day")}</option>
+                  <option value="MONTHLY">{t("staff_monthly")}</option>
                 </select>
               </div>
 
@@ -322,19 +324,19 @@ export default function Screen20StaffList() {
                     <thead>
                       <tr>
                         <th style={{ width: "42px" }}></th>
-                        <th>Name</th>
-                        <th style={{ width: "100px" }}>Type</th>
-                        <th style={{ width: "140px" }}>Role</th>
-                        <th style={{ width: "140px" }}>Payment</th>
-                        <th style={{ width: "110px" }}>With Equip.</th>
-                        <th style={{ width: "100px" }}>Status</th>
+                        <th>{t("name")}</th>
+                        <th style={{ width: "100px" }}>{t("staff_type")}</th>
+                        <th style={{ width: "140px" }}>{t("role")}</th>
+                        <th style={{ width: "140px" }}>{t("staff_payment")}</th>
+                        <th style={{ width: "110px" }}>{t("staff_with_equip")}</th>
+                        <th style={{ width: "100px" }}>{t("status")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {paginatedStaff.length === 0 ? (
                         <tr>
                           <td colSpan={7} className="text-center py-6 text-tx3" style={{ fontStyle: "italic" }}>
-                            No staff members found matching the selected filters.
+                            {t("staff_no_results")}
                           </td>
                         </tr>
                       ) : (

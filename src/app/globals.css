@@ -109,10 +109,10 @@
   --hover-border: #4A4A4A;
   --hover-card-border: #383838;
   --acc: #F8F9FA;
-  --bl: #4dabf7;
-  --gr: #40C057;
-  --rd: #FF6B6B;
-  --yl: #FCC419;
+  --bl: #cbd5e1;
+  --gr: #e2e8f0;
+  --rd: #94a3b8;
+  --yl: #94a3b8;
   --shadow: 0 4px 24px rgba(0,0,0,0.5);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);
   --focus-shadow: rgba(248, 249, 250, 0.15);
@@ -135,22 +135,22 @@
   --cal-cell: #1A1A1A;
   --cal-today: #2D2D2D;
 
-  --sem-gr-bg: #123C24;
-  --sem-gr-bdr: #1B5E34;
-  --sem-gr-tx: #40C057;
-  --sem-am-bg: #3C2D12;
-  --sem-am-bdr: #5E471B;
-  --sem-am-tx: #FCC419;
-  --sem-bl-bg: #12243C;
-  --sem-bl-bdr: #1B385E;
-  --sem-bl-tx: #4dabf7;
-  --sem-rd-bg: #3C1212;
-  --sem-rd-bdr: #5E1B1B;
-  --sem-rd-tx: #FF6B6B;
+  --sem-gr-bg: rgba(255, 255, 255, 0.06);
+  --sem-gr-bdr: rgba(255, 255, 255, 0.15);
+  --sem-gr-tx: #e2e8f0;
+  --sem-am-bg: rgba(255, 255, 255, 0.04);
+  --sem-am-bdr: rgba(255, 255, 255, 0.1);
+  --sem-am-tx: #cbd5e1;
+  --sem-bl-bg: rgba(255, 255, 255, 0.02);
+  --sem-bl-bdr: rgba(255, 255, 255, 0.05);
+  --sem-bl-tx: #94a3b8;
+  --sem-rd-bg: transparent;
+  --sem-rd-bdr: rgba(255, 255, 255, 0.1);
+  --sem-rd-tx: #94a3b8;
   --sem-gy-bg: #2D2D2D;
   --sem-gy-tx: #ADB5BD;
-  --sem-notif-bg: #3C3C12;
-  --sem-notif-bdr: #5E5E1B;
+  --sem-notif-bg: #1E1E1E;
+  --sem-notif-bdr: #383838;
   --cal-today-dot: #495057;
   --sidebar-tx: #ADB5BD;
   --sidebar-tx-active: #DDE2E5;
@@ -376,9 +376,49 @@ a { color: inherit; text-decoration: none; }
 .btn:active { transform: translateY(0); box-shadow: none; }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn:disabled:hover { background: #ffffff; color: #111111; border-color: var(--b2); box-shadow: none; transform: none; }
-:root:not(.light) .btn { background: var(--s2); color: var(--tx); }
-:root:not(.light) .btn:hover { background: var(--hover-bg); color: var(--tx); }
-:root:not(.light) .btn:disabled:hover { background: var(--s2); color: var(--tx); }
+:root:not(.light) .btn { background: var(--s2); color: var(--tx2); border-color: var(--b1); }
+:root:not(.light) .btn:hover { background: var(--hover-bg); color: var(--tx-hover); border-color: var(--b2); }
+:root:not(.light) .btn:disabled:hover { background: var(--s2); color: var(--tx3); }
+
+/* Dark mode button state and type overrides */
+:root:not(.light) .btn-primary {
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+:root:not(.light) .btn-primary:hover {
+  background: #e2e8f0 !important;
+  color: #121212 !important;
+  border-color: #e2e8f0 !important;
+}
+:root:not(.light) .btn-success {
+  color: #e2e8f0 !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+:root:not(.light) .btn-success:hover {
+  background: #e2e8f0 !important;
+  color: #121212 !important;
+  border-color: #e2e8f0 !important;
+}
+:root:not(.light) .btn-warning {
+  color: var(--tx2) !important;
+  border-color: var(--b1) !important;
+}
+:root:not(.light) .btn-warning:hover {
+  color: #FFFFFF !important;
+  border-color: var(--b2) !important;
+}
+:root:not(.light) .btn-danger {
+  color: var(--tx2) !important;
+  border-color: var(--b1) !important;
+}
+:root:not(.light) .btn-danger:hover {
+  color: #FFFFFF !important;
+  border-color: var(--b2) !important;
+}
+:root:not(.light) .btn.text-bl { color: var(--tx-hover) !important; }
+:root:not(.light) .btn.text-gr { color: var(--tx-hover) !important; }
+:root:not(.light) .btn.text-rd { color: var(--tx2) !important; }
+:root:not(.light) .btn.text-yl { color: var(--tx2) !important; }
 /* Keyboard focus ring */
 .btn:focus-visible,
 .app-nav-item:focus-visible,
@@ -673,6 +713,14 @@ a:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-shadow); bord
 }
 .theme-toggle:hover {
   background: var(--hover-bg); color: var(--acc); border-color: var(--acc);
+}
+:root:not(.light) .theme-toggle {
+  color: var(--tx2) !important;
+  border-color: var(--b1) !important;
+}
+:root:not(.light) .theme-toggle:hover {
+  color: #FFFFFF !important;
+  border-color: var(--b2) !important;
 }
 
 /* ===== TOAST ===== */

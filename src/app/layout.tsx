@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-context";
+import { LangProvider } from "@/lib/lang-context";
 import { CurrentUserProvider } from "@/lib/current-user-provider";
 import AppLayout from "@/components/layout/AppLayout";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -60,6 +61,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans bg-bg text-tx min-h-screen">
         <ThemeProvider>
+          <LangProvider>
           <CurrentUserProvider>
             <ToastProvider>
               <ConfirmProvider>
@@ -67,6 +69,7 @@ export default function RootLayout({
               </ConfirmProvider>
             </ToastProvider>
           </CurrentUserProvider>
+          </LangProvider>
         </ThemeProvider>
       </body>
     </html>
