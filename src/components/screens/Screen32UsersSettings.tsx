@@ -9,7 +9,6 @@ import { useToast } from "../ui/Toast";
 import { useConfirm } from "../ui/ConfirmDialog";
 import { useCurrentUser } from "@/lib/use-current-user";
 import { useTheme } from "@/lib/theme-context";
-import { useLang } from "@/lib/lang-context";
 import * as api from "@/lib/api";
 import type { UserRow } from "@/lib/api";
 
@@ -63,17 +62,16 @@ function StatusPill({ active }: { active: boolean }) {
       </span>;
 }
 
-const ROLE_HINT_KEY: Record<string, "role_hint_admin" | "role_hint_manager" | "role_hint_operator" | "role_hint_dept" | "role_hint_staff"> = {
-  Admin: "role_hint_admin",
-  Manager: "role_hint_manager",
-  Operator: "role_hint_operator",
-  "Department Head": "role_hint_dept",
-  Staff: "role_hint_staff",
+const ROLE_HINT: Record<string, string> = {
+  Admin: "Full access including user management.",
+  Manager: "Can create and edit all records. Cannot manage users or delete equipment.",
+  Operator: "Read-only access across all sections.",
+  "Department Head": "View and edit access scoped to their department.",
+  Staff: "See own assigned events, dates, and payments only.",
 };
 
 export default function Screen32UsersSettings() {
   const { user: currentUser } = useCurrentUser();
-  const { t } = useLang();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -141,9 +139,9 @@ export default function Screen32UsersSettings() {
 
   const handleCreate = async () => {
     setCreateError("");
-    if (!newUsername.trim() || !newPassword.trim()) { setCreateError(t("users_err_required")); return; }
-    if (newPassword.length < 6) { setCreateError(t("users_err_passlen")); return; }
-    if (newRole === "Staff" && !newStaffId) { setCreateError(t("users_err_staff")); return; }
+    if (!newUsername.trim() || !newPassword.trim()) { setCreateError("Username and password are required."); return; }
+    if (newPassword.length < 6) { setCreateError("Password must be at least 6 characters."); return; }
+    if (newRole === "Staff" && !newStaffId) { setCreateError("Please select which staff member this account belongs to."); return; }
     setCreating(true);
     try {
       await api.createUser({
@@ -157,7 +155,7 @@ export default function Screen32UsersSettings() {
       setShowCreate(false);
       resetCreate();
       load();
-      toast.success(t("users_success_created"));
+      toast.success("User created successfully.");
     } catch (err: unknown) {
       setCreateError(err instanceof Error ? err.message : "Failed to create user");
     } finally {
@@ -181,7 +179,7 @@ export default function Screen32UsersSettings() {
       await api.updateUser(editUser.id, body);
       setEditUser(null);
       load();
-      toast.success(t("users_success_updated"));
+      toast.success("User updated.");
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -196,7 +194,7 @@ export default function Screen32UsersSettings() {
     try {
       await api.deleteUser(u.id);
       load();
-      toast.success(t("users_success_deleted"));
+      toast.success("User deleted.");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to delete");
     } finally {
@@ -240,22 +238,22 @@ export default function Screen32UsersSettings() {
   };
 
   const kpis = isDark ? [
-    { label: t("users_total"), value: counts.total, icon: <Users size={18} color="#e2e8f0" />, iconBg: "rgba(255, 255, 255, 0.06)" },
-    { label: t("users_active"), value: counts.active, icon: <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#e2e8f0", display: "inline-block" }} />, iconBg: "rgba(255, 255, 255, 0.06)" },
-    { label: t("users_admins"), value: counts.admins, icon: <Shield size={18} color="#e2e8f0" />, iconBg: "rgba(255, 255, 255, 0.06)" },
-    { label: t("users_dept_heads"), value: counts.deptHeads, icon: <Shield size={18} color="#e2e8f0" />, iconBg: "rgba(255, 255, 255, 0.06)" },
+    { label: "Total Users", value: counts.total, icon: <Users size={18} color="#e2e8f0" />, iconBg: "rgba(255, 255, 255, 0.06)" },
+    { label: "Active", value: counts.active, icon: <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#e2e8f0", display: "inline-block" }} />, iconBg: "rgba(255, 255, 255, 0.06)" },
+    { label: "Admins", value: counts.admins, icon: <Shield size={18} color="#e2e8f0" />, iconBg: "rgba(255, 255, 255, 0.06)" },
+    { label: "Dept Heads", value: counts.deptHeads, icon: <Shield size={18} color="#e2e8f0" />, iconBg: "rgba(255, 255, 255, 0.06)" },
   ] : [
-    { label: t("users_total"), value: counts.total, icon: <Users size={18} color="#3B82F6" />, iconBg: "#EFF6FF" },
-    { label: t("users_active"), value: counts.active, icon: <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#22C55E", display: "inline-block" }} />, iconBg: "#F0FDF4" },
-    { label: t("users_admins"), value: counts.admins, icon: <Shield size={18} color="#EF4444" />, iconBg: "#FEE2E2" },
-    { label: t("users_dept_heads"), value: counts.deptHeads, icon: <Shield size={18} color="#F59E0B" />, iconBg: "#FEF3C7" },
+    { label: "Total Users", value: counts.total, icon: <Users size={18} color="#3B82F6" />, iconBg: "#EFF6FF" },
+    { label: "Active", value: counts.active, icon: <span style={{ width: 18, height: 18, borderRadius: "50%", background: "#22C55E", display: "inline-block" }} />, iconBg: "#F0FDF4" },
+    { label: "Admins", value: counts.admins, icon: <Shield size={18} color="#EF4444" />, iconBg: "#FEE2E2" },
+    { label: "Dept Heads", value: counts.deptHeads, icon: <Shield size={18} color="#F59E0B" />, iconBg: "#FEF3C7" },
   ];
 
   return (
     <>
       <SectionHeader
-        title={<>{t("users_title")}</>}
-        description={t("users_desc")}
+        title={<>Users & <strong>Roles</strong></>}
+        description="Manage user credentials, status, and system roles. Only Administrators have access."
       />
       <ScreenFrame
         breadcrumbs={[{ label: "Settings" }, { label: "User Accounts" }]}
@@ -265,17 +263,17 @@ export default function Screen32UsersSettings() {
             style={{ display: "flex", alignItems: "center", gap: 6 }}
             onClick={() => { resetCreate(); setShowCreate(true); }}
           >
-            <UserPlus size={14} /> {t("users_new_btn")}
+            <UserPlus size={14} /> New User
           </button>
         }
       >
         {/* Tabs */}
         <div style={{ display: "flex", gap: "4px", borderBottom: "1px solid var(--b1)", marginBottom: 24 }}>
           <Link href="/settings/users" style={{ borderBottom: "2px solid var(--acc)", padding: "10px 16px", color: "var(--tx)", fontWeight: 600, fontSize: 13 }}>
-            {t("users_tab_accounts")}
+            User Accounts
           </Link>
           <Link href="/settings/permissions" style={{ borderBottom: "2px solid transparent", padding: "10px 16px", color: "var(--tx3)", fontSize: 13 }}>
-            {t("users_tab_perms")}
+            Permissions Matrix
           </Link>
         </div>
 
@@ -299,14 +297,14 @@ export default function Screen32UsersSettings() {
           {/* Toolbar */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: "1px solid var(--b1)", gap: 12, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--tx)" }}>{t("users_all")}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--tx)" }}>All Users</span>
               <span style={{ fontSize: 12, color: "var(--tx3)", background: "var(--alt2)", borderRadius: 999, padding: "2px 8px" }}>{filtered.length}</span>
             </div>
             <div style={{ position: "relative" }}>
               <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--tx3)" }} />
               <input
                 style={{ paddingLeft: 30, paddingRight: 12, height: 34, border: "1px solid var(--b1)", borderRadius: 8, fontSize: 12, color: "var(--tx)", background: "var(--s1)", outline: "none", width: 220 }}
-                placeholder={t("users_search")}
+                placeholder="Search users…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -318,7 +316,7 @@ export default function Screen32UsersSettings() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "var(--alt)" }}>
-                  {[t("name"), t("role"), t("department"), t("status"), t("created"), t("actions")].map((h, i) => (
+                  {["User", "Role", "Department", "Status", "Created", "Actions"].map((h, i) => (
                     <th key={h} style={{ padding: "11px 20px", textAlign: i === 5 ? "right" : "left", fontSize: 11, fontWeight: 600, color: "var(--tx3)", textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid var(--b1)", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -337,7 +335,7 @@ export default function Screen32UsersSettings() {
                 ) : error ? (
                   <tr><td colSpan={6} style={{ padding: "40px 20px", textAlign: "center", color: "var(--rd)", fontSize: 13 }}>{error}</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={6} style={{ padding: "48px 20px", textAlign: "center", color: "var(--tx3)", fontSize: 13 }}>{t("users_no_results")}</td></tr>
+                  <tr><td colSpan={6} style={{ padding: "48px 20px", textAlign: "center", color: "var(--tx3)", fontSize: 13 }}>No users found.</td></tr>
                 ) : (
                   filtered.map((u, idx) => {
                     const { bg, fg } = getAvatar(u.id);
@@ -372,7 +370,7 @@ export default function Screen32UsersSettings() {
                               className="btn"
                               style={{ padding: "6px 14px", fontSize: 12 }}
                             >
-                              {t("edit")}
+                              Edit
                             </button>
                             {u.id !== currentUser?.id && (
                               <button
@@ -407,8 +405,8 @@ export default function Screen32UsersSettings() {
                   <UserPlus size={16} color={isDark ? "#e2e8f0" : "#3B82F6"} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--tx)" }}>{t("users_create_title")}</div>
-                  <div style={{ fontSize: 11, color: "var(--tx3)" }}>{t("users_create_sub")}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--tx)" }}>Create New User</div>
+                  <div style={{ fontSize: 11, color: "var(--tx3)" }}>Set credentials and assign a role</div>
                 </div>
               </div>
               <button onClick={() => setShowCreate(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--tx3)", display: "flex" }}><X size={16} /></button>
@@ -418,15 +416,15 @@ export default function Screen32UsersSettings() {
             <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div className="field span2" style={{ gridColumn: "span 2" }}>
-                  <div className="flbl">{t("users_full_name")}</div>
+                  <div className="flbl">Full Name</div>
                   <input className="finp" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Rahul Shah" />
                 </div>
                 <div className="field span2" style={{ gridColumn: "span 2" }}>
-                  <div className="flbl">{t("users_username")}</div>
+                  <div className="flbl">Username *</div>
                   <input className="finp" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} placeholder="e.g. rahul" autoCapitalize="none" autoComplete="off" />
                 </div>
                 <div className="field span2" style={{ gridColumn: "span 2" }}>
-                  <div className="flbl">{t("users_password")}</div>
+                  <div className="flbl">Password * (min 6 chars)</div>
                   <input className="finp" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password" />
                 </div>
               </div>
@@ -442,7 +440,7 @@ export default function Screen32UsersSettings() {
                         <span style={{ width: 7, height: 7, borderRadius: "50%", background: (roleColors[r as keyof typeof roleColors] ?? roleColors["Operator"]).dot, flexShrink: 0 }} />
                         <span style={{ fontSize: 12, fontWeight: 600, color: newRole === r ? "var(--bl)" : "var(--tx)" }}>{r}</span>
                       </div>
-                      <div style={{ fontSize: 10, color: "var(--tx3)", lineHeight: 1.4 }}>{ROLE_HINT_KEY[r] ? t(ROLE_HINT_KEY[r]) : "Custom role"}</div>
+                      <div style={{ fontSize: 10, color: "var(--tx3)", lineHeight: 1.4 }}>{ROLE_HINT[r] ?? "Custom role"}</div>
                     </button>
                   ))}
                 </div>
@@ -461,7 +459,7 @@ export default function Screen32UsersSettings() {
 
               {newRole === "Staff" && (
                 <div className="field">
-                  <div className="flbl">{t("users_link_staff")}</div>
+                  <div className="flbl">Link to Staff Record *</div>
                   <select className="fsel" value={newStaffId} onChange={(e) => {
                     const id = e.target.value ? Number(e.target.value) : "";
                     setNewStaffId(id);
@@ -473,12 +471,12 @@ export default function Screen32UsersSettings() {
                       }
                     }
                   }}>
-                    <option value="">{t("users_select_staff")}</option>
+                    <option value="">— Select staff member —</option>
                     {staffList.map((s) => (
                       <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
                     ))}
                   </select>
-                  <div style={{ fontSize: 11, color: "var(--tx3)", marginTop: 4 }}>{t("users_staff_note")}</div>
+                  <div style={{ fontSize: 11, color: "var(--tx3)", marginTop: 4 }}>This staff member will see their own assigned events and payments when they log in.</div>
                 </div>
               )}
 
@@ -491,9 +489,9 @@ export default function Screen32UsersSettings() {
 
             {/* Footer */}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 20px", borderTop: "1px solid var(--b1)" }}>
-              <button className="btn" onClick={() => setShowCreate(false)}>{t("cancel")}</button>
+              <button className="btn" onClick={() => setShowCreate(false)}>Cancel</button>
               <button className="btn btn-primary" disabled={creating} onClick={handleCreate} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                {creating ? t("users_creating") : <><UserPlus size={13} /> {t("users_create_btn")}</>}
+                {creating ? "Creating…" : <><UserPlus size={13} /> Create User</>}
               </button>
             </div>
           </div>
@@ -522,13 +520,13 @@ export default function Screen32UsersSettings() {
             {/* Body */}
             <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: 14 }}>
               <div className="field">
-                <div className="flbl">{t("users_full_name")}</div>
+                <div className="flbl">Full Name</div>
                 <input className="finp" value={editName} onChange={(e) => setEditName(e.target.value)} />
               </div>
 
               {/* Role selector */}
               <div>
-                <div className="flbl" style={{ marginBottom: 8 }}>{t("role")} *</div>
+                <div className="flbl" style={{ marginBottom: 8 }}>Role *</div>
                 {editUser.id === currentUser?.id && editUser.role === "Admin" ? (
                   <div style={{ padding: "10px 12px", borderRadius: 8, border: "2px solid var(--b1)", background: "var(--s2)", fontSize: 12, color: "var(--tx3)" }}>
                     Admin — <span style={{ color: "var(--tx3)" }}>Cannot demote your own role.</span>
@@ -542,7 +540,7 @@ export default function Screen32UsersSettings() {
                           <span style={{ width: 7, height: 7, borderRadius: "50%", background: (roleColors[r as keyof typeof roleColors] ?? roleColors["Operator"]).dot, flexShrink: 0 }} />
                           <span style={{ fontSize: 12, fontWeight: 600, color: editRole === r ? "var(--bl)" : "var(--tx)" }}>{r}</span>
                         </div>
-                        <div style={{ fontSize: 10, color: "var(--tx3)", lineHeight: 1.4 }}>{ROLE_HINT_KEY[r] ? t(ROLE_HINT_KEY[r]) : "Custom role"}</div>
+                        <div style={{ fontSize: 10, color: "var(--tx3)", lineHeight: 1.4 }}>{ROLE_HINT[r] ?? "Custom role"}</div>
                       </button>
                     ))}
                   </div>
@@ -561,13 +559,13 @@ export default function Screen32UsersSettings() {
               )}
 
               <div className="field">
-                <div className="flbl">{t("users_new_password")}</div>
+                <div className="flbl">New Password (leave blank to keep current)</div>
                 <input className="finp" type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password" />
               </div>
 
               {editUser.id !== currentUser?.id && (
                 <div className="field">
-                  <div className="flbl">{t("users_acct_status")}</div>
+                  <div className="flbl">Account Status</div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <button type="button" onClick={() => setEditActive(true)}
                       style={{
@@ -578,7 +576,7 @@ export default function Screen32UsersSettings() {
                         cursor: "pointer", fontSize: 12, fontWeight: 500, transition: "all 0.15s"
                       }}
                     >
-                      {t("active")}
+                      Active
                     </button>
                     <button type="button" onClick={() => setEditActive(false)}
                       style={{
@@ -589,7 +587,7 @@ export default function Screen32UsersSettings() {
                         cursor: "pointer", fontSize: 12, fontWeight: 500, transition: "all 0.15s"
                       }}
                     >
-                      {t("inactive")}
+                      Inactive
                     </button>
                   </div>
                 </div>
@@ -604,9 +602,9 @@ export default function Screen32UsersSettings() {
 
             {/* Footer */}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "14px 20px", borderTop: "1px solid var(--b1)" }}>
-              <button className="btn" onClick={() => setEditUser(null)}>{t("cancel")}</button>
+              <button className="btn" onClick={() => setEditUser(null)}>Cancel</button>
               <button className="btn btn-primary" disabled={saving} onClick={handleSave}>
-                {saving ? t("users_saving") : t("users_save_changes")}
+                {saving ? "Saving…" : "Save Changes"}
               </button>
             </div>
           </div>

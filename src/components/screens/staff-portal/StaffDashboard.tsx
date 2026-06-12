@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Calendar, IndianRupee, Briefcase, Clock, MapPin, ChevronRight } from "lucide-react";
 import { useCurrentUser } from "@/lib/use-current-user";
-import { useLang } from "@/lib/lang-context";
 
 interface Assignment {
   id: number;
@@ -46,7 +45,6 @@ function StatusPill({ status }: { status: string }) {
 
 export default function StaffDashboard() {
   const { user } = useCurrentUser();
-  const { t } = useLang();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -67,16 +65,16 @@ export default function StaffDashboard() {
 
       {/* Welcome */}
       <div style={{ marginBottom: 28 }}>
-        <div style={{ fontSize: 24, fontWeight: 700, color: "#0F172A" }}>{t("portal_good_day")}, {user?.name?.split(" ")[0] ?? "Staff"}</div>
-        <div style={{ fontSize: 14, color: "#64748B", marginTop: 4 }}>{t("portal_summary")}</div>
+        <div style={{ fontSize: 24, fontWeight: 700, color: "#0F172A" }}>Good day, {user?.name?.split(" ")[0] ?? "Staff"}</div>
+        <div style={{ fontSize: 14, color: "#64748B", marginTop: 4 }}>Here's a summary of your events and payments.</div>
       </div>
 
       {/* KPI cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
         {[
-          { label: t("portal_total_events"), value: loading ? "—" : assignments.length, color: "#0F172A", iconBg: "#EFF6FF", icon: <Briefcase size={18} color="#3B82F6" /> },
-          { label: t("portal_upcoming"),     value: loading ? "—" : upcoming.length, color: "#15803D", iconBg: "#DCFCE7", icon: <Calendar size={18} color="#22C55E" /> },
-          { label: t("portal_pending"),      value: loading ? "—" : `₹${totalPending.toLocaleString("en-IN")}`, color: "#DC2626", iconBg: "#FEE2E2", icon: <IndianRupee size={18} color="#EF4444" /> },
+          { label: "Total Events", value: loading ? "—" : assignments.length, color: "#0F172A", iconBg: "#EFF6FF", icon: <Briefcase size={18} color="#3B82F6" /> },
+          { label: "Upcoming Events", value: loading ? "—" : upcoming.length, color: "#15803D", iconBg: "#DCFCE7", icon: <Calendar size={18} color="#22C55E" /> },
+          { label: "Pending Payment", value: loading ? "—" : `₹${totalPending.toLocaleString("en-IN")}`, color: "#DC2626", iconBg: "#FEE2E2", icon: <IndianRupee size={18} color="#EF4444" /> },
         ].map((k) => (
           <div key={k.label} style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: 12, padding: "20px", display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: k.iconBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{k.icon}</div>
@@ -92,21 +90,21 @@ export default function StaffDashboard() {
       <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: 14, overflow: "hidden", marginBottom: 20 }}>
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #E2E8F0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{t("portal_upcoming")}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>Upcoming Events</span>
             <span style={{ fontSize: 11, color: "#64748B", background: "#F1F5F9", borderRadius: 999, padding: "2px 8px" }}>{upcoming.length}</span>
           </div>
           <Link href="/my-schedule/events" style={{ fontSize: 12, color: "#3B82F6", fontWeight: 500, textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}>
-            {t("view_all")} <ChevronRight size={13} />
+            View all <ChevronRight size={13} />
           </Link>
         </div>
 
         {loading ? (
-          <div style={{ padding: "32px 20px", textAlign: "center", color: "#64748B", fontSize: 13 }}>{t("loading")}</div>
+          <div style={{ padding: "32px 20px", textAlign: "center", color: "#64748B", fontSize: 13 }}>Loading...</div>
         ) : upcoming.length === 0 ? (
           <div style={{ padding: "40px 20px", textAlign: "center" }}>
             <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}><Calendar size={32} color="#CBD5E1" /></div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A", marginBottom: 4 }}>{t("portal_no_upcoming")}</div>
-            <div style={{ fontSize: 13, color: "#64748B" }}>{t("portal_assigned_by")}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A", marginBottom: 4 }}>No upcoming events</div>
+            <div style={{ fontSize: 13, color: "#64748B" }}>Your Department Head will assign you to events.</div>
           </div>
         ) : (
           upcoming.slice(0, 3).map((a, idx) => (
@@ -125,7 +123,7 @@ export default function StaffDashboard() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#475569" }}>
                   <Clock size={12} color="#94A3B8" />
-                  {t("portal_report_at")} {a.reportingTime}
+                  Report at {a.reportingTime}
                 </div>
                 {a.inquiry.venue && (
                   <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "#475569" }}>
@@ -141,18 +139,18 @@ export default function StaffDashboard() {
 
       {/* Quick earnings summary */}
       <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: 14, padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{t("portal_earnings")}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>Earnings Summary</div>
         <div style={{ display: "flex", gap: 32 }}>
           <div>
-            <div style={{ fontSize: 11, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{t("portal_total_earned")}</div>
+            <div style={{ fontSize: 11, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Total Earned</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: "#15803D" }}>₹{loading ? "—" : totalEarned.toLocaleString("en-IN")}</div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{t("portal_pending")}</div>
+            <div style={{ fontSize: 11, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Pending</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: "#DC2626" }}>₹{loading ? "—" : totalPending.toLocaleString("en-IN")}</div>
           </div>
           <Link href="/my-payments" style={{ alignSelf: "center", background: "#3B82F6", color: "#fff", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 500, textDecoration: "none" }}>
-            {t("portal_view_payments")}
+            View Payments
           </Link>
         </div>
       </div>
