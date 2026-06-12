@@ -25,7 +25,7 @@ const TIME_OPTIONS = [
 export default function Screen04NewInquiry() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { can } = useCurrentUser();
+  const { can, user } = useCurrentUser();
   const { clients } = useClients();
   const { inquiries, dispatchInquiries } = useInquiries();
   const { calendarEvents, dispatchCalendar } = useCalendar();
@@ -138,8 +138,9 @@ export default function Screen04NewInquiry() {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Department & LED states
-  const [department, setDepartment] = useState<'VIDEO' | 'LED' | 'MERGED'>('VIDEO');
+  // Department & LED states — default to the logged-in dept head's department
+  const defaultDept = (user?.role === "Department Head" && user?.department === "LED") ? "LED" : "VIDEO";
+  const [department, setDepartment] = useState<'VIDEO' | 'LED' | 'MERGED'>(defaultDept);
   const [screenWidth, setScreenWidth] = useState('');
   const [screenHeight, setScreenHeight] = useState('');
   const [ledType, setLedType] = useState('P4');

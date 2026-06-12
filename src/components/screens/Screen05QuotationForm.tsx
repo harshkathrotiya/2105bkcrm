@@ -91,14 +91,35 @@ export default function Screen05QuotationForm() {
     }
   };
 
+  // Pre-select inquiry from URL param
+  const preselectedId = searchParams.get("inquiryId") ?? "";
+  const defaultInquiryId =
+    preselectedId && inquiries.find((i) => i.id === preselectedId)
+      ? preselectedId
+      : inquiries[0]?.id ?? "";
+
+  const [selectedInquiryId, setSelectedInquiryId] = useState(defaultInquiryId);
+  const [saving, setSaving] = useState(false);
+  const [savingRateFor, setSavingRateFor] = useState<number | null>(null);
+
+  const selectedInquiry = inquiries.find((i) => i.id === selectedInquiryId);
+  const selectedClient = selectedInquiry
+    ? clients.find((c) => c.id === selectedInquiry.clientId)
+    : null;
+  const selectedClientId = selectedClient?.id;
+
   // ── Client-specific equipment rates ─────────────────────────────────────────
+  // Only map equipment that belongs to the selected inquiry's department.
   const equipNameToId = useMemo(() => {
+    const inqDept = selectedInquiry?.department ?? "VIDEO";
     const m: Record<string, number> = {};
     for (const e of allEquipment) {
+      const eDept = e.department ?? "VIDEO";
+      if (inqDept !== "MERGED" && eDept !== inqDept) continue;
       if (!(e.productName in m)) m[e.productName] = e.id;
     }
     return m;
-  }, [allEquipment]);
+  }, [allEquipment, selectedInquiry?.department]);
   // equipment id -> rate for the selected client (override or default)
   const [clientRateMap, setClientRateMap] = useState<Record<number, number>>({});
   // kit name -> rate (via kit's mainBodyId equipment rate)
@@ -112,21 +133,35 @@ export default function Screen05QuotationForm() {
     return m;
   }, [kits, clientRateMap]);
 
-  // Build live grouped equipment options from DB:
-  // Group 0 — Special, Group 1 — Kits, Group 2 — Individual available items
+  // Build live grouped equipment options from DB — filtered to the inquiry's department.
+  // Video inquiries only see Video equipment/kits; LED inquiries only see LED equipment/kits.
+  // MERGED inquiries see both. Special rows (Service, Operator, LED types) are always shown.
   const liveEquipOptions = useMemo(() => {
-    const kitOpts = kits.map((k: Kit) => ({
-      value: k.name,
-      label: `${k.name}`,
-      group: "Kits",
-    }));
+    const inqDept = selectedInquiry?.department ?? "VIDEO";
+    const deptMatch = (d: string | undefined) => {
+      if (inqDept === "MERGED") return true;
+      if (!d) return inqDept === "VIDEO"; // legacy items with no dept → treat as Video
+      return d === inqDept;
+    };
+
+    const kitOpts = kits
+      .filter((k: Kit) => deptMatch(k.department))
+      .map((k: Kit) => ({
+        value: k.name,
+        label: k.name,
+        group: "Kits",
+      }));
+
     const eqOpts = allEquipment
-      .filter((e: Equipment) => e.status === "AVAILABLE" || e.status === "IN_USE")
+      .filter((e: Equipment) =>
+        (e.status === "AVAILABLE" || e.status === "IN_USE") && deptMatch(e.department)
+      )
       .map((e: Equipment) => ({
         value: e.productName,
         label: `${e.productName}${e.serialNumber ? ` (${e.serialNumber})` : ""}`,
         group: "Equipment Items",
       }));
+
     // Deduplicate by value (special entries first so they're preserved)
     const seen = new Set<string>();
     const all = [...SPECIAL_EQUIP_OPTIONS, ...kitOpts, ...eqOpts].filter((o) => {
@@ -135,23 +170,7 @@ export default function Screen05QuotationForm() {
       return true;
     });
     return all;
-  }, [kits, allEquipment]);
-
-  // Pre-select inquiry from URL param
-  const preselectedId = searchParams.get("inquiryId") ?? "";
-  const defaultInquiryId =
-    preselectedId && inquiries.find((i) => i.id === preselectedId)
-      ? preselectedId
-      : inquiries[0]?.id ?? "";
-
-  const [selectedInquiryId, setSelectedInquiryId] = useState(defaultInquiryId);
-  const [saving, setSaving] = useState(false);
-
-  const selectedInquiry = inquiries.find((i) => i.id === selectedInquiryId);
-  const selectedClient = selectedInquiry
-    ? clients.find((c) => c.id === selectedInquiry.clientId)
-    : null;
-  const selectedClientId = selectedClient?.id;
+  }, [kits, allEquipment, selectedInquiry?.department]);
 
   // Build the effective rate map: equipment default rates overlaid with this client's overrides
   useEffect(() => {
@@ -260,6 +279,16 @@ export default function Screen05QuotationForm() {
       prev.map((row) => {
         if (row.no !== no) return row;
         const updated = { ...row, [field]: value };
+
+        if (field === "position") {
+          // Auto-fill equipment and rate from position defaults (if row has no equipment yet)
+          const pos = positionMap[value as string];
+          if (pos) {
+            if (pos.equip && !updated.equip) updated.equip = pos.equip;
+            if (pos.rate > 0 && updated.rate === 0) updated.rate = pos.rate;
+          }
+        }
+
         if (field === "equip") {
           const name = value as string;
           const eqId = equipNameToId[name];
@@ -269,9 +298,15 @@ export default function Screen05QuotationForm() {
             updated.rate = kitNameToRate[name];
           } else if (eqId != null) {
             const eq = allEquipment.find((e) => e.id === eqId);
-            updated.rate = eq?.defaultRate ?? 0;
+            if (eq?.defaultRate != null && eq.defaultRate > 0) updated.rate = eq.defaultRate;
+          }
+          // Fallback: use the position's configured rate if equipment has no rate
+          if (updated.rate === 0 && updated.position) {
+            const pos = positionMap[updated.position];
+            if (pos?.rate > 0) updated.rate = pos.rate;
           }
         }
+
         // When creating (not editing), cap days at eventDays
         if (field === "days" && !existingQuotation) {
           updated.days = Math.min(Number(value), eventDays);
@@ -290,6 +325,22 @@ export default function Screen05QuotationForm() {
   const removeRow = (no: number) => {
     if (rows.length <= 1) return;
     setRows((prev) => prev.filter((r) => r.no !== no).map((r, i) => ({ ...r, no: i + 1 })));
+  };
+
+  const saveDefaultRate = async (row: (typeof rows)[0]) => {
+    const eqId = equipNameToId[row.equip];
+    if (!eqId || row.rate <= 0) return;
+    setSavingRateFor(row.no);
+    try {
+      await api.updateEquipment(eqId, { defaultRate: row.rate });
+      // Update local clientRateMap so future rows auto-fill immediately
+      setClientRateMap((prev) => ({ ...prev, [eqId]: row.rate }));
+      toast.success(`Default rate ₹${row.rate.toLocaleString("en-IN")}/day saved for "${row.equip}"`);
+    } catch {
+      toast.error("Failed to save default rate");
+    } finally {
+      setSavingRateFor(null);
+    }
   };
 
   const allQuoteNos = quotations.map((q) => q.quoteNo);
@@ -704,13 +755,40 @@ export default function Screen05QuotationForm() {
                             />
                           </td>
                           <td>
-                            <input
-                              className="finp text-[10px] text-right"
-                              type="number"
-                              min={1}
-                              value={row.rate}
-                              onChange={(e) => updateRow(row.no, "rate", Number(e.target.value) || 0)}
-                            />
+                            {(() => {
+                              const eqId = equipNameToId[row.equip];
+                              const storedRate = eqId != null ? (allEquipment.find(e => e.id === eqId)?.defaultRate ?? null) : null;
+                              const needsSave = eqId != null && row.rate > 0 && storedRate !== row.rate;
+                              const noRate = row.equip && row.rate === 0;
+                              return (
+                                <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                  <input
+                                    className="finp text-[10px] text-right"
+                                    type="number"
+                                    min={0}
+                                    value={row.rate || ""}
+                                    placeholder="Enter rate"
+                                    onChange={(e) => updateRow(row.no, "rate", Number(e.target.value) || 0)}
+                                    style={{
+                                      flex: 1,
+                                      ...(noRate ? { borderColor: "#F59E0B", background: "#FFFBEB" } : {}),
+                                    }}
+                                    title={noRate ? "No default rate — enter rate manually" : undefined}
+                                  />
+                                  {needsSave && canWrite && (
+                                    <button
+                                      className="btn"
+                                      style={{ fontSize: 9, padding: "2px 5px", color: "#15803D", borderColor: "#86EFAC", background: "#F0FDF4", whiteSpace: "nowrap" }}
+                                      title={`Save ₹${row.rate.toLocaleString("en-IN")}/day as default rate for "${row.equip}"`}
+                                      disabled={savingRateFor === row.no}
+                                      onClick={() => saveDefaultRate(row)}
+                                    >
+                                      {savingRateFor === row.no ? "…" : "↑ Set default"}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td>
                             <input
