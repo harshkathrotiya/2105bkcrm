@@ -56,7 +56,7 @@ export default function Screen32UsersSettings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [rolesList, setRolesList] = useState<string[]>(["Admin", "Manager", "Operator", "Department Head"]);
+  const [rolesList, setRolesList] = useState<string[]>(["Admin", "Manager", "Operator", "Department Head", "Staff"]);
 
   // Staff list for Staff role picker
   const [staffList, setStaffList] = useState<{ id: number; name: string; role: string }[]>([]);

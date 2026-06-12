@@ -96,11 +96,23 @@ async function main() {
   ];
   const MANAGER_PERMS = ALL_PERMS.filter(p => p !== "settings.users");
   const OPERATOR_PERMS = ALL_PERMS.filter(p => p.endsWith(".view"));
+  const DEPT_HEAD_PERMS = [
+    "dashboard.view",
+    "inquiries.view",
+    "calendar.view",
+    "equipment.view","equipment.edit",
+    "kits.view","kits.edit",
+    "staff.view","staff.create","staff.edit","staff.payments",
+    "warehouse.view",
+  ];
 
   const rpData: any[] = [];
-  for (const p of ALL_PERMS)     rpData.push({ role: "Admin",    permission: p });
-  for (const p of MANAGER_PERMS) rpData.push({ role: "Manager",  permission: p });
-  for (const p of OPERATOR_PERMS)rpData.push({ role: "Operator", permission: p });
+  for (const p of ALL_PERMS)       rpData.push({ role: "Admin",          permission: p });
+  for (const p of MANAGER_PERMS)   rpData.push({ role: "Manager",        permission: p });
+  for (const p of OPERATOR_PERMS)  rpData.push({ role: "Operator",       permission: p });
+  for (const p of DEPT_HEAD_PERMS) rpData.push({ role: "Department Head",permission: p });
+  // Staff role uses sentinel marker (no permissions by default)
+  rpData.push({ role: "Staff", permission: "__role__" });
   await prisma.rolePermission.createMany({ data: rpData });
   console.log(`     ✓ ${rpData.length} role-permission rows\n`);
 
@@ -593,8 +605,8 @@ async function main() {
       data: {
         name: s.name, phone: s.phone, role: s.role,
         staff_type: s.staff_type, department: s.department,
-        payment_type: "", // empty as requested
-        rate_per_day: null, monthly_salary: null, // empty as requested
+        payment_type: "",
+        rate_per_day: null, monthly_salary: null,
         with_equipment: s.with_equipment,
         equipment_desc: (s as any).equipment_desc || null,
         equipment_rate_per_day: null,
@@ -609,7 +621,7 @@ async function main() {
 
   console.log("✅ Seed complete!");
   console.log(`   • 1 user (admin/admin)`);
-  console.log(`   • ${rpData.length} role permissions`);
+  console.log(`   • ${rpData.length} role-permission rows (Admin, Manager, Operator, Department Head, Staff)`);
   console.log(`   • ${olData.length} option list entries`);
   console.log(`   • 17 clients`);
   console.log(`   • 3 vendors`);
